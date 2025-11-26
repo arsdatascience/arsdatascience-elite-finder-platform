@@ -316,6 +316,8 @@ export const FlightControl: React.FC = () => {
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
   const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [localLeads, setLocalLeads] = useState<Lead[]>(LEADS_DATA);
+  const [showNewLeadModal, setShowNewLeadModal] = useState(false);
 
 
   // Filter leads
