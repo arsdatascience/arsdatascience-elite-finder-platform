@@ -188,7 +188,7 @@ export const Campaigns: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex flex-col h-[400px]">
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex flex-col h-[500px]">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
               <BarChart2 size={16} className="text-gray-400" />
@@ -208,7 +208,7 @@ export const Campaigns: React.FC = () => {
                 <YAxis
                   dataKey="name"
                   type="category"
-                  width={120}
+                  width={180}
                   tick={{ fontSize: 11, fill: '#6b7280', fontWeight: 500 }}
                   axisLine={false}
                   tickLine={false}
@@ -219,8 +219,8 @@ export const Campaigns: React.FC = () => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
-                        <div className="bg-white p-3 border border-gray-100 shadow-lg rounded-lg">
-                          <p className="text-sm font-bold text-gray-800 mb-1">{data.fullName}</p>
+                        <div className="bg-white p-3 border border-gray-100 shadow-lg rounded-lg max-w-[300px] z-50">
+                          <p className="text-sm font-bold text-gray-800 mb-1 whitespace-normal">{data.fullName}</p>
                           <p className="text-xs text-gray-500 mb-2">Plataforma: {data.platform === 'google' ? 'Google Ads' : 'Meta Ads'}</p>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-gray-600">ROAS:</span>
@@ -249,6 +249,26 @@ export const Campaigns: React.FC = () => {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+          </div>
+          <div className="mt-auto pt-4 border-t border-gray-100">
+            <div className="flex flex-wrap gap-4 justify-center">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#3b82f6]"></div>
+                <span className="text-xs text-gray-600 font-medium">Google Ads</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#a855f7]"></div>
+                <span className="text-xs text-gray-600 font-medium">Meta Ads</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
+                <span className="text-xs text-gray-600 font-medium">YouTube</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#0a66c2]"></div>
+                <span className="text-xs text-gray-600 font-medium">LinkedIn</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
