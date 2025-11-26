@@ -76,6 +76,7 @@ export const Campaigns: React.FC = () => {
       .slice(0, 6)
       .map(c => ({
         name: c.name.length > 20 ? c.name.substring(0, 20) + '...' : c.name,
+        fullName: c.name,
         roas: c.roas,
         platform: c.platform
       }));
@@ -214,12 +215,31 @@ export const Campaigns: React.FC = () => {
                 />
                 <Tooltip
                   cursor={{ fill: '#f3f4f6', radius: 4 }}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-3 border border-gray-100 shadow-lg rounded-lg">
+                          <p className="text-sm font-bold text-gray-800 mb-1">{data.fullName}</p>
+                          <p className="text-xs text-gray-500 mb-2">Plataforma: {data.platform === 'google' ? 'Google Ads' : 'Meta Ads'}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-600">ROAS:</span>
+                            <span className="text-sm font-bold text-blue-600">{data.roas}x</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
                 <Bar dataKey="roas" barSize={32} radius={[0, 6, 6, 0]}>
-                  {ROAS_DATA.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.platform === 'google' ? '#3b82f6' : '#a855f7'} />
-                  ))}
+                  {ROAS_DATA.map((entry: any, index: number) => {
+                    let color = entry.platform === 'google' ? '#3b82f6' : '#a855f7';
+                    if (entry.fullName.toLowerCase().includes('youtube')) color = '#ef4444';
+                    if (entry.fullName.toLowerCase().includes('linkedin')) color = '#0a66c2';
+
+                    return <Cell key={`cell-${index}`} fill={color} />;
+                  })}
                   <LabelList
                     dataKey="roas"
                     position="right"
