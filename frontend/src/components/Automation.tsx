@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { GitBranch, Plus, Play, Pause, Zap, Mail, MessageSquare, Clock, ArrowRight, CheckCircle, XCircle, AlertTriangle, X, UserPlus, AlertCircle, Smartphone, Tag, Globe, ArrowLeft, Copy, Edit, Trash2, Save } from 'lucide-react';
+import { GitBranch, Plus, Play, Pause, Zap, Mail, MessageSquare, Clock, UserPlus, AlertCircle, Smartphone, Tag, Globe, ArrowLeft, Copy, Edit, Trash2, Save } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 
 

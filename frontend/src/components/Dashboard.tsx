@@ -22,7 +22,7 @@ export const Dashboard: React.FC = () => {
   const [selectedClient, setSelectedClient] = useState('all');
   const [selectedPlatform, setSelectedPlatform] = useState<'all' | 'google' | 'meta'>('all');
   const [currentKPIs, setCurrentKPIs] = useState<Metric[]>(KPIS);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<unknown[]>([]);
 
   useEffect(() => {
     let baseKPIs = [...KPIS];
@@ -90,7 +90,7 @@ export const Dashboard: React.FC = () => {
 
   }, [selectedClient, selectedPlatform]);
 
-  const formatK = (val: any) => {
+  const formatK = (val: number) => {
     if (val >= 1000) return `R$${(val / 1000).toFixed(1)}k`;
     return String(val);
   };
@@ -221,7 +221,7 @@ export const Dashboard: React.FC = () => {
                 {selectedPlatform === 'all' ? (
                   <>
                     <Area type="monotone" dataKey="google_spend" name="Google Invest." stroke="#3b82f6" fill="url(#colorGoogle)" stackId="1">
-                      <LabelList dataKey="google_spend" position="top" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#3b82f6', fontWeight: 'bold' }} />
+                      <LabelList dataKey="google_spend" position="top" formatter={(val: any) => formatK(Number(val))} style={{ fontSize: '10px', fill: '#3b82f6', fontWeight: 'bold' }} />
                     </Area>
                     <Area type="monotone" dataKey="meta_spend" name="Meta Invest." stroke="#a855f7" fill="url(#colorMeta)" stackId="1">
                       <LabelList dataKey="meta_spend" position="top" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#a855f7', fontWeight: 'bold' }} />

@@ -1,15 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Save, RefreshCw, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Eye, EyeOff, Cpu, Check, Plus, Calendar, LinkIcon, Trash2, Edit2, X, MapPin, FileText, Lock } from 'lucide-react';
+import { Save, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Eye, EyeOff, Cpu, Check, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 
 type SettingsTab = 'profile' | 'integrations' | 'team' | 'billing' | 'notifications';
 
-interface CustomApi {
-  id: string;
-  name: string;
-  key: string;
-  addedAt: string;
-}
+
 
 interface TeamMember {
   id: number;
