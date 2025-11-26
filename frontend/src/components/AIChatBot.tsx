@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 import { ChatMessage } from '@/types';
 import { askEliteAssistant } from '@/services/geminiService';
-import { AIProvider, AI_MODELS, OpenAIModel, GeminiModel } from '@/constants/aiModels';
+import { AIProvider, AI_MODELS, OpenAIModel, GeminiModel, ClaudeModel } from '@/constants/aiModels';
 
 interface AIChatBotProps {
     mode?: 'widget' | 'page';
@@ -19,8 +19,10 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
     useEffect(() => {
         if (provider === AIProvider.OPENAI) {
             setModel(OpenAIModel.GPT_5);
-        } else {
+        } else if (provider === AIProvider.GEMINI) {
             setModel(GeminiModel.GEMINI_2_5_FLASH);
+        } else if (provider === AIProvider.ANTHROPIC) {
+            setModel(ClaudeModel.SONNET_4_5);
         }
     }, [provider]);
 
@@ -101,25 +103,37 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
             </div>
 
             {mode === 'page' && (
-                <div className="bg-gray-50 p-3 border-b flex gap-3">
-                    <select
-                        value={provider}
-                        onChange={(e) => setProvider(e.target.value as AIProvider)}
-                        className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    >
-                        {Object.values(AIProvider).map((p) => (
-                            <option key={p} value={p}>{p}</option>
-                        ))}
-                    </select>
-                    <select
-                        value={model}
-                        onChange={(e) => setModel(e.target.value)}
-                        className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 flex-1"
-                    >
-                        {AI_MODELS[provider].map((m) => (
-                            <option key={m.id} value={m.id}>{m.name}</option>
-                        ))}
-                    </select>
+                <div className="bg-indigo-50 p-4 border-b border-indigo-100 flex flex-col gap-3">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Sparkles size={16} className="text-indigo-600" />
+                        <span className="text-xs font-bold text-indigo-800 uppercase tracking-wider">Configuração do Modelo IA</span>
+                    </div>
+                    <div className="flex gap-4">
+                        <div className="flex-1">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Provedor</label>
+                            <select
+                                value={provider}
+                                onChange={(e) => setProvider(e.target.value as AIProvider)}
+                                className="w-full text-sm border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-white py-2"
+                            >
+                                <option value={AIProvider.OPENAI}>OpenAI (GPT)</option>
+                                <option value={AIProvider.GEMINI}>Google (Gemini)</option>
+                                <option value={AIProvider.ANTHROPIC}>Anthropic (Claude)</option>
+                            </select>
+                        </div>
+                        <div className="flex-[2]">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Modelo</label>
+                            <select
+                                value={model}
+                                onChange={(e) => setModel(e.target.value)}
+                                className="w-full text-sm border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-white py-2"
+                            >
+                                {AI_MODELS[provider].map((m) => (
+                                    <option key={m.id} value={m.id}>{m.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
                 </div>
             )}
 

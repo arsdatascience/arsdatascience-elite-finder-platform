@@ -1,53 +1,45 @@
-
 import React, { useState } from 'react';
-import { User, MapPin, Phone, Mail, Briefcase, Save, X, Check, Building2, Globe, Calendar } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { User, MapPin, Phone, Mail, Save, X, Check, Building2, Globe, Calendar } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 
-interface ClientForm {
-    type: 'PF' | 'PJ';
-    name: string;
-    document: string; // CPF or CNPJ
-    foundationDate: string;
-    email: string;
-    phone: string;
-    whatsapp: string;
-    cep: string;
-    street: string;
-    number: string;
-    complement: string;
-    neighborhood: string;
-    city: string;
-    state: string;
-    instagramUrl: string;
-    facebookUrl: string;
-    linkedinUrl: string;
-    website: string;
-    notes: string;
-}
+// --- SCHEMAS DE VALIDAÇÃO (ZOD) ---
 
-const INITIAL_FORM: ClientForm = {
-    type: 'PJ',
-    name: '',
-    document: '',
-    foundationDate: '',
-    email: '',
-    phone: '',
-    whatsapp: '',
-    cep: '',
-    street: '',
-    number: '',
-    complement: '',
-    neighborhood: '',
-    city: '',
-    state: '',
-    instagramUrl: '',
-    facebookUrl: '',
-    linkedinUrl: '',
-    website: '',
-    notes: ''
-};
+const clientSchema = z.object({
+    type: z.enum(['PF', 'PJ']),
+    name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+    document: z.string().min(11, 'Documento inválido'), // Validação mais complexa pode ser adicionada
+    foundationDate: z.string().optional(),
+    email: z.string().email('Email inválido'),
+    phone: z.string().min(10, 'Telefone inválido'),
+    whatsapp: z.string().optional(),
+    cep: z.string().min(8, 'CEP inválido'),
+    street: z.string().min(3, 'Rua obrigatória'),
+    number: z.string().min(1, 'Número obrigatório'),
+    complement: z.string().optional(),
+    neighborhood: z.string().min(2, 'Bairro obrigatório'),
+    city: z.string().min(2, 'Cidade obrigatória'),
+    state: z.string().length(2, 'Selecione um estado'),
+    instagramUrl: z.string().url('URL inválida').optional().or(z.literal('')),
+    facebookUrl: z.string().url('URL inválida').optional().or(z.literal('')),
+    linkedinUrl: z.string().url('URL inválida').optional().or(z.literal('')),
+    website: z.string().url('URL inválida').optional().or(z.literal('')),
+    notes: z.string().optional()
+}).refine((data) => {
+    if (data.type === 'PF') return data.document.length >= 11;
+    if (data.type === 'PJ') return data.document.length >= 14;
+    return true;
+}, {
+    message: "Documento inválido para o tipo selecionado",
+    path: ["document"]
+});
 
-// Mask Helpers
+type ClientFormData = z.infer<typeof clientSchema>;
+
+// --- MÁSCARAS ---
+
 const maskPhone = (value: string) => {
     return value
         .replace(/\D/g, '')
@@ -82,7 +74,7 @@ const maskCNPJ = (value: string) => {
         .slice(0, 18);
 };
 
-// Mock Data for List View
+// --- MOCK DATA ---
 const MOCK_CLIENTS = [
     { id: 1, name: 'TechCorp Soluções', type: 'PJ', email: 'contato@techcorp.com.br', phone: '(11) 99999-1010', city: 'São Paulo' },
     { id: 2, name: 'Padaria do João', type: 'PJ', email: 'joao@padaria.com', phone: '(21) 98888-2020', city: 'Rio de Janeiro' },
@@ -91,26 +83,56 @@ const MOCK_CLIENTS = [
 
 export const ClientRegistration: React.FC = () => {
     const [view, setView] = useState<'list' | 'form'>('list');
-    const [formData, setFormData] = useState<ClientForm>(INITIAL_FORM);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [successMsg, setSuccessMsg] = useState('');
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        let maskedValue = value;
-
-        if (name === 'phone' || name === 'whatsapp') maskedValue = maskPhone(value);
-        if (name === 'cep') maskedValue = maskCEP(value);
-        if (name === 'document') {
-            maskedValue = formData.type === 'PJ' ? maskCNPJ(value) : maskCPF(value);
+    const {
+        register,
+        handleSubmit,
+        setValue,
+        watch,
+        reset,
+        formState: { errors, isSubmitting }
+    } = useForm<ClientFormData>({
+        resolver: zodResolver(clientSchema),
+        defaultValues: {
+            type: 'PJ',
+            name: '',
+            document: '',
+            email: '',
+            phone: '',
+            cep: '',
+            street: '',
+            number: '',
+            neighborhood: '',
+            city: '',
+            state: '',
+            notes: ''
         }
+    });
 
-        setFormData(prev => ({ ...prev, [name]: maskedValue }));
+    const selectedType = watch('type');
+
+    // Handlers de Máscara
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setValue(e.target.name as any, maskPhone(e.target.value));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Aqui entraria a lógica de salvar no banco (POST /api/clients ou PUT /api/clients/:id)
+    const handleCEPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setValue('cep', maskCEP(e.target.value));
+    };
+
+    const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const masked = selectedType === 'PJ' ? maskCNPJ(e.target.value) : maskCPF(e.target.value);
+        setValue('document', masked);
+    };
+
+    const onSubmit = async (data: ClientFormData) => {
+        // Simulação de API Call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        console.log('Dados validados:', data);
+
         if (editingId) {
             setSuccessMsg('Cliente atualizado com sucesso!');
         } else {
@@ -120,27 +142,46 @@ export const ClientRegistration: React.FC = () => {
         setTimeout(() => {
             setSuccessMsg('');
             setView('list');
-            setFormData(INITIAL_FORM);
+            reset();
             setEditingId(null);
-        }, 2000);
+        }, 1500);
     };
 
     const handleEdit = (client: any) => {
-        setFormData({
-            ...INITIAL_FORM, // Garante que todos os campos existam
+        // Num cenário real, buscaríamos os dados completos do cliente
+        reset({
+            type: client.type as 'PF' | 'PJ',
             name: client.name,
-            type: client.type,
             email: client.email,
             phone: client.phone,
             city: client.city,
-            // Mapear outros campos se existirem no mock ou backend
+            // Preencher outros campos com dados reais
+            document: client.type === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00',
+            street: 'Rua Exemplo',
+            number: '123',
+            neighborhood: 'Centro',
+            cep: '00000-000',
+            state: 'SP'
         });
         setEditingId(client.id);
         setView('form');
     };
 
     const handleNewClient = () => {
-        setFormData(INITIAL_FORM);
+        reset({
+            type: 'PJ',
+            name: '',
+            document: '',
+            email: '',
+            phone: '',
+            cep: '',
+            street: '',
+            number: '',
+            neighborhood: '',
+            city: '',
+            state: '',
+            notes: ''
+        });
         setEditingId(null);
         setView('form');
     };
@@ -178,7 +219,7 @@ export const ClientRegistration: React.FC = () => {
                                 <tr key={client.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 font-medium text-gray-900">{client.name}</td>
                                     <td className="px-6 py-4">
-                                        <span className={`px - 2 py - 1 rounded text - xs font - bold ${client.type === 'PJ' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'} `}>
+                                        <span className={`px-2 py-1 rounded text-xs font-bold ${client.type === 'PJ' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'} `}>
                                             {client.type}
                                         </span>
                                     </td>
@@ -223,7 +264,7 @@ export const ClientRegistration: React.FC = () => {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
 
                 {/* Seção 1: Dados Principais */}
                 <div className="p-6 border-b border-gray-100">
@@ -236,50 +277,57 @@ export const ClientRegistration: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Pessoa</label>
                             <div className="flex gap-4">
                                 <label className="flex items-center gap-2 cursor-pointer">
-                                    <input type="radio" name="type" value="PJ" checked={formData.type === 'PJ'} onChange={handleChange} className="text-blue-600 focus:ring-blue-500" />
+                                    <input
+                                        type="radio"
+                                        value="PJ"
+                                        {...register('type')}
+                                        className="text-blue-600 focus:ring-blue-500"
+                                    />
                                     <span className="text-gray-900">Pessoa Jurídica (PJ)</span>
                                 </label>
                                 <label className="flex items-center gap-2 cursor-pointer">
-                                    <input type="radio" name="type" value="PF" checked={formData.type === 'PF'} onChange={handleChange} className="text-blue-600 focus:ring-blue-500" />
+                                    <input
+                                        type="radio"
+                                        value="PF"
+                                        {...register('type')}
+                                        className="text-blue-600 focus:ring-blue-500"
+                                    />
                                     <span className="text-gray-900">Pessoa Física (PF)</span>
                                 </label>
                             </div>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                {formData.type === 'PJ' ? 'CNPJ' : 'CPF'}
+                                {selectedType === 'PJ' ? 'CNPJ' : 'CPF'}
                             </label>
                             <input
                                 type="text"
-                                name="document"
-                                value={formData.document}
-                                onChange={handleChange}
-                                placeholder={formData.type === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00'}
-                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-                                required
+                                {...register('document')}
+                                onChange={handleDocumentChange}
+                                placeholder={selectedType === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00'}
+                                className={`w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.document ? 'border-red-500' : 'border-gray-300'}`}
                             />
+                            {errors.document && <p className="text-red-500 text-xs mt-1">{errors.document.message}</p>}
                         </div>
                         <div className="md:col-span-1">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                {formData.type === 'PJ' ? 'Razão Social / Nome Fantasia' : 'Nome Completo'}
+                                {selectedType === 'PJ' ? 'Razão Social / Nome Fantasia' : 'Nome Completo'}
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    {formData.type === 'PJ' ? <Building2 className="text-gray-400" size={18} /> : <User className="text-gray-400" size={18} />}
+                                    {selectedType === 'PJ' ? <Building2 className="text-gray-400" size={18} /> : <User className="text-gray-400" size={18} />}
                                 </div>
                                 <input
                                     type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    className="w-full pl-10 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-                                    required
+                                    {...register('name')}
+                                    className={`w-full pl-10 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
                                 />
                             </div>
+                            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                {formData.type === 'PJ' ? 'Data de Fundação' : 'Data de Nascimento'}
+                                {selectedType === 'PJ' ? 'Data de Fundação' : 'Data de Nascimento'}
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -287,9 +335,7 @@ export const ClientRegistration: React.FC = () => {
                                 </div>
                                 <input
                                     type="date"
-                                    name="foundationDate"
-                                    value={formData.foundationDate}
-                                    onChange={handleChange}
+                                    {...register('foundationDate')}
                                     className="w-full pl-10 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
                                 />
                             </div>
@@ -312,32 +358,29 @@ export const ClientRegistration: React.FC = () => {
                                 </div>
                                 <input
                                     type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    className="w-full pl-10 border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-                                    required
+                                    {...register('email')}
+                                    className={`w-full pl-10 border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
                                 />
                             </div>
+                            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
                             <input
                                 type="text"
-                                name="phone"
-                                value={formData.phone}
-                                onChange={handleChange}
+                                {...register('phone')}
+                                onChange={handlePhoneChange}
                                 placeholder="(00) 0000-0000"
-                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                                className={`w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
                             />
+                            {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp</label>
                             <input
                                 type="text"
-                                name="whatsapp"
-                                value={formData.whatsapp}
-                                onChange={handleChange}
+                                {...register('whatsapp')}
+                                onChange={handlePhoneChange}
                                 placeholder="(00) 90000-0000"
                                 className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
                             />
@@ -356,41 +399,37 @@ export const ClientRegistration: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
                             <input
                                 type="text"
-                                name="cep"
-                                value={formData.cep}
-                                onChange={handleChange}
+                                {...register('cep')}
+                                onChange={handleCEPChange}
                                 placeholder="00000-000"
-                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                                className={`w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.cep ? 'border-red-500' : 'border-gray-300'}`}
                             />
+                            {errors.cep && <p className="text-red-500 text-xs mt-1">{errors.cep.message}</p>}
                         </div>
                         <div className="md:col-span-3">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Avenida / Rua</label>
                             <input
                                 type="text"
-                                name="street"
-                                value={formData.street}
-                                onChange={handleChange}
+                                {...register('street')}
                                 placeholder="Ex: Av. Paulista"
-                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                                className={`w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.street ? 'border-red-500' : 'border-gray-300'}`}
                             />
+                            {errors.street && <p className="text-red-500 text-xs mt-1">{errors.street.message}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
                             <input
                                 type="text"
-                                name="number"
-                                value={formData.number}
-                                onChange={handleChange}
-                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                                {...register('number')}
+                                className={`w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.number ? 'border-red-500' : 'border-gray-300'}`}
                             />
+                            {errors.number && <p className="text-red-500 text-xs mt-1">{errors.number.message}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
                             <input
                                 type="text"
-                                name="complement"
-                                value={formData.complement}
-                                onChange={handleChange}
+                                {...register('complement')}
                                 placeholder="Ex: Sala 101"
                                 className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
                             />
@@ -399,29 +438,25 @@ export const ClientRegistration: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
                             <input
                                 type="text"
-                                name="neighborhood"
-                                value={formData.neighborhood}
-                                onChange={handleChange}
-                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                                {...register('neighborhood')}
+                                className={`w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.neighborhood ? 'border-red-500' : 'border-gray-300'}`}
                             />
+                            {errors.neighborhood && <p className="text-red-500 text-xs mt-1">{errors.neighborhood.message}</p>}
                         </div>
                         <div className="md:col-span-3">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
                             <input
                                 type="text"
-                                name="city"
-                                value={formData.city}
-                                onChange={handleChange}
-                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                                {...register('city')}
+                                className={`w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.city ? 'border-red-500' : 'border-gray-300'}`}
                             />
+                            {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                             <select
-                                name="state"
-                                value={formData.state}
-                                onChange={handleChange}
-                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                {...register('state')}
+                                className={`w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 bg-white ${errors.state ? 'border-red-500' : 'border-gray-300'}`}
                             >
                                 <option value="">UF</option>
                                 <option value="SP">SP</option>
@@ -433,6 +468,7 @@ export const ClientRegistration: React.FC = () => {
                                 <option value="BA">BA</option>
                                 {/* Outros estados... */}
                             </select>
+                            {errors.state && <p className="text-red-500 text-xs mt-1">{errors.state.message}</p>}
                         </div>
                     </div>
                 </div>
@@ -448,45 +484,41 @@ export const ClientRegistration: React.FC = () => {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Instagram (URL)</label>
                             <input
                                 type="text"
-                                name="instagramUrl"
-                                value={formData.instagramUrl}
-                                onChange={handleChange}
+                                {...register('instagramUrl')}
                                 placeholder="https://instagram.com/..."
-                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                                className={`w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.instagramUrl ? 'border-red-500' : 'border-gray-300'}`}
                             />
+                            {errors.instagramUrl && <p className="text-red-500 text-xs mt-1">{errors.instagramUrl.message}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Facebook (URL)</label>
                             <input
                                 type="text"
-                                name="facebookUrl"
-                                value={formData.facebookUrl}
-                                onChange={handleChange}
+                                {...register('facebookUrl')}
                                 placeholder="https://facebook.com/..."
-                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                                className={`w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.facebookUrl ? 'border-red-500' : 'border-gray-300'}`}
                             />
+                            {errors.facebookUrl && <p className="text-red-500 text-xs mt-1">{errors.facebookUrl.message}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn (URL)</label>
                             <input
                                 type="text"
-                                name="linkedinUrl"
-                                value={formData.linkedinUrl}
-                                onChange={handleChange}
+                                {...register('linkedinUrl')}
                                 placeholder="https://linkedin.com/in/..."
-                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                                className={`w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.linkedinUrl ? 'border-red-500' : 'border-gray-300'}`}
                             />
+                            {errors.linkedinUrl && <p className="text-red-500 text-xs mt-1">{errors.linkedinUrl.message}</p>}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                             <input
                                 type="text"
-                                name="website"
-                                value={formData.website}
-                                onChange={handleChange}
+                                {...register('website')}
                                 placeholder="https://www.seusite.com.br"
-                                className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+                                className={`w-full border rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 ${errors.website ? 'border-red-500' : 'border-gray-300'}`}
                             />
+                            {errors.website && <p className="text-red-500 text-xs mt-1">{errors.website.message}</p>}
                         </div>
                     </div>
                 </div>
@@ -495,9 +527,7 @@ export const ClientRegistration: React.FC = () => {
                 <div className="p-6">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Observações Internas</label>
                     <textarea
-                        name="notes"
-                        value={formData.notes}
-                        onChange={handleChange}
+                        {...register('notes')}
                         className="w-full border border-gray-300 rounded-lg p-3 h-24 focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                         placeholder="Informações adicionais sobre o cliente..."
                     />
@@ -513,10 +543,11 @@ export const ClientRegistration: React.FC = () => {
                     </button>
                     <button
                         type="submit"
-                        className="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-colors flex items-center gap-2"
+                        disabled={isSubmitting}
+                        className="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         <Save size={18} />
-                        {editingId ? 'Salvar Alterações' : 'Salvar Cadastro'}
+                        {isSubmitting ? 'Salvando...' : (editingId ? 'Salvar Alterações' : 'Salvar Cadastro')}
                     </button>
                 </div>
             </form>

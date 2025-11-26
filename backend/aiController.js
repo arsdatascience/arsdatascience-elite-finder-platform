@@ -1,6 +1,8 @@
 // aiController.js - Implementation using OpenAI and Gemini
 // Provider: OpenAI (Custom Endpoint /v1/responses) and Gemini (Google Generative AI)
 
+const { ClaudeService, ClaudeModel } = require('./services/anthropicService');
+
 const getEffectiveApiKey = (provider = 'openai') => {
   if (provider === 'gemini') {
     let apiKey = process.env.GEMINI_API_KEY;
@@ -14,6 +16,13 @@ const getEffectiveApiKey = (provider = 'openai') => {
     }
     if (!apiKey) {
       console.error('⚠️  GEMINI_API_KEY environment variable is not set!');
+      return null;
+    }
+    return apiKey;
+  } else if (provider === 'anthropic') {
+    let apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('⚠️  ANTHROPIC_API_KEY environment variable is not set!');
       return null;
     }
     return apiKey;
@@ -142,6 +151,29 @@ const callGemini = async (prompt, apiKey, model = "gemini-2.0-flash", jsonMode =
   }
 };
 
+// Helper function to call Anthropic API
+const callAnthropic = async (prompt, apiKey, model, jsonMode = false) => {
+  try {
+    // Se o modelo não for passado ou for inválido, o ClaudeService usa o default (Sonnet 4.5)
+    const claude = new ClaudeService(apiKey, model);
+
+    let finalPrompt = prompt;
+    if (jsonMode) {
+      finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON.";
+    }
+
+    const response = await claude.message(finalPrompt, {
+      maxTokens: 4096,
+      temperature: 0.7
+    });
+
+    return response;
+  } catch (error) {
+    console.error("Anthropic API Call Failed:", error);
+    throw error;
+  }
+};
+
 const analyzeChatConversation = async (req, res) => {
   const { messages, provider = 'openai', model } = req.body;
   const apiKey = getEffectiveApiKey(provider);
@@ -185,6 +217,8 @@ const analyzeChatConversation = async (req, res) => {
     let text;
     if (provider === 'gemini') {
       text = await callGemini(prompt, apiKey, model, false);
+    } else if (provider === 'anthropic') {
+      text = await callAnthropic(prompt, apiKey, model, false);
     } else {
       text = await callOpenAI(prompt, apiKey, model, false);
     }
@@ -279,6 +313,8 @@ const generateMarketingContent = async (req, res) => {
     let text;
     if (provider === 'gemini') {
       text = await callGemini(prompt, apiKey, model, true);
+    } else if (provider === 'anthropic') {
+      text = await callAnthropic(prompt, apiKey, model, true);
     } else {
       text = await callOpenAI(prompt, apiKey, model, true);
     }
@@ -332,6 +368,8 @@ const askEliteAssistant = async (req, res) => {
     let text;
     if (provider === 'gemini') {
       text = await callGemini(prompt, apiKey, model, false);
+    } else if (provider === 'anthropic') {
+      text = await callAnthropic(prompt, apiKey, model, false);
     } else {
       text = await callOpenAI(prompt, apiKey, model, false);
     }

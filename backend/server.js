@@ -171,30 +171,10 @@ app.post('/api/social-posts', socialMediaController.upload.single('media'), soci
 
 // Automation Workflows
 app.get('/api/workflows', dbController.getWorkflows);
-app.get('/api/workflows/:workflow_id/steps', dbController.getWorkflowSteps);
-
-// Training
-app.get('/api/training/modules', dbController.getTrainingModules);
-app.get('/api/training/progress', dbController.getTrainingProgress);
-
-// KPIs
-app.get('/api/kpis', dbController.getKPIs);
-
-// Device Stats
-app.get('/api/device-stats', dbController.getDeviceStats);
-
-// --- INTEGRATIONS ---
-const integrationsController = require('./integrationsController');
-
-app.get('/api/integrations', integrationsController.getIntegrations);
-app.patch('/api/integrations/:id', integrationsController.updateIntegrationStatus);
-app.post('/api/integrations/:id/sync', integrationsController.syncIntegration);
-
-// OAuth callbacks
+// OAuth callbacks (kept as app.get as per instruction)
 app.get('/auth/google-ads/callback', integrationsController.handleGoogleAdsCallback);
 app.get('/auth/meta-ads/callback', integrationsController.handleMetaAdsCallback);
 
-// WhatsApp setup
 app.post('/api/integrations/whatsapp/setup', integrationsController.setupWhatsAppWebhook);
 
 // --- WEBHOOKS ---

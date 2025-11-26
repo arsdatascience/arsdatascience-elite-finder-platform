@@ -1,108 +1,61 @@
 
-// O conteúdo do arquivo components/Dashboard.tsx foi movido para aqui, com os imports corrigidos para a estrutura `src`.
-// Ex: import { KPIS } from '../constants'; se torna import { KPIS } from '@/constants';
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { AreaChart, Area, PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList, Legend } from 'recharts';
-import { KPIS, CLIENTS_LIST, COMPARATIVE_FUNNEL_DATA, DEVICE_DATA } from '@/constants';
-import { ArrowUpRight, ArrowDownRight, Info, Users, Smartphone, Monitor, Tablet } from 'lucide-react';
-import { Metric } from '@/types';
-import { COMPONENT_VERSIONS } from '@/componentVersions';
+import { CLIENTS_LIST, KPIS, COMPARATIVE_FUNNEL_DATA, DEVICE_DATA } from '../constants';
+import { ArrowUpRight, ArrowDownRight, Info, Users, Smartphone, Monitor, Tablet, Loader2 } from 'lucide-react';
+import { COMPONENT_VERSIONS } from '../componentVersions';
+import { motion, Variants } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/services/apiClient';
 
-const DEFAULT_CHART_DATA = [
-  { name: 'Seg', revenue: 20000, spend: 12000, google: 8000, meta: 4000 },
-  { name: 'Ter', revenue: 15000, spend: 7000, google: 4000, meta: 3000 },
-  { name: 'Qua', revenue: 10000, spend: 49000, google: 30000, meta: 19000 },
-  { name: 'Qui', revenue: 13900, spend: 19500, google: 10000, meta: 9500 },
-  { name: 'Sex', revenue: 9450, spend: 24000, google: 12000, meta: 12000 },
-  { name: 'Sab', revenue: 11950, spend: 19000, google: 10000, meta: 9000 },
-  { name: 'Dom', revenue: 17450, spend: 21500, google: 11500, meta: 10000 },
-];
+// Variantes de animação
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
 
-interface ChartData {
-  name: string;
-  revenue: number;
-  spend: number;
-  google: number;
-  meta: number;
-  google_spend: number;
-  meta_spend: number;
-  total_spend: number;
-  google_revenue: number;
-  meta_revenue: number;
-  total_revenue: number;
-}
+const itemVariants: Variants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100
+    }
+  }
+};
 
 export const Dashboard: React.FC = () => {
   const [selectedClient, setSelectedClient] = useState('all');
   const [selectedPlatform, setSelectedPlatform] = useState<'all' | 'google' | 'meta'>('all');
-  const [currentKPIs, setCurrentKPIs] = useState<Metric[]>(KPIS);
-  const [chartData, setChartData] = useState<ChartData[]>([]);
 
-  useEffect(() => {
-    let baseKPIs = [...KPIS];
-    let processedData = DEFAULT_CHART_DATA.map(d => ({
-      ...d,
-      google_spend: d.google,
-      meta_spend: d.meta,
-      total_spend: d.spend,
-      google_revenue: d.revenue * 0.6,
-      meta_revenue: d.revenue * 0.4,
-      total_revenue: d.revenue
-    }));
+  // React Query Hooks
+  const { data: currentKPIs = KPIS, isLoading: isLoadingKPIs } = useQuery({
+    queryKey: ['kpis', selectedClient, selectedPlatform],
+    queryFn: () => apiClient.dashboard.getKPIs(selectedClient, selectedPlatform),
+  });
 
-    if (selectedClient === '1') { // TechCorp
-      baseKPIs = [
-        { label: 'Faturamento Total', value: 'R$ 450.000,00', change: 5.2, trend: 'up' },
-        { label: 'Investimento Ads', value: 'R$ 80.000,00', change: 1.1, trend: 'up' },
-        { label: 'ROAS', value: '5.6x', change: 4.1, trend: 'up' },
-        { label: 'CPA Médio', value: 'R$ 120,00', change: -2.0, trend: 'down' },
-      ];
-      processedData = processedData.map(d => ({
-        ...d,
-        total_revenue: d.total_revenue * 1.2,
-        google_spend: d.google_spend * 1.1,
-        meta_spend: d.meta_spend * 1.1,
-        google_revenue: d.google_revenue * 1.2,
-        meta_revenue: d.meta_revenue * 1.2
-      }));
-    } else if (selectedClient === '2') { // Padaria
-      baseKPIs = [
-        { label: 'Faturamento Total', value: 'R$ 25.000,00', change: -1.5, trend: 'down' },
-        { label: 'Investimento Ads', value: 'R$ 5.000,00', change: 0.0, trend: 'neutral' },
-        { label: 'ROAS', value: '5.0x', change: -2.1, trend: 'down' },
-        { label: 'CPA Médio', value: 'R$ 15,00', change: 5.2, trend: 'up' },
-      ];
-      processedData = processedData.map(d => ({
-        ...d,
-        total_revenue: d.total_revenue * 0.1,
-        google_spend: d.google_spend * 0.1,
-        meta_spend: d.meta_spend * 0.1,
-        google_revenue: d.google_revenue * 0.1,
-        meta_revenue: d.meta_revenue * 0.1
-      }));
-    }
+  const { data: chartData = [], isLoading: isLoadingChart } = useQuery({
+    queryKey: ['chartData', selectedClient],
+    queryFn: () => apiClient.dashboard.getChartData(selectedClient),
+  });
 
-    if (selectedPlatform === 'google') {
-      setCurrentKPIs([
-        { ...baseKPIs[0], value: 'R$ ' + (parseFloat(baseKPIs[0].value.replace(/[^\d,]/g, '').replace(',', '.')) * 0.6).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) },
-        { ...baseKPIs[1], value: 'R$ ' + (parseFloat(baseKPIs[1].value.replace(/[^\d,]/g, '').replace(',', '.')) * 0.55).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) },
-        { ...baseKPIs[2], value: '6.1x' },
-        { ...baseKPIs[3], value: 'R$ 85,00' },
-      ]);
-    } else if (selectedPlatform === 'meta') {
-      setCurrentKPIs([
-        { ...baseKPIs[0], value: 'R$ ' + (parseFloat(baseKPIs[0].value.replace(/[^\d,]/g, '').replace(',', '.')) * 0.4).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) },
-        { ...baseKPIs[1], value: 'R$ ' + (parseFloat(baseKPIs[1].value.replace(/[^\d,]/g, '').replace(',', '.')) * 0.45).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) },
-        { ...baseKPIs[2], value: '4.2x' },
-        { ...baseKPIs[3], value: 'R$ 45,00' },
-      ]);
-    } else {
-      setCurrentKPIs(baseKPIs);
-    }
+  const { data: funnelData = COMPARATIVE_FUNNEL_DATA } = useQuery({
+    queryKey: ['funnelData'],
+    queryFn: apiClient.dashboard.getFunnelData,
+  });
 
-    setChartData(processedData);
-
-  }, [selectedClient, selectedPlatform]);
+  const { data: deviceData = DEVICE_DATA } = useQuery({
+    queryKey: ['deviceData'],
+    queryFn: apiClient.dashboard.getDeviceData,
+  });
 
   const formatK = (val: number) => {
     if (val >= 1000) return `R$${(val / 1000).toFixed(1)}k`;
@@ -119,16 +72,20 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Conteúdo do Dashboard como estava, mas com os imports corrigidos */}
-      {/* ... (todo o JSX do Dashboard.tsx) ... */}
+    <motion.div
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+        <motion.div variants={itemVariants}>
           <h2 className="text-2xl font-bold text-gray-800">Gestão de Campanhas <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.Dashboard}</span></h2>
           <p className="text-gray-500 text-sm">Visão estratégica de performance e ROI.</p>
-        </div>
+        </motion.div>
 
-        <div className="flex flex-col gap-3">
+        <motion.div variants={itemVariants} className="flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Seletor de Cliente */}
             <div className="relative">
@@ -175,33 +132,51 @@ export const Dashboard: React.FC = () => {
               <div className="w-2 h-2 rounded-full bg-purple-500"></div> Meta Ads
             </button>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {currentKPIs.map((kpi, idx) => (
-          <div key={idx} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
-            <div className="flex justify-between items-start">
-              <p className="text-sm font-medium text-gray-500">{kpi.label}</p>
-              <span className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${kpi.trend === 'up' ? 'bg-green-100 text-green-700' :
-                kpi.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
-                }`}>
-                {kpi.trend === 'up' ? <ArrowUpRight className="w-3 h-3 mr-1" /> :
-                  kpi.trend === 'down' ? <ArrowDownRight className="w-3 h-3 mr-1" /> : null}
-                {Math.abs(kpi.change)}%
-              </span>
+        {isLoadingKPIs ? (
+          Array(4).fill(0).map((_, idx) => (
+            <div key={idx} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-32 flex items-center justify-center">
+              <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
             </div>
-            <h3 className="text-3xl font-bold text-gray-900 mt-4">{kpi.value}</h3>
-          </div>
-        ))}
+          ))
+        ) : (
+          currentKPIs.map((kpi, idx) => (
+            <motion.div
+              key={idx}
+              variants={itemVariants}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+              className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-all hover:shadow-md"
+            >
+              <div className="flex justify-between items-start">
+                <p className="text-sm font-medium text-gray-500">{kpi.label}</p>
+                <span className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${kpi.trend === 'up' ? 'bg-green-100 text-green-700' :
+                  kpi.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                  {kpi.trend === 'up' ? <ArrowUpRight className="w-3 h-3 mr-1" /> :
+                    kpi.trend === 'down' ? <ArrowDownRight className="w-3 h-3 mr-1" /> : null}
+                  {Math.abs(kpi.change)}%
+                </span>
+              </div>
+              <h3 className="text-3xl font-bold text-gray-900 mt-4">{kpi.value}</h3>
+            </motion.div>
+          ))
+        )}
       </div>
 
       {/* Charts Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Main Revenue Chart (Area) - Takes 2 Columns */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <motion.div variants={itemVariants} className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative min-h-[400px]">
+          {isLoadingChart && (
+            <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center rounded-xl">
+              <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+            </div>
+          )}
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-800">
               {selectedPlatform === 'all' ? 'Evolução: Google vs Meta vs Receita' :
@@ -267,10 +242,10 @@ export const Dashboard: React.FC = () => {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
 
         {/* UPDATED: Modern Comparative Funnel (Bar Chart) with Fixed Labels */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <motion.div variants={itemVariants} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-semibold text-gray-800">Funil de Conversão</h3>
             <div className="flex gap-2 text-xs font-medium">
@@ -282,7 +257,7 @@ export const Dashboard: React.FC = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 layout="vertical"
-                data={COMPARATIVE_FUNNEL_DATA}
+                data={funnelData}
                 margin={{ top: 5, right: 50, left: 30, bottom: 5 }}
                 barGap={4}
               >
@@ -311,10 +286,10 @@ export const Dashboard: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
 
         {/* Devices Pie Chart Modernized - Takes 2 Columns */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <motion.div variants={itemVariants} className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-800 mb-6">Dispositivos & Tecnologia</h3>
 
           <div className="flex flex-col md:flex-row items-center gap-8 h-72">
@@ -323,7 +298,7 @@ export const Dashboard: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={DEVICE_DATA}
+                    data={deviceData}
                     cx="50%"
                     cy="50%"
                     innerRadius={80}
@@ -331,9 +306,9 @@ export const Dashboard: React.FC = () => {
                     cornerRadius={8}
                     paddingAngle={5}
                     dataKey="value"
-                    label={({ name, value }: { name: string; value: number }) => `${name}: ${value}%`}
+                    label={({ name, value }: any) => `${name}: ${value}%`}
                   >
-                    {DEVICE_DATA.map((entry, index) => (
+                    {deviceData.map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
                     ))}
                   </Pie>
@@ -350,7 +325,7 @@ export const Dashboard: React.FC = () => {
 
             {/* Custom Legend/Stats Side */}
             <div className="w-full md:w-1/2 space-y-4 pr-8">
-              {DEVICE_DATA.map((entry, index) => (
+              {deviceData.map((entry: any, index: number) => (
                 <div key={index} className="flex items-center justify-between group p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-default">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-lg text-white shadow-sm`} style={{ backgroundColor: entry.color }}>
@@ -368,10 +343,10 @@ export const Dashboard: React.FC = () => {
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Conversion Source Breakdown - Takes 1 Column */}
-        <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <motion.div variants={itemVariants} className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-800 mb-6">Origem das Conversões</h3>
           <div className="space-y-6">
             {[
@@ -402,8 +377,8 @@ export const Dashboard: React.FC = () => {
                   : "ROAS geral estável. Oportunidade de escalar campanhas de vídeo no Youtube."}
             </p>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };

@@ -1,0 +1,95 @@
+import axios from 'axios';
+import { api as mockApi } from './mockApi';
+import { Campaign, Workflow, WorkflowTemplate, Metric } from '../types';
+
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+const axiosInstance = axios.create({
+    baseURL: API_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+// Interceptor para adicionar token de autenticação (futuro)
+axiosInstance.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
+export const apiClient = {
+    dashboard: {
+        getKPIs: async (clientId: string, platform: string): Promise<Metric[]> => {
+            if (USE_MOCK) return mockApi.dashboard.getKPIs(clientId, platform);
+            const response = await axiosInstance.get(`/kpis?client_id=${clientId}&platform=${platform}`);
+            return response.data;
+        },
+        getChartData: async (clientId: string) => {
+            if (USE_MOCK) return mockApi.dashboard.getChartData(clientId);
+            const response = await axiosInstance.get(`/chart-data?client_id=${clientId}`);
+            return response.data;
+        },
+        getFunnelData: async () => {
+            if (USE_MOCK) return mockApi.dashboard.getFunnelData();
+            const response = await axiosInstance.get('/funnel-data');
+            return response.data;
+        },
+        getDeviceData: async () => {
+            if (USE_MOCK) return mockApi.dashboard.getDeviceData();
+            const response = await axiosInstance.get('/device-data');
+            return response.data;
+        }
+    },
+    automation: {
+        getWorkflows: async (): Promise<Workflow[]> => {
+            if (USE_MOCK) return mockApi.automation.getWorkflows();
+            const response = await axiosInstance.get('/workflows');
+            return response.data;
+        },
+        getTemplates: async (): Promise<WorkflowTemplate[]> => {
+            if (USE_MOCK) return mockApi.automation.getTemplates();
+            const response = await axiosInstance.get('/workflow-templates');
+            return response.data;
+        },
+        saveWorkflow: async (workflow: Workflow): Promise<Workflow> => {
+            if (USE_MOCK) return mockApi.automation.saveWorkflow(workflow);
+            const response = await axiosInstance.post('/workflows', workflow);
+            return response.data;
+        },
+        toggleStatus: async (id: number): Promise<Workflow> => {
+            if (USE_MOCK) return mockApi.automation.toggleStatus(id);
+            const response = await axiosInstance.patch(`/workflows/${id}/toggle`);
+            return response.data;
+        }
+    },
+    campaigns: {
+        getCampaigns: async (clientId: string): Promise<Campaign[]> => {
+            if (USE_MOCK) return mockApi.campaigns.getCampaigns(clientId) as Promise<Campaign[]>;
+            const response = await axiosInstance.get(`/campaigns?client_id=${clientId}`);
+            return response.data;
+        }
+    },
+    auth: {
+        login: async (email: string, password: string) => {
+            if (USE_MOCK) {
+                // Simulação de login
+                if (email === 'admin@elite.com' && password === 'admin') {
+                    return {
+                        user: { id: 1, name: 'Admin', email, role: 'admin', avatar_url: 'https://github.com/shadcn.png' },
+                        token: 'mock-jwt-token'
+                    };
+                }
+                throw new Error('Credenciais inválidas');
+            }
+            const response = await axiosInstance.post('/auth/login', { email, password });
+            return response.data;
+        }
+    }
+};

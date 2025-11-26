@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader2, Bot, BrainCircuit, Sparkles, CheckCircle, AlertTriangle, ThumbsUp } from 'lucide-react';
 import { ChatMessage, AnalysisResult } from '../types';
 import { analyzeChatConversation, askEliteAssistant } from '../services/geminiService';
-import { AIProvider, AI_MODELS, OpenAIModel, GeminiModel } from '@/constants/aiModels';
+import { AIProvider, AI_MODELS, OpenAIModel, GeminiModel, ClaudeModel } from '@/constants/aiModels';
 
 export const ChatMode: React.FC = () => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -18,8 +18,10 @@ export const ChatMode: React.FC = () => {
     useEffect(() => {
         if (provider === AIProvider.OPENAI) {
             setModel(OpenAIModel.GPT_5);
-        } else {
+        } else if (provider === AIProvider.GEMINI) {
             setModel(GeminiModel.GEMINI_2_5_FLASH);
+        } else if (provider === AIProvider.ANTHROPIC) {
+            setModel(ClaudeModel.SONNET_4_5);
         }
     }, [provider]);
 
@@ -99,25 +101,32 @@ export const ChatMode: React.FC = () => {
                             <p className="text-xs text-gray-600">Especialista em Ads, Social Media e Funis</p>
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        <select
-                            value={provider}
-                            onChange={(e) => setProvider(e.target.value as AIProvider)}
-                            className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1"
-                        >
-                            {Object.values(AIProvider).map((p) => (
-                                <option key={p} value={p}>{p}</option>
-                            ))}
-                        </select>
-                        <select
-                            value={model}
-                            onChange={(e) => setModel(e.target.value)}
-                            className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1 w-40"
-                        >
-                            {AI_MODELS[provider].map((m) => (
-                                <option key={m.id} value={m.id}>{m.name}</option>
-                            ))}
-                        </select>
+                    <div className="flex gap-3 bg-white p-1.5 rounded-lg shadow-sm border border-blue-100">
+                        <div className="flex flex-col">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase px-1">Provedor</label>
+                            <select
+                                value={provider}
+                                onChange={(e) => setProvider(e.target.value as AIProvider)}
+                                className="text-xs font-medium border-none bg-transparent focus:ring-0 text-gray-700 cursor-pointer py-0 pl-1 pr-6"
+                            >
+                                <option value={AIProvider.OPENAI}>OpenAI</option>
+                                <option value={AIProvider.GEMINI}>Google</option>
+                                <option value={AIProvider.ANTHROPIC}>Anthropic</option>
+                            </select>
+                        </div>
+                        <div className="w-px bg-gray-200 my-1"></div>
+                        <div className="flex flex-col">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase px-1">Modelo</label>
+                            <select
+                                value={model}
+                                onChange={(e) => setModel(e.target.value)}
+                                className="text-xs font-medium border-none bg-transparent focus:ring-0 text-gray-700 cursor-pointer py-0 pl-1 pr-6 w-32"
+                            >
+                                {AI_MODELS[provider].map((m) => (
+                                    <option key={m.id} value={m.id}>{m.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
 

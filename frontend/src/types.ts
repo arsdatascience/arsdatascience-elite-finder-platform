@@ -16,6 +16,7 @@ export enum ViewState {
   SETTINGS = 'SETTINGS',
   SOCIAL_CALENDAR = 'SOCIAL_CALENDAR',
   SOCIAL_INTEGRATIONS = 'SOCIAL_INTEGRATIONS',
+  AGENT_BUILDER = 'AGENT_BUILDER',
   HOME = 'HOME',
 }
 
@@ -94,4 +95,35 @@ export interface ContentResult {
   cta: string;
   hashtags: string[];
   imageIdea: string;
+}
+
+export interface WorkflowStep {
+  id: string;
+  type: 'wait' | 'email' | 'whatsapp' | 'notification' | 'sms' | 'tag' | 'owner' | 'webhook' | 'trigger' | 'condition' | 'crm' | 'slack' | 'ai_generate' | 'trigger_form' | 'trigger_tag' | 'trigger_pipeline' | 'trigger_schedule' | 'trigger_api' | 'trigger_manual';
+  value: string;
+}
+
+export interface Workflow {
+  id: number;
+  name: string;
+  status: 'active' | 'paused';
+  triggers: string;
+  steps: number;
+  enrolled: number;
+  conversion: string;
+  stepsList?: WorkflowStep[];
+  flowData?: {
+    nodes: any[];
+    edges: any[];
+  };
+}
+
+export interface WorkflowTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  trigger: string;
+  steps: Omit<WorkflowStep, 'id'>[];
+  iconType: 'user-plus' | 'clock' | 'zap' | 'git-branch' | 'message-square' | 'alert-circle' | 'shopping-cart' | 'calendar';
 }
