@@ -181,7 +181,7 @@ export const Campaigns: React.FC = () => {
                     <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }}></div>
                     <span className="truncate max-w-[100px] font-medium" title={item.name}>{item.name}</span>
                   </div>
-                  <p className="text-sm font-bold text-gray-800">{formatCurrency(item.value)}</p>
+
                 </div>
               ))}
             </div>
