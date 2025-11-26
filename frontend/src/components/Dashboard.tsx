@@ -18,11 +18,25 @@ const DEFAULT_CHART_DATA = [
   { name: 'Dom', revenue: 17450, spend: 21500, google: 11500, meta: 10000 },
 ];
 
+interface ChartData {
+  name: string;
+  revenue: number;
+  spend: number;
+  google: number;
+  meta: number;
+  google_spend: number;
+  meta_spend: number;
+  total_spend: number;
+  google_revenue: number;
+  meta_revenue: number;
+  total_revenue: number;
+}
+
 export const Dashboard: React.FC = () => {
   const [selectedClient, setSelectedClient] = useState('all');
   const [selectedPlatform, setSelectedPlatform] = useState<'all' | 'google' | 'meta'>('all');
   const [currentKPIs, setCurrentKPIs] = useState<Metric[]>(KPIS);
-  const [chartData, setChartData] = useState<unknown[]>([]);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
 
   useEffect(() => {
     let baseKPIs = [...KPIS];
@@ -213,7 +227,7 @@ export const Dashboard: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                  formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, '']}
+                  formatter={(value: any) => [`R$ ${Number(value).toLocaleString('pt-BR')}`, '']}
                 />
                 <Legend verticalAlign="top" height={36} />
 
@@ -317,7 +331,7 @@ export const Dashboard: React.FC = () => {
                     cornerRadius={8}
                     paddingAngle={5}
                     dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}%`}
+                    label={({ name, value }: { name: string; value: number }) => `${name}: ${value}%`}
                   >
                     {DEVICE_DATA.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
