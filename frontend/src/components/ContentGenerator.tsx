@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ContentRequest, ContentResult } from '../types';
 import { generateMarketingContent } from '../services/geminiService';
 import { saveSocialPost } from '../services/socialService';
-import { Sparkles, X, Copy, Loader2, Image as ImageIcon, Hash, MousePointerClick, Bot, Cpu, Calendar as CalendarIcon, UploadCloud, CheckCircle } from 'lucide-react';
+import { Sparkles, X, Copy, Loader2, Image as ImageIcon, Hash, MousePointerClick, Bot, Cpu, Calendar as CalendarIcon, UploadCloud, CheckCircle, UserCircle } from 'lucide-react';
 
 interface ContentGeneratorProps {
   isOpen: boolean;
@@ -12,6 +12,13 @@ interface ContentGeneratorProps {
   mode?: 'modal' | 'page';
   onSave?: (data: any) => void;
   initialData?: any;
+}
+
+interface SocialAccount {
+  id: string;
+  platform: string;
+  username: string;
+  avatar?: string;
 }
 
 export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
@@ -39,6 +46,10 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+  // Account Selection
+  const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<string>('');
+
   useEffect(() => {
     if (initialData) {
       setType(initialData.type || defaultType);
@@ -46,6 +57,20 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
       setTopic(initialData.content || '');
     }
   }, [initialData, defaultType, defaultPlatform]);
+
+  // Load Mock Accounts (Simulating API)
+  useEffect(() => {
+    // In production, this would fetch from /api/clients/1/social-accounts
+    const mockAccounts: SocialAccount[] = [
+      { id: '1', platform: 'instagram', username: '@elite.finder', avatar: 'https://i.pravatar.cc/150?u=elite' },
+      { id: '2', platform: 'linkedin', username: 'Elite Finder Official', avatar: 'https://i.pravatar.cc/150?u=linkedin' },
+      { id: '3', platform: 'facebook', username: 'Elite Finder Page', avatar: 'https://i.pravatar.cc/150?u=facebook' },
+    ];
+    setSocialAccounts(mockAccounts);
+    if (mockAccounts.length > 0) {
+      setSelectedAccount(mockAccounts[0].id);
+    }
+  }, []);
 
   if (!isOpen && mode === 'modal') return null;
 
@@ -84,6 +109,17 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
   const handleSaveAndSchedule = async () => {
     if (!result) return;
     setSaving(true);
+
+    // Debug log
+    console.log('Saving post with params:', {
+      type,
+      platform,
+      scheduledDate,
+      scheduledTime,
+      addToCalendar,
+      selectedAccount
+    });
+
     try {
       const postData = {
         type,
@@ -92,10 +128,16 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
         scheduledDate,
         scheduledTime,
         addToCalendar,
-        image: selectedImage
+        image: selectedImage,
+        accountId: selectedAccount // Include selected account
       };
 
       if (addToCalendar) {
+        if (!scheduledDate || !scheduledTime) {
+          alert('Por favor, selecione uma data e hora para agendar.');
+          setSaving(false);
+          return;
+        }
         await saveSocialPost(postData);
         alert(`✅ Post salvo e agendado com sucesso para ${scheduledDate} às ${scheduledTime}!`);
       } else {
@@ -105,8 +147,8 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
 
       onClose();
     } catch (error) {
-      console.error(error);
-      alert('Erro ao salvar o post. Tente novamente.');
+      console.error('Save Error:', error);
+      alert('Erro ao salvar o post. Verifique o console para mais detalhes.');
     } finally {
       setSaving(false);
     }
@@ -131,7 +173,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
               <Sparkles className="text-yellow-400" size={24} />
             </div>
             <div>
-              <h3 className="text-xl font-bold">Estúdio Criativo IA <span className="text-xs bg-yellow-400 text-indigo-900 px-2 py-0.5 rounded-full ml-2">v2.0</span></h3>
+              <h3 className="text-xl font-bold">Estúdio Criativo IA <span className="text-xs bg-yellow-400 text-indigo-900 px-2 py-0.5 rounded-full ml-2">v2.1</span></h3>
               <p className="text-indigo-200 text-sm">Criação, Agendamento e Design</p>
             </div>
           </div>
@@ -326,39 +368,62 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
               {/* --- NEW: SCHEDULING & MEDIA UPLOAD --- */}
               <div className="w-full border-t border-gray-100 pt-6 mt-6">
                 <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <CalendarIcon size={18} className="text-purple-600" /> Agendamento e Mídia
+                  <CalendarIcon size={18} className="text-purple-600" /> Agendamento e Publicação
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  {/* Date & Time */}
-                  <div className="space-y-3">
+                  {/* Date, Time & Account */}
+                  <div className="space-y-4">
+
+                    {/* Account Selector */}
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data da Publicação</label>
-                      <input
-                        type="date"
-                        className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-500"
-                        value={scheduledDate}
-                        onChange={(e) => setScheduledDate(e.target.value)}
-                      />
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Conta de Publicação</label>
+                      <div className="relative">
+                        <select
+                          className="w-full border border-gray-300 rounded-lg p-2.5 pl-9 text-sm outline-none focus:ring-2 focus:ring-purple-500 appearance-none bg-white"
+                          value={selectedAccount}
+                          onChange={(e) => setSelectedAccount(e.target.value)}
+                        >
+                          {socialAccounts.map(acc => (
+                            <option key={acc.id} value={acc.id}>
+                              {acc.username} ({acc.platform})
+                            </option>
+                          ))}
+                        </select>
+                        <UserCircle size={18} className="absolute left-2.5 top-2.5 text-gray-400" />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Hora</label>
-                      <input
-                        type="time"
-                        className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-500"
-                        value={scheduledTime}
-                        onChange={(e) => setScheduledTime(e.target.value)}
-                      />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data</label>
+                        <input
+                          type="date"
+                          className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-500"
+                          value={scheduledDate}
+                          onChange={(e) => setScheduledDate(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Hora</label>
+                        <input
+                          type="time"
+                          className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-500"
+                          value={scheduledTime}
+                          onChange={(e) => setScheduledTime(e.target.value)}
+                        />
+                      </div>
                     </div>
+
                     <div className="pt-2">
-                      <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                      <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                         <input
                           type="checkbox"
                           className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4"
                           checked={addToCalendar}
                           onChange={(e) => setAddToCalendar(e.target.checked)}
                         />
-                        <span className="font-medium">Adicionar ao Calendário</span>
+                        <span className="font-medium">Agendar no Calendário</span>
                       </label>
                     </div>
                   </div>
@@ -366,7 +431,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                   {/* Media Upload */}
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Mídia (Imagem/Vídeo)</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 hover:bg-gray-50 transition-colors text-center relative group">
+                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 hover:bg-gray-50 transition-colors text-center relative group h-[180px] flex flex-col items-center justify-center">
                       <input
                         type="file"
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
@@ -374,14 +439,14 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                         onChange={handleImageUpload}
                       />
                       {imagePreview ? (
-                        <div className="relative h-32 w-full">
+                        <div className="relative h-full w-full">
                           <img src={imagePreview} alt="Preview" className="h-full w-full object-contain rounded-lg" />
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-lg">
                             <p className="text-white text-xs font-bold">Alterar Mídia</p>
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center h-32 text-gray-400">
+                        <div className="flex flex-col items-center justify-center text-gray-400">
                           <UploadCloud size={32} className="mb-2" />
                           <p className="text-sm font-medium">Arraste ou clique</p>
                           <p className="text-xs">JPG, PNG, MP4</p>
