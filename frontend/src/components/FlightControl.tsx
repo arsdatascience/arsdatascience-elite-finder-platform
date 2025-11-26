@@ -3,7 +3,7 @@ import { Lead, LeadStatus } from '@/types';
 import { COMPONENT_VERSIONS } from '@/componentVersions';
 import { LEADS_DATA, CLIENTS_LIST } from '@/constants';
 import {
-  CheckCircle, XCircle, Zap, FileText, Plus, Download, Save,
+  CheckCircle, Plus, Download, Save,
   MoreVertical, Clock, Tag, Users, Filter, Search, X,
   Phone, Mail, MessageSquare, User, Target, TrendingUp, DollarSign, Calendar
 } from 'lucide-react';
@@ -101,7 +101,7 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpda
             <div>
               <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Tags</h3>
               <div className="flex flex-wrap gap-2">
-                {lead.tags.map(tag => (
+                {lead.tags?.map(tag => (
                   <span key={tag} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
                     <Tag size={12} />
                     {tag}
@@ -332,7 +332,7 @@ export const FlightControl: React.FC = () => {
 
       // Search filter
       const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.email.toLowerCase().includes(searchTerm.toLowerCase());
+        (lead.email?.toLowerCase() || '').includes(searchTerm.toLowerCase());
       if (!matchesSearch) return false;
 
       // Source filter
@@ -635,7 +635,7 @@ export const FlightControl: React.FC = () => {
                         {formatCurrency(lead.value)}
                       </div>
                     </div>
-                    {lead.tags.length > 0 && (
+                    {lead.tags && lead.tags.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {lead.tags.slice(0, 2).map(tag => (
                           <span key={tag} className="flex items-center text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
@@ -669,6 +669,12 @@ export const FlightControl: React.FC = () => {
           onUpdate={handleUpdateLead}
         />
       )}
+
+      <NewLeadModal
+        isOpen={showNewLeadModal}
+        onClose={() => setShowNewLeadModal(false)}
+        onSave={handleAddLead}
+      />
     </div>
   );
 };
