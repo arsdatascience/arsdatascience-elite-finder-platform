@@ -215,7 +215,7 @@ export const Campaigns: React.FC = () => {
                 />
                 <Tooltip
                   cursor={{ fill: '#f3f4f6', radius: 4 }}
-                  content={({ active, payload }) => {
+                  content={({ active, payload }: any) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
@@ -243,7 +243,7 @@ export const Campaigns: React.FC = () => {
                   <LabelList
                     dataKey="roas"
                     position="right"
-                    formatter={(val: number) => `${val}x`}
+                    formatter={(val: any) => `${val}x`}
                     style={{ fontSize: '12px', fontWeight: 'bold', fill: '#374151' }}
                   />
                 </Bar>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, PlayCircle, CheckCircle, Lock, Award, Clock, FileText, ChevronRight, Star, Search, Filter } from 'lucide-react';
+import { BookOpen, CheckCircle, Award, Clock, Star, TrendingUp, Video } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 
 interface TrainingModule {

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw, Key, Shield, Bell, Globe, Mail, Smartphone, CreditCard, LogOut, User, Building } from 'lucide-react';
+import { Save, RefreshCw, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Eye, EyeOff, Cpu, Check, Plus, Calendar, LinkIcon } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 
 type SettingsTab = 'profile' | 'integrations' | 'team' | 'billing' | 'notifications';

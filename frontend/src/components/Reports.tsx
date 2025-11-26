@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo } from 'react';
-import { Printer, CheckSquare, Square, Layout, TrendingUp, Users, PieChart as PieIcon, Download, BarChart2, Activity, DollarSign, Calendar } from 'lucide-react';
+import { Printer, Layout, TrendingUp, Users, PieChart as PieIcon, Download, BarChart2, Activity, DollarSign, Calendar } from 'lucide-react';
 import { KPIS, COMPARATIVE_FUNNEL_DATA, CAMPAIGNS_DATA, LEADS_DATA, CLIENTS_LIST } from '../constants';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid, PieChart, Pie, Cell, LabelList, Legend } from 'recharts';
 import { COMPONENT_VERSIONS } from '../componentVersions';
@@ -131,13 +132,13 @@ export const Reports: React.FC = () => {
   const handleAction = (type: 'print' | 'pdf') => {
     const originalTitle = document.title;
     const prefix = type === 'pdf' ? 'Elite_Report' : 'Relatorio';
-    document.title = `${reportData.clientName.replace(/\s+/g, '_')} - ${prefix}_${selectedYear}`;
+    document.title = `${reportData.clientName.replace(/\s+/g, '_')} - ${prefix}_${selectedYear} `;
     window.print();
     setTimeout(() => { document.title = originalTitle; }, 500);
   };
 
   const formatCurrency = (val: any) => Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  const formatK = (val: any) => `R$${(Number(val) / 1000).toFixed(0)}k`;
+  const formatK = (val: any) => `R$${(Number(val) / 1000).toFixed(0)} k`;
 
   const renderWidgetContent = (id: WidgetType) => {
     switch (id) {
@@ -155,7 +156,7 @@ export const Reports: React.FC = () => {
                   </div>
                   <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">{kpi.label}</p>
                   <p className="text-2xl font-black text-gray-900 mb-2">{kpi.value}</p>
-                  <div className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${kpi.trend === 'up' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                  <div className={`inline - flex items - center gap - 1 text - xs font - bold px - 2 py - 1 rounded - full ${kpi.trend === 'up' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'} `}>
                     {kpi.trend === 'up' ? '▲' : '▼'} {Math.abs(kpi.change)}%
                     <span className="text-gray-400 font-normal ml-1">vs mês anterior</span>
                   </div>
@@ -181,10 +182,10 @@ export const Reports: React.FC = () => {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `R$${val / 1000}k`} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val: any) => `R$${val / 1000} k`} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
-                    formatter={(value: number) => [formatCurrency(value), '']}
+                    formatter={(value: any) => [formatCurrency(value), '']}
                   />
                   <Area type="monotone" dataKey="revenue" name="Receita" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)">
                     <LabelList dataKey="revenue" position="top" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#3b82f6', fontWeight: 'bold' }} />
@@ -214,8 +215,8 @@ export const Reports: React.FC = () => {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {reportData.distribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    {reportData.distribution.map((_entry, index) => (
+                      <Cell key={`cell - ${index} `} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => formatCurrency(value)} />
@@ -266,7 +267,7 @@ export const Reports: React.FC = () => {
                     <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                       <td className="p-3 font-medium text-gray-900">{c.name}</td>
                       <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${c.platform === 'google' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                        <span className={`px - 2 py - 1 rounded - full text - [10px] font - bold ${c.platform === 'google' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'} `}>
                           {c.platform.toUpperCase()}
                         </span>
                       </td>
@@ -329,13 +330,13 @@ export const Reports: React.FC = () => {
   return (
     <div className="flex flex-col h-full animate-fade-in bg-gray-50/50">
       <style>{`
-            @media print {
-                @page { margin: 0; size: A4; }
-                body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: white; }
-                .print-container { margin: 0; padding: 0; width: 100%; }
-                .page-break { page-break-after: always; }
-            }
-        `}</style>
+@media print {
+  @page { margin: 0; size: A4; }
+  body { -webkit-print-color-adjust: exact!important; print-color-adjust: exact!important; background-color: white; }
+  .print-container { margin: 0; padding: 0; width: 100%; }
+  .page-break { page-break-after: always; }
+}
+`}</style>
 
       {/* CONTROLS */}
       <div className="print:hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8 mx-4 mt-4">
