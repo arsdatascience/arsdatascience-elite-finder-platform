@@ -49,13 +49,17 @@ export interface Campaign {
 export interface Lead {
   id: string;
   name: string;
-  source: 'Google Ads' | 'Instagram' | 'Organic';
-  productInterest: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  source: string;
+  productInterest?: string;
   status: LeadStatus;
   value: number;
   lastContact: string;
-  tags: string[];
+  tags?: string[];
   assignedTo: string;
+  notes?: string;
 }
 
 export interface ChatMessage {
