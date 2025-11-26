@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { GitBranch, Plus, Play, Pause, Settings, MoreVertical, Zap, Mail, MessageSquare, Clock, Users, ArrowRight, CheckCircle, XCircle, AlertTriangle, X } from 'lucide-react';
+import { GitBranch, Plus, Play, Pause, Zap, Mail, MessageSquare, Clock, ArrowRight, CheckCircle, XCircle, AlertTriangle, X, UserPlus, AlertCircle, Smartphone, Tag, Globe, ArrowLeft, Copy, Edit, Trash2, Save } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 
 
@@ -615,8 +615,8 @@ export const Automation: React.FC = () => {
                                 <div className="flex items-center gap-3 mb-2">
                                     <h3 className="text-lg font-bold text-gray-900">{workflow.name}</h3>
                                     <span className={`px - 2 py - 1 rounded - full text - xs font - medium ${workflow.status === 'active'
-                                            ? 'bg-green-100 text-green-700'
-                                            : 'bg-gray-100 text-gray-600'
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-gray-100 text-gray-600'
                                         } `}>
                                         {workflow.status === 'active' ? 'Ativo' : 'Pausado'}
                                     </span>
@@ -641,8 +641,8 @@ export const Automation: React.FC = () => {
                                 <button
                                     onClick={() => toggleWorkflowStatus(workflow.id)}
                                     className={`p - 2 rounded - lg border ${workflow.status === 'active'
-                                            ? 'border-orange-300 text-orange-600 hover:bg-orange-50'
-                                            : 'border-green-300 text-green-600 hover:bg-green-50'
+                                        ? 'border-orange-300 text-orange-600 hover:bg-orange-50'
+                                        : 'border-green-300 text-green-600 hover:bg-green-50'
                                         } `}
                                     title={workflow.status === 'active' ? 'Pausar' : 'Ativar'}
                                 >
