@@ -251,7 +251,29 @@ app.get('/api/social/analytics/linkedin', socialIntegration.getLinkedInAnalytics
 app.get('/api/social/metrics/twitter', socialIntegration.getTwitterMetrics);
 
 
-// Iniciar Servidor
-app.listen(PORT, () => {
+// Iniciar Servidor com Socket.io
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log('⚡ Client connected:', socket.id);
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+// Tornar io acessível globalmente ou passar para controllers
+app.set('io', io);
+
+server.listen(PORT, () => {
   console.log(`🔥 Server running on port ${PORT}`);
 });

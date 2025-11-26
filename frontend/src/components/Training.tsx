@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, PlayCircle, FileText, Award, Star, CheckCircle, Clock, TrendingUp, Video } from 'lucide-react';
+import { BookOpen, CheckCircle, Award, Clock, Star, TrendingUp, Video } from 'lucide-react';
+import { COMPONENT_VERSIONS } from '../componentVersions';
 
 interface TrainingModule {
     id: number;
@@ -101,7 +102,7 @@ export const Training: React.FC = () => {
         <div className="space-y-6 animate-fade-in">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Academia de Treinamento</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">Academia de Treinamento <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.Training}</span></h2>
                     <p className="text-sm text-gray-500">Capacite sua equipe com playbooks de vendas orientados por IA.</p>
                 </div>
             </div>
@@ -232,8 +233,8 @@ export const Training: React.FC = () => {
                             <div className="p-4">
                                 <div className="flex justify-between items-start mb-2">
                                     <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${module.difficulty === 'Avançado' ? 'bg-red-50 text-red-600' :
-                                            module.difficulty === 'Intermediário' ? 'bg-yellow-50 text-yellow-600' :
-                                                'bg-green-50 text-green-600'
+                                        module.difficulty === 'Intermediário' ? 'bg-yellow-50 text-yellow-600' :
+                                            'bg-green-50 text-green-600'
                                         }`}>
                                         {module.difficulty}
                                     </span>

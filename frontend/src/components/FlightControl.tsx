@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { Lead, LeadStatus } from '@/types';
+import { COMPONENT_VERSIONS } from '@/componentVersions';
 import { LEADS_DATA, CLIENTS_LIST } from '@/constants';
 import {
+  CheckCircle, Plus, Download, Save,
   MoreVertical, Clock, Tag, Users, Filter, Search, X,
-  Phone, Mail, MessageSquare, Edit2, Trash2, User,
-  TrendingUp, DollarSign, Target, Calendar, AlertCircle,
-  CheckCircle, XCircle, Zap, FileText
+  Phone, Mail, MessageSquare, User, Target, TrendingUp, DollarSign, Calendar
 } from 'lucide-react';
 
 const COLUMNS: { id: LeadStatus; label: string; color: string; bgColor: string }[] = [
@@ -22,7 +22,7 @@ interface LeadDetailModalProps {
   onUpdate: (leadId: string, updates: Partial<Lead>) => void;
 }
 
-const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpdate }) => {
+const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose }) => {
   const [notes, setNotes] = useState('');
 
   return (
@@ -101,7 +101,7 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpda
             <div>
               <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Tags</h3>
               <div className="flex flex-wrap gap-2">
-                {lead.tags.map(tag => (
+                {lead.tags?.map(tag => (
                   <span key={tag} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
                     <Tag size={12} />
                     {tag}
@@ -159,6 +159,155 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpda
   );
 };
 
+interface NewLeadModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (lead: any) => void;
+}
+
+const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    source: 'manual',
+    status: 'new',
+    value: '',
+    notes: ''
+  });
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({
+      ...formData,
+      value: Number(formData.value) || 0,
+      id: Math.random().toString(36).substr(2, 9), // Temp ID
+      lastContact: new Date().toLocaleDateString(),
+      assignedTo: 'Você'
+    });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white flex justify-between items-center">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Plus size={24} /> Novo Lead Manual
+          </h2>
+          <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[80vh]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700">Nome Completo *</label>
+              <input
+                required
+                type="text"
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                value={formData.name}
+                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Ex: João Silva"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700">Empresa</label>
+              <input
+                type="text"
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                value={formData.company}
+                onChange={e => setFormData({ ...formData, company: e.target.value })}
+                placeholder="Ex: Acme Corp"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700">Email *</label>
+              <input
+                required
+                type="email"
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                value={formData.email}
+                onChange={e => setFormData({ ...formData, email: e.target.value })}
+                placeholder="joao@exemplo.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700">Telefone / WhatsApp</label>
+              <input
+                type="text"
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                value={formData.phone}
+                onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="(11) 99999-9999"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700">Origem</label>
+              <select
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                value={formData.source}
+                onChange={e => setFormData({ ...formData, source: e.target.value })}
+              >
+                <option value="manual">Manual / Prospecção</option>
+                <option value="indication">Indicação</option>
+                <option value="event">Evento</option>
+                <option value="social">Redes Sociais</option>
+                <option value="website">Site / Blog</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700">Status Inicial</label>
+              <select
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                value={formData.status}
+                onChange={e => setFormData({ ...formData, status: e.target.value })}
+              >
+                <option value="new">Novo Lead</option>
+                <option value="in_progress">Em Atendimento</option>
+                <option value="waiting">Aguardando</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-700">Valor Potencial (R$)</label>
+              <input
+                type="number"
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                value={formData.value}
+                onChange={e => setFormData({ ...formData, value: e.target.value })}
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700">Observações</label>
+            <textarea
+              className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"
+              value={formData.notes}
+              onChange={e => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Detalhes importantes sobre este lead..."
+            ></textarea>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors">
+              Cancelar
+            </button>
+            <button type="submit" className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-blue-200">
+              <Save size={18} /> Salvar Lead
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 export const FlightControl: React.FC = () => {
   const [selectedClient, setSelectedClient] = useState(CLIENTS_LIST[1].id);
   const [searchTerm, setSearchTerm] = useState('');
@@ -167,21 +316,24 @@ export const FlightControl: React.FC = () => {
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
   const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [leads, setLeads] = useState<Lead[]>(LEADS_DATA);
+  const [localLeads, setLocalLeads] = useState<Lead[]>(LEADS_DATA);
+  const [showNewLeadModal, setShowNewLeadModal] = useState(false);
+
 
   // Filter leads
   const filteredLeads = useMemo(() => {
-    return leads.filter(lead => {
+    return localLeads.filter(lead => {
       // Client filter
       if (selectedClient !== 'all') {
+        // Example client-specific filtering logic (adjust as needed)
         if (selectedClient === '1' && lead.value <= 5000) return false;
         if (selectedClient === '2' && lead.value >= 3000) return false;
       }
 
       // Search filter
-      if (searchTerm && !lead.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
-      }
+      const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (lead.email?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+      if (!matchesSearch) return false;
 
       // Source filter
       if (selectedSource !== 'all' && lead.source !== selectedSource) {
@@ -200,7 +352,40 @@ export const FlightControl: React.FC = () => {
 
       return true;
     });
-  }, [leads, selectedClient, searchTerm, selectedSource, selectedValue, selectedAssignee]);
+  }, [localLeads, selectedClient, searchTerm, selectedSource, selectedValue, selectedAssignee]);
+
+  const handleAddLead = (newLead: any) => {
+    setLocalLeads([newLead, ...localLeads]);
+  };
+
+  const handleExport = () => {
+    const headers = ['Nome', 'Email', 'Telefone', 'Empresa', 'Origem', 'Status', 'Valor', 'Data Contato', 'Responsável', 'Interesse Produto', 'Tags'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredLeads.map(lead => [
+        `"${lead.name}"`,
+        `"${lead.email}"`,
+        `"${lead.phone}"`,
+        `"${lead.company || ''}"`,
+        `"${lead.source}"`,
+        `"${lead.status}"`,
+        `"${lead.value}"`,
+        `"${lead.lastContact}"`,
+        `"${lead.assignedTo}"`,
+        `"${lead.productInterest || ''}"`,
+        `"${lead.tags ? lead.tags.join(';') : ''}"`
+      ].map(field => field.replace(/"/g, '""')).join(',')) // Escape double quotes within fields
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `leads_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const getLeadsByStatus = (status: LeadStatus) => filteredLeads.filter(l => l.status === status);
 
@@ -231,14 +416,14 @@ export const FlightControl: React.FC = () => {
   const handleDrop = (newStatus: LeadStatus) => {
     if (!draggedLead) return;
 
-    setLeads(prev => prev.map(lead =>
+    setLocalLeads(prev => prev.map(lead =>
       lead.id === draggedLead.id ? { ...lead, status: newStatus } : lead
     ));
     setDraggedLead(null);
   };
 
   const handleUpdateLead = (leadId: string, updates: Partial<Lead>) => {
-    setLeads(prev => prev.map(lead =>
+    setLocalLeads(prev => prev.map(lead =>
       lead.id === leadId ? { ...lead, ...updates } : lead
     ));
   };
@@ -255,7 +440,7 @@ export const FlightControl: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              Controle de Voo
+              Controle de Voo <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.FlightControl}</span>
               <span className="text-xs font-normal bg-slate-800 text-white px-2 py-1 rounded animate-pulse">AO VIVO</span>
             </h2>
             <p className="text-gray-500 text-sm">Gestão operacional de leads em tempo real</p>
@@ -277,9 +462,19 @@ export const FlightControl: React.FC = () => {
               </select>
             </div>
 
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2">
-              <Zap size={16} />
-              + Lead Manual
+            <button
+              onClick={handleExport}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+            >
+              <Download size={18} />
+              <span className="hidden sm:inline">Exportar</span>
+            </button>
+            <button
+              onClick={() => setShowNewLeadModal(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 transition-all"
+            >
+              <Plus size={18} />
+              <span>Lead Manual</span>
             </button>
           </div>
         </div>
@@ -420,8 +615,8 @@ export const FlightControl: React.FC = () => {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${lead.source === 'Google Ads' ? 'bg-blue-50 text-blue-600' :
-                          lead.source === 'Instagram' ? 'bg-pink-50 text-pink-600' :
-                            'bg-green-50 text-green-600'
+                        lead.source === 'Instagram' ? 'bg-pink-50 text-pink-600' :
+                          'bg-green-50 text-green-600'
                         }`}>
                         {lead.source}
                       </span>
@@ -440,7 +635,7 @@ export const FlightControl: React.FC = () => {
                         {formatCurrency(lead.value)}
                       </div>
                     </div>
-                    {lead.tags.length > 0 && (
+                    {lead.tags && lead.tags.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {lead.tags.slice(0, 2).map(tag => (
                           <span key={tag} className="flex items-center text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
@@ -474,6 +669,12 @@ export const FlightControl: React.FC = () => {
           onUpdate={handleUpdateLead}
         />
       )}
+
+      <NewLeadModal
+        isOpen={showNewLeadModal}
+        onClose={() => setShowNewLeadModal(false)}
+        onSave={handleAddLead}
+      />
     </div>
   );
 };

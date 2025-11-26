@@ -6,6 +6,36 @@ const pool = new Pool({
 });
 
 // ============================================
+// DATABASE INITIALIZATION
+// ============================================
+const initDb = async () => {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS leads (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                client_id UUID, -- REFERENCES clients(id) - Removido FK estrita para evitar erros se clients não existir
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255),
+                phone VARCHAR(50),
+                company VARCHAR(255),
+                source VARCHAR(50),
+                status VARCHAR(50) DEFAULT 'new',
+                value DECIMAL(10, 2),
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+        `);
+        console.log('Leads table initialized');
+    } catch (error) {
+        console.error('Error initializing database:', error);
+    }
+};
+
+// Initialize DB on start
+initDb();
+
+// ============================================
 // USERS
 // ============================================
 const getUsers = async (req, res) => {
@@ -42,6 +72,21 @@ const createClient = async (req, res) => {
     } catch (error) {
         console.error('Error creating client:', error);
         res.status(500).json({ error: 'Failed to create client' });
+    }
+};
+
+const updateClient = async (req, res) => {
+    const { id } = req.params;
+    const { name, type, email, phone, city, company_size, industry } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE clients SET name = $1, type = $2, email = $3, phone = $4, city = $5, company_size = $6, industry = $7, updated_at = NOW() WHERE id = $8 RETURNING *',
+            [name, type, email, phone, city, company_size, industry, id]
+        );
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error updating client:', error);
+        res.status(500).json({ error: 'Failed to update client' });
     }
 };
 
@@ -91,6 +136,20 @@ const getLeads = async (req, res) => {
     } catch (error) {
         console.error('Error fetching leads:', error);
         res.status(500).json({ error: 'Failed to fetch leads' });
+    }
+};
+
+const createLead = async (req, res) => {
+    const { client_id, name, email, phone, company, source, status, value, notes } = req.body;
+    try {
+        const result = await pool.query(
+            'INSERT INTO leads (client_id, name, email, phone, company, source, status, value, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+            [client_id, name, email, phone, company, source, status || 'new', value || 0, notes]
+        );
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error creating lead:', error);
+        res.status(500).json({ error: 'Failed to create lead' });
     }
 };
 
@@ -262,8 +321,10 @@ module.exports = {
     getUsers,
     getClients,
     createClient,
+    updateClient,
     getCampaigns,
     getLeads,
+    createLead,
     updateLeadStatus,
     getChatMessages,
     getSocialPosts,

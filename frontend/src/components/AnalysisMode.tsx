@@ -1,15 +1,27 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, RefreshCw, Trash2, BrainCircuit, Sparkles, Loader2, CheckCircle, AlertTriangle, ThumbsUp, Bot } from 'lucide-react';
 import { MOCK_CHAT } from '../constants';
 import { ChatMessage, AnalysisResult } from '../types';
 import { analyzeChatConversation } from '../services/geminiService';
+import { AIProvider, AI_MODELS, OpenAIModel, GeminiModel } from '@/constants/aiModels';
 
 export const AnalysisMode: React.FC = () => {
     const [messages, setMessages] = useState<ChatMessage[]>(MOCK_CHAT);
     const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [provider, setProvider] = useState<AIProvider>(AIProvider.OPENAI);
+    const [model, setModel] = useState<string>(OpenAIModel.GPT_5);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Atualiza o modelo padrão quando o provedor muda
+    useEffect(() => {
+        if (provider === AIProvider.OPENAI) {
+            setModel(OpenAIModel.GPT_5);
+        } else {
+            setModel(GeminiModel.GEMINI_2_5_FLASH);
+        }
+    }, [provider]);
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -74,7 +86,7 @@ export const AnalysisMode: React.FC = () => {
 
         setIsAnalyzing(true);
         try {
-            const result = await analyzeChatConversation(messages);
+            const result = await analyzeChatConversation(messages, provider, model);
             setAnalysis(result);
         } catch (e) {
             console.error(e);
@@ -113,7 +125,26 @@ export const AnalysisMode: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
+                        <select
+                            value={provider}
+                            onChange={(e) => setProvider(e.target.value as AIProvider)}
+                            className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1"
+                        >
+                            {Object.values(AIProvider).map((p) => (
+                                <option key={p} value={p}>{p}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={model}
+                            onChange={(e) => setModel(e.target.value)}
+                            className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1 w-40"
+                        >
+                            {AI_MODELS[provider].map((m) => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                            ))}
+                        </select>
+
                         <input
                             type="file"
                             ref={fileInputRef}
@@ -161,8 +192,8 @@ export const AnalysisMode: React.FC = () => {
                         messages.map((msg) => (
                             <div key={msg.id} className={`flex ${msg.sender === 'agent' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 ${msg.sender === 'agent'
-                                        ? 'bg-blue-600 text-white rounded-tr-none shadow-md shadow-blue-200'
-                                        : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none shadow-sm'
+                                    ? 'bg-blue-600 text-white rounded-tr-none shadow-md shadow-blue-200'
+                                    : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none shadow-sm'
                                     }`}>
                                     <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
                                     <p className={`text-[10px] mt-1 text-right ${msg.sender === 'agent' ? 'text-blue-100' : 'text-gray-400'}`}>
@@ -206,8 +237,8 @@ export const AnalysisMode: React.FC = () => {
                         <div>
                             <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Sentimento Geral</h4>
                             <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold ${analysis.sentiment === 'positive' ? 'bg-green-100 text-green-700' :
-                                    analysis.sentiment === 'negative' ? 'bg-red-100 text-red-700' :
-                                        'bg-yellow-100 text-yellow-700'
+                                analysis.sentiment === 'negative' ? 'bg-red-100 text-red-700' :
+                                    'bg-yellow-100 text-yellow-700'
                                 }`}>
                                 {analysis.sentiment === 'positive' ? <CheckCircle size={16} /> :
                                     analysis.sentiment === 'negative' ? <AlertTriangle size={16} /> :
@@ -233,7 +264,7 @@ export const AnalysisMode: React.FC = () => {
                         <div>
                             <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Próximas Ações Recomendadas</h4>
                             <ul className="space-y-2">
-                                {analysis.recommendedActions.map((action: string, idx: number) => (
+                                {analysis.suggestions.map((action: string, idx: number) => (
                                     <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
                                         <span className="text-green-600 font-bold">✓</span>
                                         {action}

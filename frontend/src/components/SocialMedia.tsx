@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Calendar, Image, ThumbsUp, MessageCircle, Share2, TrendingUp, Sparkles, Users } from 'lucide-react';
 import { ContentGenerator } from './ContentGenerator';
 import { CLIENTS_LIST } from '../constants';
 import { ViewState } from '../types';
+import { COMPONENT_VERSIONS } from '../componentVersions';
 
 interface SocialMediaProps {
     onNavigate: (view: ViewState) => void;
@@ -32,7 +32,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
         <div className="space-y-6 animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Gestão de Redes Sociais</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">Gestão de Redes Sociais <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.SocialMedia}</span></h2>
                     <p className="text-sm text-gray-500">Calendário editorial e performance de conteúdo.</p>
                 </div>
 
@@ -125,8 +125,8 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                                                 <p className="text-sm font-medium text-gray-900 line-clamp-1">{post.content}</p>
                                             </div>
                                             <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${post.status === 'publicado' ? 'bg-green-100 text-green-700' :
-                                                    post.status === 'agendado' ? 'bg-blue-100 text-blue-700' :
-                                                        'bg-gray-100 text-gray-600'
+                                                post.status === 'agendado' ? 'bg-blue-100 text-blue-700' :
+                                                    'bg-gray-100 text-gray-600'
                                                 }`}>
                                                 {post.status}
                                             </span>
