@@ -170,7 +170,7 @@ export const Dashboard: React.FC = () => {
             <div className="flex justify-between items-start">
               <p className="text-sm font-medium text-gray-500">{kpi.label}</p>
               <span className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${kpi.trend === 'up' ? 'bg-green-100 text-green-700' :
-                  kpi.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+                kpi.trend === 'down' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
                 }`}>
                 {kpi.trend === 'up' ? <ArrowUpRight className="w-3 h-3 mr-1" /> :
                   kpi.trend === 'down' ? <ArrowDownRight className="w-3 h-3 mr-1" /> : null}
@@ -221,17 +221,23 @@ export const Dashboard: React.FC = () => {
                   <>
                     <Area type="monotone" dataKey="google_spend" name="Google Invest." stroke="#3b82f6" fill="url(#colorGoogle)" stackId="1" />
                     <Area type="monotone" dataKey="meta_spend" name="Meta Invest." stroke="#a855f7" fill="url(#colorMeta)" stackId="1" />
-                    <Area type="monotone" dataKey="total_revenue" name="Receita Total" stroke="#10b981" fill="none" strokeWidth={3} />
+                    <Area type="monotone" dataKey="total_revenue" name="Receita Total" stroke="#10b981" fill="none" strokeWidth={3}>
+                      <LabelList dataKey="total_revenue" position="top" formatter={(val: number) => formatK(val)} style={{ fontSize: '10px', fill: '#10b981', fontWeight: 'bold' }} />
+                    </Area>
                   </>
                 ) : selectedPlatform === 'google' ? (
                   <>
                     <Area type="monotone" dataKey="google_spend" name="Investimento Google" stroke="#3b82f6" fill="url(#colorGoogle)" />
-                    <Area type="monotone" dataKey="google_revenue" name="Receita Atribuída" stroke="#10b981" fill="none" strokeWidth={3} />
+                    <Area type="monotone" dataKey="google_revenue" name="Receita Atribuída" stroke="#10b981" fill="none" strokeWidth={3}>
+                      <LabelList dataKey="google_revenue" position="top" formatter={(val: number) => formatK(val)} style={{ fontSize: '10px', fill: '#10b981', fontWeight: 'bold' }} />
+                    </Area>
                   </>
                 ) : (
                   <>
                     <Area type="monotone" dataKey="meta_spend" name="Investimento Meta" stroke="#a855f7" fill="url(#colorMeta)" />
-                    <Area type="monotone" dataKey="meta_revenue" name="Receita Atribuída" stroke="#10b981" fill="none" strokeWidth={3} />
+                    <Area type="monotone" dataKey="meta_revenue" name="Receita Atribuída" stroke="#10b981" fill="none" strokeWidth={3}>
+                      <LabelList dataKey="meta_revenue" position="top" formatter={(val: number) => formatK(val)} style={{ fontSize: '10px', fill: '#10b981', fontWeight: 'bold' }} />
+                    </Area>
                   </>
                 )}
 
@@ -302,6 +308,7 @@ export const Dashboard: React.FC = () => {
                     cornerRadius={8}
                     paddingAngle={5}
                     dataKey="value"
+                    label={({ name, value }) => `${name}: ${value}%`}
                   >
                     {DEVICE_DATA.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />

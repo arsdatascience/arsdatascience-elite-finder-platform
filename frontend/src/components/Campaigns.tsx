@@ -160,6 +160,7 @@ export const Campaigns: React.FC = () => {
                     outerRadius="80%"
                     paddingAngle={4}
                     dataKey="value"
+                    label={({ name, value }: any) => `${name}: ${formatCurrency(value)}`}
                   >
                     {BUDGET_DATA.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={1} stroke="#fff" />
@@ -285,7 +286,7 @@ export const Campaigns: React.FC = () => {
                       ${campaign.status === 'active' ? 'bg-green-100 text-green-800' :
                         campaign.status === 'paused' ? 'bg-gray-100 text-gray-800' : 'bg-yellow-100 text-yellow-800'}`}>
                       <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${campaign.status === 'active' ? 'bg-green-500' :
-                          campaign.status === 'paused' ? 'bg-gray-500' : 'bg-yellow-500'
+                        campaign.status === 'paused' ? 'bg-gray-500' : 'bg-yellow-500'
                         }`}></span>
                       {getStatusLabel(campaign.status)}
                     </span>
