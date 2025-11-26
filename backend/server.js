@@ -171,6 +171,9 @@ app.post('/api/social-posts', socialMediaController.upload.single('media'), soci
 
 // Automation Workflows
 app.get('/api/workflows', dbController.getWorkflows);
+
+const integrationsController = require('./integrationsController');
+
 // OAuth callbacks (kept as app.get as per instruction)
 app.get('/auth/google-ads/callback', integrationsController.handleGoogleAdsCallback);
 app.get('/auth/meta-ads/callback', integrationsController.handleMetaAdsCallback);
