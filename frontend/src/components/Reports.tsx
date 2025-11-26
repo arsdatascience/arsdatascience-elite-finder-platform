@@ -145,7 +145,8 @@ export const Reports: React.FC = () => {
       .map(style => style.outerHTML)
       .join('');
 
-    const title = `${reportData.clientName} - Relatório ${selectedYear}`;
+    const prefix = type === 'pdf' ? 'Elite_Report' : 'Relatorio';
+    const title = `${reportData.clientName} - ${prefix} ${selectedYear}`;
 
     printWindow.document.write(`
       <html>
