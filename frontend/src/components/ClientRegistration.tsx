@@ -92,6 +92,7 @@ const MOCK_CLIENTS = [
 export const ClientRegistration: React.FC = () => {
     const [view, setView] = useState<'list' | 'form'>('list');
     const [formData, setFormData] = useState<ClientForm>(INITIAL_FORM);
+    const [editingId, setEditingId] = useState<number | null>(null);
     const [successMsg, setSuccessMsg] = useState('');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -109,13 +110,39 @@ export const ClientRegistration: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Aqui entraria a lógica de salvar no banco (POST /api/clients)
-        setSuccessMsg('Cliente cadastrado com sucesso!');
+        // Aqui entraria a lógica de salvar no banco (POST /api/clients ou PUT /api/clients/:id)
+        if (editingId) {
+            setSuccessMsg('Cliente atualizado com sucesso!');
+        } else {
+            setSuccessMsg('Cliente cadastrado com sucesso!');
+        }
+
         setTimeout(() => {
             setSuccessMsg('');
             setView('list');
             setFormData(INITIAL_FORM);
+            setEditingId(null);
         }, 2000);
+    };
+
+    const handleEdit = (client: any) => {
+        setFormData({
+            ...INITIAL_FORM, // Garante que todos os campos existam
+            name: client.name,
+            type: client.type,
+            email: client.email,
+            phone: client.phone,
+            city: client.city,
+            // Mapear outros campos se existirem no mock ou backend
+        });
+        setEditingId(client.id);
+        setView('form');
+    };
+
+    const handleNewClient = () => {
+        setFormData(INITIAL_FORM);
+        setEditingId(null);
+        setView('form');
     };
 
     if (view === 'list') {
@@ -127,7 +154,7 @@ export const ClientRegistration: React.FC = () => {
                         <p className="text-sm text-gray-500">Base de clientes ativos e inativos</p>
                     </div>
                     <button
-                        onClick={() => setView('form')}
+                        onClick={handleNewClient}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                     >
                         + Novo Cliente
@@ -159,7 +186,12 @@ export const ClientRegistration: React.FC = () => {
                                     <td className="px-6 py-4 text-gray-600">{client.phone}</td>
                                     <td className="px-6 py-4 text-gray-600">{client.city}</td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">Editar</button>
+                                        <button
+                                            onClick={() => handleEdit(client)}
+                                            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 ml-auto"
+                                        >
+                                            Editar
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
@@ -178,8 +210,8 @@ export const ClientRegistration: React.FC = () => {
                         <X size={20} />
                     </button>
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-800">Novo Cliente</h2>
-                        <p className="text-sm text-gray-500">Preencha os dados completos para cadastro.</p>
+                        <h2 className="text-2xl font-bold text-gray-800">{editingId ? 'Editar Cliente' : 'Novo Cliente'}</h2>
+                        <p className="text-sm text-gray-500">{editingId ? 'Atualize os dados do cliente.' : 'Preencha os dados completos para cadastro.'}</p>
                     </div>
                 </div>
             </div>
@@ -484,7 +516,7 @@ export const ClientRegistration: React.FC = () => {
                         className="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-colors flex items-center gap-2"
                     >
                         <Save size={18} />
-                        Salvar Cadastro
+                        {editingId ? 'Salvar Alterações' : 'Salvar Cadastro'}
                     </button>
                 </div>
             </form>

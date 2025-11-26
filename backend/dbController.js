@@ -75,6 +75,21 @@ const createClient = async (req, res) => {
     }
 };
 
+const updateClient = async (req, res) => {
+    const { id } = req.params;
+    const { name, type, email, phone, city, company_size, industry } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE clients SET name = $1, type = $2, email = $3, phone = $4, city = $5, company_size = $6, industry = $7, updated_at = NOW() WHERE id = $8 RETURNING *',
+            [name, type, email, phone, city, company_size, industry, id]
+        );
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error updating client:', error);
+        res.status(500).json({ error: 'Failed to update client' });
+    }
+};
+
 // ============================================
 // CAMPAIGNS
 // ============================================
@@ -306,6 +321,7 @@ module.exports = {
     getUsers,
     getClients,
     createClient,
+    updateClient,
     getCampaigns,
     getLeads,
     createLead,
