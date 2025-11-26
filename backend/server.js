@@ -1,0 +1,257 @@
+
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const { Pool } = require('pg');
+const fs = require('fs');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Middleware
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+app.use(express.json());
+
+// Conexão com Banco de Dados (PostgreSQL no Railway)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+// Handle pool errors
+pool.on('error', (err) => {
+  console.error('⚠️  Unexpected database error:', err.message);
+  // Don't crash the app
+});
+
+// Export pool for use in controllers
+module.exports.pool = pool;
+
+// Initialize database schema
+async function initializeDatabase() {
+  try {
+    console.log('🔄 Initializing database schema...');
+    const schemaPath = path.join(__dirname, 'schema.sql');
+    const schema = fs.readFileSync(schemaPath, 'utf8');
+
+    // Custom SQL parser that handles DO $$ blocks and multi-line statements
+    const statements = [];
+    let currentStatement = '';
+    let inDollarQuote = false;
+    let inBlockComment = false;
+
+    const lines = schema.split('\n');
+
+    for (let line of lines) {
+      const trimmedLine = line.trim();
+
+      // Skip single-line comments
+      if (trimmedLine.startsWith('--')) continue;
+
+      // Handle block comments
+      if (trimmedLine.includes('/*')) inBlockComment = true;
+      if (trimmedLine.includes('*/')) {
+        inBlockComment = false;
+        continue;
+      }
+      if (inBlockComment) continue;
+
+      // Handle DO $$ blocks
+      if (trimmedLine.includes('DO $$') || trimmedLine.includes('$$')) {
+        inDollarQuote = !inDollarQuote;
+      }
+
+      currentStatement += line + '\n';
+
+      // End of statement (semicolon outside of dollar quotes)
+      if (trimmedLine.endsWith(';') && !inDollarQuote) {
+        const stmt = currentStatement.trim();
+        if (stmt.length > 0) {
+          statements.push(stmt);
+        }
+        currentStatement = '';
+      }
+    }
+
+    // Add any remaining statement
+    if (currentStatement.trim().length > 0) {
+      statements.push(currentStatement.trim());
+    }
+
+    let successCount = 0;
+    let skipCount = 0;
+    let errorCount = 0;
+
+    for (const statement of statements) {
+      try {
+        await pool.query(statement);
+        successCount++;
+      } catch (error) {
+        // Ignore "already exists" and "duplicate key" errors
+        if (error.message.includes('already exists') ||
+          error.message.includes('duplicate key')) {
+          skipCount++;
+        } else {
+          errorCount++;
+          console.error('⚠️  SQL Error:', error.message.substring(0, 150));
+        }
+      }
+    }
+
+    console.log(`✅ Database schema initialized! (${successCount} executed, ${skipCount} skipped, ${errorCount} errors)`);
+  } catch (error) {
+    console.error('⚠️  Database initialization error:', error.message);
+    // Don't crash the app if schema already exists
+  }
+}
+
+// Run schema initialization
+// Last updated: 2025-11-24 22:38
+initializeDatabase();
+
+// --- ROTAS ---
+
+// Import database controller
+const dbController = require('./dbController');
+
+// 1. Health Check (Railway uses this)
+app.get('/', (req, res) => {
+  res.status(200).send('EliteConversion API is running 🚀');
+});
+
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test database connection
+    await pool.query('SELECT 1');
+    res.status(200).json({
+      status: 'healthy',
+      database: 'connected',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    // Return 200 even if DB is not ready (Railway healthcheck)
+    res.status(200).json({
+      status: 'starting',
+      database: 'initializing',
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// --- DATABASE ROUTES ---
+
+// Users
+app.get('/api/users', dbController.getUsers);
+
+// Clients
+app.get('/api/clients', dbController.getClients);
+app.post('/api/clients', dbController.createClient);
+
+// Campaigns
+app.get('/api/campaigns', dbController.getCampaigns);
+
+// Leads
+app.get('/api/leads', dbController.getLeads);
+app.patch('/api/leads/:id/status', dbController.updateLeadStatus);
+
+// Chat Messages
+app.get('/api/chat-messages', dbController.getChatMessages);
+
+// Social Posts
+// Social Posts
+const socialMediaController = require('./socialMediaController');
+app.get('/api/social-posts', socialMediaController.getPosts);
+app.post('/api/social-posts', socialMediaController.upload.single('media'), socialMediaController.createPost);
+
+// Automation Workflows
+app.get('/api/workflows', dbController.getWorkflows);
+app.get('/api/workflows/:workflow_id/steps', dbController.getWorkflowSteps);
+
+// Training
+app.get('/api/training/modules', dbController.getTrainingModules);
+app.get('/api/training/progress', dbController.getTrainingProgress);
+
+// KPIs
+app.get('/api/kpis', dbController.getKPIs);
+
+// Device Stats
+app.get('/api/device-stats', dbController.getDeviceStats);
+
+// --- INTEGRATIONS ---
+const integrationsController = require('./integrationsController');
+
+app.get('/api/integrations', integrationsController.getIntegrations);
+app.patch('/api/integrations/:id', integrationsController.updateIntegrationStatus);
+app.post('/api/integrations/:id/sync', integrationsController.syncIntegration);
+
+// OAuth callbacks
+app.get('/auth/google-ads/callback', integrationsController.handleGoogleAdsCallback);
+app.get('/auth/meta-ads/callback', integrationsController.handleMetaAdsCallback);
+
+// WhatsApp setup
+app.post('/api/integrations/whatsapp/setup', integrationsController.setupWhatsAppWebhook);
+
+// --- WEBHOOKS ---
+app.post('/webhooks/whatsapp', (req, res) => {
+  const { from, message } = req.body;
+  console.log(`Nova mensagem de ${from}: ${message}`);
+  // Lógica futura: Integrar com tabela chat_logs e chamar Gemini API
+  res.status(200).send('EVENT_RECEIVED');
+});
+
+// --- AI SERVICES ---
+const aiController = require('./aiController');
+
+app.post('/api/ai/analyze', aiController.analyzeChatConversation);
+app.post('/api/ai/generate', aiController.generateMarketingContent);
+app.post('/api/ai/chat', aiController.askEliteAssistant);
+
+// --- USER MANAGEMENT ---
+const userCtrl = require('./userController');
+
+// Serve uploaded avatars statically
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
+// Create new user (admin)
+app.post('/api/users', userCtrl.createUser);
+
+// Update avatar for a user (requires multipart/form-data)
+app.post('/api/users/:id/avatar', userCtrl.upload.single('avatar'), userCtrl.updateAvatar);
+
+
+// --- SOCIAL MEDIA INTEGRATIONS ---
+const socialIntegration = require('./socialIntegrationController');
+app.get('/api/auth/meta', socialIntegration.initiateMetaAuth);
+app.get('/api/auth/meta/callback', socialIntegration.handleMetaCallback);
+app.get('/api/auth/linkedin', socialIntegration.initiateLinkedInAuth);
+app.get('/api/auth/linkedin/callback', socialIntegration.handleLinkedInCallback);
+app.get('/api/auth/twitter', socialIntegration.initiateTwitterAuth);
+app.get('/api/auth/twitter/callback', socialIntegration.handleTwitterCallback);
+
+// Publishing Routes
+app.post('/api/social/publish/instagram', socialIntegration.publishToInstagram);
+app.post('/api/social/publish/linkedin', socialIntegration.publishToLinkedIn);
+app.post('/api/social/publish/twitter', socialIntegration.publishToTwitter);
+
+// --- SOCIAL ACCOUNTS MANAGEMENT ---
+const socialAccountCtrl = require('./socialAccountController');
+app.get('/api/clients/:clientId/social-accounts', socialAccountCtrl.getSocialAccounts);
+app.post('/api/social-accounts', socialAccountCtrl.addSocialAccount);
+app.delete('/api/social-accounts/:accountId', socialAccountCtrl.deleteSocialAccount);
+
+// Analytics Routes
+app.get('/api/social/insights/instagram', socialIntegration.getInstagramInsights);
+app.get('/api/social/analytics/linkedin', socialIntegration.getLinkedInAnalytics);
+app.get('/api/social/metrics/twitter', socialIntegration.getTwitterMetrics);
+
+
+// Iniciar Servidor
+app.listen(PORT, () => {
+  console.log(`🔥 Server running on port ${PORT}`);
+});
