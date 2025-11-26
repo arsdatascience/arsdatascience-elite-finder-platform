@@ -334,7 +334,7 @@ export const Reports: React.FC = () => {
       <div className="print:hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8 mx-4 mt-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Elite Analytics Hub</h2>
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Elite Analytics Hub <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle font-normal">v1.0</span></h2>
             <p className="text-sm text-gray-500">Central de Inteligência e Relatórios Executivos</p>
           </div>
           <div className="flex gap-3">

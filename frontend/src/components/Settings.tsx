@@ -474,8 +474,8 @@ export const Settings: React.FC = () => {
                       <button
                         onClick={() => isConnected ? handleDisconnectPlatform(integ) : handleConnectPlatform(integ)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${isConnected
-                            ? 'bg-white border-red-200 text-red-600 hover:bg-red-50'
-                            : 'bg-blue-600 border-transparent text-white hover:bg-blue-700 shadow-sm'
+                          ? 'bg-white border-red-200 text-red-600 hover:bg-red-50'
+                          : 'bg-blue-600 border-transparent text-white hover:bg-blue-700 shadow-sm'
                           }`}
                       >
                         {isConnected ? 'Desconectar' : 'Conectar Agora'}
@@ -643,7 +643,7 @@ export const Settings: React.FC = () => {
   return (
     <div className="space-y-6 h-full flex flex-col animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800">Configurações</h2>
+        <h2 className="text-2xl font-bold text-gray-800">Configurações <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">v1.0</span></h2>
         <p className="text-sm text-gray-500">Gerencie sua conta, integrações e preferências do sistema.</p>
       </div>
 
