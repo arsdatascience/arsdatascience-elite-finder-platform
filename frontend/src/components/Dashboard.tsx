@@ -224,28 +224,28 @@ export const Dashboard: React.FC = () => {
                       <LabelList dataKey="google_spend" position="top" formatter={(val: any) => formatK(Number(val))} style={{ fontSize: '10px', fill: '#3b82f6', fontWeight: 'bold' }} />
                     </Area>
                     <Area type="monotone" dataKey="meta_spend" name="Meta Invest." stroke="#a855f7" fill="url(#colorMeta)" stackId="1">
-                      <LabelList dataKey="meta_spend" position="top" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#a855f7', fontWeight: 'bold' }} />
+                      <LabelList dataKey="meta_spend" position="top" formatter={(val: any) => formatK(Number(val))} style={{ fontSize: '10px', fill: '#a855f7', fontWeight: 'bold' }} />
                     </Area>
                     <Area type="monotone" dataKey="total_revenue" name="Receita Total" stroke="#10b981" fill="none" strokeWidth={3}>
-                      <LabelList dataKey="total_revenue" position="top" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#10b981', fontWeight: 'bold' }} />
+                      <LabelList dataKey="total_revenue" position="top" formatter={(val: any) => formatK(Number(val))} style={{ fontSize: '10px', fill: '#10b981', fontWeight: 'bold' }} />
                     </Area>
                   </>
                 ) : selectedPlatform === 'google' ? (
                   <>
                     <Area type="monotone" dataKey="google_spend" name="Investimento Google" stroke="#3b82f6" fill="url(#colorGoogle)">
-                      <LabelList dataKey="google_spend" position="top" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#3b82f6', fontWeight: 'bold' }} />
+                      <LabelList dataKey="google_spend" position="top" formatter={(val: any) => formatK(Number(val))} style={{ fontSize: '10px', fill: '#3b82f6', fontWeight: 'bold' }} />
                     </Area>
                     <Area type="monotone" dataKey="google_revenue" name="Receita Atribuída" stroke="#10b981" fill="none" strokeWidth={3}>
-                      <LabelList dataKey="google_revenue" position="top" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#10b981', fontWeight: 'bold' }} />
+                      <LabelList dataKey="google_revenue" position="top" formatter={(val: any) => formatK(Number(val))} style={{ fontSize: '10px', fill: '#10b981', fontWeight: 'bold' }} />
                     </Area>
                   </>
                 ) : (
                   <>
                     <Area type="monotone" dataKey="meta_spend" name="Investimento Meta" stroke="#a855f7" fill="url(#colorMeta)">
-                      <LabelList dataKey="meta_spend" position="top" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#a855f7', fontWeight: 'bold' }} />
+                      <LabelList dataKey="meta_spend" position="top" formatter={(val: any) => formatK(Number(val))} style={{ fontSize: '10px', fill: '#a855f7', fontWeight: 'bold' }} />
                     </Area>
                     <Area type="monotone" dataKey="meta_revenue" name="Receita Atribuída" stroke="#10b981" fill="none" strokeWidth={3}>
-                      <LabelList dataKey="meta_revenue" position="top" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#10b981', fontWeight: 'bold' }} />
+                      <LabelList dataKey="meta_revenue" position="top" formatter={(val: any) => formatK(Number(val))} style={{ fontSize: '10px', fill: '#10b981', fontWeight: 'bold' }} />
                     </Area>
                   </>
                 )}
@@ -282,7 +282,7 @@ export const Dashboard: React.FC = () => {
                   <LabelList
                     dataKey="google"
                     position="right"
-                    formatter={(val: number) => val >= 1000 ? (val / 1000).toFixed(1) + 'k' : String(val)}
+                    formatter={(val: any) => Number(val) >= 1000 ? (Number(val) / 1000).toFixed(1) + 'k' : String(val)}
                     style={{ fontSize: '10px', fontWeight: 'bold', fill: '#3b82f6' }}
                   />
                 </Bar>
@@ -290,7 +290,7 @@ export const Dashboard: React.FC = () => {
                   <LabelList
                     dataKey="meta"
                     position="right"
-                    formatter={(val: number) => val >= 1000 ? (val / 1000).toFixed(1) + 'k' : String(val)}
+                    formatter={(val: any) => Number(val) >= 1000 ? (Number(val) / 1000).toFixed(1) + 'k' : String(val)}
                     style={{ fontSize: '10px', fontWeight: 'bold', fill: '#a855f7' }}
                   />
                 </Bar>
