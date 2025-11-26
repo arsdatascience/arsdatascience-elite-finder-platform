@@ -1,6 +1,6 @@
 export const COMPONENT_VERSIONS = {
-    Dashboard: 'v1.1',
-    Campaigns: 'v1.1',
+    Dashboard: 'v1.2',
+    Campaigns: 'v1.2',
     FlightControl: 'v1.0',
     ClientRegistration: 'v1.0',
     SocialMedia: 'v1.0',

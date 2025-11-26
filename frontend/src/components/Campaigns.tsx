@@ -161,7 +161,7 @@ export const Campaigns: React.FC = () => {
                     outerRadius="80%"
                     paddingAngle={4}
                     dataKey="value"
-                    label={({ name, value }: any) => `${name}: ${formatCurrency(value)}`}
+                    label={({ value }: any) => formatCurrency(value)}
                   >
                     {BUDGET_DATA.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={1} stroke="#fff" />
