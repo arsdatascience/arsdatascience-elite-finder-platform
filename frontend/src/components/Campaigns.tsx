@@ -4,6 +4,7 @@ import { Play, Pause, Globe, Search, Sparkles, PieChart as PieIcon, BarChart2, U
 import { ContentGenerator } from '@/components/ContentGenerator';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, LabelList } from 'recharts';
 import { Campaign } from '@/types';
+import { COMPONENT_VERSIONS } from '@/componentVersions';
 
 export const Campaigns: React.FC = () => {
   const [showGenerator, setShowGenerator] = useState(false);
@@ -96,7 +97,7 @@ export const Campaigns: React.FC = () => {
       {/* ... (Todo o JSX do componente Campaigns) ... */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Gestão de Campanhas <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">v1.0</span></h2>
+          <h2 className="text-2xl font-bold text-gray-800">Gestão de Campanhas <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.Campaigns}</span></h2>
           <p className="text-gray-500 text-sm">Acompanhe e otimize seus investimentos.</p>
         </div>
 

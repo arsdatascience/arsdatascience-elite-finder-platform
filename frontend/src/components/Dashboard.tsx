@@ -6,6 +6,7 @@ import { AreaChart, Area, PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Bar
 import { KPIS, CLIENTS_LIST, COMPARATIVE_FUNNEL_DATA, DEVICE_DATA } from '@/constants';
 import { ArrowUpRight, ArrowDownRight, Info, Users, Smartphone, Monitor, Tablet } from 'lucide-react';
 import { Metric } from '@/types';
+import { COMPONENT_VERSIONS } from '@/componentVersions';
 
 const DEFAULT_CHART_DATA = [
   { name: 'Seg', revenue: 20000, spend: 12000, google: 8000, meta: 4000 },
@@ -109,7 +110,7 @@ export const Dashboard: React.FC = () => {
       {/* ... (todo o JSX do Dashboard.tsx) ... */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Gestão de Campanhas <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">v1.0</span></h2>
+          <h2 className="text-2xl font-bold text-gray-800">Gestão de Campanhas <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.Dashboard}</span></h2>
           <p className="text-gray-500 text-sm">Visão estratégica de performance e ROI.</p>
         </div>
 

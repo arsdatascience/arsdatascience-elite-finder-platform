@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Calendar, Image, ThumbsUp, MessageCircle, Share2, TrendingUp, Sparkles, Users } from 'lucide-react';
 import { ContentGenerator } from './ContentGenerator';
 import { CLIENTS_LIST } from '../constants';
 import { ViewState } from '../types';
+import { COMPONENT_VERSIONS } from '../componentVersions';
 
 interface SocialMediaProps {
     onNavigate: (view: ViewState) => void;
@@ -32,7 +32,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
         <div className="space-y-6 animate-fade-in">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Gestão de Redes Sociais <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">v1.0</span></h2>
+                    <h2 className="text-2xl font-bold text-gray-800">Gestão de Redes Sociais <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.SocialMedia}</span></h2>
                     <p className="text-sm text-gray-500">Calendário editorial e performance de conteúdo.</p>
                 </div>
 

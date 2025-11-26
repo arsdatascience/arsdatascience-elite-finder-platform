@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { GitBranch, Zap, Clock, Mail, MessageSquare, AlertCircle, Plus, ArrowLeft, Save, Trash2, X, Smartphone, Tag, UserPlus, Globe, Copy, Play, Pause, Edit } from 'lucide-react';
+import { GitBranch, Plus, Play, Pause, Settings, MoreVertical, Zap, Mail, MessageSquare, Clock, Users, ArrowRight, CheckCircle, XCircle, AlertTriangle, X } from 'lucide-react';
+import { COMPONENT_VERSIONS } from '../componentVersions';
 
 
 interface WorkflowStep {
@@ -217,7 +218,7 @@ export const Automation: React.FC = () => {
 
     const fetchWorkflows = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/workflows`);
+            const response = await fetch(`${API_URL} /api/workflows`);
             const data = await response.json();
             setWorkflows(data);
         } catch (error) {
@@ -234,7 +235,7 @@ export const Automation: React.FC = () => {
         setNewTrigger(template.trigger);
         setNewSteps(template.steps.map((step, index) => ({
             ...step,
-            id: `${Date.now()}-${index}`
+            id: `${Date.now()} -${index} `
         })));
         setView('create');
     };
@@ -245,7 +246,7 @@ export const Automation: React.FC = () => {
         setNewTrigger(workflow.triggers);
         // If stepsList exists, use it. Otherwise create empty or default steps based on count
         setNewSteps(workflow.stepsList || Array(workflow.steps).fill(null).map((_, i) => ({
-            id: `mock-${i}`,
+            id: `mock - ${i} `,
             type: 'wait',
             value: 'Passo carregado'
         })));
@@ -578,7 +579,7 @@ export const Automation: React.FC = () => {
         <div className="space-y-6 animate-fade-in">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Automação de Marketing <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">v1.0</span></h2>
+                    <h2 className="text-2xl font-bold text-gray-800">Automação de Marketing <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.Automation}</span></h2>
                     <p className="text-sm text-gray-500">Gerencie seus fluxos de trabalho e gatilhos automatizados.</p>
                 </div>
                 <div className="flex gap-3">
@@ -613,10 +614,10 @@ export const Automation: React.FC = () => {
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
                                     <h3 className="text-lg font-bold text-gray-900">{workflow.name}</h3>
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${workflow.status === 'active'
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-gray-100 text-gray-600'
-                                        }`}>
+                                    <span className={`px - 2 py - 1 rounded - full text - xs font - medium ${workflow.status === 'active'
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-gray-100 text-gray-600'
+                                        } `}>
                                         {workflow.status === 'active' ? 'Ativo' : 'Pausado'}
                                     </span>
                                 </div>
@@ -639,10 +640,10 @@ export const Automation: React.FC = () => {
                                 </button>
                                 <button
                                     onClick={() => toggleWorkflowStatus(workflow.id)}
-                                    className={`p-2 rounded-lg border ${workflow.status === 'active'
-                                        ? 'border-orange-300 text-orange-600 hover:bg-orange-50'
-                                        : 'border-green-300 text-green-600 hover:bg-green-50'
-                                        }`}
+                                    className={`p - 2 rounded - lg border ${workflow.status === 'active'
+                                            ? 'border-orange-300 text-orange-600 hover:bg-orange-50'
+                                            : 'border-green-300 text-green-600 hover:bg-green-50'
+                                        } `}
                                     title={workflow.status === 'active' ? 'Pausar' : 'Ativar'}
                                 >
                                     {workflow.status === 'active' ? <Pause size={18} /> : <Play size={18} />}

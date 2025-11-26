@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
-import { User, Lock, CreditCard, Link as LinkIcon, Shield, LogOut, Check, AlertCircle, Plus, Trash2, RefreshCw, Eye, EyeOff, BrainCircuit, Save, Server, Cpu, Search, Globe, MessageSquare, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { Save, RefreshCw, Key, Shield, Bell, Globe, Mail, Smartphone, CreditCard, LogOut, User, Building } from 'lucide-react';
+import { COMPONENT_VERSIONS } from '../componentVersions';
 
 type SettingsTab = 'profile' | 'integrations' | 'team' | 'billing' | 'notifications';
 
@@ -86,7 +88,7 @@ export const Settings: React.FC = () => {
 
   const fetchIntegrations = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/integrations?user_id=1`);
+      const response = await fetch(`${API_URL} /api/integrations ? user_id = 1`);
       const data = await response.json();
 
       // Map database data to UI format
@@ -155,7 +157,7 @@ export const Settings: React.FC = () => {
       if (!phoneNumberId || !accessToken) return;
 
       try {
-        const response = await fetch(`${API_URL}/api/integrations/whatsapp/setup`, {
+        const response = await fetch(`${API_URL} /api/integrations / whatsapp / setup`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -643,7 +645,7 @@ export const Settings: React.FC = () => {
   return (
     <div className="space-y-6 h-full flex flex-col animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800">Configurações <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">v1.0</span></h2>
+        <h2 className="text-2xl font-bold text-gray-800">Configurações <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.Settings}</span></h2>
         <p className="text-sm text-gray-500">Gerencie sua conta, integrações e preferências do sistema.</p>
       </div>
 

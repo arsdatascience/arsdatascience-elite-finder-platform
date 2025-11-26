@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, PlayCircle, FileText, Award, Star, CheckCircle, Clock, TrendingUp, Video } from 'lucide-react';
+import { BookOpen, PlayCircle, CheckCircle, Lock, Award, Clock, FileText, ChevronRight, Star, Search, Filter } from 'lucide-react';
+import { COMPONENT_VERSIONS } from '../componentVersions';
 
 interface TrainingModule {
     id: number;
@@ -101,7 +102,7 @@ export const Training: React.FC = () => {
         <div className="space-y-6 animate-fade-in">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Academia de Treinamento <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">v1.0</span></h2>
+                    <h2 className="text-2xl font-bold text-gray-800">Academia de Treinamento <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.Training}</span></h2>
                     <p className="text-sm text-gray-500">Capacite sua equipe com playbooks de vendas orientados por IA.</p>
                 </div>
             </div>

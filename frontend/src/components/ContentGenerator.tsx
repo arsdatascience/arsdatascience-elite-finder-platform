@@ -4,6 +4,7 @@ import { generateMarketingContent } from '../services/geminiService';
 import { saveSocialPost } from '../services/socialService';
 import { Sparkles, X, Copy, Loader2, Image as ImageIcon, Hash, MousePointerClick, Bot, Cpu, Calendar as CalendarIcon, UploadCloud, CheckCircle, UserCircle, Building2 } from 'lucide-react';
 import { CLIENTS_LIST } from '../constants';
+import { COMPONENT_VERSIONS } from '../componentVersions';
 
 interface ContentGeneratorProps {
   isOpen: boolean;
@@ -193,7 +194,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
               <Sparkles className="text-yellow-400" size={24} />
             </div>
             <div>
-              <h3 className="text-xl font-bold">Estúdio Criativo IA <span className="text-xs bg-yellow-400 text-indigo-900 px-2 py-0.5 rounded-full ml-2">v2.1</span></h3>
+              <h3 className="text-xl font-bold">Estúdio Criativo IA <span className="text-xs bg-yellow-400 text-indigo-900 px-2 py-0.5 rounded-full ml-2">{COMPONENT_VERSIONS.ContentGenerator}</span></h3>
               <p className="text-indigo-200 text-sm">Criação, Agendamento e Design</p>
             </div>
           </div>

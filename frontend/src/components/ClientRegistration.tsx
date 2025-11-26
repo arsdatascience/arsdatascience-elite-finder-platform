@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
 import { User, MapPin, Phone, Mail, Briefcase, Save, X, Check, Building2, Globe, Calendar } from 'lucide-react';
+import { COMPONENT_VERSIONS } from '../componentVersions';
 
 interface ClientForm {
     type: 'PF' | 'PJ';
@@ -121,7 +123,7 @@ export const ClientRegistration: React.FC = () => {
             <div className="space-y-6 animate-fade-in">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-800">Gestão de Clientes <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">v1.0</span></h2>
+                        <h2 className="text-2xl font-bold text-gray-800">Gestão de Clientes <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.ClientRegistration}</span></h2>
                         <p className="text-sm text-gray-500">Base de clientes ativos e inativos</p>
                     </div>
                     <button
@@ -149,7 +151,7 @@ export const ClientRegistration: React.FC = () => {
                                 <tr key={client.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 font-medium text-gray-900">{client.name}</td>
                                     <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded text-xs font-bold ${client.type === 'PJ' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                                        <span className={`px - 2 py - 1 rounded text - xs font - bold ${client.type === 'PJ' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'} `}>
                                             {client.type}
                                         </span>
                                     </td>
