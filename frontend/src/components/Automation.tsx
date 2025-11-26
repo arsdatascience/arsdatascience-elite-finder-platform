@@ -11,16 +11,16 @@ import ReactFlow, {
     Position,
     Connection,
     Edge,
-    Node,
-    MarkerType
+    Node
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import {
     GitBranch, Plus, Play, Pause, Zap, Mail, MessageSquare, Clock,
     UserPlus, AlertCircle, Smartphone, Tag, Globe, ArrowLeft,
-    Copy, Edit, Trash2, Save, X, MousePointerClick
+    Copy, Edit, Trash2, Save, X
 } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
+import { RichTextEditor } from './RichTextEditor';
 
 // --- TYPES ---
 
@@ -57,7 +57,6 @@ interface WorkflowTemplate {
 
 // --- CONSTANTS & MOCKS ---
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const NODE_TYPES_CONFIG = {
     trigger: { label: 'Gatilho', icon: <Zap size={16} />, color: 'bg-yellow-100 border-yellow-300' },
@@ -73,7 +72,7 @@ const NODE_TYPES_CONFIG = {
 
 // --- CUSTOM NODE COMPONENT ---
 
-const CustomNode = ({ data, type }: any) => {
+const CustomNode = ({ data }: any) => {
     const config = NODE_TYPES_CONFIG[data.type as keyof typeof NODE_TYPES_CONFIG] || NODE_TYPES_CONFIG.wait;
 
     return (
@@ -148,7 +147,6 @@ const INITIAL_WORKFLOWS: Workflow[] = [
 export const Automation: React.FC = () => {
     const [view, setView] = useState<'list' | 'create' | 'templates'>('list');
     const [workflows, setWorkflows] = useState<Workflow[]>([]);
-    const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<number | null>(null);
 
     // Flow States
@@ -174,8 +172,6 @@ export const Automation: React.FC = () => {
             setWorkflows(INITIAL_WORKFLOWS);
         } catch (error) {
             console.error('Error fetching workflows:', error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -496,13 +492,20 @@ export const Automation: React.FC = () => {
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Configuração do Passo</label>
-                                    <textarea
-                                        value={nodeValue}
-                                        onChange={(e) => updateNodeValue(e.target.value)}
-                                        rows={4}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                                        placeholder="Digite os detalhes desta ação..."
-                                    />
+                                    {nodes.find(n => n.id === selectedNodeId)?.data.type === 'email' ? (
+                                        <RichTextEditor
+                                            value={nodeValue}
+                                            onChange={updateNodeValue}
+                                        />
+                                    ) : (
+                                        <textarea
+                                            value={nodeValue}
+                                            onChange={(e) => updateNodeValue(e.target.value)}
+                                            rows={4}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                                            placeholder="Digite os detalhes desta ação..."
+                                        />
+                                    )}
                                 </div>
 
                                 <div className="pt-4 border-t border-gray-100">
