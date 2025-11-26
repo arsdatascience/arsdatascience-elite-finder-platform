@@ -131,7 +131,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
               <Sparkles className="text-yellow-400" size={24} />
             </div>
             <div>
-              <h3 className="text-xl font-bold">Estúdio Criativo IA</h3>
+              <h3 className="text-xl font-bold">Estúdio Criativo IA <span className="text-xs bg-yellow-400 text-indigo-900 px-2 py-0.5 rounded-full ml-2">v2.0</span></h3>
               <p className="text-indigo-200 text-sm">Criação, Agendamento e Design</p>
             </div>
           </div>
