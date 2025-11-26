@@ -180,6 +180,10 @@ export const Settings: React.FC = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'profile':
+        // Simulando que o usuário logado é o primeiro da lista de membros (ou um estado de user context)
+        // Na prática, você buscaria isso de um contexto de autenticação
+        const currentUser = teamMembers.find(m => m.id === 1) || teamMembers[0];
+
         return (
           <div className="space-y-6 animate-fade-in">
             <div>
@@ -190,7 +194,7 @@ export const Settings: React.FC = () => {
             <div className="flex items-center gap-6">
               <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                 <img
-                  src={profileData.avatarUrl}
+                  src={profileData.avatarUrl} // Mantendo o estado local de avatar para preview imediato
                   alt="Avatar"
                   className="w-24 h-24 rounded-full border-4 border-blue-100 object-cover group-hover:opacity-80 transition-opacity"
                 />
@@ -208,8 +212,8 @@ export const Settings: React.FC = () => {
                 />
               </div>
               <div>
-                <h4 className="font-bold text-gray-900">{profileData.name}</h4>
-                <p className="text-sm text-gray-500">{profileData.role}</p>
+                <h4 className="font-bold text-gray-900">{currentUser.firstName} {currentUser.lastName}</h4>
+                <p className="text-sm text-gray-500">{currentUser.role}</p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
@@ -224,8 +228,15 @@ export const Settings: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Nome Completo</label>
                 <input
                   type="text"
-                  value={profileData.name}
-                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  value={`${currentUser.firstName} ${currentUser.lastName}`}
+                  // Em um cenário real, você separaria firstName/lastName no onChange ou teria campos separados
+                  // Para simplificar e atender ao pedido de "Nome Completo", vamos permitir editar o nome de exibição no profileData ou atualizar o currentUser
+                  onChange={(e) => {
+                    const parts = e.target.value.split(' ');
+                    const firstName = parts[0];
+                    const lastName = parts.slice(1).join(' ');
+                    setTeamMembers(prev => prev.map(m => m.id === currentUser.id ? { ...m, firstName, lastName } : m));
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -233,8 +244,8 @@ export const Settings: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                 <input
                   type="email"
-                  value={profileData.email}
-                  onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+                  value={currentUser.email}
+                  onChange={(e) => setTeamMembers(prev => prev.map(m => m.id === currentUser.id ? { ...m, email: e.target.value } : m))}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -242,8 +253,8 @@ export const Settings: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
                 <input
                   type="tel"
-                  value={profileData.phone}
-                  onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
+                  value={currentUser.phone}
+                  onChange={(e) => setTeamMembers(prev => prev.map(m => m.id === currentUser.id ? { ...m, phone: e.target.value } : m))}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -251,7 +262,7 @@ export const Settings: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Empresa</label>
                 <input
                   type="text"
-                  value={profileData.company}
+                  value={profileData.company} // Empresa ainda vem de profileData pois não está no TeamMember type explicitamente, mas poderia estar
                   onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
