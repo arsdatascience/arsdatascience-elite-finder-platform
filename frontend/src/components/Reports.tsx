@@ -130,11 +130,79 @@ export const Reports: React.FC = () => {
   };
 
   const handleAction = (type: 'print' | 'pdf') => {
-    const originalTitle = document.title;
-    const prefix = type === 'pdf' ? 'Elite_Report' : 'Relatorio';
-    document.title = `${reportData.clientName.replace(/\s+/g, '_')} - ${prefix}_${selectedYear} `;
-    window.print();
-    setTimeout(() => { document.title = originalTitle; }, 500);
+    const printContent = document.getElementById('printable-report');
+    if (!printContent) return;
+
+    // Criar um iframe oculto ou nova janela para impressão limpa
+    const printWindow = window.open('', '_blank', 'height=600,width=800');
+    if (!printWindow) {
+      alert('Por favor, permita popups para imprimir o relatório.');
+      return;
+    }
+
+    // Coletar estilos atuais
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map(style => style.outerHTML)
+      .join('');
+
+    const title = `${reportData.clientName} - Relatório ${selectedYear}`;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${title}</title>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <script src="https://cdn.tailwindcss.com"></script>
+          ${styles}
+          <style>
+            body { 
+              background: white; 
+              -webkit-print-color-adjust: exact; 
+              print-color-adjust: exact; 
+              margin: 0;
+              padding: 0;
+            }
+            /* Resetar margens e paddings do container principal para impressão */
+            #print-root {
+              width: 100%;
+            }
+            /* Ajuste da classe de quebra de página */
+            .page-break { 
+              page-break-after: always; 
+              break-after: page;
+              display: block;
+              min-height: 297mm; /* Garantir altura A4 */
+              height: auto;
+              margin-bottom: 0;
+              padding: 15mm; /* Restaurar padding se necessário */
+            }
+            /* Garantir que gráficos apareçam */
+            .recharts-wrapper { width: 100% !important; height: 100% !important; }
+            svg { overflow: visible !important; }
+            
+            /* Ocultar elementos desnecessários se houver */
+            .print\\:hidden { display: none !important; }
+          </style>
+        </head>
+        <body>
+          <div id="print-root">
+            ${printContent.innerHTML}
+          </div>
+          <script>
+            // Aguardar carregamento de imagens/fontes antes de imprimir
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+                // window.close();
+              }, 1500); // Um pouco mais de tempo para garantir renderização dos gráficos
+            };
+          </script>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
   };
 
   const formatCurrency = (val: any) => Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -156,7 +224,7 @@ export const Reports: React.FC = () => {
                   </div>
                   <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">{kpi.label}</p>
                   <p className="text-2xl font-black text-gray-900 mb-2">{kpi.value}</p>
-                  <div className={`inline - flex items - center gap - 1 text - xs font - bold px - 2 py - 1 rounded - full ${kpi.trend === 'up' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'} `}>
+                  <div className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${kpi.trend === 'up' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                     {kpi.trend === 'up' ? '▲' : '▼'} {Math.abs(kpi.change)}%
                     <span className="text-gray-400 font-normal ml-1">vs mês anterior</span>
                   </div>
@@ -216,7 +284,7 @@ export const Reports: React.FC = () => {
                     dataKey="value"
                   >
                     {reportData.distribution.map((_entry, index) => (
-                      <Cell key={`cell - ${index} `} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => formatCurrency(value)} />
@@ -267,7 +335,7 @@ export const Reports: React.FC = () => {
                     <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                       <td className="p-3 font-medium text-gray-900">{c.name}</td>
                       <td className="p-3">
-                        <span className={`px - 2 py - 1 rounded - full text - [10px] font - bold ${c.platform === 'google' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'} `}>
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${c.platform === 'google' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
                           {c.platform.toUpperCase()}
                         </span>
                       </td>
@@ -329,17 +397,8 @@ export const Reports: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full animate-fade-in bg-gray-50/50">
-      <style>{`
-@media print {
-  @page { margin: 0; size: A4; }
-  body { -webkit-print-color-adjust: exact!important; print-color-adjust: exact!important; background-color: white; }
-  .print-container { margin: 0; padding: 0; width: 100%; }
-  .page-break { page-break-after: always; }
-}
-`}</style>
-
       {/* CONTROLS */}
-      <div className="print:hidden bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8 mx-4 mt-4">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8 mx-4 mt-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h2 className="text-2xl font-black text-gray-900 tracking-tight">Elite Analytics Hub <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle font-normal">{COMPONENT_VERSIONS.Reports}</span></h2>
@@ -357,6 +416,16 @@ export const Reports: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-500 uppercase">Título do Relatório</label>
+            <input
+              type="text"
+              value={reportTitle}
+              onChange={(e) => setReportTitle(e.target.value)}
+              className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div className="space-y-2">
             <label className="text-xs font-bold text-gray-500 uppercase">Cliente</label>
             <div className="relative">
               <select value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-indigo-500">
@@ -369,18 +438,22 @@ export const Reports: React.FC = () => {
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-500 uppercase">Período</label>
             <div className="flex gap-2">
-              <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
+              <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="w-20 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
                 <option value={2024}>2024</option>
                 <option value={2025}>2025</option>
               </select>
               <select value={startMonth} onChange={(e) => setStartMonth(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
                 {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
               </select>
+              <span className="self-center text-gray-400">-</span>
+              <select value={endMonth} onChange={(e) => setEndMonth(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
+                {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+              </select>
             </div>
           </div>
 
-          <div className="col-span-2 space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase">Módulos do Relatório</label>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-500 uppercase">Módulos</label>
             <div className="flex flex-wrap gap-2">
               {AVAILABLE_WIDGETS.map(w => (
                 <button
@@ -396,10 +469,10 @@ export const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* REPORT PAGES */}
-      <div className="print-container flex flex-col items-center pb-10">
+      {/* REPORT PAGES - ID ADICIONADO AQUI */}
+      <div id="printable-report" className="flex flex-col items-center pb-10">
         {widgetChunks.map((chunk, pageIndex) => (
-          <div key={pageIndex} className={`bg-white shadow-2xl mx-auto w-full max-w-[210mm] min-h-[297mm] p-[15mm] mb-8 print:mb-0 print:shadow-none print:w-full print:max-w-none print:p-0 print:h-[297mm] ${pageIndex > 0 ? 'page-break' : ''}`}>
+          <div key={pageIndex} className="bg-white shadow-2xl mx-auto w-full max-w-[210mm] min-h-[297mm] p-[15mm] mb-8 page-break">
 
             {/* Header */}
             <header className="flex justify-between items-end border-b-2 border-gray-900 pb-6 mb-10">

@@ -2,15 +2,19 @@ import { ChatMessage, AnalysisResult, ContentRequest, ContentResult } from "../t
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-export const analyzeChatConversation = async (messages: ChatMessage[]): Promise<AnalysisResult> => {
+export const analyzeChatConversation = async (
+    messages: ChatMessage[],
+    provider?: string,
+    model?: string
+): Promise<AnalysisResult> => {
     try {
-        console.log("📤 Sending analysis request:", { messages });
+        console.log("📤 Sending analysis request:", { messages, provider, model });
         const response = await fetch(`${API_URL}/api/ai/analyze`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ messages }),
+            body: JSON.stringify({ messages, provider, model }),
         });
 
         if (!response.ok) {
@@ -45,14 +49,19 @@ export const generateMarketingContent = async (request: ContentRequest): Promise
     }
 };
 
-export const askEliteAssistant = async (history: ChatMessage[], question: string): Promise<string> => {
+export const askEliteAssistant = async (
+    history: ChatMessage[],
+    question: string,
+    provider?: string,
+    model?: string
+): Promise<string> => {
     try {
         const response = await fetch(`${API_URL}/api/ai/chat`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ history, question }),
+            body: JSON.stringify({ history, question, provider, model }),
         });
 
         if (!response.ok) {

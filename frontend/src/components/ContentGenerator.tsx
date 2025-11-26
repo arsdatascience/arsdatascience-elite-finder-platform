@@ -5,6 +5,7 @@ import { saveSocialPost } from '../services/socialService';
 import { Sparkles, X, Copy, Loader2, Image as ImageIcon, Hash, MousePointerClick, Bot, Cpu, Calendar as CalendarIcon, UploadCloud, CheckCircle, UserCircle, Building2 } from 'lucide-react';
 import { CLIENTS_LIST } from '../constants';
 import { COMPONENT_VERSIONS } from '../componentVersions';
+import { AIProvider, AI_MODELS, OpenAIModel, GeminiModel } from '@/constants/aiModels';
 
 interface ContentGeneratorProps {
   isOpen: boolean;
@@ -35,7 +36,8 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
   const [type, setType] = useState<ContentRequest['type']>(defaultType);
   const [platform, setPlatform] = useState<ContentRequest['platform']>(defaultPlatform);
   const [tone, setTone] = useState<'professional' | 'persuasive' | 'urgent' | 'friendly'>('persuasive');
-  const [aiEngine, setAiEngine] = useState<'gemini' | 'openai'>('gemini');
+  const [provider, setProvider] = useState<AIProvider>(AIProvider.GEMINI);
+  const [model, setModel] = useState<string>(GeminiModel.GEMINI_2_5_FLASH);
   const [topic, setTopic] = useState('');
   const [result, setResult] = useState<ContentResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -60,6 +62,15 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
       setTopic(initialData.content || '');
     }
   }, [initialData, defaultType, defaultPlatform]);
+
+  // Update default model when provider changes
+  useEffect(() => {
+    if (provider === AIProvider.OPENAI) {
+      setModel(OpenAIModel.GPT_5);
+    } else {
+      setModel(GeminiModel.GEMINI_2_5_FLASH);
+    }
+  }, [provider]);
 
   // Load Mock Accounts based on Client
   useEffect(() => {
@@ -103,7 +114,8 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
         platform,
         tone,
         topic,
-        aiEngine
+        provider,
+        model
       });
       setResult(res);
     } catch (error) {
@@ -216,38 +228,52 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                 <label className="block text-sm font-semibold text-gray-700 mb-3">Escolha o Motor de Inteligência</label>
                 <div className="grid grid-cols-2 gap-4">
                   <button
-                    onClick={() => setAiEngine('gemini')}
-                    className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${aiEngine === 'gemini'
+                    onClick={() => setProvider(AIProvider.GEMINI)}
+                    className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${provider === AIProvider.GEMINI
                       ? 'border-indigo-600 bg-indigo-50'
                       : 'border-gray-200 hover:border-indigo-200 bg-white'
                       }`}
                   >
-                    <div className={`p-2 rounded-lg ${aiEngine === 'gemini' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    <div className={`p-2 rounded-lg ${provider === AIProvider.GEMINI ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
                       <Bot size={20} />
                     </div>
                     <div className="text-left">
-                      <span className={`block text-sm font-bold ${aiEngine === 'gemini' ? 'text-indigo-900' : 'text-gray-600'}`}>Google Gemini</span>
-                      <span className="text-xs text-gray-500">Modelo 3 Pro</span>
+                      <span className={`block text-sm font-bold ${provider === AIProvider.GEMINI ? 'text-indigo-900' : 'text-gray-600'}`}>Google Gemini</span>
+                      <span className="text-xs text-gray-500">Recomendado</span>
                     </div>
-                    {aiEngine === 'gemini' && <div className="ml-auto w-2 h-2 bg-indigo-600 rounded-full"></div>}
+                    {provider === AIProvider.GEMINI && <div className="ml-auto w-2 h-2 bg-indigo-600 rounded-full"></div>}
                   </button>
 
                   <button
-                    onClick={() => setAiEngine('openai')}
-                    className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${aiEngine === 'openai'
+                    onClick={() => setProvider(AIProvider.OPENAI)}
+                    className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${provider === AIProvider.OPENAI
                       ? 'border-teal-600 bg-teal-50'
                       : 'border-gray-200 hover:border-teal-200 bg-white'
                       }`}
                   >
-                    <div className={`p-2 rounded-lg ${aiEngine === 'openai' ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    <div className={`p-2 rounded-lg ${provider === AIProvider.OPENAI ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
                       <Cpu size={20} />
                     </div>
                     <div className="text-left">
-                      <span className={`block text-sm font-bold ${aiEngine === 'openai' ? 'text-teal-900' : 'text-gray-600'}`}>OpenAI GPT-5</span>
+                      <span className={`block text-sm font-bold ${provider === AIProvider.OPENAI ? 'text-teal-900' : 'text-gray-600'}`}>OpenAI GPT</span>
                       <span className="text-xs text-gray-500">Modelo Avançado</span>
                     </div>
-                    {aiEngine === 'openai' && <div className="ml-auto w-2 h-2 bg-teal-600 rounded-full"></div>}
+                    {provider === AIProvider.OPENAI && <div className="ml-auto w-2 h-2 bg-teal-600 rounded-full"></div>}
                   </button>
+                </div>
+
+                {/* Model Selector */}
+                <div className="mt-3">
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Modelo</label>
+                  <select
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+                  >
+                    {AI_MODELS[provider].map((m) => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -324,10 +350,10 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
 
               {/* Engine Badge */}
               <div className="flex justify-end">
-                <span className={`text-xs font-bold px-2 py-1 rounded flex items-center gap-1 ${aiEngine === 'gemini' ? 'bg-indigo-100 text-indigo-700' : 'bg-teal-100 text-teal-700'
+                <span className={`text-xs font-bold px-2 py-1 rounded flex items-center gap-1 ${provider === AIProvider.GEMINI ? 'bg-indigo-100 text-indigo-700' : 'bg-teal-100 text-teal-700'
                   }`}>
-                  {aiEngine === 'gemini' ? <Bot size={12} /> : <Cpu size={12} />}
-                  Gerado por {aiEngine === 'gemini' ? 'Gemini' : 'GPT-5'}
+                  {provider === AIProvider.GEMINI ? <Bot size={12} /> : <Cpu size={12} />}
+                  Gerado por {provider === AIProvider.GEMINI ? 'Gemini' : 'GPT'}
                 </span>
               </div>
 
@@ -526,13 +552,13 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
               disabled={loading || !topic}
               className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition-all text-white ${loading || !topic
                 ? 'bg-gray-400 cursor-not-allowed'
-                : aiEngine === 'gemini'
+                : provider === AIProvider.GEMINI
                   ? 'bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200'
                   : 'bg-teal-600 hover:bg-teal-700 shadow-lg shadow-teal-200'
                 }`}
             >
               {loading ? <Loader2 className="animate-spin" size={20} /> : <Sparkles />}
-              {loading ? 'Criando...' : `Gerar com ${aiEngine === 'gemini' ? 'Gemini' : 'GPT-5'}`}
+              {loading ? 'Criando...' : `Gerar com ${provider === AIProvider.GEMINI ? 'Gemini' : 'GPT'}`}
             </button>
           )}
 

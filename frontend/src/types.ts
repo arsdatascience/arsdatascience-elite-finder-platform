@@ -84,7 +84,8 @@ export interface ContentRequest {
   platform: 'google' | 'meta' | 'instagram' | 'linkedin' | 'blog' | 'site';
   topic: string;
   tone: 'professional' | 'persuasive' | 'urgent' | 'friendly';
-  aiEngine?: 'gemini' | 'openai';
+  provider?: 'gemini' | 'openai';
+  model?: string;
 }
 
 export interface ContentResult {

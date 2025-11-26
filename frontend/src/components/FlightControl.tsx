@@ -22,7 +22,7 @@ interface LeadDetailModalProps {
   onUpdate: (leadId: string, updates: Partial<Lead>) => void;
 }
 
-const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpdate }) => {
+const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose }) => {
   const [notes, setNotes] = useState('');
 
   return (

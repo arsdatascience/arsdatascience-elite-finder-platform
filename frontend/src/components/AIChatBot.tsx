@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 import { ChatMessage } from '@/types';
 import { askEliteAssistant } from '@/services/geminiService';
+import { AIProvider, AI_MODELS, OpenAIModel, GeminiModel } from '@/constants/aiModels';
 
 interface AIChatBotProps {
     mode?: 'widget' | 'page';
@@ -11,6 +12,18 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
     const [isOpen, setIsOpen] = useState(mode === 'page');
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [provider, setProvider] = useState<AIProvider>(AIProvider.OPENAI);
+    const [model, setModel] = useState<string>(OpenAIModel.GPT_5);
+
+    // Atualiza o modelo padrão quando o provedor muda
+    useEffect(() => {
+        if (provider === AIProvider.OPENAI) {
+            setModel(OpenAIModel.GPT_5);
+        } else {
+            setModel(GeminiModel.GEMINI_2_5_FLASH);
+        }
+    }, [provider]);
+
     const [messages, setMessages] = useState<ChatMessage[]>([
         {
             id: 'welcome',
@@ -41,7 +54,7 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
         setIsLoading(true);
 
         try {
-            const response = await askEliteAssistant(messages, currentInput);
+            const response = await askEliteAssistant(messages, currentInput, provider, model);
             const botMessage: ChatMessage = {
                 id: (Date.now() + 1).toString(),
                 sender: 'agent',
@@ -86,6 +99,29 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
                     </button>
                 )}
             </div>
+
+            {mode === 'page' && (
+                <div className="bg-gray-50 p-3 border-b flex gap-3">
+                    <select
+                        value={provider}
+                        onChange={(e) => setProvider(e.target.value as AIProvider)}
+                        className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    >
+                        {Object.values(AIProvider).map((p) => (
+                            <option key={p} value={p}>{p}</option>
+                        ))}
+                    </select>
+                    <select
+                        value={model}
+                        onChange={(e) => setModel(e.target.value)}
+                        className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 flex-1"
+                    >
+                        {AI_MODELS[provider].map((m) => (
+                            <option key={m.id} value={m.id}>{m.name}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.map((msg) => (

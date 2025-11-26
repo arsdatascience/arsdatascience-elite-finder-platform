@@ -1,28 +1,39 @@
-// aiController.js - Implementation using OpenAI GPT-5.1
-// Provider: OpenAI (Custom Endpoint /v1/responses)
+// aiController.js - Implementation using OpenAI and Gemini
+// Provider: OpenAI (Custom Endpoint /v1/responses) and Gemini (Google Generative AI)
 
-const getEffectiveApiKey = () => {
-  // Primary: Try standard OPENAI_API_KEY
-  let apiKey = process.env.OPENAI_API_KEY;
-
-  // Fallback: Search for any env var containing OPENAI and KEY
-  if (!apiKey) {
-    const allKeys = Object.keys(process.env);
-    const openaiKey = allKeys.find(k => k.includes('OPENAI') && k.includes('KEY'));
-    if (openaiKey) {
-      console.log(`⚠️  Using fallback key: ${openaiKey}`);
-      apiKey = process.env[openaiKey];
+const getEffectiveApiKey = (provider = 'openai') => {
+  if (provider === 'gemini') {
+    let apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      const allKeys = Object.keys(process.env);
+      const geminiKey = allKeys.find(k => k.includes('GEMINI') && k.includes('KEY'));
+      if (geminiKey) {
+        console.log(`⚠️  Using fallback Gemini key: ${geminiKey}`);
+        apiKey = process.env[geminiKey];
+      }
     }
+    if (!apiKey) {
+      console.error('⚠️  GEMINI_API_KEY environment variable is not set!');
+      return null;
+    }
+    return apiKey;
+  } else {
+    // Default to OpenAI
+    let apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      const allKeys = Object.keys(process.env);
+      const openaiKey = allKeys.find(k => k.includes('OPENAI') && k.includes('KEY'));
+      if (openaiKey) {
+        console.log(`⚠️  Using fallback OpenAI key: ${openaiKey}`);
+        apiKey = process.env[openaiKey];
+      }
+    }
+    if (!apiKey) {
+      console.error('⚠️  OPENAI_API_KEY environment variable is not set!');
+      return null;
+    }
+    return apiKey;
   }
-
-  if (!apiKey) {
-    console.error('⚠️  OPENAI_API_KEY environment variable is not set!');
-    console.error('Available env vars:', Object.keys(process.env).join(', '));
-    return null;
-  }
-
-  console.log('✅ OpenAI API Key loaded successfully');
-  return apiKey;
 };
 
 const formatChatHistory = (messages) => {
@@ -30,13 +41,11 @@ const formatChatHistory = (messages) => {
 };
 
 // Helper function to call OpenAI API via new /v1/responses endpoint
-// Helper function to call OpenAI API via new /v1/responses endpoint
-const callOpenAI = async (prompt, apiKey, jsonMode = false) => {
-  const MODEL_NAME = "gpt-5.1";
+const callOpenAI = async (prompt, apiKey, model = "gpt-5.1", jsonMode = false) => {
   const API_URL = "https://api.openai.com/v1/responses";
 
   const requestBody = {
-    model: MODEL_NAME,
+    model: model,
     input: prompt
   };
 
@@ -83,11 +92,61 @@ const callOpenAI = async (prompt, apiKey, jsonMode = false) => {
   }
 };
 
-const analyzeChatConversation = async (req, res) => {
-  const { messages } = req.body;
-  const apiKey = getEffectiveApiKey();
+// Helper function to call Gemini API
+const callGemini = async (prompt, apiKey, model = "gemini-2.0-flash", jsonMode = false) => {
+  // Map internal model names to API model names if necessary, or use direct
+  // Assuming model passed is like 'gemini-2.0-flash'
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-  if (!apiKey) return res.status(500).json({ error: "OpenAI API Key not configured" });
+  let finalPrompt = prompt;
+  if (jsonMode) {
+    finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON.";
+  }
+
+  const requestBody = {
+    contents: [{
+      parts: [{
+        text: finalPrompt
+      }]
+    }]
+  };
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Gemini API Error (${response.status}): ${errorData}`);
+    }
+
+    const data = await response.json();
+
+    let content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!content) {
+      console.error("Unknown response structure:", JSON.stringify(data, null, 2));
+      throw new Error("Empty or unknown response structure from Gemini API");
+    }
+
+    return content;
+
+  } catch (error) {
+    console.error("Gemini API Call Failed:", error);
+    throw error;
+  }
+};
+
+const analyzeChatConversation = async (req, res) => {
+  const { messages, provider = 'openai', model } = req.body;
+  const apiKey = getEffectiveApiKey(provider);
+
+  if (!apiKey) return res.status(500).json({ error: `${provider.toUpperCase()} API Key not configured` });
 
   // Validate messages input
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -121,11 +180,15 @@ const analyzeChatConversation = async (req, res) => {
   `;
 
   try {
-    console.log("🔍 Starting Chat Analysis...");
+    console.log(`🔍 Starting Chat Analysis using ${provider} (${model || 'default'})...`);
 
-    // Use jsonMode = false to avoid potential API issues with specific modes
-    // We rely on the prompt instructions to get JSON
-    const text = await callOpenAI(prompt, apiKey, false);
+    let text;
+    if (provider === 'gemini') {
+      text = await callGemini(prompt, apiKey, model, false);
+    } else {
+      text = await callOpenAI(prompt, apiKey, model, false);
+    }
+
     console.log("📩 Raw AI Response for Analysis:", text);
 
     // Robust JSON extraction
@@ -166,9 +229,11 @@ const analyzeChatConversation = async (req, res) => {
 
 const generateMarketingContent = async (req, res) => {
   const request = req.body;
-  const apiKey = getEffectiveApiKey();
+  const provider = request.provider || 'openai';
+  const model = request.model;
+  const apiKey = getEffectiveApiKey(provider);
 
-  if (!apiKey) return res.status(500).json({ error: "OpenAI API Key not configured" });
+  if (!apiKey) return res.status(500).json({ error: `${provider.toUpperCase()} API Key not configured` });
 
   let typeDescription = "";
   switch (request.type) {
@@ -211,7 +276,13 @@ const generateMarketingContent = async (req, res) => {
   `;
 
   try {
-    const text = await callOpenAI(prompt, apiKey, true);
+    let text;
+    if (provider === 'gemini') {
+      text = await callGemini(prompt, apiKey, model, true);
+    } else {
+      text = await callOpenAI(prompt, apiKey, model, true);
+    }
+
     const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
     res.json(JSON.parse(cleanText));
   } catch (error) {
@@ -221,10 +292,10 @@ const generateMarketingContent = async (req, res) => {
 };
 
 const askEliteAssistant = async (req, res) => {
-  const { history, question } = req.body;
-  const apiKey = getEffectiveApiKey();
+  const { history, question, provider = 'openai', model } = req.body;
+  const apiKey = getEffectiveApiKey(provider);
 
-  if (!apiKey) return res.status(500).json({ error: "OpenAI API Key not configured" });
+  if (!apiKey) return res.status(500).json({ error: `${provider.toUpperCase()} API Key not configured` });
 
   // Validate history parameter
   if (!history || !Array.isArray(history)) {
@@ -258,7 +329,12 @@ const askEliteAssistant = async (req, res) => {
   `;
 
   try {
-    const text = await callOpenAI(prompt, apiKey, false);
+    let text;
+    if (provider === 'gemini') {
+      text = await callGemini(prompt, apiKey, model, false);
+    } else {
+      text = await callOpenAI(prompt, apiKey, model, false);
+    }
     res.json({ answer: text });
   } catch (error) {
     console.error("Chat Assistant Failed:", error);

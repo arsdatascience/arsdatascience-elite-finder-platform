@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Loader2, Bot, BrainCircuit, Sparkles, CheckCircle, AlertTriangle, ThumbsUp } from 'lucide-react';
 import { ChatMessage, AnalysisResult } from '../types';
-import { analyzeChatConversation } from '../services/geminiService';
+import { analyzeChatConversation, askEliteAssistant } from '../services/geminiService';
+import { AIProvider, AI_MODELS, OpenAIModel, GeminiModel } from '@/constants/aiModels';
 
 export const ChatMode: React.FC = () => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -9,7 +10,18 @@ export const ChatMode: React.FC = () => {
     const [isTyping, setIsTyping] = useState(false);
     const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [provider, setProvider] = useState<AIProvider>(AIProvider.OPENAI);
+    const [model, setModel] = useState<string>(OpenAIModel.GPT_5);
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Atualiza o modelo padrão quando o provedor muda
+    useEffect(() => {
+        if (provider === AIProvider.OPENAI) {
+            setModel(OpenAIModel.GPT_5);
+        } else {
+            setModel(GeminiModel.GEMINI_2_5_FLASH);
+        }
+    }, [provider]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -28,31 +40,17 @@ export const ChatMode: React.FC = () => {
         };
 
         setMessages(prev => [...prev, userMessage]);
+        const currentInput = input;
         setInput('');
         setIsTyping(true);
 
         try {
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-            const response = await fetch(`${API_URL}/api/ai/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    history: [...messages, userMessage].map(m => ({
-                        sender: m.sender, // Backend expects 'sender' and 'text' in history objects based on aiController logic
-                        text: m.text
-                    })),
-                    question: input
-                })
-            });
-
-            if (!response.ok) throw new Error('Failed to get AI response');
-
-            const data = await response.json();
+            const response = await askEliteAssistant(messages, currentInput, provider, model);
 
             const aiMessage: ChatMessage = {
                 id: (Date.now() + 1).toString(),
                 sender: 'agent',
-                text: data.answer || 'Desculpe, não consegui gerar uma resposta.',
+                text: response || 'Desculpe, não consegui gerar uma resposta.',
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             };
 
@@ -76,7 +74,7 @@ export const ChatMode: React.FC = () => {
 
         setIsAnalyzing(true);
         try {
-            const result = await analyzeChatConversation(messages);
+            const result = await analyzeChatConversation(messages, provider, model);
             setAnalysis(result);
         } catch (e) {
             console.error(e);
@@ -91,7 +89,7 @@ export const ChatMode: React.FC = () => {
             {/* Chat Area */}
             <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 {/* Header */}
-                <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-blue-100">
+                <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-blue-100 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white">
                             <Bot size={24} />
@@ -100,6 +98,26 @@ export const ChatMode: React.FC = () => {
                             <h3 className="font-bold text-gray-800">Elite Strategist IA</h3>
                             <p className="text-xs text-gray-600">Especialista em Ads, Social Media e Funis</p>
                         </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <select
+                            value={provider}
+                            onChange={(e) => setProvider(e.target.value as AIProvider)}
+                            className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1"
+                        >
+                            {Object.values(AIProvider).map((p) => (
+                                <option key={p} value={p}>{p}</option>
+                            ))}
+                        </select>
+                        <select
+                            value={model}
+                            onChange={(e) => setModel(e.target.value)}
+                            className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-1 w-40"
+                        >
+                            {AI_MODELS[provider].map((m) => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                            ))}
+                        </select>
                     </div>
                 </div>
 
