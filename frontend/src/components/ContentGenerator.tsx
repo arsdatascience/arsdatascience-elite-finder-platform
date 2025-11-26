@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ContentRequest, ContentResult } from '../types';
 import { generateMarketingContent } from '../services/geminiService';
 import { saveSocialPost } from '../services/socialService';
-import { Sparkles, X, Copy, Loader2, Image as ImageIcon, Hash, MousePointerClick, Bot, Cpu, Calendar as CalendarIcon, UploadCloud, CheckCircle, UserCircle } from 'lucide-react';
+import { Sparkles, X, Copy, Loader2, Image as ImageIcon, Hash, MousePointerClick, Bot, Cpu, Calendar as CalendarIcon, UploadCloud, CheckCircle, UserCircle, Building2 } from 'lucide-react';
+import { CLIENTS_LIST } from '../constants';
 
 interface ContentGeneratorProps {
   isOpen: boolean;
@@ -47,6 +48,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Account Selection
+  const [selectedClient, setSelectedClient] = useState<string>('');
   const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string>('');
 
@@ -58,19 +60,36 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
     }
   }, [initialData, defaultType, defaultPlatform]);
 
-  // Load Mock Accounts (Simulating API)
+  // Load Mock Accounts based on Client
   useEffect(() => {
-    // In production, this would fetch from /api/clients/1/social-accounts
-    const mockAccounts: SocialAccount[] = [
-      { id: '1', platform: 'instagram', username: '@elite.finder', avatar: 'https://i.pravatar.cc/150?u=elite' },
-      { id: '2', platform: 'linkedin', username: 'Elite Finder Official', avatar: 'https://i.pravatar.cc/150?u=linkedin' },
-      { id: '3', platform: 'facebook', username: 'Elite Finder Page', avatar: 'https://i.pravatar.cc/150?u=facebook' },
-    ];
-    setSocialAccounts(mockAccounts);
-    if (mockAccounts.length > 0) {
-      setSelectedAccount(mockAccounts[0].id);
+    // Default to first real client if none selected
+    if (!selectedClient && CLIENTS_LIST.length > 1) {
+      setSelectedClient(CLIENTS_LIST[1].id); // Skip 'all'
     }
   }, []);
+
+  useEffect(() => {
+    if (!selectedClient) return;
+
+    // Simulate fetching accounts for the selected client
+    // In production: /api/clients/${selectedClient}/social-accounts
+    const getMockAccounts = (clientId: string) => {
+      const clientName = CLIENTS_LIST.find(c => c.id === clientId)?.name || 'Client';
+      const suffix = clientId === '1' ? 'Official' : clientId === '2' ? 'Padaria' : 'Consultoria';
+
+      return [
+        { id: `${clientId}_1`, platform: 'instagram', username: `@${suffix.toLowerCase().replace(/\s/g, '')}`, avatar: `https://i.pravatar.cc/150?u=${clientId}_ig` },
+        { id: `${clientId}_2`, platform: 'facebook', username: `${clientName} FB`, avatar: `https://i.pravatar.cc/150?u=${clientId}_fb` },
+        { id: `${clientId}_3`, platform: 'linkedin', username: `${clientName} LinkedIn`, avatar: `https://i.pravatar.cc/150?u=${clientId}_li` },
+      ];
+    };
+
+    const accounts = getMockAccounts(selectedClient);
+    setSocialAccounts(accounts);
+    if (accounts.length > 0) {
+      setSelectedAccount(accounts[0].id);
+    }
+  }, [selectedClient]);
 
   if (!isOpen && mode === 'modal') return null;
 
@@ -129,6 +148,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
         scheduledTime,
         addToCalendar,
         image: selectedImage,
+        clientId: selectedClient,
         accountId: selectedAccount // Include selected account
       };
 
@@ -375,22 +395,42 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                   {/* Date, Time & Account */}
                   <div className="space-y-4">
 
-                    {/* Account Selector */}
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Conta de Publicação</label>
-                      <div className="relative">
-                        <select
-                          className="w-full border border-gray-300 rounded-lg p-2.5 pl-9 text-sm outline-none focus:ring-2 focus:ring-purple-500 appearance-none bg-white"
-                          value={selectedAccount}
-                          onChange={(e) => setSelectedAccount(e.target.value)}
-                        >
-                          {socialAccounts.map(acc => (
-                            <option key={acc.id} value={acc.id}>
-                              {acc.username} ({acc.platform})
-                            </option>
-                          ))}
-                        </select>
-                        <UserCircle size={18} className="absolute left-2.5 top-2.5 text-gray-400" />
+                    {/* Client & Account Selector */}
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cliente (Usuário)</label>
+                        <div className="relative">
+                          <select
+                            className="w-full border border-gray-300 rounded-lg p-2.5 pl-9 text-sm outline-none focus:ring-2 focus:ring-purple-500 appearance-none bg-white"
+                            value={selectedClient}
+                            onChange={(e) => setSelectedClient(e.target.value)}
+                          >
+                            {CLIENTS_LIST.filter(c => c.id !== 'all').map(client => (
+                              <option key={client.id} value={client.id}>
+                                {client.name}
+                              </option>
+                            ))}
+                          </select>
+                          <Building2 size={18} className="absolute left-2.5 top-2.5 text-gray-400" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Conta de Publicação</label>
+                        <div className="relative">
+                          <select
+                            className="w-full border border-gray-300 rounded-lg p-2.5 pl-9 text-sm outline-none focus:ring-2 focus:ring-purple-500 appearance-none bg-white"
+                            value={selectedAccount}
+                            onChange={(e) => setSelectedAccount(e.target.value)}
+                          >
+                            {socialAccounts.map(acc => (
+                              <option key={acc.id} value={acc.id}>
+                                {acc.username} ({acc.platform})
+                              </option>
+                            ))}
+                          </select>
+                          <UserCircle size={18} className="absolute left-2.5 top-2.5 text-gray-400" />
+                        </div>
                       </div>
                     </div>
 
