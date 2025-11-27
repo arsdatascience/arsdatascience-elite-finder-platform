@@ -28,6 +28,83 @@ BEGIN
     END IF;
 END $$;
 
+-- Adicionar colunas extras para membros da equipe
+DO $$
+BEGIN
+    -- Username
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='username') THEN
+        ALTER TABLE users ADD COLUMN username VARCHAR(100) UNIQUE;
+    END IF;
+    
+    -- First Name e Last Name (separados do campo name)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='first_name') THEN
+        ALTER TABLE users ADD COLUMN first_name VARCHAR(100);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='last_name') THEN
+        ALTER TABLE users ADD COLUMN last_name VARCHAR(100);
+    END IF;
+    
+    -- Telefone
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='phone') THEN
+        ALTER TABLE users ADD COLUMN phone VARCHAR(20);
+    END IF;
+    
+    -- CPF
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='cpf') THEN
+        ALTER TABLE users ADD COLUMN cpf VARCHAR(14) UNIQUE;
+    END IF;
+    
+    -- Data de Registro
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='registration_date') THEN
+        ALTER TABLE users ADD COLUMN registration_date DATE DEFAULT CURRENT_DATE;
+    END IF;
+    
+    -- Status
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='status') THEN
+        ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive'));
+    END IF;
+    
+    -- Endereço
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_street') THEN
+        ALTER TABLE users ADD COLUMN address_street VARCHAR(255);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_number') THEN
+        ALTER TABLE users ADD COLUMN address_number VARCHAR(20);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_complement') THEN
+        ALTER TABLE users ADD COLUMN address_complement VARCHAR(100);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_district') THEN
+        ALTER TABLE users ADD COLUMN address_district VARCHAR(100);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_city') THEN
+        ALTER TABLE users ADD COLUMN address_city VARCHAR(100);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_state') THEN
+        ALTER TABLE users ADD COLUMN address_state CHAR(2);
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_zip') THEN
+        ALTER TABLE users ADD COLUMN address_zip VARCHAR(10);
+    END IF;
+    
+    -- Permissões (JSON)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='permissions') THEN
+        ALTER TABLE users ADD COLUMN permissions JSONB DEFAULT '[]'::jsonb;
+    END IF;
+    
+    -- Updated At
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='updated_at') THEN
+        ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT NOW();
+    END IF;
+END $$;
+
 -- ============================================
 -- CLIENTS
 -- ============================================
@@ -260,3 +337,4 @@ CREATE TABLE IF NOT EXISTS device_stats (
     conversions INTEGER,
     created_at TIMESTAMP DEFAULT NOW()
 );
+

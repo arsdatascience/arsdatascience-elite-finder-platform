@@ -12,6 +12,7 @@ const memberSchema = z.object({
   firstName: z.string().min(2, 'Nome obrigatório'),
   lastName: z.string().min(2, 'Sobrenome obrigatório'),
   email: z.string().email('Email inválido'),
+  password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
   phone: z.string().min(14, 'Telefone inválido'), // Ajustado para validar com máscara
   cpf: z.string().min(14, 'CPF inválido'), // Ajustado para validar com máscara
   registrationDate: z.string().min(1, 'Data obrigatória'),
@@ -26,6 +27,7 @@ const memberSchema = z.object({
     zip: z.string().min(9, 'CEP inválido') // Ajustado para validar com máscara
   })
 });
+
 
 type MemberFormData = z.infer<typeof memberSchema>;
 
@@ -104,6 +106,32 @@ const maskCEP = (value: string) => {
     .substr(0, 9);
 };
 
+// Gerador de Senha Segura
+const generateSecurePassword = (): string => {
+  const length = 16;
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const numbers = '0123456789';
+  const symbols = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+  const allChars = uppercase + lowercase + numbers + symbols;
+
+  let password = '';
+  // Garantir pelo menos um de cada tipo
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += symbols[Math.floor(Math.random() * symbols.length)];
+
+  // Completar o restante
+  for (let i = password.length; i < length; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+
+  // Embaralhar a senha
+  return password.split('').sort(() => Math.random() - 0.5).join('');
+};
+
+
 export const Settings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('integrations');
 
@@ -161,9 +189,10 @@ export const Settings: React.FC = () => {
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [currentMember, setCurrentMember] = useState<TeamMember>(INITIAL_MEMBER_STATE);
   const [isEditingMember, setIsEditingMember] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // React Hook Form Setup
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<MemberFormData>({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<MemberFormData>({
     resolver: zodResolver(memberSchema),
     defaultValues: INITIAL_MEMBER_STATE
   });
@@ -175,16 +204,58 @@ export const Settings: React.FC = () => {
     }
   }, [isMemberModalOpen, currentMember, reset]);
 
-  const onSubmitMember = (data: MemberFormData) => {
-    if (isEditingMember) {
-      setTeamMembers(prev => prev.map(m => m.id === currentMember.id ? { ...m, ...data } : m));
-      alert('Membro atualizado com sucesso!');
-    } else {
-      const newMember = { ...data, id: Date.now(), status: 'active' as const, permissions: [] };
-      setTeamMembers(prev => [...prev, newMember]);
-      alert('Membro adicionado com sucesso!');
+  const onSubmitMember = async (data: MemberFormData) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+      if (isEditingMember) {
+        // Atualizar membro existente
+        const response = await fetch(`${apiUrl}/api/team/members/${currentMember.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...data,
+            avatarUrl: currentMember.avatarUrl,
+            status: 'active'
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Erro ao atualizar membro');
+        }
+
+        const result = await response.json();
+        setTeamMembers(prev => prev.map(m => m.id === currentMember.id ? { ...m, ...data } : m));
+        alert('✅ Membro atualizado com sucesso!');
+      } else {
+        // Criar novo membro
+        const response = await fetch(`${apiUrl}/api/team/members`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...data,
+            status: 'active'
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Erro ao criar membro');
+        }
+
+        const result = await response.json();
+        const newMember = { ...data, id: result.member.id, status: 'active' as const, permissions: [] };
+        setTeamMembers(prev => [...prev, newMember]);
+        alert('✅ Membro adicionado com sucesso! Senha: ' + data.password);
+      }
+
+      setIsMemberModalOpen(false);
+      setShowPassword(false);
+    } catch (error: any) {
+      console.error('Erro ao salvar membro:', error);
+      alert('❌ ' + error.message);
     }
-    setIsMemberModalOpen(false);
   };
 
   // Carregar chaves salvas
@@ -689,6 +760,38 @@ export const Settings: React.FC = () => {
                     <label className="block text-xs font-medium text-gray-700 mb-1">E-mail</label>
                     <input {...register('email')} className={`w-full p-2 border rounded-lg ${errors.email ? 'border-red-500' : ''}`} />
                     {errors.email && <span className="text-xs text-red-500">{errors.email.message}</span>}
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Senha</label>
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <input
+                          {...register('password')}
+                          type={showPassword ? 'text' : 'password'}
+                          className={`w-full p-2 pr-10 border rounded-lg ${errors.password ? 'border-red-500' : ''}`}
+                          placeholder="Mínimo 8 caracteres"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newPassword = generateSecurePassword();
+                          setValue('password', newPassword);
+                          setShowPassword(true);
+                        }}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-xs whitespace-nowrap flex items-center gap-2"
+                      >
+                        <Shield size={16} /> Gerar Senha
+                      </button>
+                    </div>
+                    {errors.password && <span className="text-xs text-red-500">{errors.password.message}</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Telefone</label>

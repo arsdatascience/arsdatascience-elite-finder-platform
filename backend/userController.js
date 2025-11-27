@@ -104,9 +104,200 @@ const login = async (req, res) => {
     }
 };
 
+/**
+ * Get all team members
+ */
+const getTeamMembers = async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT 
+                id, username, first_name, last_name, email, phone, cpf,
+                registration_date, role, status, avatar_url,
+                address_street, address_number, address_complement,
+                address_district, address_city, address_state, address_zip,
+                permissions, created_at, updated_at
+            FROM users
+            WHERE status IS NOT NULL
+            ORDER BY created_at DESC
+        `);
+
+        // Formatar dados para o frontend
+        const members = result.rows.map(row => ({
+            id: row.id,
+            avatarUrl: row.avatar_url,
+            username: row.username,
+            firstName: row.first_name,
+            lastName: row.last_name,
+            email: row.email,
+            phone: row.phone,
+            cpf: row.cpf,
+            registrationDate: row.registration_date,
+            role: row.role,
+            status: row.status,
+            address: {
+                street: row.address_street,
+                number: row.address_number,
+                complement: row.address_complement,
+                district: row.address_district,
+                city: row.address_city,
+                state: row.address_state,
+                zip: row.address_zip
+            },
+            permissions: row.permissions || []
+        }));
+
+        res.json({ success: true, members });
+    } catch (err) {
+        console.error('Error fetching team members:', err);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
+
+/**
+ * Create a new team member
+ * Expected body: { username, firstName, lastName, email, phone, cpf, registrationDate, role, address, permissions }
+ */
+const createTeamMember = async (req, res) => {
+    const {
+        avatarUrl, username, firstName, lastName, email, phone, cpf,
+        registrationDate, role, status, address, permissions
+    } = req.body;
+
+    if (!username || !firstName || !lastName || !email) {
+        return res.status(400).json({ success: false, error: 'Campos obrigatórios faltando' });
+    }
+
+    try {
+        // Gerar senha padrão (pode ser alterada depois)
+        const defaultPassword = 'Elite@2024';
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(defaultPassword, salt);
+
+        const result = await db.query(`
+            INSERT INTO users (
+                username, first_name, last_name, email, phone, cpf,
+                registration_date, role, status, password_hash, avatar_url,
+                address_street, address_number, address_complement,
+                address_district, address_city, address_state, address_zip,
+                permissions, name
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+            RETURNING id, username, first_name, last_name, email, phone, cpf,
+                      registration_date, role, status, avatar_url, created_at
+        `, [
+            username, firstName, lastName, email, phone, cpf,
+            registrationDate || new Date().toISOString().split('T')[0],
+            role || 'Vendedor',
+            status || 'active',
+            password_hash,
+            avatarUrl || null,
+            address?.street, address?.number, address?.complement,
+            address?.district, address?.city, address?.state, address?.zip,
+            JSON.stringify(permissions || []),
+            `${firstName} ${lastName}` // Campo name para compatibilidade
+        ]);
+
+        res.json({ success: true, member: result.rows[0] });
+    } catch (err) {
+        console.error('Error creating team member:', err);
+        if (err.code === '23505') { // Unique violation
+            return res.status(400).json({ success: false, error: 'Email ou username já cadastrado' });
+        }
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
+
+/**
+ * Update a team member
+ * Expected body: { username, firstName, lastName, email, phone, cpf, registrationDate, role, status, address, permissions }
+ */
+const updateTeamMember = async (req, res) => {
+    const { id } = req.params;
+    const {
+        avatarUrl, username, firstName, lastName, email, phone, cpf,
+        registrationDate, role, status, address, permissions
+    } = req.body;
+
+    try {
+        const result = await db.query(`
+            UPDATE users SET
+                username = $1,
+                first_name = $2,
+                last_name = $3,
+                email = $4,
+                phone = $5,
+                cpf = $6,
+                registration_date = $7,
+                role = $8,
+                status = $9,
+                avatar_url = $10,
+                address_street = $11,
+                address_number = $12,
+                address_complement = $13,
+                address_district = $14,
+                address_city = $15,
+                address_state = $16,
+                address_zip = $17,
+                permissions = $18,
+                name = $19,
+                updated_at = NOW()
+            WHERE id = $20
+            RETURNING id, username, first_name, last_name, email, phone, cpf,
+                      registration_date, role, status, avatar_url, updated_at
+        `, [
+            username, firstName, lastName, email, phone, cpf,
+            registrationDate, role, status, avatarUrl,
+            address?.street, address?.number, address?.complement,
+            address?.district, address?.city, address?.state, address?.zip,
+            JSON.stringify(permissions || []),
+            `${firstName} ${lastName}`,
+            id
+        ]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Membro não encontrado' });
+        }
+
+        res.json({ success: true, member: result.rows[0] });
+    } catch (err) {
+        console.error('Error updating team member:', err);
+        if (err.code === '23505') {
+            return res.status(400).json({ success: false, error: 'Email ou username já cadastrado' });
+        }
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
+
+/**
+ * Delete a team member (soft delete - set status to inactive)
+ */
+const deleteTeamMember = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const result = await db.query(`
+            UPDATE users SET status = 'inactive', updated_at = NOW()
+            WHERE id = $1
+            RETURNING id
+        `, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Membro não encontrado' });
+        }
+
+        res.json({ success: true, message: 'Membro removido com sucesso' });
+    } catch (err) {
+        console.error('Error deleting team member:', err);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
+
 module.exports = {
     upload,
     updateAvatar,
     createUser,
-    login
+    login,
+    getTeamMembers,
+    createTeamMember,
+    updateTeamMember,
+    deleteTeamMember
 };

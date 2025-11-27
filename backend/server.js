@@ -214,6 +214,12 @@ app.post('/api/auth/login', userCtrl.login);
 // Update avatar for a user (requires multipart/form-data)
 app.post('/api/users/:id/avatar', userCtrl.upload.single('avatar'), userCtrl.updateAvatar);
 
+// --- TEAM MEMBERS MANAGEMENT ---
+app.get('/api/team/members', userCtrl.getTeamMembers);
+app.post('/api/team/members', userCtrl.createTeamMember);
+app.put('/api/team/members/:id', userCtrl.updateTeamMember);
+app.delete('/api/team/members/:id', userCtrl.deleteTeamMember);
+
 // --- AGENT TEMPLATES ---
 const templatesController = require('./templatesController');
 app.use('/api/templates', templatesController);
