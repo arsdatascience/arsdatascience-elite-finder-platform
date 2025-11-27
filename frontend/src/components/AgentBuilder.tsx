@@ -837,9 +837,28 @@ export const AgentBuilder: React.FC = () => {
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Filtros de Especialização</label>
                                             <div className="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-2 bg-gray-50">
-                                                <div className="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-2 bg-gray-50">
-                                                    <p className="text-xs text-gray-500 p-2">Nenhum filtro de especialização disponível.</p>
-                                                </div>
+                                                {['Marketing Digital', 'Vendas B2B', 'Vendas B2C', 'E-commerce', 'Redes Sociais', 'SEO/SEM', 'Geração de Leads'].map((filter, idx) => (
+                                                    <label key={idx} className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={config.vectorConfig.filters.includes(filter)}
+                                                            onChange={(e) => {
+                                                                const newFilters = e.target.checked
+                                                                    ? [...config.vectorConfig.filters, filter]
+                                                                    : config.vectorConfig.filters.filter(f => f !== filter);
+                                                                setConfig({
+                                                                    ...config,
+                                                                    vectorConfig: {
+                                                                        ...config.vectorConfig,
+                                                                        filters: newFilters
+                                                                    }
+                                                                });
+                                                            }}
+                                                            className="rounded text-green-600 focus:ring-green-500"
+                                                        />
+                                                        <span className="text-sm text-gray-700">{filter}</span>
+                                                    </label>
+                                                ))}
                                             </div>
                                         </div>
                                         <div className="space-y-4">
