@@ -122,7 +122,7 @@ export const ChatMode: React.FC = () => {
                                 onChange={(e) => setModel(e.target.value)}
                                 className="text-xs font-medium border-none bg-transparent focus:ring-0 text-gray-700 cursor-pointer py-0 pl-1 pr-6 w-32"
                             >
-                                {AI_MODELS[provider].map((m) => (
+                                {AI_MODELS[provider]?.map((m) => (
                                     <option key={m.id} value={m.id}>{m.name}</option>
                                 ))}
                             </select>
@@ -146,7 +146,9 @@ export const ChatMode: React.FC = () => {
                                 ? 'bg-blue-600 text-white rounded-tr-none shadow-md shadow-blue-200'
                                 : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none shadow-sm'
                                 }`}>
-                                <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                                <p className="text-sm whitespace-pre-wrap">
+                                    {typeof msg.text === 'object' ? JSON.stringify(msg.text) : msg.text}
+                                </p>
                                 <p className={`text-[10px] mt-1 text-right ${msg.sender === 'agent' ? 'text-blue-100' : 'text-gray-400'}`}>
                                     {msg.timestamp}
                                 </p>
@@ -250,7 +252,7 @@ export const ChatMode: React.FC = () => {
                         <div>
                             <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Recomendações</h4>
                             <ul className="space-y-2">
-                                {analysis.suggestions.map((action: string, idx: number) => (
+                                {analysis.suggestions?.map((action: string, idx: number) => (
                                     <li key={idx} className="flex items-start gap-2 text-xs text-gray-700">
                                         <span className="text-green-600 font-bold">✓</span>
                                         {action}

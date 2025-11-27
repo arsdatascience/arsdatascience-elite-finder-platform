@@ -249,7 +249,9 @@ export const WhatsAppSimulator: React.FC = () => {
                                             <span className="text-sm underline">{msg.content}</span>
                                         </div>
                                     ) : (
-                                        <p className="text-sm text-gray-800 leading-relaxed">{msg.content}</p>
+                                        <p className="text-sm text-gray-800 leading-relaxed">
+                                            {typeof msg.content === 'object' ? JSON.stringify(msg.content) : msg.content}
+                                        </p>
                                     )}
 
                                     <div className="flex items-center justify-end gap-1 mt-1">
