@@ -49,10 +49,13 @@ router.post('/', async (req, res) => {
             ]);
             const agentId = agentResult.rows[0].id;
 
-            // 2. Inserir AI Config
+            // 2. Inserir AI Config com parâmetros avançados
             await client.query(`
-                INSERT INTO agent_ai_configs (chatbot_id, provider, model, temperature, top_p, top_k, max_tokens, timeout, retries)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                INSERT INTO agent_ai_configs (
+                    chatbot_id, provider, model, temperature, top_p, top_k, max_tokens, timeout, retries,
+                    frequency_penalty, presence_penalty, stop_sequences, response_mode, candidate_count
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             `, [
                 agentId,
                 aiConfig.provider,
@@ -62,7 +65,12 @@ router.post('/', async (req, res) => {
                 aiConfig.topK,
                 aiConfig.maxTokens,
                 aiConfig.timeout,
-                aiConfig.retries
+                aiConfig.retries,
+                aiConfig.frequencyPenalty || 0.0,
+                aiConfig.presencePenalty || 0.0,
+                aiConfig.stopSequences || null,
+                aiConfig.responseMode || 'balanced',
+                aiConfig.candidateCount || 1
             ]);
 
             // 3. Inserir Vector Config

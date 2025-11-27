@@ -195,6 +195,7 @@ app.post('/api/ai/analyze', aiController.analyzeChatConversation);
 app.post('/api/ai/generate', aiController.generateMarketingContent);
 app.post('/api/ai/chat', aiController.askEliteAssistant);
 
+
 // --- USER MANAGEMENT ---
 const userCtrl = require('./userController');
 
@@ -209,6 +210,10 @@ app.post('/api/auth/login', userCtrl.login);
 
 // Update avatar for a user (requires multipart/form-data)
 app.post('/api/users/:id/avatar', userCtrl.upload.single('avatar'), userCtrl.updateAvatar);
+
+// --- AGENT TEMPLATES ---
+const templatesController = require('./templatesController');
+app.use('/api/templates', templatesController);
 
 
 // --- SOCIAL MEDIA INTEGRATIONS ---
