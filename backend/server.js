@@ -278,6 +278,10 @@ io.on('connection', (socket) => {
 // Tornar io acessível globalmente ou passar para controllers
 app.set('io', io);
 
+// --- ADMIN TOOLS ---
+const adminCtrl = require('./adminController');
+app.post('/api/admin/cleanup', adminCtrl.cleanupDatabase);
+
 server.listen(PORT, () => {
   console.log(`🔥 Server running on port ${PORT}`);
 });

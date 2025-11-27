@@ -83,6 +83,17 @@ const getCampaigns = async (req, res) => {
         }
 
         const result = await pool.query(query, params);
+
+        if (result.rows.length === 0) {
+            // Mock data for demonstration if DB is empty
+            return res.json([
+                { id: 1, name: 'Campanha Verão 2025', platform: 'google', status: 'active', budget: 5000, spent: 2300, ctr: 2.5, roas: 4.1, conversions: 150, created_at: new Date() },
+                { id: 2, name: 'Black Friday Antecipada', platform: 'meta', status: 'active', budget: 3000, spent: 1200, ctr: 1.8, roas: 3.5, conversions: 80, created_at: new Date() },
+                { id: 3, name: 'Retargeting Institucional', platform: 'meta', status: 'paused', budget: 1000, spent: 450, ctr: 0.9, roas: 2.0, conversions: 15, created_at: new Date() },
+                { id: 4, name: 'Institucional Search', platform: 'google', status: 'learning', budget: 2000, spent: 150, ctr: 3.2, roas: 0, conversions: 2, created_at: new Date() }
+            ]);
+        }
+
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching campaigns:', error);
