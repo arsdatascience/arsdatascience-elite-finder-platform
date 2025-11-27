@@ -127,6 +127,11 @@ export const AgentBuilder: React.FC = () => {
     const [qdrantCollections, setQdrantCollections] = useState<any[]>([]);
     const [loadingCollections, setLoadingCollections] = useState(false);
     const [qdrantConnected, setQdrantConnected] = useState(false);
+
+    // Estado para Salvar Template
+    const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+    const [templateName, setTemplateName] = useState('');
+    const [templateDescription, setTemplateDescription] = useState('');
     const saveAgentMutation = useMutation({
         mutationFn: async (agentConfig: AgentConfig) => {
             const response = await fetch('http://localhost:3001/api/agents', {
@@ -240,6 +245,40 @@ export const AgentBuilder: React.FC = () => {
         }
     }, [activeTab]);
 
+    const handleSaveTemplate = async () => {
+        if (!templateName) {
+            alert('Por favor, dê um nome ao template.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    template_id: templateName.toLowerCase().replace(/\s+/g, '_'),
+                    template_name: templateName,
+                    template_description: templateDescription,
+                    category: 'custom',
+                    base_config: config,
+                    default_parameters: [] // Pode ser expandido no futuro
+                })
+            });
+
+            if (response.ok) {
+                alert('Template salvo com sucesso!');
+                setShowSaveTemplateModal(false);
+                setTemplateName('');
+                setTemplateDescription('');
+            } else {
+                const error = await response.json();
+                alert('Erro ao salvar template: ' + error.error);
+            }
+        } catch (error: any) {
+            alert('Erro ao salvar template: ' + error.message);
+        }
+    };
+
     return (
         <div className="flex flex-col h-full bg-gray-50 animate-fade-in min-h-screen">
             {/* Header */}
@@ -260,6 +299,12 @@ export const AgentBuilder: React.FC = () => {
                     </button>
                     <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium flex items-center gap-2">
                         <Wand2 size={18} /> Configuração Mágica
+                    </button>
+                    <button
+                        onClick={() => setShowSaveTemplateModal(true)}
+                        className="px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg font-medium flex items-center gap-2 border border-purple-200"
+                    >
+                        <Save size={18} /> Salvar como Template
                     </button>
                     <button
                         onClick={handleSaveAgent}
@@ -1000,6 +1045,55 @@ export const AgentBuilder: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Modal Salvar Template */}
+            {showSaveTemplateModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl animate-fade-in">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <Save className="text-purple-600" /> Salvar como Template
+                        </h3>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Template</label>
+                                <input
+                                    type="text"
+                                    value={templateName}
+                                    onChange={(e) => setTemplateName(e.target.value)}
+                                    placeholder="Ex: Bot Imobiliária Premium"
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                                <textarea
+                                    value={templateDescription}
+                                    onChange={(e) => setTemplateDescription(e.target.value)}
+                                    placeholder="Descreva o propósito deste template..."
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 h-24 resize-none"
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button
+                                    onClick={() => setShowSaveTemplateModal(false)}
+                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleSaveTemplate}
+                                    className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700"
+                                >
+                                    Salvar Template
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

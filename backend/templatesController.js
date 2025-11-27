@@ -21,6 +21,50 @@ router.get('/', async (req, res) => {
     }
 });
 
+// Criar novo template personalizado
+router.post('/', async (req, res) => {
+    try {
+        const {
+            template_id,
+            template_name,
+            template_description,
+            category,
+            base_config,
+            default_parameters
+        } = req.body;
+
+        // Validação básica
+        if (!template_id || !template_name || !base_config) {
+            return res.status(400).json({ error: 'Campos obrigatórios faltando' });
+        }
+
+        const result = await pool.query(`
+            INSERT INTO agent_templates (
+                template_id, template_name, template_description, 
+                category, base_config, default_parameters, is_active
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, true)
+            RETURNING *
+        `, [
+            template_id,
+            template_name,
+            template_description || '',
+            category || 'custom',
+            base_config,
+            JSON.stringify(default_parameters || [])
+        ]);
+
+        res.status(201).json({
+            message: 'Template criado com sucesso',
+            template: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('Erro ao criar template:', error);
+        res.status(500).json({ error: 'Erro ao criar template: ' + error.message });
+    }
+});
+
 // Obter detalhes completos de um template
 router.get('/:templateId', async (req, res) => {
     try {
