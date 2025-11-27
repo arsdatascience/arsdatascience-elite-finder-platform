@@ -1,8 +1,113 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('./database');
+const agentTemplates = require('./config/agentTemplates');
 
 // Listar todos os templates disponíveis
+router.post('/setup-db', async (req, res) => {
+    try {
+        console.log('Iniciando setup de templates via API...');
+
+        // 1. Criar Tabelas
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS agent_templates (
+                id SERIAL PRIMARY KEY,
+                template_id VARCHAR(100) UNIQUE NOT NULL,
+                template_name VARCHAR(255) NOT NULL,
+                template_description TEXT,
+                template_version VARCHAR(50) DEFAULT '1.0.0',
+                category VARCHAR(100),
+                base_config JSONB NOT NULL,
+                default_parameters JSONB DEFAULT '[]'::jsonb,
+                is_active BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS agent_parameter_groups (
+                id SERIAL PRIMARY KEY,
+                group_id VARCHAR(100) NOT NULL,
+                group_label VARCHAR(255) NOT NULL,
+                display_order INTEGER DEFAULT 0,
+                chatbot_id INTEGER REFERENCES chatbots(id) ON DELETE CASCADE,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS agent_custom_parameters (
+                id SERIAL PRIMARY KEY,
+                chatbot_id INTEGER REFERENCES chatbots(id) ON DELETE CASCADE,
+                parameter_key VARCHAR(100) NOT NULL,
+                parameter_value TEXT,
+                parameter_type VARCHAR(50) DEFAULT 'text',
+                category VARCHAR(100),
+                display_label VARCHAR(255),
+                display_order INTEGER DEFAULT 0,
+                helper_text TEXT,
+                is_required BOOLEAN DEFAULT false,
+                is_visible BOOLEAN DEFAULT true,
+                validation_rules JSONB DEFAULT '{}'::jsonb,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW(),
+                UNIQUE(chatbot_id, parameter_key)
+            );
+        `);
+
+        // 2. Popular Templates
+        for (const key in agentTemplates) {
+            const template = agentTemplates[key];
+            const meta = template.meta;
+            const baseConfig = template.baseConfig;
+            const parameters = template.parameters;
+            const groups = template.groups;
+
+            // Inserir/Atualizar Template
+            await pool.query(`
+                INSERT INTO agent_templates (
+                    template_id, template_name, template_description, 
+                    template_version, category, base_config, default_parameters
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (template_id) 
+                DO UPDATE SET 
+                    template_name = EXCLUDED.template_name,
+                    template_description = EXCLUDED.template_description,
+                    base_config = EXCLUDED.base_config,
+                    default_parameters = EXCLUDED.default_parameters,
+                    updated_at = NOW()
+            `, [
+                meta.templateId,
+                meta.templateName,
+                meta.templateDescription,
+                meta.version,
+                meta.category,
+                JSON.stringify(baseConfig),
+                JSON.stringify(parameters)
+            ]);
+
+            // Atualizar Grupos
+            if (groups && groups.length > 0) {
+                const templatePrefix = `${meta.templateId}.%`;
+                await pool.query('DELETE FROM agent_parameter_groups WHERE group_id LIKE $1', [templatePrefix]);
+
+                for (const group of groups) {
+                    const fullGroupId = `${meta.templateId}.${group.id}`;
+                    await pool.query(`
+                        INSERT INTO agent_parameter_groups (
+                            group_id, group_label, display_order
+                        )
+                        VALUES ($1, $2, $3)
+                    `, [fullGroupId, group.label, group.order]);
+                }
+            }
+        }
+
+        res.json({ success: true, message: 'Tabelas criadas e templates populados com sucesso!' });
+    } catch (error) {
+        console.error('Erro no setup de templates:', error);
+        res.status(500).json({ error: 'Erro no setup: ' + error.message });
+    }
+});
+
 router.get('/', async (req, res) => {
     try {
         const result = await pool.query(`

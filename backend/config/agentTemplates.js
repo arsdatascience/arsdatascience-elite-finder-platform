@@ -506,6 +506,87 @@ const agentTemplates = {
             { id: 'analytics', label: 'Análise de Dados', order: 4 },
             { id: 'integrations', label: 'Integrações', order: 5 }
         ]
+    },
+
+    // ==========================================
+    // TEMPLATE 5: WHATSAPP SALES & ANALYTICS
+    // ==========================================
+    whatsapp_analytics: {
+        meta: {
+            templateId: 'whatsapp_analytics',
+            templateName: 'WhatsApp Sales & Analytics',
+            templateDescription: 'Agente de WhatsApp com inteligência de análise de conversas e estratégia de vendas em tempo real.',
+            version: '1.0.0',
+            category: 'whatsapp'
+        },
+        baseConfig: {
+            identity: {
+                name: 'WhatsApp Strategist',
+                category: 'sales',
+                class: 'SalesAgent',
+                specializationLevel: 5,
+                status: 'active'
+            },
+            aiConfig: {
+                provider: 'openai',
+                model: 'gpt-4-turbo-preview',
+                temperature: 0.7,
+                maxTokens: 1000,
+                responseMode: 'balanced'
+            },
+            whatsappConfig: {
+                enabled: true,
+                provider: 'evolution_api'
+            },
+            vectorConfig: {
+                enableRag: true,
+                chunkingMode: 'semantic',
+                chunkSize: 512,
+                sensitivity: 'balanced',
+                contextWindow: 5
+            }
+        },
+        parameters: [
+            {
+                key: 'evolution_instance',
+                label: 'Nome da Instância (Evolution API)',
+                type: 'text',
+                category: 'whatsapp_config',
+                defaultValue: 'minha_instancia',
+                required: true,
+                displayOrder: 1
+            },
+            {
+                key: 'evolution_apikey',
+                label: 'API Key (Evolution API)',
+                type: 'password',
+                category: 'whatsapp_config',
+                required: true,
+                displayOrder: 2
+            },
+            {
+                key: 'auto_analysis',
+                label: 'Análise Automática de Conversa',
+                type: 'boolean',
+                category: 'analytics',
+                defaultValue: 'true',
+                helperText: 'Gerar insights estratégicos após cada interação significativa',
+                displayOrder: 3
+            },
+            {
+                key: 'sales_script',
+                label: 'Script de Vendas Base',
+                type: 'textarea',
+                category: 'strategy',
+                defaultValue: '1. Saudação\n2. Qualificação\n3. Apresentação\n4. Fechamento',
+                displayOrder: 4
+            }
+        ],
+        groups: [
+            { id: 'whatsapp_config', label: 'Configuração WhatsApp', order: 1 },
+            { id: 'analytics', label: 'Inteligência & Análise', order: 2 },
+            { id: 'strategy', label: 'Estratégia de Vendas', order: 3 }
+        ]
     }
 };
 
