@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import {
     Brain, Save, Database, MessageSquare,
-    Shield, Fingerprint, Wand2, Smartphone, Check
+    Shield, Fingerprint, Wand2, Smartphone, Check,
+    LayoutTemplate, X, Loader2
 } from 'lucide-react';
-
 // Tipos baseados na especificação do usuário
 interface AgentConfig {
     identity: {
@@ -61,7 +61,6 @@ interface AgentConfig {
         };
     };
 }
-
 const INITIAL_CONFIG: AgentConfig = {
     identity: {
         name: '',
@@ -117,26 +116,29 @@ const INITIAL_CONFIG: AgentConfig = {
         }
     }
 };
-
 import { useSearchParams } from 'react-router-dom';
-
 export const AgentBuilder: React.FC = () => {
     const [searchParams] = useSearchParams();
     const templateId = searchParams.get('template');
-
     const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'vector' | 'prompts' | 'channels'>('identity');
     const [config, setConfig] = useState<AgentConfig>(INITIAL_CONFIG);
     const [magicPrompt, setMagicPrompt] = useState('');
-
     // Estado para Qdrant
     const [qdrantCollections, setQdrantCollections] = useState<any[]>([]);
     const [loadingCollections, setLoadingCollections] = useState(false);
     const [qdrantConnected, setQdrantConnected] = useState(false);
-
     // Estado para Salvar Template
     const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
     const [templateName, setTemplateName] = useState('');
     const [templateDescription, setTemplateDescription] = useState('');
+    // Estado para Configuração Mágica
+    const [showMagicModal, setShowMagicModal] = useState(false);
+    const [magicDescription, setMagicDescription] = useState('');
+    const [isGeneratingConfig, setIsGeneratingConfig] = useState(false);
+    // Estado para Carregar Template
+    const [showLoadTemplateModal, setShowLoadTemplateModal] = useState(false);
+    const [availableTemplates, setAvailableTemplates] = useState<any[]>([]);
+    const [loadingTemplates, setLoadingTemplates] = useState(false);
     const saveAgentMutation = useMutation({
         mutationFn: async (agentConfig: AgentConfig) => {
             const response = await fetch('http://localhost:3001/api/agents', {
@@ -144,12 +146,10 @@ export const AgentBuilder: React.FC = () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(agentConfig)
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Falha ao salvar agente');
             }
-
             return response.json();
         },
         onSuccess: (data) => {
@@ -160,7 +160,6 @@ export const AgentBuilder: React.FC = () => {
             alert('Erro ao salvar agente: ' + error.message);
         }
     });
-
     const testConnectionMutation = useMutation({
         mutationFn: async () => {
             const payload = {
@@ -169,13 +168,11 @@ export const AgentBuilder: React.FC = () => {
                     ? config.whatsappConfig.evolution
                     : config.whatsappConfig.official
             };
-
             const response = await fetch('http://localhost:3001/api/agents/test-connection', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-
             return response.json();
         },
         onSuccess: (data) => {
@@ -190,27 +187,18 @@ export const AgentBuilder: React.FC = () => {
             alert('Erro ao testar conexão: ' + error.message);
         }
     });
-
-    const handleMagicConfig = () => {
-        // Simulação de configuração automática baseada na descrição
-        alert("A IA está analisando sua descrição e configurando os parâmetros ideais para o seu Agente...");
-    };
-
     const handleSaveAgent = () => {
         saveAgentMutation.mutate(config);
     };
-
     const handleTestConnection = () => {
         testConnectionMutation.mutate();
     };
-
     // Carregar coleções do Qdrant
     const loadQdrantCollections = async () => {
         setLoadingCollections(true);
         try {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/qdrant/collections`);
             const data = await response.json();
-
             if (data.success) {
                 setQdrantCollections(data.collections);
                 setQdrantConnected(true);
@@ -225,13 +213,11 @@ export const AgentBuilder: React.FC = () => {
             setLoadingCollections(false);
         }
     };
-
     // Testar conexão Qdrant
     const testQdrantConnection = async () => {
         try {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/qdrant/test`);
             const data = await response.json();
-
             if (data.success) {
                 alert('✅ Conexão com Qdrant estabelecida com sucesso!');
                 loadQdrantCollections();
@@ -242,14 +228,12 @@ export const AgentBuilder: React.FC = () => {
             alert('❌ Erro de conexão: ' + error.message);
         }
     };
-
     // Carregar coleções ao montar o componente
     React.useEffect(() => {
         if (activeTab === 'vector') {
             loadQdrantCollections();
         }
     }, [activeTab]);
-
     // Carregar template se existir na URL
     React.useEffect(() => {
         if (templateId) {
@@ -257,7 +241,6 @@ export const AgentBuilder: React.FC = () => {
                 try {
                     const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates/${templateId}`);
                     const data = await response.json();
-
                     if (data.base_config) {
                         setConfig(data.base_config);
                         // Opcional: Mostrar notificação de sucesso
@@ -270,13 +253,11 @@ export const AgentBuilder: React.FC = () => {
             loadTemplate();
         }
     }, [templateId]);
-
     const handleSaveTemplate = async () => {
         if (!templateName) {
             alert('Por favor, dê um nome ao template.');
             return;
         }
-
         try {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates`, {
                 method: 'POST',
@@ -290,7 +271,6 @@ export const AgentBuilder: React.FC = () => {
                     default_parameters: [] // Pode ser expandido no futuro
                 })
             });
-
             if (response.ok) {
                 alert('Template salvo com sucesso!');
                 setShowSaveTemplateModal(false);
@@ -304,7 +284,65 @@ export const AgentBuilder: React.FC = () => {
             alert('Erro ao salvar template: ' + error.message);
         }
     };
-
+    const handleMagicConfig = async () => {
+        if (!magicDescription) return;
+        setIsGeneratingConfig(true);
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/generate-config`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: magicDescription })
+            });
+            const data = await response.json();
+            if (data.error) {
+                alert('Erro ao gerar configuração: ' + data.error);
+            } else {
+                // Mesclar com a configuração atual, mantendo o que não foi gerado
+                setConfig(prev => ({
+                    ...prev,
+                    identity: { ...prev.identity, ...data.identity },
+                    aiConfig: { ...prev.aiConfig, ...data.aiConfig },
+                    prompts: { ...prev.prompts, ...data.prompts }
+                }));
+                setShowMagicModal(false);
+                setMagicDescription('');
+                alert('✨ Configuração Mágica aplicada com sucesso!');
+            }
+        } catch (error: any) {
+            console.error('Erro na Configuração Mágica:', error);
+            alert('Falha ao gerar configuração: ' + error.message);
+        } finally {
+            setIsGeneratingConfig(false);
+        }
+    };
+    const fetchTemplates = async () => {
+        setLoadingTemplates(true);
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates`);
+            const data = await response.json();
+            setAvailableTemplates(data);
+            setShowLoadTemplateModal(true);
+        } catch (error) {
+            console.error('Erro ao carregar templates:', error);
+            alert('Erro ao carregar lista de templates.');
+        } finally {
+            setLoadingTemplates(false);
+        }
+    };
+    const handleSelectTemplate = async (templateId: string) => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates/${templateId}`);
+            const data = await response.json();
+            if (data.base_config) {
+                setConfig(data.base_config);
+                setShowLoadTemplateModal(false);
+                alert('Template carregado com sucesso!');
+            }
+        } catch (error) {
+            console.error('Erro ao carregar template:', error);
+            alert('Erro ao carregar o template selecionado.');
+        }
+    };
     return (
         <div className="flex flex-col h-full bg-gray-50 animate-fade-in min-h-screen">
             {/* Header */}
@@ -323,8 +361,17 @@ export const AgentBuilder: React.FC = () => {
                     >
                         <MessageSquare size={18} /> Simular WhatsApp
                     </button>
-                    <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium flex items-center gap-2">
+                    <button
+                        onClick={() => setShowMagicModal(true)}
+                        className="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium flex items-center gap-2 border border-indigo-200"
+                    >
                         <Wand2 size={18} /> Configuração Mágica
+                    </button>
+                    <button
+                        onClick={fetchTemplates}
+                        className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium flex items-center gap-2 border border-blue-200"
+                    >
+                        <LayoutTemplate size={18} /> Carregar Template
                     </button>
                     <button
                         onClick={() => setShowSaveTemplateModal(true)}
@@ -341,7 +388,6 @@ export const AgentBuilder: React.FC = () => {
                     </button>
                 </div>
             </div>
-
             <div className="flex flex-1 overflow-hidden">
                 {/* Sidebar Navigation */}
                 <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
@@ -377,7 +423,6 @@ export const AgentBuilder: React.FC = () => {
                             <Smartphone size={18} /> Canais & Integrações
                         </button>
                     </nav>
-
                     <div className="mt-auto p-4 border-t border-gray-200">
                         <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
                             <div className="flex items-center gap-2 mb-2 text-indigo-800 font-bold text-xs uppercase">
@@ -399,11 +444,9 @@ export const AgentBuilder: React.FC = () => {
                         </div>
                     </div>
                 </div>
-
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-8">
                     <div className="max-w-4xl mx-auto">
-
                         {/* TAB: IDENTIDADE */}
                         {activeTab === 'identity' && (
                             <div className="space-y-6 animate-fade-in">
@@ -473,7 +516,6 @@ export const AgentBuilder: React.FC = () => {
                                 </div>
                             </div>
                         )}
-
                         {/* TAB: IA CONFIG */}
                         {activeTab === 'ai' && (
                             <div className="space-y-6 animate-fade-in">
@@ -558,7 +600,6 @@ export const AgentBuilder: React.FC = () => {
                                             </select>
                                         </div>
                                     </div>
-
                                     <div className="space-y-6 border-t border-gray-100 pt-6">
                                         <div>
                                             <div className="flex justify-between mb-1">
@@ -576,7 +617,6 @@ export const AgentBuilder: React.FC = () => {
                                             />
                                             <p className="text-xs text-gray-500 mt-1">0 = Determin��stico, 2 = Muito Criativo</p>
                                         </div>
-
                                         <div className="grid grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Top-P (Diversidade)</label>
@@ -598,7 +638,6 @@ export const AgentBuilder: React.FC = () => {
                                                 />
                                             </div>
                                         </div>
-
                                         <div className="grid grid-cols-3 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Max Tokens</label>
@@ -628,7 +667,6 @@ export const AgentBuilder: React.FC = () => {
                                                 />
                                             </div>
                                         </div>
-
                                         {/* Parâmetros Avançados (Novos) */}
                                         <div className="border-t border-gray-200 pt-6">
                                             <h4 className="text-sm font-bold text-gray-800 mb-4">Parâmetros Avançados</h4>
@@ -690,7 +728,6 @@ export const AgentBuilder: React.FC = () => {
                                 </div>
                             </div>
                         )}
-
                         {/* TAB: VECTOR CONFIG */}
                         {activeTab === 'vector' && (
                             <div className="space-y-6 animate-fade-in">
@@ -718,7 +755,6 @@ export const AgentBuilder: React.FC = () => {
                                             </button>
                                         </div>
                                     </div>
-
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -744,7 +780,6 @@ export const AgentBuilder: React.FC = () => {
                                                 <p className="text-xs text-purple-600 mt-1">Carregando coleções...</p>
                                             )}
                                         </div>
-
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 Coleções Disponíveis
@@ -766,12 +801,10 @@ export const AgentBuilder: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                         <Database className="text-green-600" /> Processamento Vetorial (RAG)
                                     </h3>
-
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Modo de Fragmentação (Chunking)</label>
@@ -788,7 +821,6 @@ export const AgentBuilder: React.FC = () => {
                                             <p className="text-xs text-gray-500 mt-1">Recomendado: 300-500 palavras</p>
                                         </div>
                                     </div>
-
                                     <div className="mb-6">
                                         <div className="flex justify-between mb-1">
                                             <label className="text-sm font-medium text-gray-700">Sensibilidade Semântica</label>
@@ -801,7 +833,6 @@ export const AgentBuilder: React.FC = () => {
                                             ))}
                                         </div>
                                     </div>
-
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-100 pt-6">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Filtros de Especialização</label>
@@ -825,7 +856,6 @@ export const AgentBuilder: React.FC = () => {
                                 </div>
                             </div>
                         )}
-
                         {/* TAB: PROMPTS */}
                         {activeTab === 'prompts' && (
                             <div className="space-y-6 animate-fade-in">
@@ -833,14 +863,12 @@ export const AgentBuilder: React.FC = () => {
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                         <MessageSquare className="text-orange-500" /> Sistema de Prompts Avançado
                                     </h3>
-
                                     <div className="space-y-6">
                                         <div>
                                             <label className="block text-sm font-bold text-gray-800 mb-1">System Prompt (Personalidade Principal)</label>
                                             <p className="text-xs text-gray-500 mb-2">Define o comportamento base e a expertise do agente.</p>
                                             <textarea className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm bg-gray-50" rows={4} value={config.prompts.system} />
                                         </div>
-
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-800 mb-1">Prompt de Resposta Estruturada</label>
@@ -851,7 +879,6 @@ export const AgentBuilder: React.FC = () => {
                                                 <textarea className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm" rows={4} value={config.prompts.vectorSearch} />
                                             </div>
                                         </div>
-
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-800 mb-1">Prompt de Análise</label>
@@ -862,7 +889,6 @@ export const AgentBuilder: React.FC = () => {
                                                 <textarea className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm" rows={3} value={config.prompts.complexCases} />
                                             </div>
                                         </div>
-
                                         <div>
                                             <label className="block text-sm font-bold text-gray-800 mb-1">Prompt de Validação (Consistency Check)</label>
                                             <div className="flex gap-2">
@@ -885,7 +911,6 @@ export const AgentBuilder: React.FC = () => {
                                 </div>
                             </div>
                         )}
-
                         {/* TAB: CHANNELS */}
                         {activeTab === 'channels' && (
                             <div className="space-y-6 animate-fade-in">
@@ -893,7 +918,6 @@ export const AgentBuilder: React.FC = () => {
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                         <Smartphone className="text-green-600" /> Integração WhatsApp
                                     </h3>
-
                                     <div className="mb-6">
                                         <label className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                                             <input
@@ -911,7 +935,6 @@ export const AgentBuilder: React.FC = () => {
                                             </div>
                                         </label>
                                     </div>
-
                                     {config.whatsappConfig.enabled && (
                                         <div className="space-y-6 animate-fade-in">
                                             <div>
@@ -927,7 +950,6 @@ export const AgentBuilder: React.FC = () => {
                                                         <div className="font-bold text-gray-800 mb-1">Evolution API</div>
                                                         <div className="text-xs text-gray-500">API Open Source robusta para WhatsApp. Ideal para múltiplas instâncias.</div>
                                                     </button>
-
                                                     <button
                                                         onClick={() => setConfig({
                                                             ...config,
@@ -940,7 +962,6 @@ export const AgentBuilder: React.FC = () => {
                                                     </button>
                                                 </div>
                                             </div>
-
                                             {config.whatsappConfig.provider === 'evolution_api' && (
                                                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                                     <h4 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wider">Configuração Evolution API</h4>
@@ -995,7 +1016,6 @@ export const AgentBuilder: React.FC = () => {
                                                     </div>
                                                 </div>
                                             )}
-
                                             {config.whatsappConfig.provider === 'official' && (
                                                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                                                     <h4 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wider">Configuração WhatsApp Cloud API</h4>
@@ -1048,7 +1068,6 @@ export const AgentBuilder: React.FC = () => {
                                                     </div>
                                                 </div>
                                             )}
-
                                             <div className="mt-4 flex justify-end">
                                                 <button
                                                     onClick={handleTestConnection}
@@ -1067,11 +1086,9 @@ export const AgentBuilder: React.FC = () => {
                                 </div>
                             </div>
                         )}
-
                     </div>
                 </div>
             </div>
-
             {/* Modal Salvar Template */}
             {showSaveTemplateModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1079,7 +1096,6 @@ export const AgentBuilder: React.FC = () => {
                         <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                             <Save className="text-purple-600" /> Salvar como Template
                         </h3>
-
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Template</label>
@@ -1091,7 +1107,6 @@ export const AgentBuilder: React.FC = () => {
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
                                 />
                             </div>
-
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
                                 <textarea
@@ -1101,7 +1116,6 @@ export const AgentBuilder: React.FC = () => {
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 h-24 resize-none"
                                 />
                             </div>
-
                             <div className="flex justify-end gap-3 mt-6">
                                 <button
                                     onClick={() => setShowSaveTemplateModal(false)}
@@ -1117,6 +1131,87 @@ export const AgentBuilder: React.FC = () => {
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+            {/* Modal Configuração Mágica */}
+            {showMagicModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-2xl animate-fade-in">
+                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                            <Wand2 className="text-indigo-600" /> Configuração Mágica de IA
+                        </h3>
+                        <p className="text-gray-600 mb-4">
+                            Descreva o agente que você deseja criar e nossa IA irá gerar a configuração perfeita (identidade, prompts e parâmetros) para você.
+                        </p>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Descrição do Agente</label>
+                                <textarea
+                                    value={magicDescription}
+                                    onChange={(e) => setMagicDescription(e.target.value)}
+                                    placeholder="Ex: Um especialista em vendas de imóveis de luxo que seja persuasivo, educado e focado em agendar visitas. Ele deve saber lidar com objeções de preço."
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 h-32 resize-none"
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3 mt-6">
+                                <button
+                                    onClick={() => setShowMagicModal(false)}
+                                    disabled={isGeneratingConfig}
+                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleMagicConfig}
+                                    disabled={isGeneratingConfig || !magicDescription}
+                                    className={`px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2 ${isGeneratingConfig ? 'opacity-70 cursor-not-allowed' : ''}`}
+                                >
+                                    {isGeneratingConfig ? (
+                                        <><Loader2 className="animate-spin" size={18} /> Gerando Mágica...</>
+                                    ) : (
+                                        <><Wand2 size={18} /> Gerar Configuração</>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Modal Carregar Template */}
+            {showLoadTemplateModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-3xl shadow-2xl animate-fade-in max-h-[80vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                <LayoutTemplate className="text-blue-600" /> Carregar Template
+                            </h3>
+                            <button onClick={() => setShowLoadTemplateModal(false)} className="text-gray-400 hover:text-gray-600">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        {loadingTemplates ? (
+                            <div className="flex justify-center py-12">
+                                <Loader2 className="animate-spin text-blue-600" size={32} />
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {availableTemplates.map(template => (
+                                    <div key={template.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer group" onClick={() => handleSelectTemplate(template.template_id)}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h4 className="font-bold text-gray-800 group-hover:text-blue-700">{template.template_name}</h4>
+                                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{template.category}</span>
+                                        </div>
+                                        <p className="text-sm text-gray-500 line-clamp-2">{template.template_description || 'Sem descrição.'}</p>
+                                    </div>
+                                ))}
+                                {availableTemplates.length === 0 && (
+                                    <div className="col-span-full text-center py-8 text-gray-400">
+                                        Nenhum template encontrado.
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

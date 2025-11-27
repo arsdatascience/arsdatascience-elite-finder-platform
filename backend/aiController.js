@@ -423,9 +423,73 @@ const analyzeConversationStrategy = async (req, res) => {
   }
 };
 
+/**
+ * Gera uma configuração completa de agente baseada em uma descrição simples
+ */
+const generateAgentConfig = async (req, res) => {
+  const { description, provider = 'openai' } = req.body;
+  const apiKey = getEffectiveApiKey(provider);
+
+  if (!description) {
+    return res.status(400).json({ error: 'Description is required' });
+  }
+
+  const prompt = `
+    Você é um Arquiteto de Agentes de IA Especialista.
+    Sua tarefa é criar uma configuração técnica completa para um Agente de IA com base na seguinte descrição do usuário:
+    
+    DESCRIÇÃO DO USUÁRIO: "${description}"
+
+    Gere um JSON estrito com a seguinte estrutura exata, preenchendo os campos de forma criativa e profissional:
+
+    {
+      "identity": {
+        "name": "Nome criativo do agente",
+        "role": "Cargo/Função (ex: Especialista em Vendas Imobiliárias)",
+        "tone": "Tom de voz (ex: Profissional, Empático, Persuasivo)",
+        "style": "Estilo de comunicação (ex: Formal, Casual, Técnico)",
+        "company": "Nome da empresa fictícia ou inferida",
+        "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=NomeDoAgente"
+      },
+      "aiConfig": {
+        "model": "gpt-4-turbo-preview",
+        "temperature": 0.7,
+        "maxTokens": 500,
+        "topP": 0.9,
+        "frequencyPenalty": 0.5,
+        "presencePenalty": 0.3,
+        "responseMode": "balanced",
+        "candidateCount": 1
+      },
+      "prompts": {
+        "system": "Um prompt de sistema detalhado e robusto (min 3 parágrafos) que defina a persona, regras de negócio, o que fazer e o que NÃO fazer. Use markdown.",
+        "welcome": "Uma mensagem de boas-vindas engajadora para iniciar a conversa.",
+        "fallback": "Uma mensagem educada para quando o agente não souber a resposta."
+      }
+    }
+
+    Responda APENAS o JSON. Sem blocos de código markdown.
+    `;
+
+  try {
+    // Usar callOpenAI com jsonMode=true para garantir JSON válido
+    const text = await callOpenAI(prompt, apiKey, "gpt-4-turbo-preview", true);
+
+    const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+    const config = JSON.parse(cleanText);
+
+    res.json(config);
+
+  } catch (error) {
+    console.error('Error generating agent config:', error);
+    res.status(500).json({ error: 'Failed to generate configuration' });
+  }
+};
+
 module.exports = {
   analyzeChatConversation,
   generateMarketingContent,
   askEliteAssistant,
-  analyzeConversationStrategy
+  analyzeConversationStrategy,
+  generateAgentConfig
 };
