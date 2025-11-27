@@ -327,11 +327,14 @@ export const AgentBuilder: React.FC = () => {
             // Garantir que data é um array válido
             if (Array.isArray(data)) {
                 setAvailableTemplates(data);
+                if (data.length === 0) setShowSetupButton(true);
             } else if (data.templates && Array.isArray(data.templates)) {
                 setAvailableTemplates(data.templates);
+                if (data.templates.length === 0) setShowSetupButton(true);
             } else {
                 console.warn('Formato de templates inesperado:', data);
                 setAvailableTemplates([]);
+                setShowSetupButton(true);
             }
 
             setShowLoadTemplateModal(true);
