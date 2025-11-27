@@ -215,6 +215,10 @@ app.post('/api/users/:id/avatar', userCtrl.upload.single('avatar'), userCtrl.upd
 const templatesController = require('./templatesController');
 app.use('/api/templates', templatesController);
 
+// --- QDRANT VECTOR DATABASE ---
+const qdrantController = require('./qdrantController');
+app.use('/api/qdrant', qdrantController);
+
 
 // --- SOCIAL MEDIA INTEGRATIONS ---
 const socialIntegration = require('./socialIntegrationController');

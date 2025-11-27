@@ -36,6 +36,7 @@ interface AgentConfig {
         contextWindow: number;
         relevanceThreshold: number;
         filters: string[];
+        knowledgeBaseId?: string;
     };
     prompts: {
         system: string;
@@ -78,7 +79,11 @@ const INITIAL_CONFIG: AgentConfig = {
         topK: 40,
         maxTokens: 2000,
         timeout: 60,
-        retries: 3
+        retries: 3,
+        frequencyPenalty: 0,
+        presencePenalty: 0,
+        responseMode: 'balanced',
+        candidateCount: 1
     },
     vectorConfig: {
         chunkingMode: 'semantic',
@@ -86,7 +91,8 @@ const INITIAL_CONFIG: AgentConfig = {
         sensitivity: 5,
         contextWindow: 5,
         relevanceThreshold: 0.70,
-        filters: []
+        filters: [],
+        knowledgeBaseId: ''
     },
     prompts: {
         system: '',
@@ -116,6 +122,11 @@ export const AgentBuilder: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'vector' | 'prompts' | 'channels'>('identity');
     const [config, setConfig] = useState<AgentConfig>(INITIAL_CONFIG);
     const [magicPrompt, setMagicPrompt] = useState('');
+
+    // Estado para Qdrant
+    const [qdrantCollections, setQdrantCollections] = useState<any[]>([]);
+    const [loadingCollections, setLoadingCollections] = useState(false);
+    const [qdrantConnected, setQdrantConnected] = useState(false);
     const saveAgentMutation = useMutation({
         mutationFn: async (agentConfig: AgentConfig) => {
             const response = await fetch('http://localhost:3001/api/agents', {
@@ -182,6 +193,52 @@ export const AgentBuilder: React.FC = () => {
     const handleTestConnection = () => {
         testConnectionMutation.mutate();
     };
+
+    // Carregar coleções do Qdrant
+    const loadQdrantCollections = async () => {
+        setLoadingCollections(true);
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/qdrant/collections`);
+            const data = await response.json();
+
+            if (data.success) {
+                setQdrantCollections(data.collections);
+                setQdrantConnected(true);
+            } else {
+                console.error('Erro ao carregar coleções:', data.error);
+                setQdrantConnected(false);
+            }
+        } catch (error) {
+            console.error('Erro ao conectar com Qdrant:', error);
+            setQdrantConnected(false);
+        } finally {
+            setLoadingCollections(false);
+        }
+    };
+
+    // Testar conexão Qdrant
+    const testQdrantConnection = async () => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/qdrant/test`);
+            const data = await response.json();
+
+            if (data.success) {
+                alert('✅ Conexão com Qdrant estabelecida com sucesso!');
+                loadQdrantCollections();
+            } else {
+                alert('❌ Erro ao conectar: ' + data.error);
+            }
+        } catch (error: any) {
+            alert('❌ Erro de conexão: ' + error.message);
+        }
+    };
+
+    // Carregar coleções ao montar o componente
+    React.useEffect(() => {
+        if (activeTab === 'vector') {
+            loadQdrantCollections();
+        }
+    }, [activeTab]);
 
     return (
         <div className="flex flex-col h-full bg-gray-50 animate-fade-in min-h-screen">
@@ -560,6 +617,79 @@ export const AgentBuilder: React.FC = () => {
                         {/* TAB: VECTOR CONFIG */}
                         {activeTab === 'vector' && (
                             <div className="space-y-6 animate-fade-in">
+                                {/* Qdrant Connection Section */}
+                                <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border border-purple-200 shadow-sm">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                            <Database className="text-purple-600" /> Qdrant Vector Database
+                                        </h3>
+                                        <div className="flex items-center gap-2">
+                                            {qdrantConnected ? (
+                                                <span className="flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                                                    <Check size={14} /> Conectado
+                                                </span>
+                                            ) : (
+                                                <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-full">
+                                                    Desconectado
+                                                </span>
+                                            )}
+                                            <button
+                                                onClick={testQdrantConnection}
+                                                className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                                            >
+                                                Testar Conexão
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Selecionar Coleção (Knowledge Base)
+                                            </label>
+                                            <select
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                                                disabled={!qdrantConnected || loadingCollections}
+                                                value={config.vectorConfig.knowledgeBaseId || ''}
+                                                onChange={(e) => setConfig({
+                                                    ...config,
+                                                    vectorConfig: { ...config.vectorConfig, knowledgeBaseId: e.target.value }
+                                                })}
+                                            >
+                                                <option value="">Nenhuma coleção selecionada</option>
+                                                {qdrantCollections.map((collection) => (
+                                                    <option key={collection.name} value={collection.name}>
+                                                        {collection.name} ({collection.pointsCount || 0} pontos)
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            {loadingCollections && (
+                                                <p className="text-xs text-purple-600 mt-1">Carregando coleções...</p>
+                                            )}
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Coleções Disponíveis
+                                            </label>
+                                            <div className="bg-white border rounded-lg p-3 max-h-32 overflow-y-auto">
+                                                {qdrantCollections.length === 0 ? (
+                                                    <p className="text-xs text-gray-500">Nenhuma coleção encontrada</p>
+                                                ) : (
+                                                    <div className="space-y-1">
+                                                        {qdrantCollections.map((col) => (
+                                                            <div key={col.name} className="flex items-center justify-between p-2 hover:bg-purple-50 rounded">
+                                                                <span className="text-sm font-medium text-gray-700">{col.name}</span>
+                                                                <span className="text-xs text-gray-500">{col.pointsCount} pts</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                         <Database className="text-green-600" /> Processamento Vetorial (RAG)
