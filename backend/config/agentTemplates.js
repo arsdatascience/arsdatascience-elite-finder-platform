@@ -587,7 +587,360 @@ const agentTemplates = {
             { id: 'analytics', label: 'Inteligência & Análise', order: 2 },
             { id: 'strategy', label: 'Estratégia de Vendas', order: 3 }
         ]
+    },
+
+    // ==========================================
+    // TEMPLATE 6: ADVOGADO VIRTUAL
+    // ==========================================
+    legal_assistant: {
+        meta: {
+            templateId: 'legal_assistant',
+            templateName: 'Advogado Virtual',
+            templateDescription: 'Assistente jurídico para triagem inicial, agendamento e respostas a dúvidas frequentes com base legal.',
+            version: '1.0.0',
+            category: 'legal'
+        },
+        baseConfig: {
+            identity: {
+                name: 'Assistente Jurídico',
+                category: 'legal',
+                class: 'specialist',
+                specializationLevel: 4,
+                status: 'active'
+            },
+            aiConfig: {
+                provider: 'openai',
+                model: 'gpt-4-turbo-preview',
+                temperature: 0.2,
+                topP: 0.8,
+                maxTokens: 2048,
+                responseMode: 'formal'
+            },
+            vectorConfig: {
+                enableRag: true,
+                chunkingMode: 'recursive',
+                chunkSize: 1024,
+                sensitivity: 'high',
+                contextWindow: 5,
+                relevanceThreshold: 0.85
+            }
+        },
+        parameters: [
+            {
+                key: 'legal_area',
+                label: 'Área de Atuação',
+                type: 'select',
+                category: 'config',
+                defaultValue: 'civil',
+                options: [
+                    { value: 'civil', label: 'Direito Civil' },
+                    { value: 'trabalhista', label: 'Direito Trabalhista' },
+                    { value: 'consumidor', label: 'Direito do Consumidor' },
+                    { value: 'criminal', label: 'Direito Criminal' },
+                    { value: 'familia', label: 'Direito de Família' }
+                ],
+                required: true,
+                displayOrder: 1
+            },
+            {
+                key: 'disclaimer_message',
+                label: 'Aviso Legal (Disclaimer)',
+                type: 'textarea',
+                category: 'compliance',
+                defaultValue: 'Este assistente fornece informações gerais e não substitui uma consulta jurídica formal com um advogado.',
+                required: true,
+                displayOrder: 2
+            },
+            {
+                key: 'scheduling_link',
+                label: 'Link para Agendamento',
+                type: 'text',
+                category: 'config',
+                defaultValue: 'https://calendly.com/seu-escritorio',
+                displayOrder: 3
+            }
+        ],
+        groups: [
+            { id: 'config', label: 'Configuração Geral', order: 1 },
+            { id: 'compliance', label: 'Compliance & Legal', order: 2 }
+        ]
+    },
+
+    // ==========================================
+    // TEMPLATE 7: FAQ DINÂMICO POR CATEGORIA
+    // ==========================================
+    dynamic_faq: {
+        meta: {
+            templateId: 'dynamic_faq',
+            templateName: 'FAQ Dinâmico Inteligente',
+            templateDescription: 'Responde dúvidas categorizadas automaticamente com base em sua base de conhecimento, adaptando-se ao contexto.',
+            version: '1.0.0',
+            category: 'support'
+        },
+        baseConfig: {
+            identity: {
+                name: 'FAQ Bot Inteligente',
+                category: 'support',
+                class: 'generalist',
+                specializationLevel: 2,
+                status: 'active'
+            },
+            aiConfig: {
+                provider: 'gemini',
+                model: 'gemini-2.0-flash-exp',
+                temperature: 0.3,
+                topP: 0.85,
+                responseMode: 'concise'
+            },
+            vectorConfig: {
+                enableRag: true,
+                chunkingMode: 'semantic',
+                chunkSize: 512,
+                sensitivity: 'high',
+                relevanceThreshold: 0.80
+            }
+        },
+        parameters: [
+            {
+                key: 'faq_categories',
+                label: 'Categorias de FAQ',
+                type: 'textarea',
+                category: 'content',
+                defaultValue: 'Financeiro, Técnico, Comercial, Logística',
+                helperText: 'Liste as categorias separadas por vírgula',
+                required: true,
+                displayOrder: 1
+            },
+            {
+                key: 'fallback_behavior',
+                label: 'Comportamento de Fallback',
+                type: 'select',
+                category: 'behavior',
+                defaultValue: 'human_handoff',
+                options: [
+                    { value: 'human_handoff', label: 'Transferir para Humano' },
+                    { value: 'search_web', label: 'Buscar na Web (se permitido)' },
+                    { value: 'ask_rephrase', label: 'Pedir para reformular' }
+                ],
+                displayOrder: 2
+            },
+            {
+                key: 'fallback_message',
+                label: 'Mensagem de Não Encontrado',
+                type: 'textarea',
+                category: 'behavior',
+                defaultValue: 'Não encontrei essa informação específica. Deseja falar com um de nossos especialistas?',
+                displayOrder: 3
+            }
+        ],
+        groups: [
+            { id: 'content', label: 'Conteúdo & Categorias', order: 1 },
+            { id: 'behavior', label: 'Comportamento', order: 2 }
+        ]
+    },
+
+    // ==========================================
+    // TEMPLATE 8: RECUPERAÇÃO DE CARRINHO
+    // ==========================================
+    cart_recovery: {
+        meta: {
+            templateId: 'cart_recovery',
+            templateName: 'Recuperação de Carrinho',
+            templateDescription: 'Especialista em converter carrinhos abandonados com ofertas persuasivas e gatilhos mentais de urgência.',
+            version: '1.0.0',
+            category: 'sales'
+        },
+        baseConfig: {
+            identity: {
+                name: 'Recuperador de Vendas',
+                category: 'sales',
+                class: 'specialist',
+                specializationLevel: 4,
+                status: 'active'
+            },
+            aiConfig: {
+                provider: 'openai',
+                model: 'gpt-4-turbo-preview',
+                temperature: 0.8,
+                topP: 0.95,
+                responseMode: 'persuasive'
+            },
+            whatsappConfig: {
+                enabled: true,
+                provider: 'evolution_api'
+            }
+        },
+        parameters: [
+            {
+                key: 'discount_percentage',
+                label: 'Oferta de Desconto (%)',
+                type: 'number',
+                category: 'strategy',
+                defaultValue: '5',
+                validation: { min: 0, max: 100 },
+                displayOrder: 1
+            },
+            {
+                key: 'urgency_trigger',
+                label: 'Gatilho de Urgência',
+                type: 'textarea',
+                category: 'strategy',
+                defaultValue: 'Seu carrinho expira em 1 hora! Garanta seus itens agora.',
+                displayOrder: 2
+            },
+            {
+                key: 'message_sequence',
+                label: 'Sequência de Mensagens',
+                type: 'select',
+                category: 'automation',
+                defaultValue: 'aggressive',
+                options: [
+                    { value: 'soft', label: 'Suave (1 lembrete)' },
+                    { value: 'moderate', label: 'Moderada (2 lembretes)' },
+                    { value: 'aggressive', label: 'Agressiva (3 lembretes + oferta final)' }
+                ],
+                displayOrder: 3
+            }
+        ],
+        groups: [
+            { id: 'strategy', label: 'Estratégia de Recuperação', order: 1 },
+            { id: 'automation', label: 'Automação', order: 2 }
+        ]
+    },
+
+    // ==========================================
+    // TEMPLATE 9: VENDAS COM UPSELL/CROSS-SELL
+    // ==========================================
+    upsell_cross_sell: {
+        meta: {
+            templateId: 'upsell_cross_sell',
+            templateName: 'Vendas Inteligentes (Upsell/Cross-sell)',
+            templateDescription: 'Analisa o perfil e histórico do cliente para sugerir produtos complementares ou upgrades.',
+            version: '1.0.0',
+            category: 'sales'
+        },
+        baseConfig: {
+            identity: {
+                name: 'Consultor de Ofertas',
+                category: 'sales',
+                class: 'specialist',
+                specializationLevel: 4,
+                status: 'active'
+            },
+            aiConfig: {
+                provider: 'gemini',
+                model: 'gemini-2.0-flash-exp',
+                temperature: 0.6,
+                topP: 0.9,
+                responseMode: 'balanced'
+            },
+            vectorConfig: {
+                enableRag: true,
+                chunkingMode: 'semantic'
+            }
+        },
+        parameters: [
+            {
+                key: 'product_catalog_url',
+                label: 'URL do Catálogo de Produtos',
+                type: 'text',
+                category: 'products',
+                required: true,
+                displayOrder: 1
+            },
+            {
+                key: 'recommendation_logic',
+                label: 'Lógica de Recomendação',
+                type: 'select',
+                category: 'strategy',
+                defaultValue: 'hybrid',
+                options: [
+                    { value: 'complementary', label: 'Cross-sell (Produtos Complementares)' },
+                    { value: 'premium', label: 'Upsell (Upgrade de Versão)' },
+                    { value: 'hybrid', label: 'Híbrido (Ambos)' }
+                ],
+                displayOrder: 2
+            },
+            {
+                key: 'min_ticket_increase',
+                label: 'Aumento Mínimo de Ticket (%)',
+                type: 'number',
+                category: 'strategy',
+                defaultValue: '15',
+                displayOrder: 3
+            }
+        ],
+        groups: [
+            { id: 'products', label: 'Catálogo & Produtos', order: 1 },
+            { id: 'strategy', label: 'Estratégia de Oferta', order: 2 }
+        ]
+    },
+
+    // ==========================================
+    // TEMPLATE 10: MULTI-CANAL (OMNICHANNEL)
+    // ==========================================
+    omnichannel_support: {
+        meta: {
+            templateId: 'omnichannel_support',
+            templateName: 'Suporte Multi-canal',
+            templateDescription: 'Atendimento unificado para WhatsApp, Webchat e Telegram, mantendo o contexto entre canais.',
+            version: '1.0.0',
+            category: 'support'
+        },
+        baseConfig: {
+            identity: {
+                name: 'Atendente Omni',
+                category: 'support',
+                class: 'generalist',
+                specializationLevel: 3,
+                status: 'active'
+            },
+            aiConfig: {
+                provider: 'anthropic',
+                model: 'claude-3-5-sonnet-20240620',
+                temperature: 0.5,
+                maxTokens: 2048,
+                responseMode: 'empathetic'
+            },
+            whatsappConfig: {
+                enabled: true,
+                provider: 'evolution_api'
+            }
+        },
+        parameters: [
+            {
+                key: 'active_channels',
+                label: 'Canais Ativos',
+                type: 'textarea',
+                category: 'config',
+                defaultValue: 'WhatsApp, Webchat, Telegram',
+                helperText: 'Canais onde o bot atuará',
+                required: true,
+                displayOrder: 1
+            },
+            {
+                key: 'unify_history',
+                label: 'Unificar Histórico de Conversa',
+                type: 'boolean',
+                category: 'data',
+                defaultValue: 'true',
+                helperText: 'Permite que o bot lembre do que foi dito em outro canal',
+                displayOrder: 2
+            },
+            {
+                key: 'channel_tone_adaptation',
+                label: 'Adaptação de Tom por Canal',
+                type: 'boolean',
+                category: 'config',
+                defaultValue: 'true',
+                helperText: 'Ex: Mais formal no Email, mais informal no WhatsApp',
+                displayOrder: 3
+            }
+        ],
+        groups: [
+            { id: 'config', label: 'Configuração de Canais', order: 1 },
+            { id: 'data', label: 'Dados & Contexto', order: 2 }
+        ]
     }
-};
 
 module.exports = agentTemplates;
