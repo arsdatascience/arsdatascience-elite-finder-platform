@@ -67,18 +67,24 @@ const createUser = async (req, res) => {
  */
 const login = async (req, res) => {
     const { email, password } = req.body;
+    console.log(`[Login Attempt] Email: ${email}`);
 
     try {
         const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
         const user = result.rows[0];
 
         if (!user) {
-            return res.status(400).json({ error: 'Credenciais inválidas' });
+            console.log('[Login Fail] User not found');
+            return res.status(400).json({ error: 'Usuário não encontrado (Debug)' });
         }
 
+        console.log(`[Login] User found: ${user.id}, Role: ${user.role}`);
         const isMatch = await bcrypt.compare(password, user.password_hash);
+
         if (!isMatch) {
-            return res.status(400).json({ error: 'Credenciais inválidas' });
+            console.log('[Login Fail] Password mismatch');
+            // Debug: log hash comparison details if needed (careful with security in prod logs)
+            return res.status(400).json({ error: 'Senha incorreta (Debug)' });
         }
 
         const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
