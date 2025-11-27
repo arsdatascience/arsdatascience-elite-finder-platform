@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, MoreVertical, Search, Phone, Video, Smile, Mic, Check, CheckCheck, BarChart3, TrendingUp, Target, MessageCircle, FileText, X, Play, Pause, Image as ImageIcon, File } from 'lucide-react';
+import { Send, Paperclip, MoreVertical, Search, Smile, Mic, Check, CheckCheck, BarChart3, TrendingUp, Target, MessageCircle, FileText, X, Play, Image as ImageIcon } from 'lucide-react';
 
 interface Message {
     id: string;

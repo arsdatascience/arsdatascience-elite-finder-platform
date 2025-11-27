@@ -122,7 +122,7 @@ export const AgentBuilder: React.FC = () => {
     const templateId = searchParams.get('template');
     const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'vector' | 'prompts' | 'channels'>('identity');
     const [config, setConfig] = useState<AgentConfig>(INITIAL_CONFIG);
-    const [magicPrompt, setMagicPrompt] = useState('');
+
     // Estado para Qdrant
     const [qdrantCollections, setQdrantCollections] = useState<any[]>([]);
     const [loadingCollections, setLoadingCollections] = useState(false);
