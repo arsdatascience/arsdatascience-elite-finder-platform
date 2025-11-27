@@ -90,6 +90,17 @@ export const apiClient = {
             }
             const response = await axiosInstance.post('/auth/login', { email, password });
             return response.data;
+        },
+        register: async (name: string, email: string, password: string) => {
+            if (USE_MOCK) {
+                // Simulação de registro
+                return {
+                    user: { id: Date.now(), name, email, role: 'user', avatar_url: '' },
+                    token: 'mock-jwt-token-register'
+                };
+            }
+            const response = await axiosInstance.post('/auth/register', { name, email, password });
+            return response.data;
         }
     },
     clients: {

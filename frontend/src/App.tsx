@@ -21,6 +21,7 @@ import { ViewState } from '@/types';
 import { Menu, Loader2 } from 'lucide-react';
 import { ContentGenerator } from '@/components/ContentGenerator';
 import { Login } from '@/components/Login';
+import { Register } from '@/components/Register';
 import { useAuth } from '@/contexts/AuthContext';
 
 const PATH_MAP: Record<ViewState, string> = {
@@ -128,6 +129,7 @@ const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
       <Route element={<PrivateRoute />}>
         <Route element={<Layout />}>
