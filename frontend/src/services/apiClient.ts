@@ -80,9 +80,15 @@ export const apiClient = {
         login: async (email: string, password: string) => {
             if (USE_MOCK) {
                 // Simulação de login
-                if (email === 'admin@elite.com' && password === 'admin') {
+                if ((email === 'admin@elite.com' || email === 'denismay@arsdatascience.com.br') && password === 'admin') {
                     return {
-                        user: { id: 1, name: 'Admin', email, role: 'admin', avatar_url: 'https://github.com/shadcn.png' },
+                        user: {
+                            id: 1,
+                            name: email.includes('denis') ? 'Denis May' : 'Admin',
+                            email,
+                            role: 'admin',
+                            avatar_url: 'https://github.com/shadcn.png'
+                        },
                         token: 'mock-jwt-token'
                     };
                 }
