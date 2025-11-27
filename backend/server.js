@@ -189,6 +189,16 @@ app.post('/api/ai/analyze-strategy', aiController.analyzeConversationStrategy);
 app.post('/api/ai/generate-config', aiController.generateAgentConfig);
 
 
+// --- DASHBOARD ANALYTICS ---
+const dashboardCtrl = require('./dashboardController');
+app.get('/api/dashboard/kpis', dashboardCtrl.getKPIs);
+app.get('/api/dashboard/chart-data', dashboardCtrl.getChartData);
+app.get('/api/dashboard/funnel-data', dashboardCtrl.getFunnelData);
+app.get('/api/dashboard/device-data', dashboardCtrl.getDeviceData);
+
+// --- CAMPAIGNS ---
+app.get('/api/campaigns', dbController.getCampaigns);
+
 // --- USER MANAGEMENT ---
 const userCtrl = require('./userController');
 
