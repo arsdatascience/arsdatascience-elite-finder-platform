@@ -194,6 +194,7 @@ app.post('/api/ai/chat', aiController.askEliteAssistant);
 // AI Analysis Routes
 app.post('/api/ai/analyze-strategy', aiController.analyzeConversationStrategy);
 app.post('/api/ai/generate-config', aiController.generateAgentConfig);
+app.post('/api/ai/save-analysis', aiController.saveAnalysis);
 
 
 // --- DASHBOARD ANALYTICS ---

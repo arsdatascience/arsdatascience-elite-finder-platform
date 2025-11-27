@@ -2,6 +2,7 @@
 // Provider: OpenAI (Custom Endpoint /v1/responses) and Gemini (Google Generative AI)
 
 const { ClaudeService, ClaudeModel } = require('./services/anthropicService');
+const db = require('./database');
 
 const getEffectiveApiKey = (provider = 'openai') => {
   if (provider === 'gemini') {
@@ -486,10 +487,26 @@ const generateAgentConfig = async (req, res) => {
   }
 };
 
+const saveAnalysis = async (req, res) => {
+  const { messages, analysis, provider, model } = req.body;
+
+  try {
+    const result = await db.query(
+      'INSERT INTO chat_analyses (messages, analysis, provider, model) VALUES ($1, $2, $3, $4) RETURNING *',
+      [JSON.stringify(messages), JSON.stringify(analysis), provider, model]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error saving analysis:', error);
+    res.status(500).json({ error: 'Failed to save analysis' });
+  }
+};
+
 module.exports = {
   analyzeChatConversation,
   generateMarketingContent,
   askEliteAssistant,
   analyzeConversationStrategy,
-  generateAgentConfig
+  generateAgentConfig,
+  saveAnalysis
 };

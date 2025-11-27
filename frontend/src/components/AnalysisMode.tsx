@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, RefreshCw, Trash2, BrainCircuit, Sparkles, Loader2, CheckCircle, AlertTriangle, ThumbsUp, Bot } from 'lucide-react';
+import { Upload, RefreshCw, Trash2, BrainCircuit, Sparkles, Loader2, CheckCircle, AlertTriangle, ThumbsUp, Bot, Save } from 'lucide-react';
 import { MOCK_CHAT } from '../constants';
 import { ChatMessage, AnalysisResult } from '../types';
 import { analyzeChatConversation } from '../services/geminiService';
@@ -9,6 +9,7 @@ export const AnalysisMode: React.FC = () => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [provider, setProvider] = useState<AIProvider>(AIProvider.OPENAI);
     const [model, setModel] = useState<string>(OpenAIModel.GPT_5);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +109,35 @@ export const AnalysisMode: React.FC = () => {
     const clearChat = () => {
         setMessages([]);
         setAnalysis(null);
+    };
+
+    const handleSaveAnalysis = async () => {
+        if (!analysis || messages.length === 0) return;
+
+        setIsSaving(true);
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/ai/save-analysis`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages,
+                    analysis,
+                    provider,
+                    model
+                })
+            });
+
+            if (response.ok) {
+                alert('Análise salva com sucesso!');
+            } else {
+                throw new Error('Erro ao salvar');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Erro ao salvar análise.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -244,6 +274,18 @@ export const AnalysisMode: React.FC = () => {
                 {/* Results Area */}
                 {analysis ? (
                     <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 overflow-y-auto space-y-6">
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+                            <h4 className="text-xs font-bold text-gray-500 uppercase">Relatório de IA</h4>
+                            <button
+                                onClick={handleSaveAnalysis}
+                                disabled={isSaving}
+                                className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-100 flex items-center gap-2 transition-colors"
+                            >
+                                {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                {isSaving ? 'Salvando...' : 'Salvar Análise'}
+                            </button>
+                        </div>
+
                         {/* Sentiment */}
                         <div>
                             <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Sentimento Geral</h4>
