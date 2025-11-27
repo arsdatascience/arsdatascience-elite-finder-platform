@@ -3,7 +3,12 @@ import { api as mockApi } from './mockApi';
 import { Campaign, Workflow, WorkflowTemplate, Metric } from '../types';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+let API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+// Garantir que a URL da API termine com /api
+if (API_URL && !API_URL.endsWith('/api')) {
+    API_URL += '/api';
+}
 
 const axiosInstance = axios.create({
     baseURL: API_URL,
