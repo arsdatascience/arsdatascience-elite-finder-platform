@@ -20,6 +20,14 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Garantir que a coluna 'role' exista (correção para erro de migração anterior)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='role') THEN
+        ALTER TABLE users ADD COLUMN role VARCHAR(50) DEFAULT 'user';
+    END IF;
+END $$;
+
 -- ============================================
 -- CLIENTS
 -- ============================================
