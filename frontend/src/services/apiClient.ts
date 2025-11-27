@@ -56,22 +56,22 @@ export const apiClient = {
     dashboard: {
         getKPIs: async (clientId: string, platform: string): Promise<Metric[]> => {
             if (USE_MOCK) return mockApi.dashboard.getKPIs(clientId, platform);
-            const response = await axiosInstance.get(`/dashboard/kpis?client_id=${clientId}&platform=${platform}`);
+            const response = await axiosInstance.get(`/dashboard/kpis?client=${clientId}&platform=${platform}`);
             return response.data;
         },
         getChartData: async (clientId: string) => {
             if (USE_MOCK) return mockApi.dashboard.getChartData(clientId);
-            const response = await axiosInstance.get(`/dashboard/chart-data?client_id=${clientId}`);
+            const response = await axiosInstance.get(`/dashboard/chart-data?client=${clientId}`);
             return response.data;
         },
-        getFunnelData: async () => {
+        getFunnelData: async (clientId: string) => {
             if (USE_MOCK) return mockApi.dashboard.getFunnelData();
-            const response = await axiosInstance.get(`/dashboard/funnel-data`);
+            const response = await axiosInstance.get(`/dashboard/funnel-data?client=${clientId}`);
             return response.data;
         },
-        getDeviceData: async () => {
+        getDeviceData: async (clientId: string) => {
             if (USE_MOCK) return mockApi.dashboard.getDeviceData();
-            const response = await axiosInstance.get(`/dashboard/device-data`);
+            const response = await axiosInstance.get(`/dashboard/device-data?client=${clientId}`);
             return response.data;
         }
     },

@@ -54,13 +54,13 @@ export const Dashboard: React.FC = () => {
   });
 
   const { data: funnelData = COMPARATIVE_FUNNEL_DATA } = useQuery({
-    queryKey: ['funnelData'],
-    queryFn: apiClient.dashboard.getFunnelData,
+    queryKey: ['funnelData', selectedClient],
+    queryFn: () => apiClient.dashboard.getFunnelData(selectedClient),
   });
 
   const { data: deviceData = DEVICE_DATA } = useQuery({
-    queryKey: ['deviceData'],
-    queryFn: apiClient.dashboard.getDeviceData,
+    queryKey: ['deviceData', selectedClient],
+    queryFn: () => apiClient.dashboard.getDeviceData(selectedClient),
   });
 
   const formatK = (val: number) => {
