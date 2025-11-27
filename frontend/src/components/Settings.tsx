@@ -604,47 +604,53 @@ export const Settings: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {teamMembers.map(member => (
-                    <tr key={member.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <img
-                            src={`https://i.pravatar.cc/40?u=${member.email}`}
-                            alt={member.firstName}
-                            className="w-10 h-10 rounded-full"
-                          />
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{member.firstName} {member.lastName}</div>
-                            <div className="text-sm text-gray-500">{member.email}</div>
+                  {teamMembers.map(member => {
+                    const isInvalid = !member.email || !member.username;
+                    return (
+                      <tr key={member.id} className={`hover:bg-gray-50 ${isInvalid ? 'bg-red-50 border-l-4 border-red-500' : ''}`}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <img
+                              src={`https://i.pravatar.cc/40?u=${member.email || 'default'}`}
+                              alt={member.firstName || 'Unknown'}
+                              className="w-10 h-10 rounded-full"
+                            />
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">
+                                {member.firstName} {member.lastName}
+                                {isInvalid && <span className="text-xs text-red-600 font-bold ml-2">(Registro Inválido - Exclua este item)</span>}
+                              </div>
+                              <div className="text-sm text-gray-500">{member.email || 'Sem email'}</div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {member.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${member.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                          {member.status === 'active' ? 'Ativo' : 'Inativo'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleEditMember(member)}
-                          className="text-blue-600 hover:text-blue-900 mr-3"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteMember(member.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            {member.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${member.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                            {member.status === 'active' ? 'Ativo' : 'Inativo'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <button
+                            onClick={() => handleEditMember(member)}
+                            className="text-blue-600 hover:text-blue-900 mr-3"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMember(member.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
