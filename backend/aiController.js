@@ -49,17 +49,23 @@ const formatChatHistory = (messages) => {
   return messages.map(m => `${m.sender.toUpperCase()}: ${m.text}`).join('\n');
 };
 
-// Helper function to call OpenAI API via new /v1/responses endpoint
-const callOpenAI = async (prompt, apiKey, model = "gpt-5.1", jsonMode = false) => {
-  const API_URL = "https://api.openai.com/v1/responses";
+// Helper function to call OpenAI API via standard /v1/chat/completions endpoint
+const callOpenAI = async (prompt, apiKey, model = "gpt-4o", jsonMode = false) => {
+  const API_URL = "https://api.openai.com/v1/chat/completions";
+
+  // Fallback para gpt-4o se o modelo solicitado for gpt-5 (que não existe publicamente)
+  const safeModel = model.includes('gpt-5') ? 'gpt-4o' : model;
 
   const requestBody = {
-    model: model,
-    input: prompt
+    model: safeModel,
+    messages: [
+      { role: "user", content: prompt }
+    ],
+    temperature: 0.7
   };
 
   if (jsonMode) {
-    requestBody.input += "\n\nIMPORTANT: Return ONLY valid JSON.";
+    requestBody.response_format = { type: "json_object" };
   }
 
   try {
@@ -79,14 +85,7 @@ const callOpenAI = async (prompt, apiKey, model = "gpt-5.1", jsonMode = false) =
 
     const data = await response.json();
 
-    // Correct parsing for GPT-5.1 /v1/responses structure
-    let content;
-    if (data.output && Array.isArray(data.output) && data.output[0]?.content?.[0]?.text) {
-      content = data.output[0].content[0].text;
-    } else {
-      // Fallback for other potential structures
-      content = data.response || data.text || data.choices?.[0]?.message?.content;
-    }
+    const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
       console.error("Unknown response structure:", JSON.stringify(data, null, 2));
