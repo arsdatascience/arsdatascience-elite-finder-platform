@@ -29,6 +29,9 @@ interface AgentConfig {
         presencePenalty?: number;
         responseMode?: string;
         candidateCount?: number;
+        stopSequences?: string[];
+        seed?: number;
+        jsonMode?: boolean;
     };
     vectorConfig: {
         chunkingMode: 'semantic' | 'fixed' | 'hierarchical';
@@ -744,6 +747,58 @@ export const AgentBuilder: React.FC = () => {
                                                         className="w-full px-3 py-2 border rounded-lg"
                                                     />
                                                     <p className="text-xs text-gray-500 mt-1">Número de candidatos (1-8)</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Meta Parâmetros de Ajuste Fino (Novos) */}
+                                        <div className="border-t border-gray-200 pt-6 mt-6">
+                                            <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                                <Brain size={16} className="text-purple-600" /> Meta Parâmetros de Ajuste Fino
+                                            </h4>
+                                            <div className="grid grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Seed (Reprodutibilidade)</label>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="Ex: 12345"
+                                                        value={config.aiConfig.seed || ''}
+                                                        onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, seed: parseInt(e.target.value) } })}
+                                                        className="w-full px-3 py-2 border rounded-lg"
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-1">Defina um valor para respostas consistentes.</p>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Modo JSON</label>
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <label className="relative inline-flex items-center cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={config.aiConfig.jsonMode || false}
+                                                                onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, jsonMode: e.target.checked } })}
+                                                                className="sr-only peer"
+                                                            />
+                                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                                            <span className="ml-3 text-sm font-medium text-gray-700">Forçar saída JSON</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Stop Sequences (Sequências de Parada)</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Ex: Usuário:, Fim, ###"
+                                                        value={config.aiConfig.stopSequences?.join(', ') || ''}
+                                                        onChange={(e) => setConfig({
+                                                            ...config,
+                                                            aiConfig: {
+                                                                ...config.aiConfig,
+                                                                stopSequences: e.target.value.split(',').map(s => s.trim()).filter(s => s)
+                                                            }
+                                                        })}
+                                                        className="w-full px-3 py-2 border rounded-lg"
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-1">Separe por vírgulas. A IA parará de gerar ao encontrar esses termos.</p>
                                                 </div>
                                             </div>
                                         </div>
