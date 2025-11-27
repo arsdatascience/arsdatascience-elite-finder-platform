@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../server');
+const pool = require('./database');
 
 // Listar todos os templates disponíveis
 router.get('/', async (req, res) => {
