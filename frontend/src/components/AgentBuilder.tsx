@@ -320,11 +320,22 @@ export const AgentBuilder: React.FC = () => {
         try {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates`);
             const data = await response.json();
-            setAvailableTemplates(data);
+
+            // Garantir que data é um array válido
+            if (Array.isArray(data)) {
+                setAvailableTemplates(data);
+            } else if (data.templates && Array.isArray(data.templates)) {
+                setAvailableTemplates(data.templates);
+            } else {
+                console.warn('Formato de templates inesperado:', data);
+                setAvailableTemplates([]);
+            }
+
             setShowLoadTemplateModal(true);
         } catch (error) {
             console.error('Erro ao carregar templates:', error);
             alert('Erro ao carregar lista de templates.');
+            setAvailableTemplates([]);
         } finally {
             setLoadingTemplates(false);
         }
@@ -423,26 +434,7 @@ export const AgentBuilder: React.FC = () => {
                             <Smartphone size={18} /> Canais & Integrações
                         </button>
                     </nav>
-                    <div className="mt-auto p-4 border-t border-gray-200">
-                        <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                            <div className="flex items-center gap-2 mb-2 text-indigo-800 font-bold text-xs uppercase">
-                                <Wand2 size={14} /> Assistente de Configuração
-                            </div>
-                            <textarea
-                                className="w-full text-xs bg-white border-indigo-200 rounded p-2 focus:ring-1 focus:ring-indigo-500 mb-2"
-                                rows={4}
-                                placeholder="Descreva o agente que você deseja criar..."
-                                value={magicPrompt}
-                                onChange={(e) => setMagicPrompt(e.target.value)}
-                            />
-                            <button
-                                onClick={handleMagicConfig}
-                                className="w-full py-1.5 bg-indigo-600 text-white text-xs font-bold rounded hover:bg-indigo-700"
-                            >
-                                Gerar Configuração
-                            </button>
-                        </div>
-                    </div>
+
                 </div>
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-8">

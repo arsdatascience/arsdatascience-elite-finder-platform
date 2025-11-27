@@ -12,7 +12,9 @@ const memberSchema = z.object({
   firstName: z.string().min(2, 'Nome obrigatório'),
   lastName: z.string().min(2, 'Sobrenome obrigatório'),
   email: z.string().email('Email inválido'),
-  password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+  password: z.string().optional(), // Opcional ao editar
+  oldPassword: z.string().optional(), // Para validar alteração de senha
+  newPassword: z.string().optional(), // Nova senha
   phone: z.string().min(14, 'Telefone inválido'), // Ajustado para validar com máscara
   cpf: z.string().min(14, 'CPF inválido'), // Ajustado para validar com máscara
   registrationDate: z.string().min(1, 'Data obrigatória'),
@@ -26,6 +28,18 @@ const memberSchema = z.object({
     state: z.string().length(2, 'UF deve ter 2 letras'),
     zip: z.string().min(9, 'CEP inválido') // Ajustado para validar com máscara
   })
+}).refine((data) => {
+  // Se estiver alterando senha, validar que ambos os campos foram preenchidos
+  if (data.newPassword && !data.oldPassword) {
+    return false;
+  }
+  if (data.newPassword && data.newPassword.length < 8) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Para alterar senha, informe a senha antiga e uma nova senha com no mínimo 8 caracteres",
+  path: ["newPassword"]
 });
 
 
@@ -190,6 +204,7 @@ export const Settings: React.FC = () => {
   const [currentMember, setCurrentMember] = useState<TeamMember>(INITIAL_MEMBER_STATE);
   const [isEditingMember, setIsEditingMember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [wantsToChangePassword, setWantsToChangePassword] = useState(false);
 
   // React Hook Form Setup
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<MemberFormData>({
@@ -761,38 +776,109 @@ export const Settings: React.FC = () => {
                     <input {...register('email')} className={`w-full p-2 border rounded-lg ${errors.email ? 'border-red-500' : ''}`} />
                     {errors.email && <span className="text-xs text-red-500">{errors.email.message}</span>}
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Senha</label>
-                    <div className="flex gap-2">
-                      <div className="flex-1 relative">
-                        <input
-                          {...register('password')}
-                          type={showPassword ? 'text' : 'password'}
-                          className={`w-full p-2 pr-10 border rounded-lg ${errors.password ? 'border-red-500' : ''}`}
-                          placeholder="Mínimo 8 caracteres"
-                        />
+                  {/* Senha - Condicional: obrigatória ao criar, opcional ao editar */}
+                  {!isEditingMember ? (
+                    // CRIANDO NOVO MEMBRO: Senha obrigatória
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Senha *</label>
+                      <div className="flex gap-2">
+                        <div className="flex-1 relative">
+                          <input
+                            {...register('password', { required: 'Senha obrigatória ao criar usuário' })}
+                            type={showPassword ? 'text' : 'password'}
+                            className={`w-full p-2 pr-10 border rounded-lg ${errors.password ? 'border-red-500' : ''}`}
+                            placeholder="Mínimo 8 caracteres"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
                         <button
                           type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          onClick={() => {
+                            const newPassword = generateSecurePassword();
+                            setValue('password', newPassword);
+                            setShowPassword(true);
+                          }}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-xs whitespace-nowrap flex items-center gap-2"
                         >
-                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          <Shield size={16} /> Gerar Senha
                         </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newPassword = generateSecurePassword();
-                          setValue('password', newPassword);
-                          setShowPassword(true);
-                        }}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-xs whitespace-nowrap flex items-center gap-2"
-                      >
-                        <Shield size={16} /> Gerar Senha
-                      </button>
+                      {errors.password && <span className="text-xs text-red-500">{errors.password.message}</span>}
                     </div>
-                    {errors.password && <span className="text-xs text-red-500">{errors.password.message}</span>}
-                  </div>
+                  ) : (
+                    // EDITANDO MEMBRO: Opção de alterar senha
+                    <div className="md:col-span-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                          <Lock size={16} className="text-orange-600" /> Alteração de Senha
+                        </h5>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={wantsToChangePassword}
+                            onChange={(e) => {
+                              setWantsToChangePassword(e.target.checked);
+                              if (!e.target.checked) {
+                                setValue('oldPassword', '');
+                                setValue('newPassword', '');
+                              }
+                            }}
+                            className="rounded text-blue-600"
+                          />
+                          <span className="text-xs text-gray-600">Alterar senha</span>
+                        </label>
+                      </div>
+
+                      {wantsToChangePassword && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Senha Antiga *</label>
+                            <input
+                              {...register('oldPassword')}
+                              type="password"
+                              className={`w-full p-2 border rounded-lg ${errors.oldPassword ? 'border-red-500' : ''}`}
+                              placeholder="Digite a senha atual"
+                            />
+                            {errors.oldPassword && <span className="text-xs text-red-500">{errors.oldPassword.message}</span>}
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">Nova Senha *</label>
+                            <div className="flex gap-2">
+                              <input
+                                {...register('newPassword')}
+                                type={showPassword ? 'text' : 'password'}
+                                className={`flex-1 p-2 border rounded-lg ${errors.newPassword ? 'border-red-500' : ''}`}
+                                placeholder="Mínimo 8 caracteres"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const pwd = generateSecurePassword();
+                                  setValue('newPassword', pwd);
+                                  setShowPassword(true);
+                                }}
+                                className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs"
+                                title="Gerar senha segura"
+                              >
+                                <Shield size={16} />
+                              </button>
+                            </div>
+                            {errors.newPassword && <span className="text-xs text-red-500">{errors.newPassword.message}</span>}
+                          </div>
+                        </div>
+                      )}
+
+                      {!wantsToChangePassword && (
+                        <p className="text-xs text-gray-500 italic">Marque a opção acima para alterar a senha</p>
+                      )}
+                    </div>
+                  )}
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Telefone</label>
                     <input
