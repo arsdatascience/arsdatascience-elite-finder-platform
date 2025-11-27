@@ -30,6 +30,28 @@ axiosInstance.interceptors.request.use(
 );
 
 export const apiClient = {
+    users: {
+        getTeamMembers: async () => {
+            if (USE_MOCK) return [];
+            const response = await axiosInstance.get('/team');
+            return response.data;
+        },
+        createTeamMember: async (member: any) => {
+            if (USE_MOCK) return member;
+            const response = await axiosInstance.post('/team', member);
+            return response.data;
+        },
+        updateTeamMember: async (id: number, member: any) => {
+            if (USE_MOCK) return member;
+            const response = await axiosInstance.put(`/team/${id}`, member);
+            return response.data;
+        },
+        deleteTeamMember: async (id: number) => {
+            if (USE_MOCK) return { success: true };
+            const response = await axiosInstance.delete(`/team/${id}`);
+            return response.data;
+        }
+    },
     clients: {
         getClients: async () => {
             const response = await axiosInstance.get('/clients');

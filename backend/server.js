@@ -139,6 +139,12 @@ app.get('/api/health', async (req, res) => {
 // Users
 app.get('/api/users', dbController.getUsers);
 
+// Team Management
+app.get('/api/team', userCtrl.getTeamMembers);
+app.post('/api/team', userCtrl.createTeamMember);
+app.put('/api/team/:id', userCtrl.updateTeamMember);
+app.delete('/api/team/:id', userCtrl.deleteTeamMember);
+
 // Clients
 app.get('/api/clients', dbController.getClients);
 app.post('/api/clients', dbController.createClient);
