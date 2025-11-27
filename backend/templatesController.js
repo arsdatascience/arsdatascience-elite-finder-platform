@@ -122,6 +122,9 @@ router.get('/', async (req, res) => {
         res.json(result.rows);
     } catch (error) {
         console.error('Erro ao listar templates:', error);
+        if (error.code === '42P01') {
+            return res.status(500).json({ error: 'Tabelas de templates não encontradas', code: 'TABLE_NOT_FOUND' });
+        }
         res.status(500).json({ error: 'Erro ao listar templates' });
     }
 });

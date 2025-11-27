@@ -229,10 +229,16 @@ const updateTeamMember = async (req, res) => {
         if (duplicateCheck.rows.length > 0) {
             const conflict = duplicateCheck.rows[0];
             if (conflict.email === email) {
-                return res.status(400).json({ success: false, error: 'Este email já está em uso por outro usuário.' });
+                return res.status(400).json({
+                    success: false,
+                    error: `Este email já está em uso pelo usuário ID ${conflict.id} (${conflict.username}).`
+                });
             }
             if (conflict.username === username) {
-                return res.status(400).json({ success: false, error: 'Este nome de usuário já está em uso.' });
+                return res.status(400).json({
+                    success: false,
+                    error: `Este nome de usuário já está em uso pelo usuário ID ${conflict.id}.`
+                });
             }
         }
 
