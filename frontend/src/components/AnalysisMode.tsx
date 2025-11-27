@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, RefreshCw, Trash2, BrainCircuit, Sparkles, Loader2, CheckCircle, AlertTriangle, ThumbsUp, Bot, Save } from 'lucide-react';
+import { Upload, RefreshCw, Trash2, BrainCircuit, Sparkles, Loader2, CheckCircle, AlertTriangle, ThumbsUp, Bot, Save, FileDown } from 'lucide-react';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
+import { saveAs } from "file-saver";
 import { MOCK_CHAT } from '../constants';
 import { ChatMessage, AnalysisResult } from '../types';
 import { analyzeChatConversation } from '../services/geminiService';
@@ -140,6 +142,72 @@ export const AnalysisMode: React.FC = () => {
         }
     };
 
+    const handleExportDocx = async () => {
+        if (!analysis) return;
+
+        const doc = new Document({
+            sections: [{
+                properties: {},
+                children: [
+                    new Paragraph({
+                        text: "Relatório de Análise de Conversa - Elite Finder",
+                        heading: HeadingLevel.TITLE,
+                        alignment: AlignmentType.CENTER,
+                    }),
+                    new Paragraph({ text: "" }),
+
+                    new Paragraph({
+                        text: "Resumo Executivo",
+                        heading: HeadingLevel.HEADING_1,
+                    }),
+                    new Paragraph({
+                        text: analysis.summary,
+                    }),
+                    new Paragraph({ text: "" }),
+
+                    new Paragraph({
+                        text: `Sentimento: ${analysis.sentiment.toUpperCase()}`,
+                        bullet: { level: 0 }
+                    }),
+                    new Paragraph({
+                        text: `Intenção: ${analysis.intent.toUpperCase()}`,
+                        bullet: { level: 0 }
+                    }),
+                    new Paragraph({ text: "" }),
+
+                    new Paragraph({
+                        text: "Recomendações",
+                        heading: HeadingLevel.HEADING_1,
+                    }),
+                    ...(analysis.suggestions?.map(s => new Paragraph({
+                        text: s,
+                        bullet: { level: 0 }
+                    })) || []),
+                    new Paragraph({ text: "" }),
+
+                    new Paragraph({
+                        text: "Histórico da Conversa",
+                        heading: HeadingLevel.HEADING_1,
+                    }),
+                    ...messages.map(m => new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: `${m.sender === 'agent' ? 'Agente' : 'Cliente'} (${m.timestamp}): `,
+                                bold: true,
+                            }),
+                            new TextRun({
+                                text: typeof m.text === 'string' ? m.text : JSON.stringify(m.text),
+                            })
+                        ]
+                    }))
+                ],
+            }],
+        });
+
+        const blob = await Packer.toBlob(doc);
+        saveAs(blob, "analise_conversa.docx");
+    };
+
     return (
         <div className="h-full flex flex-col md:flex-row gap-6">
             {/* Chat Area */}
@@ -276,14 +344,24 @@ export const AnalysisMode: React.FC = () => {
                     <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 overflow-y-auto space-y-6">
                         <div className="flex justify-between items-center border-b border-gray-100 pb-4">
                             <h4 className="text-xs font-bold text-gray-500 uppercase">Relatório de IA</h4>
-                            <button
-                                onClick={handleSaveAnalysis}
-                                disabled={isSaving}
-                                className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-100 flex items-center gap-2 transition-colors"
-                            >
-                                {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                                {isSaving ? 'Salvando...' : 'Salvar Análise'}
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleExportDocx}
+                                    className="text-xs bg-green-50 text-green-700 px-3 py-1.5 rounded-lg font-bold hover:bg-green-100 flex items-center gap-2 transition-colors"
+                                    title="Exportar DOCX"
+                                >
+                                    <FileDown size={14} />
+                                    DOCX
+                                </button>
+                                <button
+                                    onClick={handleSaveAnalysis}
+                                    disabled={isSaving}
+                                    className="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg font-bold hover:bg-indigo-100 flex items-center gap-2 transition-colors"
+                                >
+                                    {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                    {isSaving ? 'Salvando...' : 'Salvar'}
+                                </button>
+                            </div>
                         </div>
 
                         {/* Sentiment */}
