@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import {
     Brain, Save, Database, MessageSquare,
     Shield, Fingerprint, Wand2, Smartphone, Check,
-    LayoutTemplate, X, Loader2
+    LayoutTemplate, X, Loader2, RefreshCw
 } from 'lucide-react';
 // Tipos baseados na especificação do usuário
 interface AgentConfig {
@@ -1242,6 +1242,17 @@ export const AgentBuilder: React.FC = () => {
                                 <X size={24} />
                             </button>
                         </div>
+                        {!loadingTemplates && availableTemplates.length > 0 && (
+                            <div className="mb-4 flex justify-end">
+                                <button
+                                    onClick={handleSetupTemplates}
+                                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                                    title="Recarregar templates do sistema"
+                                >
+                                    <RefreshCw size={12} /> Atualizar Lista
+                                </button>
+                            </div>
+                        )}
                         {loadingTemplates ? (
                             <div className="flex justify-center py-12">
                                 <Loader2 className="animate-spin text-blue-600" size={32} />
