@@ -78,9 +78,12 @@ export const apiClient = {
     },
     auth: {
         login: async (email: string, password: string) => {
+            console.log(`[Auth] Tentando login para ${email}. Modo Mock: ${USE_MOCK}`);
+
             if (USE_MOCK) {
                 // Simulação de login
                 if ((email === 'admin@elite.com' || email === 'denismay@arsdatascience.com.br') && password === 'admin') {
+                    console.log('[Auth] Login Mock sucesso');
                     return {
                         user: {
                             id: 1,
@@ -92,10 +95,19 @@ export const apiClient = {
                         token: 'mock-jwt-token'
                     };
                 }
+                console.error('[Auth] Login Mock falhou: credenciais inválidas');
                 throw new Error('Credenciais inválidas');
             }
-            const response = await axiosInstance.post('/auth/login', { email, password });
-            return response.data;
+
+            try {
+                console.log(`[Auth] Enviando request para ${axiosInstance.getUri()}/auth/login`);
+                const response = await axiosInstance.post('/auth/login', { email, password });
+                console.log('[Auth] Login Backend sucesso:', response.data);
+                return response.data;
+            } catch (error: any) {
+                console.error('[Auth] Login Backend erro:', error.response?.data || error.message);
+                throw error;
+            }
         },
         register: async (name: string, email: string, password: string) => {
             if (USE_MOCK) {
