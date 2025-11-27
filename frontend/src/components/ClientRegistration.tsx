@@ -75,16 +75,51 @@ const maskCNPJ = (value: string) => {
 };
 
 // --- MOCK DATA ---
-const MOCK_CLIENTS = [
-    { id: 1, name: 'TechCorp Soluções', type: 'PJ', email: 'contato@techcorp.com.br', phone: '(11) 99999-1010', city: 'São Paulo' },
-    { id: 2, name: 'Padaria do João', type: 'PJ', email: 'joao@padaria.com', phone: '(21) 98888-2020', city: 'Rio de Janeiro' },
-    { id: 3, name: 'Ana Maria Silva', type: 'PF', email: 'ana.silva@gmail.com', phone: '(31) 97777-3030', city: 'Belo Horizonte' },
-];
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/services/apiClient';
 
 export const ClientRegistration: React.FC = () => {
     const [view, setView] = useState<'list' | 'form'>('list');
     const [editingId, setEditingId] = useState<number | null>(null);
     const [successMsg, setSuccessMsg] = useState('');
+    const queryClient = useQueryClient();
+
+    const { data: clients = [], isLoading } = useQuery({
+        queryKey: ['clients'],
+        queryFn: apiClient.clients.getClients
+    });
+
+    const createMutation = useMutation({
+        mutationFn: apiClient.clients.createClient,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['clients'] });
+            setSuccessMsg('Cliente cadastrado com sucesso!');
+            setTimeout(() => setSuccessMsg(''), 3000);
+            setView('list');
+            reset();
+        }
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, data }: { id: number, data: any }) => apiClient.clients.updateClient(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['clients'] });
+            setSuccessMsg('Cliente atualizado com sucesso!');
+            setTimeout(() => setSuccessMsg(''), 3000);
+            setView('list');
+            setEditingId(null);
+            reset();
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: apiClient.clients.deleteClient,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['clients'] });
+            setSuccessMsg('Cliente removido com sucesso!');
+            setTimeout(() => setSuccessMsg(''), 3000);
+        }
+    });
 
     const {
         register,
@@ -128,43 +163,30 @@ export const ClientRegistration: React.FC = () => {
     };
 
     const onSubmit = async (data: ClientFormData) => {
-        // Simulação de API Call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        console.log('Dados validados:', data);
-
-        if (editingId) {
-            setSuccessMsg('Cliente atualizado com sucesso!');
-        } else {
-            setSuccessMsg('Cliente cadastrado com sucesso!');
+        try {
+            if (editingId) {
+                await updateMutation.mutateAsync({ id: editingId, data });
+            } else {
+                await createMutation.mutateAsync(data);
+            }
+        } catch (error) {
+            console.error('Erro ao salvar cliente:', error);
         }
-
-        setTimeout(() => {
-            setSuccessMsg('');
-            setView('list');
-            reset();
-            setEditingId(null);
-        }, 1500);
     };
 
     const handleEdit = (client: any) => {
-        // Num cenário real, buscaríamos os dados completos do cliente
-        reset({
-            type: client.type as 'PF' | 'PJ',
-            name: client.name,
-            email: client.email,
-            phone: client.phone,
-            city: client.city,
-            // Preencher outros campos com dados reais
-            document: client.type === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00',
-            street: 'Rua Exemplo',
-            number: '123',
-            neighborhood: 'Centro',
-            cep: '00000-000',
-            state: 'SP'
-        });
         setEditingId(client.id);
+        // Preencher formulário com dados do cliente
+        Object.keys(client).forEach(key => {
+            setValue(key as any, client[key]);
+        });
         setView('form');
+    };
+
+    const handleDelete = async (id: number) => {
+        if (window.confirm('Tem certeza que deseja excluir este cliente?')) {
+            await deleteMutation.mutateAsync(id);
+        }
     };
 
     const handleNewClient = () => {
@@ -203,41 +225,83 @@ export const ClientRegistration: React.FC = () => {
                 </div>
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <table className="w-full text-left">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Nome / Razão Social</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Tipo</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Email</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Telefone</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase">Cidade</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {MOCK_CLIENTS.map(client => (
-                                <tr key={client.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4 font-medium text-gray-900">{client.name}</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 rounded text-xs font-bold ${client.type === 'PJ' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'} `}>
-                                            {client.type}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-gray-600">{client.email}</td>
-                                    <td className="px-6 py-4 text-gray-600">{client.phone}</td>
-                                    <td className="px-6 py-4 text-gray-600">{client.city}</td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button
-                                            onClick={() => handleEdit(client)}
-                                            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 ml-auto"
-                                        >
-                                            Editar
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    {isLoading ? (
+                        <div className="p-8 text-center text-gray-500">Carregando clientes...</div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Cliente</th>
+                                        <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipo</th>
+                                        <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contato</th>
+                                        <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Localização</th>
+                                        <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {clients.map((client: any) => (
+                                        <tr key={client.id} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                                                        {client.name.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-gray-900">{client.name}</p>
+                                                        <p className="text-xs text-gray-500">ID: #{client.id}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${client.type === 'PJ' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'
+                                                    }`}>
+                                                    {client.type === 'PJ' ? <Building2 size={12} className="mr-1" /> : <User size={12} className="mr-1" />}
+                                                    {client.type}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="flex items-center text-sm text-gray-600">
+                                                        <Mail size={14} className="mr-2 text-gray-400" />
+                                                        {client.email}
+                                                    </div>
+                                                    <div className="flex items-center text-sm text-gray-600">
+                                                        <Phone size={14} className="mr-2 text-gray-400" />
+                                                        {client.phone}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center text-sm text-gray-600">
+                                                    <MapPin size={14} className="mr-2 text-gray-400" />
+                                                    {client.city}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleEdit(client)}
+                                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        title="Editar"
+                                                    >
+                                                        <User size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(client.id)}
+                                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Excluir"
+                                                    >
+                                                        <X size={18} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             </div>
         );

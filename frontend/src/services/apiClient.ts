@@ -91,5 +91,27 @@ export const apiClient = {
             const response = await axiosInstance.post('/auth/login', { email, password });
             return response.data;
         }
+    },
+    clients: {
+        getClients: async () => {
+            if (USE_MOCK) return mockApi.clients.getClients();
+            const response = await axiosInstance.get('/clients');
+            return response.data;
+        },
+        createClient: async (client: any) => {
+            if (USE_MOCK) return mockApi.clients.createClient(client);
+            const response = await axiosInstance.post('/clients', client);
+            return response.data;
+        },
+        updateClient: async (id: number, client: any) => {
+            if (USE_MOCK) return mockApi.clients.updateClient(id, client);
+            const response = await axiosInstance.put(`/clients/${id}`, client);
+            return response.data;
+        },
+        deleteClient: async (id: number) => {
+            if (USE_MOCK) return mockApi.clients.deleteClient(id);
+            const response = await axiosInstance.delete(`/clients/${id}`);
+            return response.data;
+        }
     }
 };

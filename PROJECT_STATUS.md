@@ -43,21 +43,23 @@ Módulos que já têm base mas podem precisar de refinamentos ou integração fi
 - [x] **Campanhas (Campaigns)**
   - [x] Visualização de lista de campanhas (Refatorado para useQuery)
   - [x] Dados integrados ao Mock API
+  - [x] Migração para apiClient (Mock/Real)
   - [ ] Edição/Criação de campanhas
   - [ ] Integração com APIs de Ad Tech
+
+- [x] **Autenticação & Segurança**
+  - [x] Contexto de Autenticação (AuthContext)
+  - [x] Tela de Login
+  - [x] Proteção de Rotas (PrivateRoute)
+  - [x] Integração com apiClient
 
 ### 🔴 Pendente / A Fazer
 Funcionalidades que ainda precisam ser desenvolvidas ou conectadas.
 
 - [ ] **Backend Integration (Real)**
-  - [ ] Substituir `mockApi.ts` por chamadas reais aos endpoints do Express
-  - [ ] Configurar Axios Instance com Interceptors
+  - [x] Configurar Axios Instance com Interceptors (apiClient.ts)
+  - [ ] Substituir chamadas mockadas restantes
   - [ ] Tratamento de Erros Global
-
-- [ ] **Autenticação & Segurança**
-  - [ ] Tela de Login/Registro
-  - [ ] Proteção de Rotas (Private Routes)
-  - [ ] Persistência de Sessão (JWT/Context)
 
 - [ ] **Módulos Adicionais**
   - [ ] Social Media (Gestão de Postagens)

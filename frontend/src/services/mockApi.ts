@@ -111,6 +111,12 @@ const DEFAULT_CHART_DATA = [
     { name: 'Dom', revenue: 17450, spend: 21500, google: 11500, meta: 10000 },
 ];
 
+let MOCK_CLIENTS = [
+    { id: 1, name: 'TechCorp Soluções', type: 'PJ', email: 'contato@techcorp.com.br', phone: '(11) 99999-1010', city: 'São Paulo' },
+    { id: 2, name: 'Padaria do João', type: 'PJ', email: 'joao@padaria.com', phone: '(21) 98888-2020', city: 'Rio de Janeiro' },
+    { id: 3, name: 'Ana Maria Silva', type: 'PF', email: 'ana.silva@gmail.com', phone: '(31) 97777-3030', city: 'Belo Horizonte' },
+];
+
 export const api = {
     dashboard: {
         getKPIs: async (clientId: string, platform: string) => {
@@ -254,6 +260,28 @@ export const api = {
                         { id: '001', name: 'Campanha Institucional Global', platform: 'google', status: 'active', budget: 100000, spent: 45000, ctr: 2.0, roas: 3.0, conversions: 500 }
                     ];
             }
+        }
+    },
+    clients: {
+        getClients: async () => {
+            await delay(500);
+            return MOCK_CLIENTS;
+        },
+        createClient: async (client: any) => {
+            await delay(800);
+            const newClient = { ...client, id: Date.now() };
+            MOCK_CLIENTS = [...MOCK_CLIENTS, newClient];
+            return newClient;
+        },
+        updateClient: async (id: number, client: any) => {
+            await delay(800);
+            MOCK_CLIENTS = MOCK_CLIENTS.map(c => c.id === id ? { ...c, ...client } : c);
+            return { ...client, id };
+        },
+        deleteClient: async (id: number) => {
+            await delay(500);
+            MOCK_CLIENTS = MOCK_CLIENTS.filter(c => c.id !== id);
+            return { success: true };
         }
     }
 };
