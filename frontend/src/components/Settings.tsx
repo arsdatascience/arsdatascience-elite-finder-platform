@@ -170,36 +170,26 @@ export const Settings: React.FC = () => {
   const memberFileInputRef = useRef<HTMLInputElement>(null);
 
   // Estados para Gestão de Equipe
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      id: 1,
-      username: 'denismay',
-      firstName: 'Denis',
-      lastName: 'May',
-      email: 'denismay@arsdatascience.com.br',
-      phone: '(11) 99999-9999',
-      cpf: '000.000.000-00',
-      registrationDate: '2024-01-01',
-      role: 'Admin',
-      status: 'active',
-      address: { street: 'Av. Paulista', number: '1000', complement: 'Sala 100', district: 'Bela Vista', city: 'São Paulo', state: 'SP', zip: '01310-100' },
-      permissions: ['all']
-    },
-    {
-      id: 2,
-      username: 'sarahsales',
-      firstName: 'Sarah',
-      lastName: 'Sales',
-      email: 'sarah@elite.com',
-      phone: '(11) 88888-8888',
-      cpf: '111.111.111-11',
-      registrationDate: '2024-02-15',
-      role: 'Vendedor',
-      status: 'active',
-      address: { street: 'Rua Augusta', number: '500', complement: '', district: 'Consolação', city: 'São Paulo', state: 'SP', zip: '01305-000' },
-      permissions: ['manage_leads', 'view_dashboard']
-    },
-  ]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+
+  // Carregar membros do backend
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/team/members`);
+        const data = await response.json();
+        if (data.success) {
+          setTeamMembers(data.members);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar membros:', error);
+      }
+    };
+
+    if (activeTab === 'team') {
+      fetchMembers();
+    }
+  }, [activeTab]);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [currentMember, setCurrentMember] = useState<TeamMember>(INITIAL_MEMBER_STATE);
   const [isEditingMember, setIsEditingMember] = useState(false);
