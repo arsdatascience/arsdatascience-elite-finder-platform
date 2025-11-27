@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS clients (
 -- ============================================
 -- LEADS
 -- ============================================
+-- Tenta criar a tabela leads se não existir
 CREATE TABLE IF NOT EXISTS leads (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
@@ -109,19 +110,28 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
 CREATE TABLE IF NOT EXISTS chat_messages (
     id SERIAL PRIMARY KEY,
     session_id INTEGER REFERENCES chat_sessions(id) ON DELETE CASCADE,
-    lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
     role VARCHAR(50) NOT NULL,
     content TEXT NOT NULL,
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Garantir que a coluna lead_id exista (para bancos já criados)
+-- Adicionar coluna lead_id separadamente para evitar erro de FK se a tabela leads tiver tipo incompatível
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='chat_messages' AND column_name='lead_id') THEN
-        ALTER TABLE chat_messages ADD COLUMN lead_id UUID REFERENCES leads(id) ON DELETE SET NULL;
+        ALTER TABLE chat_messages ADD COLUMN lead_id UUID;
     END IF;
+END $$;
+
+-- Tentar adicionar a FK. Se falhar (ex: tipos incompatíveis), apenas loga ou ignora por enquanto.
+DO $$
+BEGIN
+    BEGIN
+        ALTER TABLE chat_messages ADD CONSTRAINT chat_messages_lead_id_fkey FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Não foi possível adicionar FK chat_messages_lead_id_fkey: %', SQLERRM;
+    END;
 END $$;
 
 CREATE INDEX IF NOT EXISTS idx_chat_messages_lead_id ON chat_messages(lead_id);

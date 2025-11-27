@@ -8,32 +8,10 @@ const pool = new Pool({
 // ============================================
 // DATABASE INITIALIZATION
 // ============================================
-const initDb = async () => {
-    try {
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS leads (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                client_id UUID, -- REFERENCES clients(id) - Removido FK estrita para evitar erros se clients não existir
-                name VARCHAR(255) NOT NULL,
-                email VARCHAR(255),
-                phone VARCHAR(50),
-                company VARCHAR(255),
-                source VARCHAR(50),
-                status VARCHAR(50) DEFAULT 'new',
-                value DECIMAL(10, 2),
-                notes TEXT,
-                created_at TIMESTAMP DEFAULT NOW(),
-                updated_at TIMESTAMP DEFAULT NOW()
-            );
-        `);
-        console.log('Leads table initialized');
-    } catch (error) {
-        console.error('Error initializing database:', error);
-    }
-};
-
-// Initialize DB on start
-initDb();
+// ============================================
+// DATABASE INITIALIZATION
+// ============================================
+// A inicialização do banco é feita via schema.sql no server.js
 
 // ============================================
 // USERS
