@@ -61,8 +61,8 @@ const getKPIs = async (req, res) => {
         const spentQuery = await db.query(`SELECT SUM(spent) as total_spent FROM campaigns ${whereClause}`, params);
         const totalSpent = parseFloat(spentQuery.rows[0].total_spent || 0);
 
-        // Se não houver dados reais, retornar mock
-        if (totalSpent === 0) {
+        // Se não houver dados reais significativos (investimento zero ou receita zero), retornar mock para demonstração
+        if (totalSpent === 0 || totalRevenue === 0) {
             return res.json(generateMockData(clientId).kpis);
         }
 
