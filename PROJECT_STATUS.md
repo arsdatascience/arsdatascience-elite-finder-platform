@@ -37,29 +37,19 @@ Módulos que já têm base mas podem precisar de refinamentos ou integração fi
 
 - [ ] **Cadastro de Clientes (ClientRegistration)**
   - [x] Formulário com Zod
-  - [ ] Integração com TanStack Query (Substituir estado local se necessário)
-  - [ ] Conexão com Backend Real
+  - [x] Integração com TanStack Query (Substituir estado local se necessário)
+  - [x] Conexão com Backend Real (via apiClient)
 
 - [x] **Campanhas (Campaigns)**
   - [x] Visualização de lista de campanhas (Refatorado para useQuery)
-  - [x] Dados integrados ao Mock API
-  - [x] Migração para apiClient (Mock/Real)
-  - [ ] Edição/Criação de campanhas
-  - [ ] Integração com APIs de Ad Tech
+  - [ ] Substituir chamadas mockadas restantes
+  - [ ] Tratamento de Erros Global
 
 - [x] **Autenticação & Segurança**
   - [x] Contexto de Autenticação (AuthContext)
-  - [x] Tela de Login
-  - [x] Proteção de Rotas (PrivateRoute)
-  - [x] Integração com apiClient
-
-### 🔴 Pendente / A Fazer
-Funcionalidades que ainda precisam ser desenvolvidas ou conectadas.
-
-- [ ] **Backend Integration (Real)**
-  - [x] Configurar Axios Instance com Interceptors (apiClient.ts)
-  - [ ] Substituir chamadas mockadas restantes
-  - [ ] Tratamento de Erros Global
+  - [x] Tela de Login (Frontend + Backend)
+  - [x] Proteção de Rotas (Private Routes)
+  - [x] Persistência de Sessão (JWT/Context)
 
 - [ ] **Módulos Adicionais**
   - [ ] Social Media (Gestão de Postagens)
@@ -67,7 +57,7 @@ Funcionalidades que ainda precisam ser desenvolvidas ou conectadas.
   - [ ] Treinamento (Training Area)
 
 - [ ] **Infraestrutura & Deploy**
-  - [ ] Configuração final do Banco de Dados (PostgreSQL)
+  - [x] Configuração final do Banco de Dados (PostgreSQL)
   - [ ] Deploy Frontend (Vercel)
   - [ ] Deploy Backend (Railway/Render)
 
