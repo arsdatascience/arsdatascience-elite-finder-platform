@@ -75,7 +75,7 @@ const login = async (req, res) => {
 
         if (!user) {
             console.log('[Login Fail] User not found');
-            return res.status(400).json({ error: 'Usuário não encontrado (Debug)' });
+            return res.status(400).json({ error: 'Credenciais inválidas' });
         }
 
         console.log(`[Login] User found: ${user.id}, Role: ${user.role}`);
@@ -83,8 +83,7 @@ const login = async (req, res) => {
 
         if (!isMatch) {
             console.log('[Login Fail] Password mismatch');
-            // Debug: log hash comparison details if needed (careful with security in prod logs)
-            return res.status(400).json({ error: 'Senha incorreta (Debug)' });
+            return res.status(400).json({ error: 'Credenciais inválidas' });
         }
 
         const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
