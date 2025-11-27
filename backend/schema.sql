@@ -338,3 +338,46 @@ CREATE TABLE IF NOT EXISTS device_stats (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+
+-- ============================================
+-- AGENT TEMPLATES
+-- ============================================
+CREATE TABLE IF NOT EXISTS agent_templates (
+    id SERIAL PRIMARY KEY,
+    template_id VARCHAR(100) UNIQUE NOT NULL,
+    template_name VARCHAR(255) NOT NULL,
+    template_description TEXT,
+    template_version VARCHAR(50) DEFAULT '1.0.0',
+    category VARCHAR(100),
+    base_config JSONB NOT NULL,
+    default_parameters JSONB DEFAULT '[]'::jsonb,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS agent_parameter_groups (
+    id SERIAL PRIMARY KEY,
+    group_id VARCHAR(100) NOT NULL,
+    group_label VARCHAR(255) NOT NULL,
+    display_order INTEGER DEFAULT 0,
+    chatbot_id INTEGER,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS agent_custom_parameters (
+    id SERIAL PRIMARY KEY,
+    chatbot_id INTEGER,
+    parameter_key VARCHAR(100) NOT NULL,
+    parameter_value TEXT,
+    parameter_type VARCHAR(50) DEFAULT 'text',
+    category VARCHAR(100),
+    display_label VARCHAR(255),
+    display_order INTEGER DEFAULT 0,
+    helper_text TEXT,
+    is_required BOOLEAN DEFAULT false,
+    is_visible BOOLEAN DEFAULT true,
+    validation_rules JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);

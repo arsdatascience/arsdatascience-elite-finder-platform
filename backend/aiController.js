@@ -226,6 +226,9 @@ const analyzeChatConversation = async (req, res) => {
     console.log("📩 Raw AI Response for Analysis:", text);
 
     // Robust JSON extraction
+    if (typeof text !== 'string') {
+      text = JSON.stringify(text);
+    }
     let cleanText = text.trim();
 
     // Try to find JSON block if wrapped in markdown
