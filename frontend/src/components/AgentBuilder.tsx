@@ -118,7 +118,12 @@ const INITIAL_CONFIG: AgentConfig = {
     }
 };
 
+import { useSearchParams } from 'react-router-dom';
+
 export const AgentBuilder: React.FC = () => {
+    const [searchParams] = useSearchParams();
+    const templateId = searchParams.get('template');
+
     const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'vector' | 'prompts' | 'channels'>('identity');
     const [config, setConfig] = useState<AgentConfig>(INITIAL_CONFIG);
     const [magicPrompt, setMagicPrompt] = useState('');
@@ -244,6 +249,27 @@ export const AgentBuilder: React.FC = () => {
             loadQdrantCollections();
         }
     }, [activeTab]);
+
+    // Carregar template se existir na URL
+    React.useEffect(() => {
+        if (templateId) {
+            const loadTemplate = async () => {
+                try {
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates/${templateId}`);
+                    const data = await response.json();
+
+                    if (data.base_config) {
+                        setConfig(data.base_config);
+                        // Opcional: Mostrar notificação de sucesso
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar template:', error);
+                    alert('Erro ao carregar o template selecionado.');
+                }
+            };
+            loadTemplate();
+        }
+    }, [templateId]);
 
     const handleSaveTemplate = async () => {
         if (!templateName) {

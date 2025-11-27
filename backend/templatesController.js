@@ -207,6 +207,30 @@ router.post('/:templateId/instantiate', async (req, res) => {
     }
 });
 
+// Deletar um template
+router.delete('/:templateId', async (req, res) => {
+    try {
+        const { templateId } = req.params;
+
+        // Soft delete (apenas marca como inativo)
+        const result = await pool.query(`
+            UPDATE agent_templates
+            SET is_active = false
+            WHERE template_id = $1
+            RETURNING *
+        `, [templateId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Template não encontrado' });
+        }
+
+        res.json({ message: 'Template removido com sucesso' });
+    } catch (error) {
+        console.error('Erro ao deletar template:', error);
+        res.status(500).json({ error: 'Erro ao deletar template' });
+    }
+});
+
 // Obter parâmetros customizados de um agente
 router.get('/agents/:agentId/parameters', async (req, res) => {
     try {
