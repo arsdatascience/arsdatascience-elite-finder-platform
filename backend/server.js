@@ -109,6 +109,7 @@ initializeDatabase();
 
 // Import database controller
 const dbController = require('./dbController');
+const userCtrl = require('./userController');
 
 // 1. Health Check (Railway uses this)
 app.get('/', (req, res) => {
@@ -205,8 +206,10 @@ app.get('/api/dashboard/device-data', dashboardCtrl.getDeviceData);
 // --- CAMPAIGNS ---
 app.get('/api/campaigns', dbController.getCampaigns);
 
+// --- CAMPAIGNS ---
+app.get('/api/campaigns', dbController.getCampaigns);
+
 // --- USER MANAGEMENT ---
-const userCtrl = require('./userController');
 
 // Serve uploaded avatars statically
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
