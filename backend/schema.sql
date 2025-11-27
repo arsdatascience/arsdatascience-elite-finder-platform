@@ -5,7 +5,7 @@
 -- Enable Extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-CREATE EXTENSION IF NOT EXISTS vector;
+-- CREATE EXTENSION IF NOT EXISTS vector; -- Desativado temporariamente pois a imagem do Railway não tem suporte nativo
 
 -- ============================================
 -- USERS
@@ -117,17 +117,34 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Adicionar coluna lead_id separadamente para evitar erro de FK se a tabela leads tiver tipo incompatível
+-- Correção robusta para lead_id em chat_messages
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='chat_messages' AND column_name='lead_id') THEN
+    -- 1. Se a coluna existe mas não é UUID, dropamos para recriar corretamente
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='chat_messages' AND column_name='lead_id' AND data_type != 'uuid'
+    ) THEN
+        ALTER TABLE chat_messages DROP COLUMN lead_id;
+    END IF;
+
+    -- 2. Se a coluna não existe (ou foi dropada acima), criamos como UUID
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='chat_messages' AND column_name='lead_id'
+    ) THEN
         ALTER TABLE chat_messages ADD COLUMN lead_id UUID;
     END IF;
 END $$;
 
--- Tentar adicionar a FK. Se falhar (ex: tipos incompatíveis), apenas loga ou ignora por enquanto.
+-- Tentar adicionar a FK.
 DO $$
 BEGIN
+    -- Remove constraint antiga se existir para evitar conflito
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'chat_messages_lead_id_fkey') THEN
+        ALTER TABLE chat_messages DROP CONSTRAINT chat_messages_lead_id_fkey;
+    END IF;
+
     BEGIN
         ALTER TABLE chat_messages ADD CONSTRAINT chat_messages_lead_id_fkey FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL;
     EXCEPTION WHEN OTHERS THEN
