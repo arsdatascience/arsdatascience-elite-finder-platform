@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import {
     Brain, Save, Database, MessageSquare,
@@ -116,7 +117,6 @@ const INITIAL_CONFIG: AgentConfig = {
         }
     }
 };
-import { useSearchParams } from 'react-router-dom';
 export const AgentBuilder: React.FC = () => {
     const [searchParams] = useSearchParams();
     const templateId = searchParams.get('template');

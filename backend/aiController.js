@@ -445,26 +445,24 @@ const generateAgentConfig = async (req, res) => {
     {
       "identity": {
         "name": "Nome criativo do agente",
-        "role": "Cargo/Função (ex: Especialista em Vendas Imobiliárias)",
-        "tone": "Tom de voz (ex: Profissional, Empático, Persuasivo)",
-        "style": "Estilo de comunicação (ex: Formal, Casual, Técnico)",
-        "company": "Nome da empresa fictícia ou inferida",
-        "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=NomeDoAgente"
+        "category": "sales",
+        "description": "Descrição curta da função do agente",
+        "class": "SalesAgent",
+        "specializationLevel": 5,
+        "status": "active"
       },
       "aiConfig": {
+        "provider": "openai",
         "model": "gpt-4-turbo-preview",
         "temperature": 0.7,
-        "maxTokens": 500,
         "topP": 0.9,
-        "frequencyPenalty": 0.5,
-        "presencePenalty": 0.3,
-        "responseMode": "balanced",
-        "candidateCount": 1
+        "maxTokens": 1000,
+        "responseMode": "balanced"
       },
       "prompts": {
         "system": "Um prompt de sistema detalhado e robusto (min 3 parágrafos) que defina a persona, regras de negócio, o que fazer e o que NÃO fazer. Use markdown.",
-        "welcome": "Uma mensagem de boas-vindas engajadora para iniciar a conversa.",
-        "fallback": "Uma mensagem educada para quando o agente não souber a resposta."
+        "responseStructure": "Instruções sobre como estruturar a resposta (ex: usar tópicos, ser conciso).",
+        "analysis": "Instruções para análise de input do usuário."
       }
     }
 
