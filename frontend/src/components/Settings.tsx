@@ -346,7 +346,7 @@ export const Settings: React.FC = () => {
             <div className="flex items-center gap-6">
               <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                 <img
-                  src={profileData.avatarUrl} // Mantendo o estado local de avatar para preview imediato
+                  src={currentUser.avatarUrl || "https://github.com/shadcn.png"}
                   alt="Avatar"
                   className="w-24 h-24 rounded-full border-4 border-blue-100 object-cover group-hover:opacity-80 transition-opacity"
                 />
@@ -405,18 +405,22 @@ export const Settings: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
                 <input
                   type="tel"
-                  value={currentUser.phone}
-                  onChange={(e) => setTeamMembers(prev => prev.map(m => m.id === currentUser.id ? { ...m, phone: e.target.value } : m))}
+                  value={currentUser.phone || ''}
+                  onChange={(e) => {
+                    const masked = maskPhone(e.target.value);
+                    setTeamMembers(prev => prev.map(m => m.id === currentUser.id ? { ...m, phone: masked } : m));
+                  }}
+                  maxLength={15}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Empresa</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Cargo</label>
                 <input
                   type="text"
-                  value={profileData.company} // Empresa ainda vem de profileData pois não está no TeamMember type explicitamente, mas poderia estar
-                  onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={currentUser.role}
+                  disabled
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
                 />
               </div>
             </div>
@@ -430,59 +434,72 @@ export const Settings: React.FC = () => {
           </div>
         );
 
+      case 'security':
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Segurança</h3>
+                <p className="text-sm text-gray-500">Gerencie sua senha e configurações de segurança.</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg flex items-start gap-3">
+              <Shield className="text-blue-600 mt-0.5" size={20} />
+              <div>
+                <h4 className="font-bold text-blue-900 text-sm">Autenticação de Dois Fatores (2FA)</h4>
+                <p className="text-xs text-blue-700 mt-1">Adicione uma camada extra de segurança à sua conta.</p>
+                <button className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-800 uppercase tracking-wide">Ativar 2FA</button>
+              </div>
+            </div>
+
+            <form className="space-y-4 max-w-md">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Senha Atual</label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="••••••••"
+                  />
+                  <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nova Senha</label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="••••••••"
+                  />
+                  <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Confirmar Nova Senha</label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="••••••••"
+                  />
+                  <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                </div>
+              </div>
+              <button type="button" className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 w-full">
+                Atualizar Senha
+              </button>
+            </form>
+          </div>
+        );
+
       case 'integrations':
         return (
           <div className="space-y-8 animate-fade-in">
             <div>
-              <h3 className="text-lg font-bold text-gray-900">Chaves de API</h3>
-              <p className="text-sm text-gray-500">Configure suas chaves de API para serviços de IA.</p>
-            </div>
-
-            {/* Gemini API */}
-            <div className="border border-gray-200 rounded-xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                    <BrainCircuit size={20} className="text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-gray-900">Google Gemini API</h4>
-                    <p className="text-xs text-gray-500">Para análise de chat e geração de conteúdo</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsEditingGemini(!isEditingGemini)}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                >
-                  {isEditingGemini ? 'Cancelar' : 'Editar'}
-                </button>
-              </div>
-              <div className="flex gap-2">
-                <div className="flex-1 relative">
-                  <input
-                    type={showGeminiKey ? 'text' : 'password'}
-                    value={geminiKey}
-                    onChange={(e) => setGeminiKey(e.target.value)}
-                    disabled={!isEditingGemini}
-                    placeholder="Cole sua chave da API Gemini aqui"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 disabled:bg-gray-50"
-                  />
-                  <button
-                    onClick={() => setShowGeminiKey(!showGeminiKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showGeminiKey ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-                {isEditingGemini && (
-                  <button
-                    onClick={handleSaveGemini}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                  >
-                    <Save size={18} />
-                  </button>
-                )}
-              </div>
+              <h3 className="text-lg font-bold text-gray-900">Integrações</h3>
+              <p className="text-sm text-gray-500">Conecte suas ferramentas favoritas.</p>
             </div>
 
             {/* OpenAI API */}
@@ -532,6 +549,53 @@ export const Settings: React.FC = () => {
               </div>
             </div>
 
+            {/* Gemini API */}
+            <div className="border border-gray-200 rounded-xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <BrainCircuit size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900">Google Gemini API</h4>
+                    <p className="text-xs text-gray-500">Para análise de chat e geração de conteúdo</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsEditingGemini(!isEditingGemini)}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  {isEditingGemini ? 'Cancelar' : 'Editar'}
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <input
+                    type={showGeminiKey ? 'text' : 'password'}
+                    value={geminiKey}
+                    onChange={(e) => setGeminiKey(e.target.value)}
+                    disabled={!isEditingGemini}
+                    placeholder="Cole sua chave da API Gemini aqui"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 disabled:bg-gray-50"
+                  />
+                  <button
+                    onClick={() => setShowGeminiKey(!showGeminiKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showGeminiKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {isEditingGemini && (
+                  <button
+                    onClick={handleSaveGemini}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                  >
+                    <Save size={18} />
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Lista de Integrações */}
             <div className="grid grid-cols-1 gap-4">
               <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mt-2">Plataformas Nativas</h4>
@@ -574,13 +638,23 @@ export const Settings: React.FC = () => {
                 <h3 className="text-lg font-bold text-gray-900">Equipe e Permissões</h3>
                 <p className="text-sm text-gray-500">Gerencie os membros da sua equipe e suas permissões.</p>
               </div>
-              <button
-                onClick={handleOpenAddMember}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-              >
-                <Plus size={18} />
-                Adicionar Membro
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSystemCleanup}
+                  className="px-4 py-2 bg-red-100 text-red-700 border border-red-200 rounded-lg hover:bg-red-200 flex items-center gap-2"
+                  title="Limpar clientes extras e resetar IDs"
+                >
+                  <Trash2 size={18} />
+                  Limpar Banco
+                </button>
+                <button
+                  onClick={handleOpenAddMember}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <Plus size={18} />
+                  Adicionar Membro
+                </button>
+              </div>
             </div>
 
             <div className="border border-gray-200 rounded-xl overflow-hidden">
