@@ -1,24 +1,52 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Save, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Eye, EyeOff, Cpu, Check, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 
+// Schema de Validação com Zod
+const memberSchema = z.object({
+  avatarUrl: z.string().optional(),
+  username: z.string().min(3, 'Mínimo de 3 caracteres'),
+  firstName: z.string().min(2, 'Nome obrigatório'),
+  lastName: z.string().min(2, 'Sobrenome obrigatório'),
+  email: z.string().email('Email inválido'),
+  phone: z.string().min(14, 'Telefone inválido'), // Ajustado para validar com máscara
+  cpf: z.string().min(14, 'CPF inválido'), // Ajustado para validar com máscara
+  registrationDate: z.string().min(1, 'Data obrigatória'),
+  role: z.string(),
+  address: z.object({
+    street: z.string().min(1, 'Rua obrigatória'),
+    number: z.string().min(1, 'Número obrigatório'),
+    complement: z.string().optional(),
+    district: z.string().min(1, 'Bairro obrigatório'),
+    city: z.string().min(1, 'Cidade obrigatória'),
+    state: z.string().length(2, 'UF deve ter 2 letras'),
+    zip: z.string().min(9, 'CEP inválido') // Ajustado para validar com máscara
+  })
+});
+
+type MemberFormData = z.infer<typeof memberSchema>;
+
 type SettingsTab = 'profile' | 'integrations' | 'team' | 'billing' | 'notifications';
-
-
 
 interface TeamMember {
   id: number;
+  avatarUrl?: string;
   username: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   cpf: string;
+  registrationDate: string;
   role: string;
   status: 'active' | 'inactive';
   address: {
     street: string;
     number: string;
+    complement?: string;
     district: string;
     city: string;
     state: string;
@@ -29,23 +57,51 @@ interface TeamMember {
 
 const INITIAL_MEMBER_STATE: TeamMember = {
   id: 0,
+  avatarUrl: '',
   username: '',
   firstName: '',
   lastName: '',
   email: '',
   phone: '',
   cpf: '',
+  registrationDate: new Date().toISOString().split('T')[0], // Data atual como padrão
   role: 'Vendedor',
   status: 'active',
   address: {
     street: '',
     number: '',
+    complement: '',
     district: '',
     city: '',
     state: '',
     zip: ''
   },
   permissions: []
+};
+
+// Funções de Máscara
+const maskPhone = (value: string) => {
+  return value
+    .replace(/\D/g, '')
+    .replace(/^(\d{2})(\d)/g, '($1) $2')
+    .replace(/(\d{5})(\d)/, '$1-$2')
+    .substr(0, 15);
+};
+
+const maskCPF = (value: string) => {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+    .replace(/(-\d{2})\d+?$/, '$1');
+};
+
+const maskCEP = (value: string) => {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{5})(\d)/, '$1-$2')
+    .substr(0, 9);
 };
 
 export const Settings: React.FC = () => {
@@ -69,6 +125,7 @@ export const Settings: React.FC = () => {
     avatarUrl: 'https://i.pravatar.cc/100?u=denis'
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const memberFileInputRef = useRef<HTMLInputElement>(null);
 
   // Estados para Gestão de Equipe
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
@@ -80,9 +137,10 @@ export const Settings: React.FC = () => {
       email: 'denismay@arsdatascience.com.br',
       phone: '(11) 99999-9999',
       cpf: '000.000.000-00',
+      registrationDate: '2024-01-01',
       role: 'Admin',
       status: 'active',
-      address: { street: 'Av. Paulista', number: '1000', district: 'Bela Vista', city: 'São Paulo', state: 'SP', zip: '01310-100' },
+      address: { street: 'Av. Paulista', number: '1000', complement: 'Sala 100', district: 'Bela Vista', city: 'São Paulo', state: 'SP', zip: '01310-100' },
       permissions: ['all']
     },
     {
@@ -93,15 +151,41 @@ export const Settings: React.FC = () => {
       email: 'sarah@elite.com',
       phone: '(11) 88888-8888',
       cpf: '111.111.111-11',
+      registrationDate: '2024-02-15',
       role: 'Vendedor',
       status: 'active',
-      address: { street: 'Rua Augusta', number: '500', district: 'Consolação', city: 'São Paulo', state: 'SP', zip: '01305-000' },
+      address: { street: 'Rua Augusta', number: '500', complement: '', district: 'Consolação', city: 'São Paulo', state: 'SP', zip: '01305-000' },
       permissions: ['manage_leads', 'view_dashboard']
     },
   ]);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [currentMember, setCurrentMember] = useState<TeamMember>(INITIAL_MEMBER_STATE);
   const [isEditingMember, setIsEditingMember] = useState(false);
+
+  // React Hook Form Setup
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<MemberFormData>({
+    resolver: zodResolver(memberSchema),
+    defaultValues: INITIAL_MEMBER_STATE
+  });
+
+  // Reset form when modal opens or member changes
+  useEffect(() => {
+    if (isMemberModalOpen) {
+      reset(currentMember);
+    }
+  }, [isMemberModalOpen, currentMember, reset]);
+
+  const onSubmitMember = (data: MemberFormData) => {
+    if (isEditingMember) {
+      setTeamMembers(prev => prev.map(m => m.id === currentMember.id ? { ...m, ...data } : m));
+      alert('Membro atualizado com sucesso!');
+    } else {
+      const newMember = { ...data, id: Date.now(), status: 'active' as const, permissions: [] };
+      setTeamMembers(prev => [...prev, newMember]);
+      alert('Membro adicionado com sucesso!');
+    }
+    setIsMemberModalOpen(false);
+  };
 
   // Carregar chaves salvas
   useEffect(() => {
@@ -117,6 +201,14 @@ export const Settings: React.FC = () => {
       setProfileData(prev => ({ ...prev, avatarUrl: imageUrl }));
       // Aqui você implementaria o upload real para o backend
       alert('Foto atualizada com sucesso! (Simulação)');
+    }
+  };
+
+  const handleMemberPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setCurrentMember(prev => ({ ...prev, avatarUrl: imageUrl }));
     }
   };
 
@@ -139,18 +231,7 @@ export const Settings: React.FC = () => {
     }
   };
 
-  const handleSaveMember = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isEditingMember) {
-      setTeamMembers(prev => prev.map(m => m.id === currentMember.id ? currentMember : m));
-      alert('Membro atualizado com sucesso!');
-    } else {
-      const newMember = { ...currentMember, id: Date.now() };
-      setTeamMembers(prev => [...prev, newMember]);
-      alert('Membro adicionado com sucesso!');
-    }
-    setIsMemberModalOpen(false);
-  };
+
 
   // --- Handlers de Integração (Mantidos da versão anterior) ---
   const handleSaveGemini = () => {
@@ -559,7 +640,30 @@ export const Settings: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveMember} className="p-6 space-y-8">
+
+
+            <form onSubmit={handleSubmit(onSubmitMember)} className="p-6 space-y-8">
+              {/* Foto do Membro */}
+              <div className="flex justify-center">
+                <div className="relative group cursor-pointer" onClick={() => memberFileInputRef.current?.click()}>
+                  <img
+                    src={currentMember.avatarUrl || `https://i.pravatar.cc/150?u=${currentMember.email}`}
+                    alt="Avatar"
+                    className="w-24 h-24 rounded-full border-4 border-blue-100 object-cover"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Edit2 className="text-white" size={20} />
+                  </div>
+                  <input
+                    type="file"
+                    ref={memberFileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleMemberPhotoUpload}
+                  />
+                </div>
+              </div>
+
               {/* Dados Pessoais */}
               <section>
                 <h4 className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
@@ -568,27 +672,52 @@ export const Settings: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Username</label>
-                    <input required type="text" value={currentMember.username} onChange={e => setCurrentMember({ ...currentMember, username: e.target.value })} className="w-full p-2 border rounded-lg" />
+                    <input {...register('username')} className={`w-full p-2 border rounded-lg ${errors.username ? 'border-red-500' : ''}`} />
+                    {errors.username && <span className="text-xs text-red-500">{errors.username.message}</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Nome</label>
-                    <input required type="text" value={currentMember.firstName} onChange={e => setCurrentMember({ ...currentMember, firstName: e.target.value })} className="w-full p-2 border rounded-lg" />
+                    <input {...register('firstName')} className={`w-full p-2 border rounded-lg ${errors.firstName ? 'border-red-500' : ''}`} />
+                    {errors.firstName && <span className="text-xs text-red-500">{errors.firstName.message}</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Sobrenome</label>
-                    <input required type="text" value={currentMember.lastName} onChange={e => setCurrentMember({ ...currentMember, lastName: e.target.value })} className="w-full p-2 border rounded-lg" />
+                    <input {...register('lastName')} className={`w-full p-2 border rounded-lg ${errors.lastName ? 'border-red-500' : ''}`} />
+                    {errors.lastName && <span className="text-xs text-red-500">{errors.lastName.message}</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">E-mail</label>
-                    <input required type="email" value={currentMember.email} onChange={e => setCurrentMember({ ...currentMember, email: e.target.value })} className="w-full p-2 border rounded-lg" />
+                    <input {...register('email')} className={`w-full p-2 border rounded-lg ${errors.email ? 'border-red-500' : ''}`} />
+                    {errors.email && <span className="text-xs text-red-500">{errors.email.message}</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Telefone</label>
-                    <input required type="tel" value={currentMember.phone} onChange={e => setCurrentMember({ ...currentMember, phone: e.target.value })} className="w-full p-2 border rounded-lg" />
+                    <input
+                      {...register('phone')}
+                      onChange={(e) => {
+                        e.target.value = maskPhone(e.target.value);
+                        register('phone').onChange(e);
+                      }}
+                      className={`w-full p-2 border rounded-lg ${errors.phone ? 'border-red-500' : ''}`}
+                    />
+                    {errors.phone && <span className="text-xs text-red-500">{errors.phone.message}</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">CPF</label>
-                    <input required type="text" value={currentMember.cpf} onChange={e => setCurrentMember({ ...currentMember, cpf: e.target.value })} className="w-full p-2 border rounded-lg" />
+                    <input
+                      {...register('cpf')}
+                      onChange={(e) => {
+                        e.target.value = maskCPF(e.target.value);
+                        register('cpf').onChange(e);
+                      }}
+                      className={`w-full p-2 border rounded-lg ${errors.cpf ? 'border-red-500' : ''}`}
+                    />
+                    {errors.cpf && <span className="text-xs text-red-500">{errors.cpf.message}</span>}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Data de Cadastro</label>
+                    <input type="date" {...register('registrationDate')} className={`w-full p-2 border rounded-lg ${errors.registrationDate ? 'border-red-500' : ''}`} />
+                    {errors.registrationDate && <span className="text-xs text-red-500">{errors.registrationDate.message}</span>}
                   </div>
                 </div>
               </section>
@@ -601,27 +730,44 @@ export const Settings: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="md:col-span-3">
                     <label className="block text-xs font-medium text-gray-700 mb-1">Rua/Avenida</label>
-                    <input required type="text" value={currentMember.address.street} onChange={e => setCurrentMember({ ...currentMember, address: { ...currentMember.address, street: e.target.value } })} className="w-full p-2 border rounded-lg" />
+                    <input {...register('address.street')} className={`w-full p-2 border rounded-lg ${errors.address?.street ? 'border-red-500' : ''}`} />
+                    {errors.address?.street && <span className="text-xs text-red-500">{errors.address.street.message}</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Número</label>
-                    <input required type="text" value={currentMember.address.number} onChange={e => setCurrentMember({ ...currentMember, address: { ...currentMember.address, number: e.target.value } })} className="w-full p-2 border rounded-lg" />
+                    <input {...register('address.number')} className={`w-full p-2 border rounded-lg ${errors.address?.number ? 'border-red-500' : ''}`} />
+                    {errors.address?.number && <span className="text-xs text-red-500">{errors.address.number.message}</span>}
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Complemento</label>
+                    <input {...register('address.complement')} className="w-full p-2 border rounded-lg" />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-700 mb-1">Bairro</label>
-                    <input required type="text" value={currentMember.address.district} onChange={e => setCurrentMember({ ...currentMember, address: { ...currentMember.address, district: e.target.value } })} className="w-full p-2 border rounded-lg" />
+                    <input {...register('address.district')} className={`w-full p-2 border rounded-lg ${errors.address?.district ? 'border-red-500' : ''}`} />
+                    {errors.address?.district && <span className="text-xs text-red-500">{errors.address.district.message}</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Cidade</label>
-                    <input required type="text" value={currentMember.address.city} onChange={e => setCurrentMember({ ...currentMember, address: { ...currentMember.address, city: e.target.value } })} className="w-full p-2 border rounded-lg" />
+                    <input {...register('address.city')} className={`w-full p-2 border rounded-lg ${errors.address?.city ? 'border-red-500' : ''}`} />
+                    {errors.address?.city && <span className="text-xs text-red-500">{errors.address.city.message}</span>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">UF</label>
-                    <input required type="text" maxLength={2} value={currentMember.address.state} onChange={e => setCurrentMember({ ...currentMember, address: { ...currentMember.address, state: e.target.value.toUpperCase() } })} className="w-full p-2 border rounded-lg" />
+                    <input {...register('address.state')} maxLength={2} className={`w-full p-2 border rounded-lg ${errors.address?.state ? 'border-red-500' : ''}`} />
+                    {errors.address?.state && <span className="text-xs text-red-500">{errors.address.state.message}</span>}
                   </div>
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-700 mb-1">CEP</label>
-                    <input required type="text" value={currentMember.address.zip} onChange={e => setCurrentMember({ ...currentMember, address: { ...currentMember.address, zip: e.target.value } })} className="w-full p-2 border rounded-lg" />
+                    <input
+                      {...register('address.zip')}
+                      onChange={(e) => {
+                        e.target.value = maskCEP(e.target.value);
+                        register('address.zip').onChange(e);
+                      }}
+                      className={`w-full p-2 border rounded-lg ${errors.address?.zip ? 'border-red-500' : ''}`}
+                    />
+                    {errors.address?.zip && <span className="text-xs text-red-500">{errors.address.zip.message}</span>}
                   </div>
                 </div>
               </section>
@@ -634,11 +780,7 @@ export const Settings: React.FC = () => {
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Função do Sistema (Role)</label>
-                    <select
-                      value={currentMember.role}
-                      onChange={e => setCurrentMember({ ...currentMember, role: e.target.value })}
-                      className="w-full p-2.5 border border-gray-300 rounded-lg bg-white"
-                    >
+                    <select {...register('role')} className="w-full p-2.5 border border-gray-300 rounded-lg bg-white">
                       <option value="Admin">Admin (Acesso Total)</option>
                       <option value="Vendedor">Vendedor (Leads e CRM)</option>
                       <option value="Editor">Editor (Marketing e Conteúdo)</option>

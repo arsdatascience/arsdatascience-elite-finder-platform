@@ -17,6 +17,7 @@ export const NAV_ITEMS = [
   { id: 'TRAINING', label: 'Academia de Treino', icon: BookOpen },
   { id: 'AI_AGENT', label: 'Estúdio Criativo IA', icon: Sparkles },
   { id: 'ELITE_ASSISTANT', label: 'Assistente Elite', icon: Bot },
+  { id: 'AGENT_BUILDER', label: 'Agente Builder', icon: Bot },
   { id: 'SETTINGS', label: 'Configurações', icon: Settings },
   // New items
   { id: 'SOCIAL_CALENDAR', label: 'Calendário Social', icon: Calendar },

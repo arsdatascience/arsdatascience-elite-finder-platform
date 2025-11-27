@@ -1,96 +1,157 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { Dashboard } from '@/components/Dashboard';
 import { Campaigns } from '@/components/Campaigns';
 import { FlightControl } from '@/components/FlightControl';
 import { ClientRegistration } from '@/components/ClientRegistration';
-import { ChatAI } from '@/components/ChatAI';
+import { AnalysisMode } from '@/components/AnalysisMode';
 import { SocialMedia } from '@/components/SocialMedia';
 import { Automation } from '@/components/Automation';
 import { Training } from '@/components/Training';
-import { ContentGenerator } from '@/components/ContentGenerator';
 import { Reports } from '@/components/Reports';
 import { Settings } from '@/components/Settings';
 import { AIChatBot } from '@/components/AIChatBot';
+import { AgentBuilder } from '@/components/AgentBuilder';
+import { AnimatePresence, motion } from 'framer-motion';
 import Home from '@/components/Home';
 import { SocialCalendar } from '@/components/SocialCalendar';
 import { SocialIntegrations } from '@/components/SocialIntegrations';
 import { ViewState } from '@/types';
-import { Menu } from 'lucide-react';
+import { Menu, Loader2 } from 'lucide-react';
+import { ContentGenerator } from '@/components/ContentGenerator';
+import { Login } from '@/components/Login';
+import { useAuth } from '@/contexts/AuthContext';
 
-const App: React.FC = () => {
-  const [activeView, setActiveView] = useState<ViewState>(ViewState.HOME);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+const PATH_MAP: Record<ViewState, string> = {
+  [ViewState.HOME]: '/',
+  [ViewState.DASHBOARD]: '/dashboard',
+  [ViewState.CAMPAIGNS]: '/campaigns',
+  [ViewState.FLIGHT_CONTROL]: '/flight-control',
+  [ViewState.CLIENTS]: '/clients',
+  [ViewState.CHAT_AI]: '/chat-ai',
+  [ViewState.SOCIAL]: '/social',
+  [ViewState.SOCIAL_CALENDAR]: '/social-calendar',
+  [ViewState.SOCIAL_INTEGRATIONS]: '/social-integrations',
+  [ViewState.AUTOMATION]: '/automation',
+  [ViewState.TRAINING]: '/training',
+  [ViewState.REPORTS]: '/reports',
+  [ViewState.AI_AGENT]: '/ai-agent',
+  [ViewState.ELITE_ASSISTANT]: '/elite-assistant',
+  [ViewState.SETTINGS]: '/settings',
+  [ViewState.AGENT_BUILDER]: '/agent-builder',
+};
 
-  const renderContent = () => {
-    switch (activeView) {
-      case ViewState.HOME:
-        return <Home onSelect={(id) => setActiveView(id as ViewState)} />;
-      case ViewState.DASHBOARD:
-        return <Dashboard />;
-      case ViewState.CAMPAIGNS:
-        return <Campaigns />;
-      case ViewState.FLIGHT_CONTROL:
-        return <FlightControl />;
-      case ViewState.CLIENTS:
-        return <ClientRegistration />;
-      case ViewState.CHAT_AI:
-        return <ChatAI />;
-      case ViewState.SOCIAL:
-        return <SocialMedia onNavigate={setActiveView} />;
-      case ViewState.SOCIAL_CALENDAR:
-        return <div className="h-full min-h-screen"><SocialCalendar /></div>;
-      case ViewState.SOCIAL_INTEGRATIONS:
-        return <SocialIntegrations />;
-      case ViewState.AUTOMATION:
-        return <Automation />;
-      case ViewState.TRAINING:
-        return <Training />;
-      case ViewState.REPORTS:
-        return <Reports />;
-      case ViewState.AI_AGENT:
-        return <ContentGenerator isOpen={true} onClose={() => { }} mode="page" />;
-      case ViewState.ELITE_ASSISTANT:
-        return <AIChatBot mode="page" />;
-      case ViewState.SETTINGS:
-        return <Settings />;
-      default:
-        return <Home onSelect={(id) => setActiveView(id as ViewState)} />;
-    }
+const PrivateRoute: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-100">
+        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      </div>
+    );
+  }
+
+  return isAuthenticated ? <Outlet /> : <Navigate to="/login" />;
+};
+
+const Layout: React.FC = () => {
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const getActiveView = (): ViewState => {
+    const path = location.pathname;
+    const entry = Object.entries(PATH_MAP).find(([_, p]) => p === path);
+    return entry ? (entry[0] as ViewState) : ViewState.HOME;
+  };
+
+  const handleNavigate = (view: ViewState) => {
+    navigate(PATH_MAP[view]);
+    setSidebarOpen(false);
+  };
+
+  const pageVariants = {
+    initial: { opacity: 0, x: -20 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: 20 }
   };
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden font-sans relative">
       <Sidebar
-        activeView={activeView}
-        onNavigate={(view) => {
-          setActiveView(view);
-          setSidebarOpen(false);
-        }}
+        activeView={getActiveView()}
+        onNavigate={handleNavigate}
         isOpen={sidebarOpen}
       />
 
-      {sidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden" onClick={() => setSidebarOpen(false)}></div>}
-
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 md:hidden print:hidden">
-          <div className="flex items-center gap-2">
-            <button onClick={() => setSidebarOpen(true)} className="text-gray-600">
-              <Menu size={24} />
-            </button>
-            <span className="font-bold text-gray-800">EliteFinder</span>
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 print:p-0 print:overflow-visible">
-          <div className="max-w-7xl mx-auto h-full print:max-w-none print:h-auto">
-            {renderContent()}
-          </div>
+      <div className="flex-1 flex flex-col h-full relative w-full">
+        {/* Mobile Header */}
+        <div className="md:hidden bg-white border-b border-gray-200 p-4 flex items-center justify-between z-20">
+          <h1 className="text-lg font-bold text-gray-800">Elite Finder</h1>
+          <button onClick={() => setSidebarOpen(true)} className="p-2 text-gray-600">
+            <Menu size={24} />
+          </button>
         </div>
 
-        {activeView !== ViewState.ELITE_ASSISTANT && <AIChatBot mode="widget" />}
-      </main>
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 w-full">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              variants={pageVariants}
+              transition={{ duration: 0.2 }}
+              className="h-full"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleNavigate = (view: ViewState | string) => {
+    const path = PATH_MAP[view as ViewState];
+    if (path) {
+      navigate(path);
+    }
+  };
+
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+
+      <Route element={<PrivateRoute />}>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home onSelect={handleNavigate} />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/campaigns" element={<Campaigns />} />
+          <Route path="/flight-control" element={<FlightControl />} />
+          <Route path="/clients" element={<ClientRegistration />} />
+          <Route path="/chat-ai" element={<AnalysisMode />} />
+          <Route path="/social" element={<SocialMedia onNavigate={handleNavigate} />} />
+          <Route path="/social-calendar" element={<div className="h-full min-h-screen"><SocialCalendar /></div>} />
+          <Route path="/social-integrations" element={<SocialIntegrations />} />
+          <Route path="/automation" element={<Automation />} />
+          <Route path="/training" element={<Training />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/ai-agent" element={<ContentGenerator isOpen={true} onClose={() => { }} mode="page" />} />
+          <Route path="/elite-assistant" element={<AIChatBot mode="page" />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/agent-builder" element={<AgentBuilder />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 };
 
