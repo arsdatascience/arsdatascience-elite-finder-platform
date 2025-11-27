@@ -24,6 +24,10 @@ interface AgentConfig {
         maxTokens: number;
         timeout: number;
         retries: number;
+        frequencyPenalty?: number;
+        presencePenalty?: number;
+        responseMode?: string;
+        candidateCount?: number;
     };
     vectorConfig: {
         chunkingMode: 'semantic' | 'fixed' | 'hierarchical';
@@ -310,8 +314,25 @@ export const AgentBuilder: React.FC = () => {
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Nível de Especialização</label>
                                             <div className="flex items-center gap-4">
-                                                <input type="range" min="1" max="5" value={config.identity.specializationLevel} className="flex-1" />
-                                                <span className="font-bold text-blue-600">{config.identity.specializationLevel} - Iniciante</span>
+                                                <input
+                                                    type="range"
+                                                    min="1"
+                                                    max="5"
+                                                    value={config.identity.specializationLevel}
+                                                    onChange={(e) => setConfig({
+                                                        ...config,
+                                                        identity: { ...config.identity, specializationLevel: parseInt(e.target.value) }
+                                                    })}
+                                                    className="flex-1"
+                                                />
+                                                <span className="font-bold text-blue-600">
+                                                    {config.identity.specializationLevel} - {
+                                                        config.identity.specializationLevel === 1 ? 'Iniciante' :
+                                                            config.identity.specializationLevel === 2 ? 'Básico' :
+                                                                config.identity.specializationLevel === 3 ? 'Intermediário' :
+                                                                    config.identity.specializationLevel === 4 ? 'Avançado' : 'Especialista'
+                                                    }
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -410,33 +431,125 @@ export const AgentBuilder: React.FC = () => {
                                                 <label className="text-sm font-medium text-gray-700">Temperatura (Criatividade)</label>
                                                 <span className="text-sm font-bold text-gray-900">{config.aiConfig.temperature}</span>
                                             </div>
-                                            <input type="range" min="0" max="2" step="0.1" value={config.aiConfig.temperature} className="w-full" />
-                                            <p className="text-xs text-gray-500 mt-1">0 = Deterministico, 2 = Muito Criativo</p>
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="2"
+                                                step="0.1"
+                                                value={config.aiConfig.temperature}
+                                                onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, temperature: parseFloat(e.target.value) } })}
+                                                className="w-full"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">0 = Determin��stico, 2 = Muito Criativo</p>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Top-P (Diversidade)</label>
-                                                <input type="number" step="0.01" value={config.aiConfig.topP} className="w-full px-3 py-2 border rounded-lg" />
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={config.aiConfig.topP}
+                                                    onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, topP: parseFloat(e.target.value) } })}
+                                                    className="w-full px-3 py-2 border rounded-lg"
+                                                />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Top-K (Filtro de Tokens)</label>
-                                                <input type="number" value={config.aiConfig.topK} className="w-full px-3 py-2 border rounded-lg" />
+                                                <input
+                                                    type="number"
+                                                    value={config.aiConfig.topK}
+                                                    onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, topK: parseInt(e.target.value) } })}
+                                                    className="w-full px-3 py-2 border rounded-lg"
+                                                />
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-3 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Max Tokens</label>
-                                                <input type="number" value={config.aiConfig.maxTokens} className="w-full px-3 py-2 border rounded-lg" />
+                                                <input
+                                                    type="number"
+                                                    value={config.aiConfig.maxTokens}
+                                                    onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, maxTokens: parseInt(e.target.value) } })}
+                                                    className="w-full px-3 py-2 border rounded-lg"
+                                                />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Timeout (seg)</label>
-                                                <input type="number" value={config.aiConfig.timeout} className="w-full px-3 py-2 border rounded-lg" />
+                                                <input
+                                                    type="number"
+                                                    value={config.aiConfig.timeout}
+                                                    onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, timeout: parseInt(e.target.value) } })}
+                                                    className="w-full px-3 py-2 border rounded-lg"
+                                                />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Retries</label>
-                                                <input type="number" value={config.aiConfig.retries} className="w-full px-3 py-2 border rounded-lg" />
+                                                <input
+                                                    type="number"
+                                                    value={config.aiConfig.retries}
+                                                    onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, retries: parseInt(e.target.value) } })}
+                                                    className="w-full px-3 py-2 border rounded-lg"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Parâmetros Avançados (Novos) */}
+                                        <div className="border-t border-gray-200 pt-6">
+                                            <h4 className="text-sm font-bold text-gray-800 mb-4">Parâmetros Avançados</h4>
+                                            <div className="grid grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Frequency Penalty</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.1"
+                                                        min="0"
+                                                        max="2"
+                                                        value={config.aiConfig.frequencyPenalty || 0}
+                                                        onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, frequencyPenalty: parseFloat(e.target.value) } })}
+                                                        className="w-full px-3 py-2 border rounded-lg"
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-1">Evitar repetições (0-2)</p>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Presence Penalty</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.1"
+                                                        min="0"
+                                                        max="2"
+                                                        value={config.aiConfig.presencePenalty || 0}
+                                                        onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, presencePenalty: parseFloat(e.target.value) } })}
+                                                        className="w-full px-3 py-2 border rounded-lg"
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-1">Diversidade de vocabulário (0-2)</p>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Modo de Resposta</label>
+                                                    <select
+                                                        value={config.aiConfig.responseMode || 'balanced'}
+                                                        onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, responseMode: e.target.value } })}
+                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                                                    >
+                                                        <option value="concise">Conciso</option>
+                                                        <option value="balanced">Balanceado</option>
+                                                        <option value="detailed">Detalhado</option>
+                                                        <option value="comprehensive">Abrangente</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Candidate Count</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        max="8"
+                                                        value={config.aiConfig.candidateCount || 1}
+                                                        onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, candidateCount: parseInt(e.target.value) } })}
+                                                        className="w-full px-3 py-2 border rounded-lg"
+                                                    />
+                                                    <p className="text-xs text-gray-500 mt-1">Número de candidatos (1-8)</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
