@@ -6,7 +6,7 @@ import { analyzeChatConversation } from '../services/geminiService';
 import { AIProvider, AI_MODELS, OpenAIModel, GeminiModel, ClaudeModel } from '@/constants/aiModels';
 
 export const AnalysisMode: React.FC = () => {
-    const [messages, setMessages] = useState<ChatMessage[]>(MOCK_CHAT);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [provider, setProvider] = useState<AIProvider>(AIProvider.OPENAI);
