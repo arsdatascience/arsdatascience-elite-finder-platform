@@ -252,6 +252,12 @@ export const AgentBuilder: React.FC = () => {
                     <p className="text-sm text-gray-500">Configure agentes especializados com parâmetros avançados de RAG e Engenharia de Prompt.</p>
                 </div>
                 <div className="flex gap-3">
+                    <button
+                        onClick={() => window.open('/whatsapp-simulator', '_blank')}
+                        className="px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg font-medium flex items-center gap-2 border border-green-200"
+                    >
+                        <MessageSquare size={18} /> Simular WhatsApp
+                    </button>
                     <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium flex items-center gap-2">
                         <Wand2 size={18} /> Configuração Mágica
                     </button>

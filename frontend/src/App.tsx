@@ -13,6 +13,7 @@ import { Reports } from '@/components/Reports';
 import { Settings } from '@/components/Settings';
 import { AIChatBot } from '@/components/AIChatBot';
 import { AgentBuilder } from '@/components/AgentBuilder';
+import { WhatsAppSimulator } from '@/components/WhatsAppSimulator';
 import { AnimatePresence, motion } from 'framer-motion';
 import Home from '@/components/Home';
 import { SocialCalendar } from '@/components/SocialCalendar';
@@ -149,6 +150,7 @@ const App: React.FC = () => {
           <Route path="/elite-assistant" element={<AIChatBot mode="page" />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/agent-builder" element={<AgentBuilder />} />
+          <Route path="/whatsapp-simulator" element={<WhatsAppSimulator />} />
         </Route>
       </Route>
 

@@ -194,6 +194,7 @@ const aiController = require('./aiController');
 app.post('/api/ai/analyze', aiController.analyzeChatConversation);
 app.post('/api/ai/generate', aiController.generateMarketingContent);
 app.post('/api/ai/chat', aiController.askEliteAssistant);
+app.post('/api/ai/analyze-strategy', aiController.analyzeConversationStrategy);
 
 
 // --- USER MANAGEMENT ---
