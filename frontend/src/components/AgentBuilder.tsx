@@ -232,13 +232,13 @@ export const AgentBuilder: React.FC = () => {
 
 
     // Carregar coleções ao montar o componente
-    React.useEffect(() => {
+    useEffect(() => {
         if (activeTab === 'vector') {
             loadQdrantCollections();
         }
     }, [activeTab]);
     // Carregar template se existir na URL
-    React.useEffect(() => {
+    useEffect(() => {
         if (templateId) {
             const loadTemplate = async () => {
                 try {
