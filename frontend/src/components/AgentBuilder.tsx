@@ -837,7 +837,17 @@ export const AgentBuilder: React.FC = () => {
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Filtros de Especialização</label>
                                             <div className="space-y-2 max-h-40 overflow-y-auto border rounded-lg p-2 bg-gray-50">
-                                                {['Marketing Digital', 'Vendas B2B', 'Vendas B2C', 'E-commerce', 'Redes Sociais', 'SEO/SEM', 'Geração de Leads'].map((filter, idx) => (
+                                                {[
+                                                    'Escritório de Advocacia',
+                                                    'Loja Física',
+                                                    'E-Commerce',
+                                                    'Clínica Odontológica',
+                                                    'Clínica Médica',
+                                                    'Clínica de Estética',
+                                                    'Marketing Digital',
+                                                    'Vendas B2B',
+                                                    'Vendas B2C'
+                                                ].map((filter, idx) => (
                                                     <label key={idx} className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
                                                         <input
                                                             type="checkbox"
