@@ -245,6 +245,7 @@ app.post('/api/social/publish/twitter', socialIntegration.publishToTwitter);
 
 // --- SOCIAL ACCOUNTS MANAGEMENT ---
 const socialAccountCtrl = require('./socialAccountController');
+app.get('/api/clients', dbController.getClients);
 app.get('/api/clients/:clientId/social-accounts', socialAccountCtrl.getSocialAccounts);
 app.post('/api/social-accounts', socialAccountCtrl.addSocialAccount);
 app.delete('/api/social-accounts/:accountId', socialAccountCtrl.deleteSocialAccount);

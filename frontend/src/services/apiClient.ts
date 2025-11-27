@@ -30,6 +30,12 @@ axiosInstance.interceptors.request.use(
 );
 
 export const apiClient = {
+    clients: {
+        getClients: async () => {
+            const response = await axiosInstance.get('/clients');
+            return response.data;
+        }
+    },
     dashboard: {
         getKPIs: async (clientId: string, platform: string): Promise<Metric[]> => {
             if (USE_MOCK) return mockApi.dashboard.getKPIs(clientId, platform);

@@ -13,6 +13,12 @@ export const Campaigns: React.FC = () => {
   const [platformFilter, setPlatformFilter] = useState<'all' | 'google' | 'meta'>('all');
   const [selectedClient, setSelectedClient] = useState(CLIENTS_LIST[1].id);
 
+  const { data: clients = CLIENTS_LIST } = useQuery({
+    queryKey: ['clients'],
+    queryFn: apiClient.clients.getClients,
+    initialData: CLIENTS_LIST
+  });
+
   const { data: clientCampaigns = [], isLoading } = useQuery<Campaign[]>({
     queryKey: ['campaigns', selectedClient],
     queryFn: () => apiClient.campaigns.getCampaigns(selectedClient)
@@ -89,7 +95,7 @@ export const Campaigns: React.FC = () => {
               onChange={(e) => setSelectedClient(e.target.value)}
               className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
             >
-              {CLIENTS_LIST.map(client => (
+              {clients.filter((c: any) => c.id !== 'all').map((client: any) => (
                 <option key={client.id} value={client.id}>{client.name}</option>
               ))}
             </select>

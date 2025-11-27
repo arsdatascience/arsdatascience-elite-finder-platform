@@ -37,6 +37,12 @@ export const Dashboard: React.FC = () => {
   const [selectedPlatform, setSelectedPlatform] = useState<'all' | 'google' | 'meta'>('all');
 
   // React Query Hooks
+  const { data: clients = CLIENTS_LIST } = useQuery({
+    queryKey: ['clients'],
+    queryFn: apiClient.clients.getClients,
+    initialData: CLIENTS_LIST
+  });
+
   const { data: currentKPIs = KPIS, isLoading: isLoadingKPIs } = useQuery({
     queryKey: ['kpis', selectedClient, selectedPlatform],
     queryFn: () => apiClient.dashboard.getKPIs(selectedClient, selectedPlatform),
@@ -97,7 +103,8 @@ export const Dashboard: React.FC = () => {
                 onChange={(e) => setSelectedClient(e.target.value)}
                 className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-64 pl-10 p-2.5 shadow-sm"
               >
-                {CLIENTS_LIST.map(client => (
+                <option value="all">Todos os Clientes (Visão Global)</option>
+                {clients.filter((c: any) => c.id !== 'all').map((client: any) => (
                   <option key={client.id} value={client.id}>{client.name}</option>
                 ))}
               </select>
