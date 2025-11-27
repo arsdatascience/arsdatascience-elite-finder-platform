@@ -142,7 +142,7 @@ export const AgentBuilder: React.FC = () => {
     const [showSetupButton, setShowSetupButton] = useState(false);
     const saveAgentMutation = useMutation({
         mutationFn: async (agentConfig: AgentConfig) => {
-            const response = await fetch('http://localhost:3001/api/agents', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agents`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(agentConfig)
@@ -169,7 +169,7 @@ export const AgentBuilder: React.FC = () => {
                     ? config.whatsappConfig.evolution
                     : config.whatsappConfig.official
             };
-            const response = await fetch('http://localhost:3001/api/agents/test-connection', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agents/test-connection`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -229,6 +229,8 @@ export const AgentBuilder: React.FC = () => {
             alert('❌ Erro de conexão: ' + error.message);
         }
     };
+
+
     // Carregar coleções ao montar o componente
     React.useEffect(() => {
         if (activeTab === 'vector') {
