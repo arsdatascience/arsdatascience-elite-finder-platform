@@ -74,6 +74,7 @@ export const WhatsAppSimulator: React.FC = () => {
     const handleAnalyze = async () => {
         setAnalyzing(true);
         setShowAnalysis(true);
+        setAnalysis(null);
 
         try {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/analyze-strategy`, {
@@ -86,9 +87,16 @@ export const WhatsAppSimulator: React.FC = () => {
             });
 
             const data = await response.json();
+
+            if (!response.ok || data.error) {
+                throw new Error(data.error || data.message || 'Falha na análise');
+            }
+
             setAnalysis(data);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Erro na análise:', error);
+            alert('Erro ao analisar conversa: ' + error.message);
+            setShowAnalysis(false);
         } finally {
             setAnalyzing(false);
         }
@@ -204,8 +212,8 @@ export const WhatsAppSimulator: React.FC = () => {
                                 </h4>
                                 <div className="flex items-center gap-2 mb-2">
                                     <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${analysis.sales_opportunity.probability === 'Alta' ? 'bg-green-200 text-green-800' :
-                                            analysis.sales_opportunity.probability === 'Média' ? 'bg-yellow-200 text-yellow-800' :
-                                                'bg-red-200 text-red-800'
+                                        analysis.sales_opportunity.probability === 'Média' ? 'bg-yellow-200 text-yellow-800' :
+                                            'bg-red-200 text-red-800'
                                         }`}>
                                         {analysis.sales_opportunity.probability}
                                     </span>
@@ -219,9 +227,9 @@ export const WhatsAppSimulator: React.FC = () => {
                                     <Target size={16} className="text-red-500" /> Ângulos de Marketing
                                 </h4>
                                 <ul className="space-y-2">
-                                    {analysis.marketing_angles.map((angle, i) => (
+                                    {analysis.marketing_angles?.map((angle, i) => (
                                         <li key={i} className="text-xs bg-red-50 text-red-700 p-2 rounded border border-red-100">
-                                            • {angle}
+                                            • {typeof angle === 'object' ? (angle as any).message || (angle as any).text || JSON.stringify(angle) : angle}
                                         </li>
                                     ))}
                                 </ul>
@@ -241,10 +249,10 @@ export const WhatsAppSimulator: React.FC = () => {
                                     <CheckCheck size={16} className="text-green-500" /> Próximos Passos
                                 </h4>
                                 <ul className="space-y-2">
-                                    {analysis.suggested_next_steps.map((step, i) => (
+                                    {analysis.suggested_next_steps?.map((step, i) => (
                                         <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
                                             <span className="text-green-500 font-bold">{i + 1}.</span>
-                                            {step}
+                                            {typeof step === 'object' ? (step as any).message || (step as any).text || JSON.stringify(step) : step}
                                         </li>
                                     ))}
                                 </ul>
