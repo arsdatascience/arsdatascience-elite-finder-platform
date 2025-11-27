@@ -1,3 +1,4 @@
+// Fixed syntax error
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Paperclip, MoreVertical, Search, Smile, Mic, Check, CheckCheck, BarChart3, TrendingUp, Target, MessageCircle, FileText, X, Play, Image as ImageIcon } from 'lucide-react';
 
