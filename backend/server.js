@@ -204,6 +204,9 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 // Create new user (admin)
 app.post('/api/users', userCtrl.createUser);
 
+// Login
+app.post('/api/auth/login', userCtrl.login);
+
 // Update avatar for a user (requires multipart/form-data)
 app.post('/api/users/:id/avatar', userCtrl.upload.single('avatar'), userCtrl.updateAvatar);
 

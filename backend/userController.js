@@ -1,6 +1,10 @@
 const db = require('./db');
 const path = require('path');
 const multer = require('multer');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'elite-secret-key-change-me';
 
 // Multer configuration – store uploads in ./uploads (outside src)
 const upload = multer({
@@ -38,14 +42,17 @@ const updateAvatar = async (req, res) => {
  * Expected body: { name, email, password_hash, role_id? }
  */
 const createUser = async (req, res) => {
-    const { name, email, password_hash, role_id } = req.body;
-    if (!name || !email || !password_hash) {
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password) {
         return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
     try {
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(password, salt);
+
         const result = await db.query(
-            `INSERT INTO users (name, email, password_hash, role_id) VALUES ($1,$2,$3,$4) RETURNING *`,
-            [name, email, password_hash, role_id || 2]
+            `INSERT INTO users (name, email, password_hash, role) VALUES ($1,$2,$3,$4) RETURNING id, name, email, role, avatar_url, created_at`,
+            [name, email, password_hash, role || 'user']
         );
         res.json({ success: true, user: result.rows[0] });
     } catch (err) {
@@ -54,8 +61,47 @@ const createUser = async (req, res) => {
     }
 };
 
+/**
+ * Login user.
+ * Expected body: { email, password }
+ */
+const login = async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = result.rows[0];
+
+        if (!user) {
+            return res.status(400).json({ error: 'Credenciais inválidas' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Credenciais inválidas' });
+        }
+
+        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                avatar_url: user.avatar_url
+            }
+        });
+    } catch (err) {
+        console.error('Error logging in:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
 module.exports = {
     upload,
     updateAvatar,
     createUser,
+    login
 };
