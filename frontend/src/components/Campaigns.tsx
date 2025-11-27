@@ -117,6 +117,13 @@ export const Campaigns: React.FC = () => {
         defaultPlatform="google"
       />
 
+      {clientCampaigns.length === 0 && !isLoading && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg flex items-center gap-2">
+          <AlertCircle size={20} />
+          <span>Nenhuma campanha encontrada. O sistema está tentando carregar dados de exemplo...</span>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="flex flex-col items-center justify-center h-64">
           <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
