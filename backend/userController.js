@@ -117,7 +117,6 @@ const getTeamMembers = async (req, res) => {
                 address_district, address_city, address_state, address_zip,
                 permissions, created_at, updated_at
             FROM users
-            WHERE status IS NOT NULL
             ORDER BY created_at DESC
         `);
 
