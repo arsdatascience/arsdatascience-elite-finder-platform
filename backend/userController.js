@@ -219,6 +219,34 @@ const updateTeamMember = async (req, res) => {
     } = req.body;
 
     try {
+
+        // Verificar duplicidade de Email/Username (excluindo o próprio usuário)
+        const duplicateCheck = await db.query(
+            'SELECT id, email, username FROM users WHERE (email = $1 OR username = $2) AND id != $3',
+            [email, username, id]
+        );
+
+        if (duplicateCheck.rows.length > 0) {
+            const conflict = duplicateCheck.rows[0];
+            if (conflict.email === email) {
+                return res.status(400).json({ success: false, error: 'Este email já está em uso por outro usuário.' });
+            }
+            if (conflict.username === username) {
+                return res.status(400).json({ success: false, error: 'Este nome de usuário já está em uso.' });
+            }
+        }
+
+        // Verificar duplicidade de CPF (se fornecido)
+        if (cpf) {
+            const cpfCheck = await db.query(
+                'SELECT id FROM users WHERE cpf = $1 AND id != $2',
+                [cpf, id]
+            );
+            if (cpfCheck.rows.length > 0) {
+                return res.status(400).json({ success: false, error: 'Este CPF já está em uso por outro usuário.' });
+            }
+        }
+
         // Se está tentando alterar senha, validar senha antiga
         if (newPassword) {
             if (!oldPassword) {
@@ -329,20 +357,9 @@ const updateTeamMember = async (req, res) => {
     } catch (err) {
         console.error('Error updating team member:', err);
         if (err.code === '23505') {
-            // Verificar se o erro é porque está tentando usar o mesmo email/username (não é erro)
-            const currentUser = await db.query('SELECT email, username FROM users WHERE id = $1', [id]);
-            if (currentUser.rows.length > 0) {
-                const isSameEmail = currentUser.rows[0].email === email;
-                const isSameUsername = currentUser.rows[0].username === username;
-
-                if (isSameEmail && isSameUsername) {
-                    // É o mesmo usuário, não é erro
-                    return res.json({ success: true, message: 'Dados atualizados (sem alterações críticas)' });
-                }
-            }
-            return res.status(400).json({ success: false, error: 'Email ou username já utilizado por outro usuário' });
+            return res.status(400).json({ success: false, error: 'Dados duplicados (email, username ou CPF) detectados.' });
         }
-        res.status(500).json({ success: false, error: 'Database error' });
+        res.status(500).json({ success: false, error: 'Database error: ' + err.message });
     }
 };
 
