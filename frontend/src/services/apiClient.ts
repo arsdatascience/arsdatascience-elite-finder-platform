@@ -52,12 +52,7 @@ export const apiClient = {
             return response.data;
         }
     },
-    clients: {
-        getClients: async () => {
-            const response = await axiosInstance.get('/clients');
-            return response.data;
-        }
-    },
+
     dashboard: {
         getKPIs: async (clientId: string, platform: string): Promise<Metric[]> => {
             if (USE_MOCK) return mockApi.dashboard.getKPIs(clientId, platform);
