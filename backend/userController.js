@@ -82,12 +82,43 @@ const login = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password_hash);
 
         if (!isMatch) {
-            address_street, address_number, address_complement,
+            console.log('[Login Fail] Password mismatch');
+            return res.status(400).json({ error: 'Credenciais inválidas' });
+        }
+
+        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                avatar_url: user.avatar_url
+            }
+        });
+    } catch (err) {
+        console.error('Error logging in:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+/**
+ * Get all team members
+ */
+const getTeamMembers = async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT 
+                id, username, first_name, last_name, email, phone, cpf,
+                registration_date, role, status, avatar_url,
+                address_street, address_number, address_complement,
                 address_district, address_city, address_state, address_zip,
                 permissions, created_at, updated_at
             FROM users
             ORDER BY created_at DESC
-                `);
+        `);
 
         // Formatar dados para o frontend
         const members = result.rows.map(row => ({
@@ -132,7 +163,7 @@ const forgotPassword = async (req, res) => {
             // If "user" table fails, try "users"
             result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
         }
-        
+
         const user = result.rows[0];
 
         if (!user) {
@@ -141,10 +172,10 @@ const forgotPassword = async (req, res) => {
 
         const resetToken = jwt.sign({ id: user.id, type: 'reset' }, JWT_SECRET, { expiresIn: '1h' });
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             message: 'Link de recuperação gerado com sucesso.',
-            debugToken: resetToken 
+            debugToken: resetToken
         });
     } catch (err) {
         console.error('Forgot Password Error:', err);
@@ -214,7 +245,7 @@ const createTeamMember = async (req, res) => {
             address?.street, address?.number, address?.complement,
             address?.district, address?.city, address?.state, address?.zip,
             JSON.stringify(permissions || []),
-            `${ firstName } ${ lastName } ` // Campo name para compatibilidade
+            `${firstName} ${lastName} ` // Campo name para compatibilidade
         ]);
 
         res.json({ success: true, member: result.rows[0] });
@@ -252,13 +283,13 @@ const updateTeamMember = async (req, res) => {
             if (conflict.email === email) {
                 return res.status(400).json({
                     success: false,
-                    error: `Este email já está em uso pelo usuário ID ${ conflict.id } (${ conflict.username }).`
+                    error: `Este email já está em uso pelo usuário ID ${conflict.id} (${conflict.username}).`
                 });
             }
             if (conflict.username === username) {
                 return res.status(400).json({
                     success: false,
-                    error: `Este nome de usuário já está em uso pelo usuário ID ${ conflict.id }.`
+                    error: `Este nome de usuário já está em uso pelo usuário ID ${conflict.id}.`
                 });
             }
         }
@@ -328,7 +359,7 @@ const updateTeamMember = async (req, res) => {
                 address?.street, address?.number, address?.complement,
                 address?.district, address?.city, address?.state, address?.zip,
                 JSON.stringify(permissions || []),
-                `${ firstName } ${ lastName } `,
+                `${firstName} ${lastName} `,
                 password_hash,
                 id
             ]);
@@ -371,7 +402,7 @@ const updateTeamMember = async (req, res) => {
                 address?.street, address?.number, address?.complement,
                 address?.district, address?.city, address?.state, address?.zip,
                 JSON.stringify(permissions || []),
-                `${ firstName } ${ lastName } `,
+                `${firstName} ${lastName} `,
                 id
             ]);
 
