@@ -942,5 +942,6 @@ const agentTemplates = {
             { id: 'data', label: 'Dados & Contexto', order: 2 }
         ]
     }
+};
 
 module.exports = agentTemplates;
