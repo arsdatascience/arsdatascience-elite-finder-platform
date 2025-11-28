@@ -95,6 +95,7 @@ export const Campaigns: React.FC = () => {
               onChange={(e) => setSelectedClient(e.target.value)}
               className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
             >
+              <option value="all">Todos os Clientes (Visão Global)</option>
               {clients.filter((c: any) => c.id !== 'all').map((client: any) => (
                 <option key={client.id} value={client.id}>{client.name}</option>
               ))}

@@ -1,0 +1,8 @@
+ALTER TABLE agent_vector_configs
+ADD COLUMN IF NOT EXISTS chunking_strategy VARCHAR(50) DEFAULT 'paragraph',
+ADD COLUMN IF NOT EXISTS chunk_delimiter VARCHAR(10) DEFAULT '\n\n',
+ADD COLUMN IF NOT EXISTS max_chunk_size INTEGER DEFAULT 2048,
+ADD COLUMN IF NOT EXISTS chunk_overlap INTEGER DEFAULT 100;
+
+ALTER TABLE agents
+ADD COLUMN IF NOT EXISTS advanced_settings JSONB DEFAULT '{}';

@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import {
     Brain, Save, Database, MessageSquare,
     Shield, Fingerprint, Wand2, Smartphone, Check,
-    LayoutTemplate, X, Loader2, RefreshCw
+    LayoutTemplate, X, Loader2, RefreshCw, Settings, Zap
 } from 'lucide-react';
 // Tipos baseados na especificação do usuário
 interface AgentConfig {
@@ -43,6 +43,54 @@ interface AgentConfig {
         knowledgeBaseId?: string;
         searchMode?: 'semantic' | 'keyword' | 'hybrid';
         enableReranking?: boolean;
+        // Configurações Avançadas de Chunking
+        chunkingStrategy?: 'paragraph' | 'fixed' | 'semantic';
+        chunkDelimiter?: string;
+        maxChunkSize?: number;
+        chunkOverlap?: number;
+        childChunkSize?: number;
+        preprocessing?: {
+            removeExtraSpaces: boolean;
+            removeUrls: boolean;
+            removeEmails: boolean;
+        };
+        // Embeddings Híbridos
+        hybridConfig?: {
+            semanticPrecision: number;
+            contextualWeight: number;
+        };
+        // Reranking Avançado
+        rerankConfig?: {
+            topK: number;
+            threshold: number;
+        };
+    };
+    advancedConfig?: {
+        multiModelValidation: {
+            enabled: boolean;
+            minConsensus: number;
+            parallelModels: number;
+        };
+        promptEngineering: {
+            analysisDepth: number;
+            chainOfThought: 'none' | 'basic' | 'advanced';
+        };
+        qualitySafety: {
+            hallucinationCheck: {
+                enabled: boolean;
+                sensitivity: number;
+                method: 'cross-reference' | 'self-consistency';
+            };
+            semanticCache: {
+                enabled: boolean;
+                similarityThreshold: number;
+                ttlHours: number;
+            };
+            monitoring: {
+                logFrequency: 'all' | 'errors' | 'critical';
+                confidenceThreshold: number;
+            };
+        };
     };
     prompts: {
         system: string;
@@ -97,7 +145,54 @@ const INITIAL_CONFIG: AgentConfig = {
         contextWindow: 5,
         relevanceThreshold: 0.70,
         filters: [],
-        knowledgeBaseId: ''
+        knowledgeBaseId: '',
+        searchMode: 'hybrid',
+        enableReranking: true,
+        chunkingStrategy: 'paragraph',
+        chunkDelimiter: '\\n\\n',
+        maxChunkSize: 2048,
+        chunkOverlap: 100,
+        childChunkSize: 768,
+        preprocessing: {
+            removeExtraSpaces: true,
+            removeUrls: true,
+            removeEmails: true
+        },
+        hybridConfig: {
+            semanticPrecision: 0.85,
+            contextualWeight: 0.25
+        },
+        rerankConfig: {
+            topK: 10,
+            threshold: 0.75
+        }
+    },
+    advancedConfig: {
+        multiModelValidation: {
+            enabled: true,
+            minConsensus: 0.75,
+            parallelModels: 3
+        },
+        promptEngineering: {
+            analysisDepth: 3,
+            chainOfThought: 'advanced'
+        },
+        qualitySafety: {
+            hallucinationCheck: {
+                enabled: true,
+                sensitivity: 0.80,
+                method: 'cross-reference'
+            },
+            semanticCache: {
+                enabled: true,
+                similarityThreshold: 0.90,
+                ttlHours: 6
+            },
+            monitoring: {
+                logFrequency: 'critical',
+                confidenceThreshold: 0.70
+            }
+        }
     },
     prompts: {
         system: '',
@@ -511,6 +606,12 @@ export const AgentBuilder: React.FC = () => {
                             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'channels' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
                         >
                             <Smartphone size={18} /> Canais & Integrações
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('advanced')}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'advanced' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Zap size={18} /> Otimização Avançada
                         </button>
                     </nav>
 
@@ -1337,6 +1438,149 @@ export const AgentBuilder: React.FC = () => {
                                             </div>
                                         </div>
                                     )}
+                                </div>
+                            </div>
+                        )}
+                        {/* TAB: ADVANCED */}
+                        {activeTab === 'advanced' && (
+                            <div className="space-y-6 animate-fade-in">
+                                {/* Chunking Otimizado */}
+                                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <Database className="text-blue-600" /> Configuração de Fragmentação (Chunking)
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Estratégia</label>
+                                            <select
+                                                value={config.vectorConfig.chunkingStrategy}
+                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, chunkingStrategy: e.target.value as any } })}
+                                                className="w-full px-3 py-2 border rounded-lg"
+                                            >
+                                                <option value="paragraph">Parágrafo (Recomendado)</option>
+                                                <option value="fixed">Fixo</option>
+                                                <option value="semantic">Semântico</option>
+                                            </select>
+                                            <p className="text-xs text-gray-500 mt-1">Parágrafo oferece melhor precisão para textos jurídicos.</p>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Delimitador</label>
+                                            <input
+                                                type="text"
+                                                value={config.vectorConfig.chunkDelimiter}
+                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, chunkDelimiter: e.target.value } })}
+                                                className="w-full px-3 py-2 border rounded-lg font-mono"
+                                                placeholder="\n\n"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Tamanho Máximo (chars)</label>
+                                            <input
+                                                type="number"
+                                                value={config.vectorConfig.maxChunkSize}
+                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, maxChunkSize: parseInt(e.target.value) } })}
+                                                className="w-full px-3 py-2 border rounded-lg"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">2048 = Equilíbrio contexto/performance.</p>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Sobreposição (chars)</label>
+                                            <input
+                                                type="number"
+                                                value={config.vectorConfig.chunkOverlap}
+                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, chunkOverlap: parseInt(e.target.value) } })}
+                                                className="w-full px-3 py-2 border rounded-lg"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">100 = Preserva continuidade contextual.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Inteligência Avançada */}
+                                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <Brain className="text-purple-600" /> Inteligência Avançada
+                                    </h3>
+                                    <div className="space-y-6">
+                                        {/* Embeddings Híbridos */}
+                                        <div>
+                                            <h4 className="text-sm font-bold text-gray-700 mb-2">Embeddings Híbridos</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-500 mb-1">Precisão Semântica ({config.vectorConfig.hybridConfig?.semanticPrecision})</label>
+                                                    <input
+                                                        type="range" min="0" max="1" step="0.05"
+                                                        value={config.vectorConfig.hybridConfig?.semanticPrecision}
+                                                        onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, hybridConfig: { ...config.vectorConfig.hybridConfig!, semanticPrecision: parseFloat(e.target.value) } } })}
+                                                        className="w-full accent-purple-600"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-500 mb-1">Peso Contextual ({config.vectorConfig.hybridConfig?.contextualWeight})</label>
+                                                    <input
+                                                        type="range" min="0" max="1" step="0.05"
+                                                        value={config.vectorConfig.hybridConfig?.contextualWeight}
+                                                        onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, hybridConfig: { ...config.vectorConfig.hybridConfig!, contextualWeight: parseFloat(e.target.value) } } })}
+                                                        className="w-full accent-purple-600"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Validação Multi-Modelo */}
+                                        <div className="border-t pt-4">
+                                            <h4 className="text-sm font-bold text-gray-700 mb-2">Validação Multi-Modelo</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-500 mb-1">Consenso Mínimo ({config.advancedConfig?.multiModelValidation.minConsensus})</label>
+                                                    <input
+                                                        type="range" min="0.5" max="1" step="0.05"
+                                                        value={config.advancedConfig?.multiModelValidation.minConsensus}
+                                                        onChange={(e) => setConfig({ ...config, advancedConfig: { ...config.advancedConfig!, multiModelValidation: { ...config.advancedConfig!.multiModelValidation, minConsensus: parseFloat(e.target.value) } } })}
+                                                        className="w-full accent-blue-600"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-gray-500 mb-1">Modelos Paralelos</label>
+                                                    <input
+                                                        type="number" min="1" max="5"
+                                                        value={config.advancedConfig?.multiModelValidation.parallelModels}
+                                                        onChange={(e) => setConfig({ ...config, advancedConfig: { ...config.advancedConfig!, multiModelValidation: { ...config.advancedConfig!.multiModelValidation, parallelModels: parseInt(e.target.value) } } })}
+                                                        className="w-full px-3 py-2 border rounded-lg"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Qualidade e Segurança */}
+                                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <Shield className="text-green-600" /> Qualidade e Segurança
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Verificação de Alucinações (Sensibilidade)</label>
+                                            <input
+                                                type="range" min="0" max="1" step="0.05"
+                                                value={config.advancedConfig?.qualitySafety.hallucinationCheck.sensitivity}
+                                                onChange={(e) => setConfig({ ...config, advancedConfig: { ...config.advancedConfig!, qualitySafety: { ...config.advancedConfig!.qualitySafety, hallucinationCheck: { ...config.advancedConfig!.qualitySafety.hallucinationCheck, sensitivity: parseFloat(e.target.value) } } } })}
+                                                className="w-full accent-green-600"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Valor atual: {config.advancedConfig?.qualitySafety.hallucinationCheck.sensitivity}</p>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Cache Semântico (Similaridade)</label>
+                                            <input
+                                                type="range" min="0.5" max="1" step="0.01"
+                                                value={config.advancedConfig?.qualitySafety.semanticCache.similarityThreshold}
+                                                onChange={(e) => setConfig({ ...config, advancedConfig: { ...config.advancedConfig!, qualitySafety: { ...config.advancedConfig!.qualitySafety, semanticCache: { ...config.advancedConfig!.qualitySafety.semanticCache, similarityThreshold: parseFloat(e.target.value) } } } })}
+                                                className="w-full accent-green-600"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Valor atual: {config.advancedConfig?.qualitySafety.semanticCache.similarityThreshold}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
