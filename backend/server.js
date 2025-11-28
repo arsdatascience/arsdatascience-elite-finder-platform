@@ -293,6 +293,11 @@ app.set('io', io);
 const adminCtrl = require('./adminController');
 app.post('/api/admin/cleanup', adminCtrl.cleanupDatabase);
 
-server.listen(PORT, () => {
-  console.log(`🔥 Server running on port ${PORT}`);
+const runMigrations = require('./migrate');
+
+// Iniciar servidor após migrações
+runMigrations().then(() => {
+  server.listen(PORT, () => {
+    console.log(`🔥 Server running on port ${PORT}`);
+  });
 });

@@ -53,9 +53,10 @@ router.post('/', async (req, res) => {
             await client.query(`
                 INSERT INTO agent_ai_configs (
                     chatbot_id, provider, model, temperature, top_p, top_k, max_tokens, timeout, retries,
-                    frequency_penalty, presence_penalty, stop_sequences, response_mode, candidate_count
+                    frequency_penalty, presence_penalty, stop_sequences, response_mode, candidate_count,
+                    seed, json_mode
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
             `, [
                 agentId,
                 aiConfig.provider,
@@ -70,7 +71,9 @@ router.post('/', async (req, res) => {
                 aiConfig.presencePenalty || 0.0,
                 aiConfig.stopSequences || null,
                 aiConfig.responseMode || 'balanced',
-                aiConfig.candidateCount || 1
+                aiConfig.candidateCount || 1,
+                aiConfig.seed || null,
+                aiConfig.jsonMode || false
             ]);
 
             // 3. Inserir Vector Config
@@ -272,17 +275,33 @@ router.put('/:id', async (req, res) => {
 
             // 2. Upsert AI Config (Deletar e inserir é mais simples para garantir consistência se não existir PK)
             // Mas vamos tentar UPDATE primeiro, se rowCount=0, INSERT.
+            // 2. Upsert AI Config
             const updateAi = await client.query(`
                 UPDATE agent_ai_configs SET
-                    provider=$1, model=$2, temperature=$3, top_p=$4, top_k=$5, max_tokens=$6, timeout=$7, retries=$8
-                WHERE chatbot_id = $9
-            `, [aiConfig.provider, aiConfig.model, aiConfig.temperature, aiConfig.topP, aiConfig.topK, aiConfig.maxTokens, aiConfig.timeout, aiConfig.retries, id]);
+                    provider=$1, model=$2, temperature=$3, top_p=$4, top_k=$5, max_tokens=$6, timeout=$7, retries=$8,
+                    frequency_penalty=$9, presence_penalty=$10, stop_sequences=$11, response_mode=$12, candidate_count=$13,
+                    seed=$14, json_mode=$15
+                WHERE chatbot_id = $16
+            `, [
+                aiConfig.provider, aiConfig.model, aiConfig.temperature, aiConfig.topP, aiConfig.topK, aiConfig.maxTokens, aiConfig.timeout, aiConfig.retries,
+                aiConfig.frequencyPenalty || 0.0, aiConfig.presencePenalty || 0.0, aiConfig.stopSequences || null, aiConfig.responseMode || 'balanced', aiConfig.candidateCount || 1,
+                aiConfig.seed || null, aiConfig.jsonMode || false,
+                id
+            ]);
 
             if (updateAi.rowCount === 0) {
                 await client.query(`
-                    INSERT INTO agent_ai_configs (chatbot_id, provider, model, temperature, top_p, top_k, max_tokens, timeout, retries)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                `, [id, aiConfig.provider, aiConfig.model, aiConfig.temperature, aiConfig.topP, aiConfig.topK, aiConfig.maxTokens, aiConfig.timeout, aiConfig.retries]);
+                    INSERT INTO agent_ai_configs (
+                        chatbot_id, provider, model, temperature, top_p, top_k, max_tokens, timeout, retries,
+                        frequency_penalty, presence_penalty, stop_sequences, response_mode, candidate_count,
+                        seed, json_mode
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+                `, [
+                    id, aiConfig.provider, aiConfig.model, aiConfig.temperature, aiConfig.topP, aiConfig.topK, aiConfig.maxTokens, aiConfig.timeout, aiConfig.retries,
+                    aiConfig.frequencyPenalty || 0.0, aiConfig.presencePenalty || 0.0, aiConfig.stopSequences || null, aiConfig.responseMode || 'balanced', aiConfig.candidateCount || 1,
+                    aiConfig.seed || null, aiConfig.jsonMode || false
+                ]);
             }
 
             // 3. Upsert Vector Config
