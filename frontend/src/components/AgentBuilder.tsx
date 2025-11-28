@@ -410,6 +410,29 @@ export const AgentBuilder: React.FC = () => {
         setConfig({ ...config, aiConfig: newConfig });
     };
 
+    const applyPromptPreset = (preset: string) => {
+        let newPrompts = { ...config.prompts };
+        switch (preset) {
+            case 'sales':
+                newPrompts.system = "Você é um especialista em vendas persuasivas. Use gatilhos mentais como escassez e urgência de forma ética. Seu objetivo é entender a dor do cliente e oferecer a solução ideal. Mantenha o foco em benefícios, não apenas características.";
+                newPrompts.responseStructure = "1. Empatia com a dor do cliente\n2. Apresentação da solução como alívio\n3. Prova social ou autoridade\n4. Call to Action (CTA) claro";
+                break;
+            case 'support':
+                newPrompts.system = "Você é um agente de suporte técnico paciente e claro. Forneça instruções passo-a-passo numeradas. Valide se o usuário entendeu cada etapa antes de prosseguir. Mantenha um tom empático e profissional.";
+                newPrompts.responseStructure = "1. Confirmação do entendimento do problema\n2. Passo-a-passo da solução\n3. Verificação de sucesso\n4. Encerramento cordial";
+                break;
+            case 'legal':
+                newPrompts.system = "Você é um assistente jurídico preciso. Baseie suas respostas estritamente na legislação vigente e nos documentos fornecidos. Use linguagem formal e cite fontes quando possível. Evite opiniões pessoais e deixe claro que é uma IA.";
+                newPrompts.responseStructure = "1. Resumo da questão legal\n2. Base legal aplicável (Lei/Artigo)\n3. Aplicação ao caso concreto\n4. Disclaimer de responsabilidade";
+                break;
+            case 'marketing':
+                newPrompts.system = "Você é um copywriter criativo e estrategista de marketing. Use storytelling e linguagem envolvente para capturar a atenção do público. Crie conexões emocionais e use metáforas relevantes.";
+                newPrompts.responseStructure = "1. Gancho (Hook) para capturar atenção\n2. Desenvolvimento da história/argumento\n3. Conexão emocional\n4. Fechamento memorável";
+                break;
+        }
+        setConfig({ ...config, prompts: newPrompts });
+    };
+
     return (
         <div className="flex flex-col h-full bg-gray-50 animate-fade-in min-h-screen">
             {/* Header */}
@@ -1043,6 +1066,23 @@ export const AgentBuilder: React.FC = () => {
                         {/* TAB: PROMPTS */}
                         {activeTab === 'prompts' && (
                             <div className="space-y-6 animate-fade-in">
+                                {/* Presets de Prompt */}
+                                <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Wand2 className="text-orange-600" size={20} />
+                                        <div>
+                                            <h4 className="text-sm font-bold text-orange-900">Templates de Prompt</h4>
+                                            <p className="text-xs text-orange-700">Comece com uma base sólida de engenharia de prompt.</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => applyPromptPreset('sales')} className="px-3 py-1.5 bg-white text-orange-700 text-xs font-bold rounded-lg border border-orange-200 hover:bg-orange-50 transition-colors">Vendas</button>
+                                        <button onClick={() => applyPromptPreset('support')} className="px-3 py-1.5 bg-white text-orange-700 text-xs font-bold rounded-lg border border-orange-200 hover:bg-orange-50 transition-colors">Suporte</button>
+                                        <button onClick={() => applyPromptPreset('legal')} className="px-3 py-1.5 bg-white text-orange-700 text-xs font-bold rounded-lg border border-orange-200 hover:bg-orange-50 transition-colors">Jurídico</button>
+                                        <button onClick={() => applyPromptPreset('marketing')} className="px-3 py-1.5 bg-white text-orange-700 text-xs font-bold rounded-lg border border-orange-200 hover:bg-orange-50 transition-colors">Marketing</button>
+                                    </div>
+                                </div>
+
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                         <MessageSquare className="text-orange-500" /> Sistema de Prompts Avançado
@@ -1051,33 +1091,63 @@ export const AgentBuilder: React.FC = () => {
                                         <div>
                                             <label className="block text-sm font-bold text-gray-800 mb-1">System Prompt (Personalidade Principal)</label>
                                             <p className="text-xs text-gray-500 mb-2">Define o comportamento base e a expertise do agente.</p>
-                                            <textarea className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm bg-gray-50" rows={4} value={config.prompts.system} />
+                                            <textarea
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm bg-gray-50"
+                                                rows={4}
+                                                value={config.prompts.system}
+                                                onChange={(e) => setConfig({ ...config, prompts: { ...config.prompts, system: e.target.value } })}
+                                            />
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-800 mb-1">Prompt de Resposta Estruturada</label>
-                                                <textarea className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm" rows={4} value={config.prompts.responseStructure} />
+                                                <textarea
+                                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm"
+                                                    rows={4}
+                                                    value={config.prompts.responseStructure}
+                                                    onChange={(e) => setConfig({ ...config, prompts: { ...config.prompts, responseStructure: e.target.value } })}
+                                                />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-800 mb-1">Prompt de Busca Vetorial</label>
-                                                <textarea className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm" rows={4} value={config.prompts.vectorSearch} />
+                                                <textarea
+                                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm"
+                                                    rows={4}
+                                                    value={config.prompts.vectorSearch}
+                                                    onChange={(e) => setConfig({ ...config, prompts: { ...config.prompts, vectorSearch: e.target.value } })}
+                                                />
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-800 mb-1">Prompt de Análise</label>
-                                                <textarea className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm" rows={3} value={config.prompts.analysis} />
+                                                <textarea
+                                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm"
+                                                    rows={3}
+                                                    value={config.prompts.analysis}
+                                                    onChange={(e) => setConfig({ ...config, prompts: { ...config.prompts, analysis: e.target.value } })}
+                                                />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-bold text-gray-800 mb-1">Prompt para Casos Complexos</label>
-                                                <textarea className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm" rows={3} value={config.prompts.complexCases} />
+                                                <textarea
+                                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm"
+                                                    rows={3}
+                                                    value={config.prompts.complexCases}
+                                                    onChange={(e) => setConfig({ ...config, prompts: { ...config.prompts, complexCases: e.target.value } })}
+                                                />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-bold text-gray-800 mb-1">Prompt de Validação (Consistency Check)</label>
                                             <div className="flex gap-2">
                                                 <div className="flex-1">
-                                                    <textarea className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm" rows={2} value={config.prompts.validation} />
+                                                    <textarea
+                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm"
+                                                        rows={2}
+                                                        value={config.prompts.validation}
+                                                        onChange={(e) => setConfig({ ...config, prompts: { ...config.prompts, validation: e.target.value } })}
+                                                    />
                                                 </div>
                                                 <div className="w-1/3 bg-orange-50 p-3 rounded-lg border border-orange-100">
                                                     <div className="flex items-center gap-2 text-orange-800 font-bold text-xs mb-1">
