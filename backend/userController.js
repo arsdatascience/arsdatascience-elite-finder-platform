@@ -58,6 +58,10 @@ const updateAvatar = async (req, res) => {
     }
 };
 
+const WebhookService = require('./services/webhookService');
+
+// ... (código existente)
+
 const createUser = async (req, res) => {
     const { name, email, password, role } = req.body;
     if (!name || !email || !password) {
@@ -70,7 +74,13 @@ const createUser = async (req, res) => {
             `INSERT INTO users (name, email, password_hash, role) VALUES ($1,$2,$3,$4) RETURNING id, name, email, role, avatar_url, created_at`,
             [name, email, password_hash, role || 'user']
         );
-        res.json({ success: true, user: result.rows[0] });
+
+        const newUser = result.rows[0];
+
+        // Disparar Webhook para n8n
+        WebhookService.trigger('USER_CREATED', newUser);
+
+        res.json({ success: true, user: newUser });
     } catch (err) {
         console.error('Error creating user:', err);
         res.status(500).json({ success: false, error: 'Database error' });

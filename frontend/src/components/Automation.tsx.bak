@@ -1,0 +1,19 @@
+import React from 'react';
+
+export const Automation: React.FC = () => {
+    return (
+        <div className="flex flex-col h-full p-4 bg-gray-100">
+            <div className="bg-white p-4 rounded shadow mb-4">
+                <h1 className="text-xl font-bold">Automação (Debug)</h1>
+                <p>Verificando renderização...</p>
+            </div>
+            <div className="flex-1 bg-white border rounded overflow-hidden">
+                <iframe
+                    src="https://arsdatascience-n8n.aiiam.com.br"
+                    className="w-full h-full"
+                    title="n8n"
+                />
+            </div>
+        </div>
+    );
+};

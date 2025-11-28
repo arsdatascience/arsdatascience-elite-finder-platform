@@ -7,7 +7,7 @@ import { FlightControl } from '@/components/FlightControl';
 import { ClientRegistration } from '@/components/ClientRegistration';
 import { AnalysisMode } from '@/components/AnalysisMode';
 import { SocialMedia } from '@/components/SocialMedia';
-import { Automation } from '@/components/Automation';
+const AutomationPage = React.lazy(() => import('@/components/AutomationPage'));
 import { Training } from '@/components/Training';
 import { Reports } from '@/components/Reports';
 import { Settings } from '@/components/Settings';
@@ -144,7 +144,14 @@ const App: React.FC = () => {
           <Route path="/social" element={<SocialMedia onNavigate={handleNavigate} />} />
           <Route path="/social-calendar" element={<div className="h-full min-h-screen"><SocialCalendar /></div>} />
           <Route path="/social-integrations" element={<SocialIntegrations />} />
-          <Route path="/automation" element={<Automation />} />
+          <Route
+            path="/automation"
+            element={
+              <React.Suspense fallback={<div className="p-10 text-center">Carregando Módulo de Automação...</div>}>
+                <AutomationPage />
+              </React.Suspense>
+            }
+          />
           <Route path="/training" element={<Training />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/ai-agent" element={<ContentGenerator isOpen={true} onClose={() => { }} mode="page" />} />
