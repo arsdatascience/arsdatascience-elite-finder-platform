@@ -1,370 +1,371 @@
-import React, { useState, useMemo } from 'react';
-import { CLIENTS_LIST } from '@/constants';
-import { Play, Pause, Globe, Search, Sparkles, PieChart as PieIcon, BarChart2, Users, AlertCircle, Loader2 } from 'lucide-react';
-import { ContentGenerator } from '@/components/ContentGenerator';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, LabelList } from 'recharts';
-import { Campaign } from '@/types';
-import { COMPONENT_VERSIONS } from '@/componentVersions';
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/services/apiClient';
+import React, { useState, useEffect } from 'react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  AreaChart, Area, PieChart, Pie, Cell
+} from 'recharts';
+import {
+  Filter, Calendar, Download, TrendingUp, DollarSign, MousePointer,
+  Eye, Target, Layers, Search, ArrowUpRight, ArrowDownRight
+} from 'lucide-react';
+
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
+
+interface Campaign {
+  id: number;
+  name: string;
+  platform: string;
+  status: string;
+  spend: string;
+  impressions: string;
+  clicks: string;
+  conversions: string;
+  revenue: string;
+}
+
+interface KPI {
+  total_spend: string;
+  total_impressions: string;
+  total_clicks: string;
+  total_conversions: string;
+  total_revenue: string;
+}
 
 export const Campaigns: React.FC = () => {
-  const [showGenerator, setShowGenerator] = useState(false);
-  const [platformFilter, setPlatformFilter] = useState<'all' | 'google' | 'meta'>('all');
-  const [selectedClient, setSelectedClient] = useState(CLIENTS_LIST[1].id);
-
-  const { data: clients = CLIENTS_LIST } = useQuery({
-    queryKey: ['clients'],
-    queryFn: apiClient.clients.getClients,
-    initialData: CLIENTS_LIST
+  // State for Filters
+  const [clients, setClients] = useState<any[]>([]);
+  const [selectedClient, setSelectedClient] = useState<string>('');
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['google', 'meta', 'youtube', 'linkedin']);
+  const [dateRange, setDateRange] = useState({
+    start: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0]
   });
 
-  const { data: clientCampaigns = [], isLoading } = useQuery<Campaign[]>({
-    queryKey: ['campaigns', selectedClient],
-    queryFn: () => apiClient.campaigns.getCampaigns(selectedClient)
-  });
+  // State for Data
+  const [loading, setLoading] = useState(true);
+  const [kpis, setKpis] = useState<KPI | null>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [platformData, setPlatformData] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 
-  const filteredCampaigns = useMemo(() => {
-    return (clientCampaigns as Campaign[]).filter(c => platformFilter === 'all' ? true : c.platform === platformFilter);
-  }, [clientCampaigns, platformFilter]);
+  // Fetch Clients
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/api/clients`)
+      .then(res => res.json())
+      .then(data => {
+        setClients(data);
+        if (data.length > 0) setSelectedClient(data[0].id);
+      })
+      .catch(err => console.error('Erro ao buscar clientes:', err));
+  }, []);
 
-  const BUDGET_DATA = useMemo(() => {
-    if (platformFilter === 'all') {
-      const googleSpend = filteredCampaigns.filter(c => c.platform === 'google').reduce((acc, curr) => acc + curr.spent, 0);
-      const metaSpend = filteredCampaigns.filter(c => c.platform === 'meta').reduce((acc, curr) => acc + curr.spent, 0);
+  // Fetch Analytics
+  useEffect(() => {
+    if (!selectedClient) return;
 
-      if (googleSpend === 0 && metaSpend === 0) return [{ name: 'Sem Dados', value: 1, color: '#e5e7eb' }];
+    setLoading(true);
+    const queryParams = new URLSearchParams({
+      clientId: selectedClient,
+      startDate: dateRange.start,
+      endDate: dateRange.end,
+      platforms: selectedPlatforms.join(',')
+    });
 
-      return [
-        { name: 'Google Ads', value: googleSpend, color: '#3b82f6' },
-        { name: 'Meta Ads', value: metaSpend, color: '#a855f7' },
-      ];
+    fetch(`${import.meta.env.VITE_API_URL}/api/campaigns/analytics?${queryParams}`)
+      .then(res => res.json())
+      .then(data => {
+        setKpis(data.kpis);
+        setChartData(data.chartData);
+        setPlatformData(data.platformData);
+        setCampaigns(data.campaigns);
+      })
+      .catch(err => console.error('Erro ao buscar analytics:', err))
+      .finally(() => setLoading(false));
+  }, [selectedClient, selectedPlatforms, dateRange]);
+
+  const togglePlatform = (platform: string) => {
+    if (selectedPlatforms.includes(platform)) {
+      setSelectedPlatforms(selectedPlatforms.filter(p => p !== platform));
     } else {
-      const COLORS = platformFilter === 'google'
-        ? ['#3b82f6', '#60a5fa', '#93c5fd', '#2563eb', '#1d4ed8']
-        : ['#a855f7', '#c084fc', '#e9d5ff', '#9333ea', '#7e22ce'];
-
-      return filteredCampaigns.map((c, index) => ({
-        name: c.name,
-        value: c.spent,
-        color: COLORS[index % COLORS.length]
-      })).sort((a, b) => b.value - a.value);
-    }
-  }, [filteredCampaigns, platformFilter]);
-
-  const ROAS_DATA = useMemo(() => {
-    return filteredCampaigns
-      .sort((a, b) => b.roas - a.roas)
-      .slice(0, 6)
-      .map(c => ({
-        name: c.name.length > 20 ? c.name.substring(0, 20) + '...' : c.name,
-        fullName: c.name,
-        roas: c.roas,
-        platform: c.platform
-      }));
-  }, [filteredCampaigns]);
-
-  const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'active': return 'Ativa';
-      case 'paused': return 'Pausada';
-      case 'learning': return 'Aprendizado';
-      default: return status;
+      setSelectedPlatforms([...selectedPlatforms, platform]);
     }
   };
 
+  const formatCurrency = (value: string | number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value));
+  };
+
+  const formatNumber = (value: string | number) => {
+    return new Intl.NumberFormat('pt-BR').format(Number(value));
+  };
+
+  if (loading && !kpis) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6 animate-fade-in pb-10">
-      {/* ... (Todo o JSX do componente Campaigns) ... */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="min-h-screen bg-gray-50 p-8 font-sans">
+      {/* Header & Filters */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Gestão de Campanhas <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.Campaigns}</span></h2>
-          <p className="text-gray-500 text-sm">Acompanhe e otimize seus investimentos.</p>
+          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+            <Target className="text-blue-600" /> Gestão de Campanhas
+          </h1>
+          <p className="text-gray-500 mt-1">Acompanhe o desempenho de suas campanhas em tempo real.</p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 items-center">
+        <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
           {/* Client Selector */}
-          <div className="relative w-full sm:w-64">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
-              <Users size={16} />
-            </div>
+          <div className="relative">
             <select
               value={selectedClient}
               onChange={(e) => setSelectedClient(e.target.value)}
-              className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
+              className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
             >
-              <option value="all">Todos os Clientes (Visão Global)</option>
-              {clients.filter((c: any) => c.id !== 'all').map((client: any) => (
+              {clients.map(client => (
                 <option key={client.id} value={client.id}>{client.name}</option>
               ))}
             </select>
           </div>
 
-          <div className="flex gap-2 w-full sm:w-auto">
-            <button
-              onClick={() => setShowGenerator(true)}
-              className="flex-1 sm:flex-none bg-purple-100 text-purple-700 border border-purple-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-purple-200 flex items-center justify-center gap-2 whitespace-nowrap"
-            >
-              <Sparkles size={16} />
-              Criar Anúncio IA
-            </button>
-            <button className="flex-1 sm:flex-none bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 whitespace-nowrap">
-              + Nova Campanha
-            </button>
+          <div className="h-6 w-px bg-gray-300 mx-1"></div>
+
+          {/* Date Range */}
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+              className="px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+            <span className="text-gray-400">-</span>
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+              className="px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+            />
           </div>
         </div>
       </div>
 
-      <ContentGenerator
-        isOpen={showGenerator}
-        onClose={() => setShowGenerator(false)}
-        defaultType="ad"
-        defaultPlatform="google"
-      />
+      {/* Platform Filters */}
+      <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
+        {['google', 'meta', 'youtube', 'linkedin'].map(platform => (
+          <button
+            key={platform}
+            onClick={() => togglePlatform(platform)}
+            className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${selectedPlatforms.includes(platform)
+                ? platform === 'google' ? 'bg-blue-100 text-blue-700 border-blue-200 border' :
+                  platform === 'meta' ? 'bg-indigo-100 text-indigo-700 border-indigo-200 border' :
+                    platform === 'youtube' ? 'bg-red-100 text-red-700 border-red-200 border' :
+                      'bg-cyan-100 text-cyan-700 border-cyan-200 border'
+                : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
+              }`}
+          >
+            <div className={`w-2 h-2 rounded-full ${selectedPlatforms.includes(platform) ? 'bg-current' : 'bg-gray-300'}`}></div>
+            {platform.charAt(0).toUpperCase() + platform.slice(1)} Ads
+          </button>
+        ))}
+      </div>
 
-      {clientCampaigns.length === 0 && !isLoading && (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg flex items-center gap-2">
-          <AlertCircle size={20} />
-          <span>Nenhuma campanha encontrada. O sistema está tentando carregar dados de exemplo...</span>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <KpiCard
+          title="Investimento Total"
+          value={formatCurrency(kpis?.total_spend || 0)}
+          icon={<DollarSign size={20} className="text-blue-600" />}
+          trend="+12.5%"
+          trendUp={true}
+          color="blue"
+        />
+        <KpiCard
+          title="Impressões"
+          value={formatNumber(kpis?.total_impressions || 0)}
+          icon={<Eye size={20} className="text-purple-600" />}
+          trend="+5.2%"
+          trendUp={true}
+          color="purple"
+        />
+        <KpiCard
+          title="Cliques"
+          value={formatNumber(kpis?.total_clicks || 0)}
+          icon={<MousePointer size={20} className="text-orange-600" />}
+          trend="-2.1%"
+          trendUp={false}
+          color="orange"
+        />
+        <KpiCard
+          title="Conversões"
+          value={formatNumber(kpis?.total_conversions || 0)}
+          icon={<Target size={20} className="text-green-600" />}
+          trend="+8.4%"
+          trendUp={true}
+          color="green"
+        />
+        <KpiCard
+          title="ROAS Médio"
+          value={`${Number(kpis?.total_spend) > 0 ? (Number(kpis?.total_revenue) / Number(kpis?.total_spend)).toFixed(2) : '0.00'}x`}
+          icon={<TrendingUp size={20} className="text-indigo-600" />}
+          trend="+0.5x"
+          trendUp={true}
+          color="indigo"
+        />
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        {/* Main Chart */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+            <TrendingUp size={20} className="text-gray-400" /> Evolução de Investimento vs. Receita
+          </h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.1} />
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={(val) => new Date(val).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#6B7280', fontSize: 12 }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#6B7280', fontSize: 12 }}
+                  tickFormatter={(val) => `R$ ${val / 1000}k`}
+                />
+                <Tooltip
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                  formatter={(value: number) => [`R$ ${value.toFixed(2)}`, '']}
+                />
+                <Legend />
+                <Area type="monotone" dataKey="spend" name="Investimento" stroke="#3B82F6" strokeWidth={2} fillOpacity={1} fill="url(#colorSpend)" />
+                <Area type="monotone" dataKey="revenue" name="Receita" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      )}
 
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center h-64">
-          <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-          <p className="text-gray-500 font-medium">Carregando campanhas...</p>
+        {/* Secondary Chart */}
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+            <Layers size={20} className="text-gray-400" /> Share por Plataforma
+          </h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={platformData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="spend"
+                >
+                  {platformData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex flex-col h-[400px]">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                  <PieIcon size={16} className="text-gray-400" />
-                  Share de Investimento
-                </h3>
-                <span className="text-xs text-gray-500">{platformFilter === 'all' ? 'Por Plataforma' : 'Por Campanha'}</span>
-              </div>
-              <div className="flex-1 flex flex-col md:flex-row items-center h-full">
-                <div className="w-full md:w-3/5 h-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={BUDGET_DATA}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius="55%"
-                        outerRadius="80%"
-                        paddingAngle={4}
-                        dataKey="value"
-                        label={({ value }: { value: number }) => formatCurrency(value)}
-                      >
-                        {BUDGET_DATA.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={1} stroke="#fff" />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(val: number) => formatCurrency(val)}
-                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="w-full md:w-2/5 pl-0 md:pl-4 space-y-3 mt-4 md:mt-0 overflow-y-auto max-h-[300px] custom-scrollbar pr-2">
-                  {BUDGET_DATA.map(item => (
-                    <div key={item.name} className="p-2.5 bg-gray-50 rounded-lg border border-gray-100 flex justify-between items-center group hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center gap-2 text-xs text-gray-600 overflow-hidden">
-                        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }}></div>
-                        <span className="truncate max-w-[100px] font-medium" title={item.name}>{item.name}</span>
-                      </div>
+      </div>
 
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex flex-col h-[500px]">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                  <BarChart2 size={16} className="text-gray-400" />
-                  Top ROAS por Campanha
-                </h3>
-                <span className="text-xs text-gray-500">Retorno sobre Investimento</span>
-              </div>
-              <div className="h-full w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={ROAS_DATA}
-                    layout="vertical"
-                    margin={{ top: 10, right: 60, bottom: 10, left: 10 }}
-                    barCategoryGap={20}
-                  >
-                    <XAxis type="number" hide />
-                    <YAxis
-                      dataKey="name"
-                      type="category"
-                      width={180}
-                      tick={{ fontSize: 11, fill: '#6b7280', fontWeight: 500 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      cursor={{ fill: '#f3f4f6', radius: 4 }}
-                      content={({ active, payload }: { active?: boolean; payload?: any[] | readonly any[] }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="bg-white p-3 border border-gray-100 shadow-lg rounded-lg max-w-[300px] z-50">
-                              <p className="text-sm font-bold text-gray-800 mb-1 whitespace-normal">{data.fullName}</p>
-                              <p className="text-xs text-gray-500 mb-2">Plataforma: {data.platform === 'google' ? 'Google Ads' : 'Meta Ads'}</p>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-600">ROAS:</span>
-                                <span className="text-sm font-bold text-blue-600">{data.roas}x</span>
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="roas" barSize={32} radius={[0, 6, 6, 0]}>
-                      {ROAS_DATA.map((entry: any, index: number) => {
-                        let color = entry.platform === 'google' ? '#3b82f6' : '#a855f7';
-                        if (entry.fullName.toLowerCase().includes('youtube')) color = '#ef4444';
-                        if (entry.fullName.toLowerCase().includes('linkedin')) color = '#0a66c2';
-
-                        return <Cell key={`cell-${index}`} fill={color} />;
-                      })}
-                      <LabelList
-                        dataKey="roas"
-                        position="right"
-                        formatter={(val: any) => `${val}x`}
-                        style={{ fontSize: '12px', fontWeight: 'bold', fill: '#374151' }}
-                      />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-auto pt-4 border-t border-gray-100">
-                <div className="flex flex-wrap gap-4 justify-center">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#3b82f6]"></div>
-                    <span className="text-xs text-gray-600 font-medium">Google Ads</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#a855f7]"></div>
-                    <span className="text-xs text-gray-600 font-medium">Meta Ads</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#ef4444]"></div>
-                    <span className="text-xs text-gray-600 font-medium">YouTube</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#0a66c2]"></div>
-                    <span className="text-xs text-gray-600 font-medium">LinkedIn</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            <button
-              onClick={() => setPlatformFilter('all')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${platformFilter === 'all' ? 'bg-gray-800 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
-                }`}
-            >
-              Todas
-            </button>
-            <button
-              onClick={() => setPlatformFilter('google')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap ${platformFilter === 'google' ? 'bg-blue-100 text-blue-700 border-blue-200 border' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
-                }`}
-            >
-              <Search size={14} /> Google Ads
-            </button>
-            <button
-              onClick={() => setPlatformFilter('meta')}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 whitespace-nowrap ${platformFilter === 'meta' ? 'bg-purple-100 text-purple-700 border-purple-200 border' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
-                }`}
-            >
-              <Globe size={14} /> Meta Ads
-            </button>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left min-w-[800px]">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nome da Campanha</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Orçamento / Gasto</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">CTR</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">ROAS</th>
-                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {filteredCampaigns.map((campaign) => (
-                    <tr key={campaign.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${campaign.platform === 'google' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
-                            {campaign.platform === 'google' ? <Search size={16} /> : <Globe size={16} />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">{campaign.name}</p>
-                            <p className="text-xs text-gray-500 capitalize">{campaign.platform} Ads</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                      ${campaign.status === 'active' ? 'bg-green-100 text-green-800' :
-                            campaign.status === 'paused' ? 'bg-gray-100 text-gray-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${campaign.status === 'active' ? 'bg-green-500' :
-                            campaign.status === 'paused' ? 'bg-gray-500' : 'bg-yellow-500'
-                            }`}></span>
-                          {getStatusLabel(campaign.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 font-medium">{formatCurrency(campaign.spent)} <span className="text-gray-400 text-xs font-normal">/ {formatCurrency(campaign.budget)}</span></div>
-                        <div className="w-24 h-1.5 bg-gray-100 rounded-full mt-1.5">
-                          <div
-                            className={`h-1.5 rounded-full ${campaign.platform === 'google' ? 'bg-blue-500' : 'bg-purple-500'}`}
-                            style={{ width: `${(campaign.spent / campaign.budget) * 100}%` }}
-                          ></div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">{campaign.ctr}%</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-bold text-gray-900">{campaign.roas}x</div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="text-gray-400 hover:text-gray-600 p-1">
-                          {campaign.status === 'active' ? <Pause size={16} /> : <Play size={16} />}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredCampaigns.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="text-center py-8 text-gray-400 text-sm flex flex-col items-center gap-2">
-                        <AlertCircle size={24} />
-                        Nenhuma campanha encontrada para este filtro.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      )}
+      {/* Detailed Table */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+          <h3 className="text-lg font-bold text-gray-800">Detalhamento de Campanhas</h3>
+          <button className="flex items-center gap-2 text-sm text-blue-600 font-medium hover:text-blue-700">
+            <Download size={16} /> Exportar Relatório
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                <th className="px-6 py-4 font-semibold">Campanha</th>
+                <th className="px-6 py-4 font-semibold">Plataforma</th>
+                <th className="px-6 py-4 font-semibold">Status</th>
+                <th className="px-6 py-4 font-semibold text-right">Investimento</th>
+                <th className="px-6 py-4 font-semibold text-right">Impr.</th>
+                <th className="px-6 py-4 font-semibold text-right">Cliques</th>
+                <th className="px-6 py-4 font-semibold text-right">Conv.</th>
+                <th className="px-6 py-4 font-semibold text-right">ROAS</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {campaigns.map((camp) => (
+                <tr key={camp.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-gray-900">{camp.name}</div>
+                    <div className="text-xs text-gray-400">ID: {camp.id}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${camp.platform === 'google' ? 'bg-blue-50 text-blue-700' :
+                        camp.platform === 'meta' ? 'bg-indigo-50 text-indigo-700' :
+                          camp.platform === 'youtube' ? 'bg-red-50 text-red-700' :
+                            'bg-cyan-50 text-cyan-700'
+                      }`}>
+                      {camp.platform}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="flex items-center gap-1.5 text-sm text-green-600 font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-600"></span> Ativa
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right font-medium text-gray-900">{formatCurrency(camp.spend)}</td>
+                  <td className="px-6 py-4 text-right text-gray-600">{formatNumber(camp.impressions)}</td>
+                  <td className="px-6 py-4 text-right text-gray-600">{formatNumber(camp.clicks)}</td>
+                  <td className="px-6 py-4 text-right font-medium text-blue-600">{formatNumber(camp.conversions)}</td>
+                  <td className="px-6 py-4 text-right">
+                    <span className={`font-bold ${Number(camp.revenue) / Number(camp.spend) >= 4 ? 'text-green-600' : 'text-yellow-600'}`}>
+                      {(Number(camp.revenue) / (Number(camp.spend) || 1)).toFixed(2)}x
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };
+
+const KpiCard = ({ title, value, icon, trend, trendUp, color }: any) => (
+  <div className={`bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-${color}-500`}>
+    <div className="flex items-start justify-between mb-4">
+      <div className={`p-2 rounded-lg bg-${color}-50`}>
+        {icon}
+      </div>
+      <div className={`flex items-center gap-1 text-xs font-bold ${trendUp ? 'text-green-600' : 'text-red-600'}`}>
+        {trendUp ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+        {trend}
+      </div>
+    </div>
+    <p className="text-sm text-gray-500 mb-1">{title}</p>
+    <h3 className="text-2xl font-bold text-gray-800">{value}</h3>
+  </div>
+);

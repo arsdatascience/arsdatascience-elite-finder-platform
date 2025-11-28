@@ -10,7 +10,8 @@ const runMigrations = async () => {
         const migrations = [
             '008_add_ai_meta_params.sql',
             '009_add_vector_meta_params.sql',
-            '010_add_advanced_settings.sql'
+            '010_add_advanced_settings.sql',
+            '011_create_campaign_metrics.sql'
         ];
 
         for (const migrationFile of migrations) {

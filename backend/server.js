@@ -205,10 +205,9 @@ app.get('/api/dashboard/funnel-data', dashboardCtrl.getFunnelData);
 app.get('/api/dashboard/device-data', dashboardCtrl.getDeviceData);
 
 // --- CAMPAIGNS ---
-app.get('/api/campaigns', dbController.getCampaigns);
-
-// --- CAMPAIGNS ---
-app.get('/api/campaigns', dbController.getCampaigns);
+const campaignCtrl = require('./campaignController');
+app.get('/api/campaigns/analytics', campaignCtrl.getCampaignAnalytics);
+app.get('/api/campaigns', dbController.getCampaigns); // Manter compatibilidade se necessário
 
 // --- USER MANAGEMENT ---
 
@@ -291,6 +290,8 @@ app.set('io', io);
 
 // --- ADMIN TOOLS ---
 const adminCtrl = require('./adminController');
+const seedCtrl = require('./seedController');
+app.get('/api/seed-campaigns', seedCtrl.seedCampaigns);
 app.post('/api/admin/cleanup', adminCtrl.cleanupDatabase);
 
 const runMigrations = require('./migrate');
