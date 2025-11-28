@@ -2,7 +2,7 @@ const pool = require('./database');
 const bcrypt = require('bcryptjs');
 
 exports.resetPassword = async (req, res) => {
-    const EMAIL = 'denismay@arsdatascience.com.br';
+    const EMAIL = 'arsdatascience@gmail.com';
     const NEW_PASSWORD = 'Elite@2025';
 
     try {

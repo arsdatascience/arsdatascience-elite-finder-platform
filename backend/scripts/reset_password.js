@@ -1,16 +1,19 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
-require('dotenv').config({ path: '../.env' });
+const path = require('path');
 
-// Fallback connection string
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/elite_finder_db';
+// Tenta carregar .env do diretório atual (backend)
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+
+// Fallback connection string (tenta 'postgres' se 'elite_finder_db' falhar)
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres';
 
 const pool = new Pool({
     connectionString,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-const EMAIL = 'denismay@arsdatascience.com.br';
+const EMAIL = 'arsdatascience@gmail.com';
 const NEW_PASSWORD = 'Elite@2025';
 
 async function resetPassword() {
