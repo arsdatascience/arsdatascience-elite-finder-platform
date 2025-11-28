@@ -345,8 +345,17 @@ export const AgentBuilder: React.FC = () => {
                     const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates/${templateId}`);
                     const data = await response.json();
                     if (data.base_config) {
-                        setConfig(data.base_config);
-                        // Opcional: Mostrar notificação de sucesso
+                        // Merge robusto para garantir que novos campos (como advancedConfig ou prompts) não quebrem com templates antigos
+                        setConfig({
+                            ...INITIAL_CONFIG,
+                            ...data.base_config,
+                            identity: { ...INITIAL_CONFIG.identity, ...(data.base_config.identity || {}) },
+                            aiConfig: { ...INITIAL_CONFIG.aiConfig, ...(data.base_config.aiConfig || {}) },
+                            vectorConfig: { ...INITIAL_CONFIG.vectorConfig, ...(data.base_config.vectorConfig || {}) },
+                            prompts: { ...INITIAL_CONFIG.prompts, ...(data.base_config.prompts || {}) },
+                            whatsappConfig: { ...INITIAL_CONFIG.whatsappConfig, ...(data.base_config.whatsappConfig || {}) },
+                            advancedConfig: { ...INITIAL_CONFIG.advancedConfig, ...(data.base_config.advancedConfig || {}) }
+                        });
                     }
                 } catch (error) {
                     console.error('Erro ao carregar template:', error);
@@ -476,7 +485,16 @@ export const AgentBuilder: React.FC = () => {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates/${templateId}`);
             const data = await response.json();
             if (data.base_config) {
-                setConfig(data.base_config);
+                setConfig({
+                    ...INITIAL_CONFIG,
+                    ...data.base_config,
+                    identity: { ...INITIAL_CONFIG.identity, ...(data.base_config.identity || {}) },
+                    aiConfig: { ...INITIAL_CONFIG.aiConfig, ...(data.base_config.aiConfig || {}) },
+                    vectorConfig: { ...INITIAL_CONFIG.vectorConfig, ...(data.base_config.vectorConfig || {}) },
+                    prompts: { ...INITIAL_CONFIG.prompts, ...(data.base_config.prompts || {}) },
+                    whatsappConfig: { ...INITIAL_CONFIG.whatsappConfig, ...(data.base_config.whatsappConfig || {}) },
+                    advancedConfig: { ...INITIAL_CONFIG.advancedConfig, ...(data.base_config.advancedConfig || {}) }
+                });
                 setShowLoadTemplateModal(false);
                 alert('Template carregado com sucesso!');
             }
