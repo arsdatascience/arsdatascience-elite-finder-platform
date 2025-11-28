@@ -25,12 +25,40 @@ router.post('/', async (req, res) => {
             identity,
             aiConfig,
             vectorConfig,
-            INSERT INTO agent_ai_configs (
-                chatbot_id, provider, model, temperature, top_p, top_k, max_tokens, timeout, retries,
-                frequency_penalty, presence_penalty, stop_sequences, response_mode, candidate_count,
-                seed, json_mode
-            )
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+            prompts,
+            whatsappConfig,
+            advancedConfig
+        } = req.body;
+
+        if (!identity || !identity.name) {
+            return res.status(400).json({ error: 'Nome do agente é obrigatório' });
+        }
+
+        const newAgent = await executeTransaction(async (client) => {
+            // 1. Inserir Agente (Chatbot)
+            const agentResult = await client.query(`
+                INSERT INTO chatbots (name, description, category, class, specialization_level, status, advanced_settings)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING id, name, description, category, class, specialization_level, status
+            `, [
+                identity.name,
+                identity.description,
+                identity.category,
+                identity.class,
+                identity.specializationLevel,
+                identity.status,
+                advancedConfig || {}
+            ]);
+            const agentId = agentResult.rows[0].id;
+
+            // 2. Inserir AI Config com parâmetros avançados
+            await client.query(`
+                INSERT INTO agent_ai_configs (
+                    chatbot_id, provider, model, temperature, top_p, top_k, max_tokens, timeout, retries,
+                    frequency_penalty, presence_penalty, stop_sequences, response_mode, candidate_count,
+                    seed, json_mode
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
             `, [
                 agentId,
                 aiConfig.provider,
@@ -46,18 +74,48 @@ router.post('/', async (req, res) => {
                 aiConfig.stopSequences || null,
                 aiConfig.responseMode || 'balanced',
                 aiConfig.candidateCount || 1,
+                aiConfig.seed || null,
+                aiConfig.jsonMode || false
+            ]);
+
+            // 3. Inserir Vector Config
+            const vectorResult = await client.query(`
+                INSERT INTO agent_vector_configs (
+                    chatbot_id, chunking_mode, chunk_size, sensitivity, context_window, relevance_threshold, 
+                    search_mode, enable_reranking, chunking_strategy, chunk_delimiter, max_chunk_size, chunk_overlap
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                RETURNING id
+            `, [
+                agentId,
+                vectorConfig.chunkingMode,
+                vectorConfig.chunkSize,
+                vectorConfig.sensitivity,
+                vectorConfig.contextWindow,
+                vectorConfig.relevanceThreshold,
+                vectorConfig.searchMode || 'semantic',
+                vectorConfig.enableReranking || false,
+                vectorConfig.chunkingStrategy || 'paragraph',
+                vectorConfig.chunkDelimiter || '\n\n',
+                vectorConfig.maxChunkSize || 2048,
+                vectorConfig.chunkOverlap || 100
+            ]);
+            const vectorConfigId = vectorResult.rows[0].id;
+
+            // 4. Inserir Filtros Vetoriais
+            if (vectorConfig.filters && vectorConfig.filters.length > 0) {
                 for (const filter of vectorConfig.filters) {
                     await client.query(`
-                        INSERT INTO agent_vector_filters(vector_config_id, filter_tag)
-        VALUES($1, $2)
-            `, [vectorConfigId, filter]);
+                        INSERT INTO agent_vector_filters (vector_config_id, filter_tag)
+                        VALUES ($1, $2)
+                    `, [vectorConfigId, filter]);
                 }
             }
 
             // 5. Inserir Prompts
             await client.query(`
-                INSERT INTO agent_prompts(chatbot_id, system_prompt, response_structure_prompt, vector_search_prompt, analysis_prompt, complex_cases_prompt, validation_prompt)
-        VALUES($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO agent_prompts (chatbot_id, system_prompt, response_structure_prompt, vector_search_prompt, analysis_prompt, complex_cases_prompt, validation_prompt)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
             `, [
                 agentId,
                 prompts.system,
@@ -70,12 +128,12 @@ router.post('/', async (req, res) => {
 
             // 6. Inserir WhatsApp Config
             await client.query(`
-                INSERT INTO agent_whatsapp_configs(
-                chatbot_id, enabled, provider,
-                evolution_base_url, evolution_api_key, evolution_instance_name,
-                official_phone_number_id, official_access_token, official_verify_token
-            )
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                INSERT INTO agent_whatsapp_configs (
+                    chatbot_id, enabled, provider, 
+                    evolution_base_url, evolution_api_key, evolution_instance_name,
+                    official_phone_number_id, official_access_token, official_verify_token
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             `, [
                 agentId,
                 whatsappConfig.enabled,
@@ -286,11 +344,12 @@ router.put('/:id', async (req, res) => {
 
             // 4. Atualizar Filtros (Deletar todos e inserir novos)
             await client.query('DELETE FROM agent_vector_filters WHERE vector_config_id = $1', [vectorConfigId]);
+            if (vectorConfig.filters && vectorConfig.filters.length > 0) {
                 for (const filter of vectorConfig.filters) {
                     await client.query(`
                         INSERT INTO agent_vector_filters(vector_config_id, filter_tag)
-        VALUES($1, $2)
-            `, [vectorConfigId, filter]);
+                        VALUES($1, $2)
+                    `, [vectorConfigId, filter]);
                 }
             }
 
