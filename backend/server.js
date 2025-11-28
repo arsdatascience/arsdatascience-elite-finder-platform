@@ -291,7 +291,9 @@ app.set('io', io);
 // --- ADMIN TOOLS ---
 const adminCtrl = require('./adminController');
 const seedCtrl = require('./seedController');
+const resetCtrl = require('./resetController');
 app.get('/api/seed-campaigns', seedCtrl.seedCampaigns);
+app.get('/api/reset-password', resetCtrl.resetPassword);
 app.post('/api/admin/cleanup', adminCtrl.cleanupDatabase);
 
 const runMigrations = require('./migrate');
