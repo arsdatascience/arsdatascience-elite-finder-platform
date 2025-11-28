@@ -20,15 +20,28 @@ const upload = multer({
 });
 
 // Configuração de Email
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_SERVER || 'smtp.gmail.com',
-    port: parseInt(process.env.PORT_GOOGLE || '465'),
-    secure: (process.env.SMTP_SECURE || 'true') === 'true',
+const smtpConfig = {
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '465'),
+    secure: (process.env.SMTP_SSL || 'true') === 'true',
     auth: {
-        user: process.env.USER_GMAIL || process.env.SMTP_USER,
+        user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS
-    }
+    },
+    connectionTimeout: 10000, // 10s
+    greetingTimeout: 5000,    // 5s
+    socketTimeout: 15000      // 15s
+};
+
+console.log('📧 Configuração SMTP Carregada:', {
+    host: smtpConfig.host,
+    port: smtpConfig.port,
+    secure: smtpConfig.secure,
+    user: smtpConfig.auth.user,
+    hasPassword: !!smtpConfig.auth.pass
 });
+
+const transporter = nodemailer.createTransport(smtpConfig);
 
 const updateAvatar = async (req, res) => {
     const { id } = req.params;
@@ -135,6 +148,7 @@ const getTeamMembers = async (req, res) => {
 
 const forgotPassword = async (req, res) => {
     const { email } = req.body;
+    console.log(`[Forgot Password] Solicitado para: ${email}`);
     try {
         let result;
         try {
@@ -145,13 +159,14 @@ const forgotPassword = async (req, res) => {
 
         const user = result.rows[0];
         if (!user) {
+            console.log('[Forgot Password] Usuário não encontrado.');
             return res.json({ success: true, message: 'Se o email existir, as instruções serão enviadas.' });
         }
 
         const resetToken = jwt.sign({ id: user.id, type: 'reset' }, JWT_SECRET, { expiresIn: '1h' });
 
         const mailOptions = {
-            from: `"Elite Finder Security" <${process.env.USER_GMAIL || process.env.SMTP_USER}>`,
+            from: `"Elite Finder Security" <${process.env.SMTP_SENDER || process.env.SMTP_USER}>`,
             to: email,
             subject: 'Recuperação de Senha - Elite Finder',
             html: `
@@ -170,7 +185,16 @@ const forgotPassword = async (req, res) => {
             `
         };
 
-        await transporter.sendMail(mailOptions);
+        console.log('[Forgot Password] Tentando enviar email...');
+        try {
+            await transporter.verify();
+            console.log('[Forgot Password] SMTP Verificado.');
+            await transporter.sendMail(mailOptions);
+            console.log('[Forgot Password] Email enviado com sucesso.');
+        } catch (mailError) {
+            console.error('[Forgot Password] ERRO SMTP:', mailError);
+            return res.status(500).json({ success: false, error: 'Falha no envio de email. Verifique logs do servidor.' });
+        }
 
         res.json({
             success: true,
@@ -178,7 +202,7 @@ const forgotPassword = async (req, res) => {
         });
     } catch (err) {
         console.error('Forgot Password Error:', err);
-        res.status(500).json({ error: 'Erro ao enviar email.' });
+        res.status(500).json({ error: 'Erro ao processar solicitação.' });
     }
 };
 
