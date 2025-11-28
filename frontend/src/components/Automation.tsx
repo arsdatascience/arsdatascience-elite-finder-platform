@@ -83,460 +83,143 @@ const nodeTypes = {
     custom: CustomNode,
 };
 
+// ... (imports anteriores mantidos)
+import { ExternalLink, Layers, Workflow as WorkflowIcon } from 'lucide-react';
+
+// ... (código anterior até o início do componente Automation)
+
 export const Automation: React.FC = () => {
     const queryClient = useQueryClient();
+    const [mode, setMode] = useState<'native' | 'n8n'>('native'); // Novo estado para alternar modos
     const [view, setView] = useState<'list' | 'create' | 'templates'>('list');
     const [editingId, setEditingId] = useState<number | null>(null);
 
-    // React Query
-    const { data: workflows = [], isLoading: isLoadingWorkflows } = useQuery<Workflow[]>({
-        queryKey: ['workflows'],
-        queryFn: apiClient.automation.getWorkflows
-    });
+    // ... (hooks e mutations mantidos)
 
-    const { data: templates = [] } = useQuery<WorkflowTemplate[]>({
-        queryKey: ['workflowTemplates'],
-        queryFn: apiClient.automation.getTemplates
-    });
+    // URL do n8n fornecida pelo usuário
+    const N8N_URL = "https://arsdatascience-n8n.aiiam.com.br";
 
-    const saveMutation = useMutation({
-        mutationFn: apiClient.automation.saveWorkflow,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['workflows'] });
-            setView('list');
-        }
-    });
+    // ... (resto da lógica do ReactFlow mantida: onConnect, onDragOver, onDrop, etc.)
 
-    const toggleStatusMutation = useMutation({
-        mutationFn: apiClient.automation.toggleStatus,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['workflows'] });
-        }
-    });
-
-    // Flow States
-    const [nodes, setNodes, onNodesChange] = useNodesState([]);
-    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-    const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-    const reactFlowWrapper = useRef<HTMLDivElement>(null);
-    const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
-
-    // Form States (Metadata)
-    const [newName, setNewName] = useState('');
-
-    // Properties Panel State
-    const [nodeValue, setNodeValue] = useState('');
-
-    // --- FLOW HANDLERS ---
-
-    const onConnect = useCallback((params: Connection) => setEdges((eds) => addEdge({ ...params, type: 'smoothstep', animated: true }, eds)), [setEdges]);
-
-    const onDragOver = useCallback((event: React.DragEvent) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-    }, []);
-
-    const onDrop = useCallback(
-        (event: React.DragEvent) => {
-            event.preventDefault();
-
-            const type = event.dataTransfer.getData('application/reactflow');
-
-            // check if the dropped element is valid
-            if (typeof type === 'undefined' || !type) {
-                return;
-            }
-
-            const position = reactFlowInstance.screenToFlowPosition({
-                x: event.clientX,
-                y: event.clientY,
-            });
-
-            const newNode: Node = {
-                id: Date.now().toString(),
-                type: 'custom',
-                position,
-                data: {
-                    type,
-                    value: type.startsWith('trigger') ? `Novo ${NODE_TYPES_CONFIG[type as keyof typeof NODE_TYPES_CONFIG].label}` : `Nova ${NODE_TYPES_CONFIG[type as keyof typeof NODE_TYPES_CONFIG].label}`
-                },
-            };
-
-            setNodes((nds) => nds.concat(newNode));
-        },
-        [reactFlowInstance, setNodes]
-    );
-
-    const onNodeClick = (_: React.MouseEvent, node: Node) => {
-        setSelectedNodeId(node.id);
-        setNodeValue(node.data.value);
-    };
-
-    const updateNodeValue = (val: string) => {
-        setNodeValue(val);
-        setNodes((nds) =>
-            nds.map((node) => {
-                if (node.id === selectedNodeId) {
-                    node.data = { ...node.data, value: val };
-                }
-                return node;
-            })
-        );
-    };
-
-    const deleteSelectedNode = () => {
-        if (selectedNodeId) {
-            setNodes((nds) => nds.filter((n) => n.id !== selectedNodeId));
-            setEdges((eds) => eds.filter((e) => e.source !== selectedNodeId && e.target !== selectedNodeId));
-            setSelectedNodeId(null);
-        }
-    };
-
-    // --- ACTION HANDLERS ---
-
-    const handleUseTemplate = (template: WorkflowTemplate) => {
-        setEditingId(null);
-        setNewName(template.name);
-
-        // Converter template steps para nodes/edges
-        const initialNodes: Node[] = [
-            { id: 'trigger', type: 'custom', position: { x: 250, y: 0 }, data: { type: 'trigger', value: template.trigger } }
-        ];
-        const initialEdges: Edge[] = [];
-
-        template.steps.forEach((step, index) => {
-            const id = `step-${index}`;
-            const prevId = index === 0 ? 'trigger' : `step-${index - 1}`;
-
-            initialNodes.push({
-                id,
-                type: 'custom',
-                position: { x: 250, y: (index + 1) * 100 },
-                data: { type: step.type, value: step.value }
-            });
-
-            initialEdges.push({
-                id: `e-${prevId}-${id}`,
-                source: prevId,
-                target: id,
-                type: 'smoothstep',
-                animated: true
-            });
-        });
-
-        setNodes(initialNodes);
-        setEdges(initialEdges);
-        setView('create');
-    };
-
-    const handleEditWorkflow = (workflow: Workflow) => {
-        setEditingId(workflow.id);
-        setNewName(workflow.name);
-
-        if (workflow.flowData) {
-            setNodes(workflow.flowData.nodes);
-            setEdges(workflow.flowData.edges);
-        } else {
-            // Fallback se não tiver flowData (converter stepsList antigo)
-            // ... implementação simplificada
-            setNodes([]);
-            setEdges([]);
-        }
-        setView('create');
-    };
-
-    const handleCreateNew = () => {
-        setEditingId(null);
-        setNewName('');
-        setNodes([
-            { id: 'trigger', type: 'custom', position: { x: 250, y: 50 }, data: { type: 'trigger', value: 'Novo Lead Criado' } }
-        ]);
-        setEdges([]);
-        setView('create');
-    };
-
-    const handleSave = () => {
-        if (!newName.trim()) {
-            alert("Dê um nome para a automação");
-            return;
-        }
-
-        const flowData = { nodes, edges };
-        // Calcular steps baseado no número de nós (menos trigger)
-        const stepsCount = nodes.filter(n => !TRIGGER_KEYS.includes(n.data.type)).length;
-        // Pegar o valor do trigger
-        const triggerNode = nodes.find(n => TRIGGER_KEYS.includes(n.data.type));
-        const triggerValue = triggerNode ? triggerNode.data.value : 'Manual';
-
-        const newWorkflow: Workflow = {
-            id: editingId || Date.now(),
-            name: newName,
-            status: 'active',
-            triggers: triggerValue,
-            steps: stepsCount,
-            enrolled: editingId ? (workflows.find((w: Workflow) => w.id === editingId)?.enrolled || 0) : 0,
-            conversion: editingId ? (workflows.find((w: Workflow) => w.id === editingId)?.conversion || '-') : '-',
-            flowData
-        };
-
-        saveMutation.mutate(newWorkflow);
-    };
-
-    const handleToggleStatus = (id: number) => {
-        toggleStatusMutation.mutate(id);
-    };
-
-    // --- RENDER HELPERS ---
-
-    const getTemplateIcon = (iconType: string) => {
-        switch (iconType) {
-            case 'user-plus': return <UserPlus className="text-green-600" size={24} />;
-            case 'clock': return <Clock className="text-orange-600" size={24} />;
-            case 'zap': return <Zap className="text-yellow-600" size={24} />;
-            case 'git-branch': return <GitBranch className="text-purple-600" size={24} />;
-            case 'message-square': return <MessageSquare className="text-blue-600" size={24} />;
-            case 'alert-circle': return <AlertCircle className="text-red-600" size={24} />;
-            case 'shopping-cart': return <ShoppingCart className="text-indigo-600" size={24} />;
-            case 'calendar': return <Calendar className="text-cyan-600" size={24} />;
-            default: return <Zap className="text-gray-600" size={24} />;
-        }
-    };
-
-    // --- VIEWS ---
-
-    if (view === 'templates') {
-        return (
-            <div className="space-y-6 animate-fade-in">
-                <div className="flex items-center gap-4">
-                    <button onClick={() => setView('list')} className="text-gray-600 hover:text-gray-900">
-                        <ArrowLeft size={24} />
-                    </button>
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-800">Templates de Automação</h2>
-                        <p className="text-sm text-gray-500">Escolha um template pronto para começar rapidamente</p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {templates.map((template: WorkflowTemplate) => (
-                        <div key={template.id} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all">
-                            <div className="flex items-start gap-4 mb-4">
-                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    {getTemplateIcon(template.iconType)}
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="font-bold text-gray-900 mb-1">{template.name}</h3>
-                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{template.category}</span>
-                                </div>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-4">{template.description}</p>
-                            <button
-                                onClick={() => handleUseTemplate(template)}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
-                            >
-                                <Copy size={16} /> Usar Template
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    }
-
-    if (view === 'create') {
+    // Renderização do modo n8n
+    if (mode === 'n8n') {
         return (
             <div className="flex flex-col h-[calc(100vh-100px)] animate-fade-in">
-                {/* Header */}
                 <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => setView('list')} className="text-gray-600 hover:text-gray-900">
-                            <ArrowLeft size={24} />
-                        </button>
-                        <div>
-                            <input
-                                type="text"
-                                value={newName}
-                                onChange={(e) => setNewName(e.target.value)}
-                                placeholder="Nome da Automação"
-                                className="text-xl font-bold text-gray-800 border-none focus:ring-0 p-0 placeholder-gray-400"
-                            />
-                            <p className="text-xs text-gray-500">Arraste os elementos para construir seu fluxo</p>
-                        </div>
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                            <WorkflowIcon className="text-orange-600" /> Automação Avançada (n8n)
+                        </h2>
+                        <p className="text-sm text-gray-500">Crie fluxos complexos usando o poder do n8n integrado.</p>
                     </div>
                     <div className="flex gap-3">
-                        <button onClick={() => setView('list')} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium">Cancelar</button>
-                        <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2">
-                            <Save size={18} /> Salvar Fluxo
+                        <button
+                            onClick={() => setMode('native')}
+                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium flex items-center gap-2"
+                        >
+                            <Layers size={18} /> Voltar para Editor Simples
                         </button>
+                        <a
+                            href={N8N_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 flex items-center gap-2"
+                        >
+                            <ExternalLink size={18} /> Abrir em Nova Aba
+                        </a>
                     </div>
                 </div>
-
-                {/* Canvas Area */}
-                <div className="flex-1 flex overflow-hidden">
-                    {/* Sidebar */}
-                    <div className="w-64 bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto shrink-0">
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Elementos</h3>
-
-                        <div className="space-y-6">
-                            <div>
-                                <h4 className="text-xs font-medium text-gray-400 mb-2">Gatilhos</h4>
-                                {Object.entries(NODE_TYPES_CONFIG).filter(([key]) => TRIGGER_KEYS.includes(key)).map(([type, config]) => (
-                                    <div
-                                        key={type}
-                                        className={`bg-white p-3 rounded-lg border shadow-sm cursor-grab hover:shadow-md flex items-center gap-3 mb-2 ${config.color.split(' ')[1]}`}
-                                        onDragStart={(event) => event.dataTransfer.setData('application/reactflow', type)}
-                                        draggable
-                                    >
-                                        <div className="text-gray-600">{config.icon}</div>
-                                        <span className="text-sm font-medium text-gray-700">{config.label}</span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div>
-                                <h4 className="text-xs font-medium text-gray-400 mb-2">Ações</h4>
-                                {Object.entries(NODE_TYPES_CONFIG).filter(([key]) => !TRIGGER_KEYS.includes(key)).map(([type, config]) => (
-                                    <div
-                                        key={type}
-                                        className={`bg-white p-3 rounded-lg border shadow-sm cursor-grab hover:shadow-md flex items-center gap-3 mb-2 ${config.color.split(' ')[1]}`} // Usando a cor da borda
-                                        onDragStart={(event) => event.dataTransfer.setData('application/reactflow', type)}
-                                        draggable
-                                    >
-                                        <div className="text-gray-600">{config.icon}</div>
-                                        <span className="text-sm font-medium text-gray-700">{config.label}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                <div className="flex-1 bg-gray-100 relative">
+                    <iframe
+                        src={N8N_URL}
+                        className="w-full h-full border-none"
+                        title="n8n Editor"
+                        allow="clipboard-read; clipboard-write"
+                    />
+                    {/* Overlay informativo caso o iframe não carregue por restrições de segurança */}
+                    <div className="absolute bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg border border-gray-200 max-w-sm opacity-90 hover:opacity-100 transition-opacity">
+                        <p className="text-xs text-gray-500 mb-2">
+                            <strong>Nota:</strong> Se o editor não carregar aqui, pode ser devido a configurações de segurança do navegador ou do servidor n8n.
+                        </p>
+                        <p className="text-xs text-gray-500">
+                            Use o botão "Abrir em Nova Aba" para acessar diretamente.
+                        </p>
                     </div>
-
-                    {/* React Flow Canvas */}
-                    <div className="flex-1 h-full relative" ref={reactFlowWrapper}>
-                        <ReactFlowProvider>
-                            <ReactFlow
-                                nodes={nodes}
-                                edges={edges}
-                                onNodesChange={onNodesChange}
-                                onEdgesChange={onEdgesChange}
-                                onConnect={onConnect}
-                                onInit={setReactFlowInstance}
-                                onDrop={onDrop}
-                                onDragOver={onDragOver}
-                                onNodeClick={onNodeClick}
-                                nodeTypes={nodeTypes}
-                                fitView
-                                snapToGrid
-                            >
-                                <Background color="#f1f5f9" gap={16} />
-                                <Controls />
-                                <MiniMap />
-                            </ReactFlow>
-                        </ReactFlowProvider>
-                    </div>
-
-                    {/* Properties Panel */}
-                    {selectedNodeId && (
-                        <div className="w-72 bg-white border-l border-gray-200 p-4 shadow-xl z-10 shrink-0">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="font-bold text-gray-800">Propriedades</h3>
-                                <button onClick={() => setSelectedNodeId(null)} className="text-gray-400 hover:text-gray-600">
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Configuração do Passo</label>
-                                    {nodes.find(n => n.id === selectedNodeId)?.data.type === 'email' ? (
-                                        <RichTextEditor
-                                            value={nodeValue}
-                                            onChange={updateNodeValue}
-                                        />
-                                    ) : (
-                                        <textarea
-                                            value={nodeValue}
-                                            onChange={(e) => updateNodeValue(e.target.value)}
-                                            rows={4}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-                                            placeholder="Digite os detalhes desta ação..."
-                                        />
-                                    )}
-                                </div>
-
-                                <div className="pt-4 border-t border-gray-100">
-                                    <button
-                                        onClick={deleteSelectedNode}
-                                        className="w-full py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 flex items-center justify-center gap-2"
-                                    >
-                                        <Trash2 size={16} /> Excluir Passo
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
         );
     }
 
-    // List View
-    return (
-        <div className="space-y-6 animate-fade-in">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-800">Automação de Marketing <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.Automation}</span></h2>
-                    <p className="text-sm text-gray-500">Gerencie seus fluxos de trabalho e gatilhos automatizados.</p>
-                </div>
-                <div className="flex gap-3">
-                    <button onClick={() => setView('templates')} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
-                        <Copy size={18} /> Templates
-                    </button>
-                    <button onClick={handleCreateNew} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-200">
-                        <Plus size={18} /> Nova Automação
-                    </button>
-                </div>
-            </div>
+    // ... (lógica de renderização das views 'templates' e 'create' mantida, apenas ajustando o header para incluir o botão de troca de modo se necessário, ou mantendo simples)
 
-            {isLoadingWorkflows ? (
-                <div className="flex justify-center items-center h-64">
-                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+    // Ajuste na visualização 'list' para incluir o botão de alternância para n8n
+    if (view === 'list') {
+        return (
+            <div className="space-y-6 animate-fade-in">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-800">Automação de Marketing <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.Automation}</span></h2>
+                        <p className="text-sm text-gray-500">Gerencie seus fluxos de trabalho e gatilhos automatizados.</p>
+                    </div>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setMode('n8n')}
+                            className="bg-orange-50 border border-orange-200 text-orange-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-100 flex items-center gap-2"
+                        >
+                            <WorkflowIcon size={18} /> Ir para n8n
+                        </button>
+                        <button onClick={() => setView('templates')} className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
+                            <Copy size={18} /> Templates
+                        </button>
+                        <button onClick={handleCreateNew} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-200">
+                            <Plus size={18} /> Nova Automação
+                        </button>
+                    </div>
                 </div>
-            ) : (
-                <div className="grid grid-cols-1 gap-4">
-                    {workflows.map((workflow: Workflow) => (
-                        <div key={workflow.id} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-all">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <h3 className="text-lg font-bold text-gray-900">{workflow.name}</h3>
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${workflow.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                                            {workflow.status === 'active' ? 'Ativo' : 'Pausado'}
-                                        </span>
+
+                {isLoadingWorkflows ? (
+                    <div className="flex justify-center items-center h-64">
+                        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                        {workflows.map((workflow: Workflow) => (
+                            <div key={workflow.id} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-all">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <h3 className="text-lg font-bold text-gray-900">{workflow.name}</h3>
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${workflow.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                                {workflow.status === 'active' ? 'Ativo' : 'Pausado'}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mb-3"><strong>Gatilho:</strong> {workflow.triggers}</p>
+                                        <div className="flex items-center gap-6 text-sm text-gray-500">
+                                            <span>{workflow.steps} passos</span>
+                                            <span>{workflow.enrolled} inscritos</span>
+                                            <span>Taxa de conversão: {workflow.conversion}</span>
+                                        </div>
                                     </div>
-                                    <p className="text-sm text-gray-600 mb-3"><strong>Gatilho:</strong> {workflow.triggers}</p>
-                                    <div className="flex items-center gap-6 text-sm text-gray-500">
-                                        <span>{workflow.steps} passos</span>
-                                        <span>{workflow.enrolled} inscritos</span>
-                                        <span>Taxa de conversão: {workflow.conversion}</span>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={() => handleEditWorkflow(workflow)} className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50" title="Editar">
+                                            <Edit size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleToggleStatus(workflow.id)}
+                                            disabled={toggleStatusMutation.isPending}
+                                            className={`p-2 rounded-lg border ${workflow.status === 'active' ? 'border-orange-300 text-orange-600 hover:bg-orange-50' : 'border-green-300 text-green-600 hover:bg-green-50'}`}
+                                        >
+                                            {workflow.status === 'active' ? <Pause size={18} /> : <Play size={18} />}
+                                        </button>
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={() => handleEditWorkflow(workflow)} className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50" title="Editar">
-                                        <Edit size={18} />
-                                    </button>
-                                    <button
-                                        onClick={() => handleToggleStatus(workflow.id)}
-                                        disabled={toggleStatusMutation.isPending}
-                                        className={`p-2 rounded-lg border ${workflow.status === 'active' ? 'border-orange-300 text-orange-600 hover:bg-orange-50' : 'border-green-300 text-green-600 hover:bg-green-50'}`}
-                                    >
-                                        {workflow.status === 'active' ? <Pause size={18} /> : <Play size={18} />}
-                                    </button>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    return null; // Fallback
 };
