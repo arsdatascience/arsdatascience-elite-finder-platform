@@ -41,6 +41,8 @@ interface AgentConfig {
         relevanceThreshold: number;
         filters: string[];
         knowledgeBaseId?: string;
+        searchMode?: 'semantic' | 'keyword' | 'hybrid';
+        enableReranking?: boolean;
     };
     prompts: {
         system: string;
@@ -388,6 +390,26 @@ export const AgentBuilder: React.FC = () => {
             alert('Erro ao carregar o template selecionado.');
         }
     };
+
+    const applyAiPreset = (preset: string) => {
+        let newConfig = { ...config.aiConfig };
+        switch (preset) {
+            case 'creative':
+                newConfig = { ...newConfig, temperature: 0.8, topP: 0.95, presencePenalty: 0.1, frequencyPenalty: 0.1 };
+                break;
+            case 'precise':
+                newConfig = { ...newConfig, temperature: 0.2, topP: 0.8, presencePenalty: 0, frequencyPenalty: 0 };
+                break;
+            case 'balanced':
+                newConfig = { ...newConfig, temperature: 0.5, topP: 0.9, presencePenalty: 0, frequencyPenalty: 0 };
+                break;
+            case 'coding':
+                newConfig = { ...newConfig, temperature: 0.1, topP: 0.7, presencePenalty: 0, frequencyPenalty: 0 };
+                break;
+        }
+        setConfig({ ...config, aiConfig: newConfig });
+    };
+
     return (
         <div className="flex flex-col h-full bg-gray-50 animate-fade-in min-h-screen">
             {/* Header */}
@@ -545,6 +567,23 @@ export const AgentBuilder: React.FC = () => {
                         {/* TAB: IA CONFIG */}
                         {activeTab === 'ai' && (
                             <div className="space-y-6 animate-fade-in">
+                                {/* Presets de Comportamento */}
+                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Wand2 className="text-blue-600" size={20} />
+                                        <div>
+                                            <h4 className="text-sm font-bold text-blue-900">Configuração Rápida</h4>
+                                            <p className="text-xs text-blue-700">Aplique as melhores práticas para seu caso de uso.</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => applyAiPreset('precise')} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">Preciso</button>
+                                        <button onClick={() => applyAiPreset('balanced')} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">Equilibrado</button>
+                                        <button onClick={() => applyAiPreset('creative')} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">Criativo</button>
+                                        <button onClick={() => applyAiPreset('coding')} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">Técnico/Code</button>
+                                    </div>
+                                </div>
+
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                         <Brain className="text-purple-500" /> Configurações de Modelo (LLM)
@@ -886,7 +925,11 @@ export const AgentBuilder: React.FC = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Modo de Fragmentação (Chunking)</label>
-                                            <select className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 bg-white">
+                                            <select
+                                                value={config.vectorConfig.chunkingMode}
+                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, chunkingMode: e.target.value as any } })}
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 bg-white"
+                                            >
                                                 <option value="semantic">Semântico (Recomendado)</option>
                                                 <option value="fixed">Tamanho Fixo</option>
                                                 <option value="hierarchical">Hierárquico</option>
@@ -895,8 +938,42 @@ export const AgentBuilder: React.FC = () => {
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Tamanho Ótimo (palavras)</label>
-                                            <input type="number" value={config.vectorConfig.chunkSize} className="w-full px-3 py-2 border rounded-lg" />
+                                            <input
+                                                type="number"
+                                                value={config.vectorConfig.chunkSize}
+                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, chunkSize: parseInt(e.target.value) } })}
+                                                className="w-full px-3 py-2 border rounded-lg"
+                                            />
                                             <p className="text-xs text-gray-500 mt-1">Recomendado: 300-500 palavras</p>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Estratégia de Busca</label>
+                                            <select
+                                                value={config.vectorConfig.searchMode || 'semantic'}
+                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, searchMode: e.target.value as any } })}
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 bg-white"
+                                            >
+                                                <option value="semantic">Semântica (Vetorial)</option>
+                                                <option value="keyword">Palavra-chave (BM25)</option>
+                                                <option value="hybrid">Híbrida (Recomendado)</option>
+                                            </select>
+                                            <p className="text-xs text-gray-500 mt-1">Híbrida combina precisão e contexto.</p>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Reranking (Relevância)</label>
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={config.vectorConfig.enableReranking || false}
+                                                        onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, enableReranking: e.target.checked } })}
+                                                        className="sr-only peer"
+                                                    />
+                                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                                    <span className="ml-3 text-sm font-medium text-gray-700">Ativar Reranker (Cohere/BGE)</span>
+                                                </label>
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-1">Reordena resultados para máxima precisão.</p>
                                         </div>
                                     </div>
                                     <div className="mb-6">

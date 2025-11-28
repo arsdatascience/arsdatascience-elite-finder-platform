@@ -8,7 +8,8 @@ const runMigrations = async () => {
 
         // Lista de migrações críticas que precisam rodar
         const migrations = [
-            '008_add_ai_meta_params.sql'
+            '008_add_ai_meta_params.sql',
+            '009_add_vector_meta_params.sql'
         ];
 
         for (const migrationFile of migrations) {

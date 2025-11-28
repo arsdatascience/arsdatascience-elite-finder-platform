@@ -78,8 +78,8 @@ router.post('/', async (req, res) => {
 
             // 3. Inserir Vector Config
             const vectorResult = await client.query(`
-                INSERT INTO agent_vector_configs (chatbot_id, chunking_mode, chunk_size, sensitivity, context_window, relevance_threshold)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO agent_vector_configs (chatbot_id, chunking_mode, chunk_size, sensitivity, context_window, relevance_threshold, search_mode, enable_reranking)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING id
             `, [
                 agentId,
@@ -87,7 +87,9 @@ router.post('/', async (req, res) => {
                 vectorConfig.chunkSize,
                 vectorConfig.sensitivity,
                 vectorConfig.contextWindow,
-                vectorConfig.relevanceThreshold
+                vectorConfig.relevanceThreshold,
+                vectorConfig.searchMode || 'semantic',
+                vectorConfig.enableReranking || false
             ]);
             const vectorConfigId = vectorResult.rows[0].id;
 
@@ -308,17 +310,25 @@ router.put('/:id', async (req, res) => {
             let vectorConfigId;
             const updateVector = await client.query(`
                 UPDATE agent_vector_configs SET
-                    chunking_mode=$1, chunk_size=$2, sensitivity=$3, context_window=$4, relevance_threshold=$5
-                WHERE chatbot_id = $6
+                    chunking_mode=$1, chunk_size=$2, sensitivity=$3, context_window=$4, relevance_threshold=$5,
+                    search_mode=$6, enable_reranking=$7
+                WHERE chatbot_id = $8
                 RETURNING id
-            `, [vectorConfig.chunkingMode, vectorConfig.chunkSize, vectorConfig.sensitivity, vectorConfig.contextWindow, vectorConfig.relevanceThreshold, id]);
+            `, [
+                vectorConfig.chunkingMode, vectorConfig.chunkSize, vectorConfig.sensitivity, vectorConfig.contextWindow, vectorConfig.relevanceThreshold,
+                vectorConfig.searchMode || 'semantic', vectorConfig.enableReranking || false,
+                id
+            ]);
 
             if (updateVector.rowCount === 0) {
                 const insertVector = await client.query(`
-                    INSERT INTO agent_vector_configs (chatbot_id, chunking_mode, chunk_size, sensitivity, context_window, relevance_threshold)
-                    VALUES ($1, $2, $3, $4, $5, $6)
+                    INSERT INTO agent_vector_configs (chatbot_id, chunking_mode, chunk_size, sensitivity, context_window, relevance_threshold, search_mode, enable_reranking)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                     RETURNING id
-                `, [id, vectorConfig.chunkingMode, vectorConfig.chunkSize, vectorConfig.sensitivity, vectorConfig.contextWindow, vectorConfig.relevanceThreshold]);
+                `, [
+                    id, vectorConfig.chunkingMode, vectorConfig.chunkSize, vectorConfig.sensitivity, vectorConfig.contextWindow, vectorConfig.relevanceThreshold,
+                    vectorConfig.searchMode || 'semantic', vectorConfig.enableReranking || false
+                ]);
                 vectorConfigId = insertVector.rows[0].id;
             } else {
                 vectorConfigId = updateVector.rows[0].id;
