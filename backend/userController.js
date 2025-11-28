@@ -3,13 +3,14 @@ const path = require('path');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'elite-secret-key-change-me';
 
-// Multer configuration – store uploads in ./uploads (outside src)
+// Multer configuration
 const upload = multer({
     dest: path.join(__dirname, '..', 'uploads'),
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (!file.mimetype.startsWith('image/')) {
             return cb(new Error('Only image files are allowed'), false);
@@ -18,17 +19,24 @@ const upload = multer({
     }
 });
 
-/**
- * Update user avatar (profile picture).
- * Expects multipart/form-data with field "avatar".
- */
+// Configuração de Email
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_SERVER || 'smtp.gmail.com',
+    port: parseInt(process.env.PORT_GOOGLE || '465'),
+    secure: (process.env.SMTP_SECURE || 'true') === 'true',
+    auth: {
+        user: process.env.USER_GMAIL || process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+    }
+});
+
 const updateAvatar = async (req, res) => {
-    const { id } = req.params; // user id
+    const { id } = req.params;
     if (!req.file) {
         return res.status(400).json({ success: false, error: 'No file uploaded' });
     }
     try {
-        const avatarPath = `/uploads/${req.file.filename}`; // will be served statically
+        const avatarPath = `/uploads/${req.file.filename}`;
         await db.query('UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2', [avatarPath, id]);
         res.json({ success: true, avatarUrl: avatarPath });
     } catch (err) {
@@ -37,10 +45,6 @@ const updateAvatar = async (req, res) => {
     }
 };
 
-/**
- * Create a new user (admin only).
- * Expected body: { name, email, password_hash, role_id? }
- */
 const createUser = async (req, res) => {
     const { name, email, password, role } = req.body;
     if (!name || !email || !password) {
@@ -49,7 +53,6 @@ const createUser = async (req, res) => {
     try {
         const salt = await bcrypt.genSalt(10);
         const password_hash = await bcrypt.hash(password, salt);
-
         const result = await db.query(
             `INSERT INTO users (name, email, password_hash, role) VALUES ($1,$2,$3,$4) RETURNING id, name, email, role, avatar_url, created_at`,
             [name, email, password_hash, role || 'user']
@@ -61,33 +64,17 @@ const createUser = async (req, res) => {
     }
 };
 
-/**
- * Login user.
- * Expected body: { email, password }
- */
 const login = async (req, res) => {
     const { email, password } = req.body;
-    console.log(`[Login Attempt] Email: ${email}`);
-
     try {
         const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
         const user = result.rows[0];
+        if (!user) return res.status(400).json({ error: 'Credenciais inválidas' });
 
-        if (!user) {
-            console.log('[Login Fail] User not found');
-            return res.status(400).json({ error: 'Credenciais inválidas' });
-        }
-
-        console.log(`[Login] User found: ${user.id}, Role: ${user.role}`);
         const isMatch = await bcrypt.compare(password, user.password_hash);
-
-        if (!isMatch) {
-            console.log('[Login Fail] Password mismatch');
-            return res.status(400).json({ error: 'Credenciais inválidas' });
-        }
+        if (!isMatch) return res.status(400).json({ error: 'Credenciais inválidas' });
 
         const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
-
         res.json({
             token,
             user: {
@@ -104,9 +91,6 @@ const login = async (req, res) => {
     }
 };
 
-/**
- * Get all team members
- */
 const getTeamMembers = async (req, res) => {
     try {
         const result = await db.query(`
@@ -119,8 +103,6 @@ const getTeamMembers = async (req, res) => {
             FROM users
             ORDER BY created_at DESC
         `);
-
-        // Formatar dados para o frontend
         const members = result.rows.map(row => ({
             id: row.id,
             avatarUrl: row.avatar_url,
@@ -144,49 +126,100 @@ const getTeamMembers = async (req, res) => {
             },
             permissions: row.permissions || []
         }));
-
         res.json({ success: true, members });
+    } catch (err) {
+        console.error('Error fetching team members:', err);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
+
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    try {
+        let result;
         try {
-            const decoded = jwt.verify(token, JWT_SECRET);
-            if (decoded.type !== 'reset') throw new Error('Invalid token type');
-
-            const salt = await bcrypt.genSalt(10);
-            const hash = await bcrypt.hash(newPassword, salt);
-
-            try {
-                await db.query('UPDATE "user" SET password_hash = $1 WHERE id = $2', [hash, decoded.id]);
-            } catch (e) {
-                await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, decoded.id]);
-            }
-
-            res.json({ success: true, message: 'Senha alterada com sucesso' });
-        } catch (err) {
-            console.error('Reset Confirm Error:', err);
-            res.status(400).json({ error: 'Token inválido ou expirado' });
-        }
-    };
-
-    /**
-     * Create a new team member
-     * Expected body: { username, firstName, lastName, email, phone, cpf, registrationDate, role, address, permissions }
-     */
-    const createTeamMember = async (req, res) => {
-        const {
-            avatarUrl, username, firstName, lastName, email, phone, cpf,
-            registrationDate, role, status, address, permissions
-        } = req.body;
-
-        if (!username || !firstName || !lastName || !email) {
-            return res.status(400).json({ success: false, error: 'Campos obrigatórios faltando' });
+            result = await db.query('SELECT * FROM "user" WHERE email = $1', [email]);
+        } catch (e) {
+            result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
         }
 
-        try {
-            // Gerar senha padrão (pode ser alterada depois)
-            const defaultPassword = 'Elite@2024';
-            const salt = await bcrypt.genSalt(10);
-            const password_hash = await bcrypt.hash(defaultPassword, salt);
+        const user = result.rows[0];
+        if (!user) {
+            return res.json({ success: true, message: 'Se o email existir, as instruções serão enviadas.' });
+        }
 
-            const result = await db.query(`
+        const resetToken = jwt.sign({ id: user.id, type: 'reset' }, JWT_SECRET, { expiresIn: '1h' });
+
+        const mailOptions = {
+            from: `"Elite Finder Security" <${process.env.USER_GMAIL || process.env.SMTP_USER}>`,
+            to: email,
+            subject: 'Recuperação de Senha - Elite Finder',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #2563eb;">Recuperação de Senha</h2>
+                    <p>Você solicitou a redefinição de sua senha.</p>
+                    <p>Use o código abaixo ou clique no link para redefinir:</p>
+                    <div style="background: #f3f4f6; padding: 15px; border-radius: 5px; text-align: center; font-weight: bold; font-size: 24px; letter-spacing: 2px;">
+                        ${resetToken}
+                    </div>
+                    <p style="text-align: center; margin-top: 20px;">
+                        <a href="https://elitefinder.vercel.app/login?resetToken=${resetToken}" style="background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Redefinir Senha</a>
+                    </p>
+                    <p style="color: #6b7280; font-size: 12px; margin-top: 30px;">Este link expira em 1 hora.</p>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.json({
+            success: true,
+            message: 'Email de recuperação enviado com sucesso! Verifique sua caixa de entrada.'
+        });
+    } catch (err) {
+        console.error('Forgot Password Error:', err);
+        res.status(500).json({ error: 'Erro ao enviar email.' });
+    }
+};
+
+const resetPasswordConfirm = async (req, res) => {
+    const { token, newPassword } = req.body;
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded.type !== 'reset') throw new Error('Invalid token type');
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(newPassword, salt);
+
+        try {
+            await db.query('UPDATE "user" SET password_hash = $1 WHERE id = $2', [hash, decoded.id]);
+        } catch (e) {
+            await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, decoded.id]);
+        }
+
+        res.json({ success: true, message: 'Senha alterada com sucesso' });
+    } catch (err) {
+        console.error('Reset Confirm Error:', err);
+        res.status(400).json({ error: 'Token inválido ou expirado' });
+    }
+};
+
+const createTeamMember = async (req, res) => {
+    const {
+        avatarUrl, username, firstName, lastName, email, phone, cpf,
+        registrationDate, role, status, address, permissions
+    } = req.body;
+
+    if (!username || !firstName || !lastName || !email) {
+        return res.status(400).json({ success: false, error: 'Campos obrigatórios faltando' });
+    }
+
+    try {
+        const defaultPassword = 'Elite@2024';
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(defaultPassword, salt);
+
+        const result = await db.query(`
             INSERT INTO users(
                     username, first_name, last_name, email, phone, cpf,
                     registration_date, role, status, password_hash, avatar_url,
@@ -197,224 +230,136 @@ const getTeamMembers = async (req, res) => {
             RETURNING id, username, first_name, last_name, email, phone, cpf,
                 registration_date, role, status, avatar_url, created_at
                     `, [
-                username, firstName, lastName, email, phone, cpf,
-                registrationDate || new Date().toISOString().split('T')[0],
-                role || 'Vendedor',
-                status || 'active',
-                password_hash,
-                avatarUrl || null,
-                address?.street, address?.number, address?.complement,
-                address?.district, address?.city, address?.state, address?.zip,
-                JSON.stringify(permissions || []),
-                `${firstName} ${lastName} ` // Campo name para compatibilidade
-            ]);
+            username, firstName, lastName, email, phone, cpf,
+            registrationDate || new Date().toISOString().split('T')[0],
+            role || 'Vendedor',
+            status || 'active',
+            password_hash,
+            avatarUrl || null,
+            address?.street, address?.number, address?.complement,
+            address?.district, address?.city, address?.state, address?.zip,
+            JSON.stringify(permissions || []),
+            `${firstName} ${lastName} `
+        ]);
 
-            res.json({ success: true, member: result.rows[0] });
-        } catch (err) {
-            console.error('Error creating team member:', err);
-            if (err.code === '23505') { // Unique violation
-                return res.status(400).json({ success: false, error: 'Email ou username já cadastrado' });
-            }
-            res.status(500).json({ success: false, error: 'Database error' });
+        res.json({ success: true, member: result.rows[0] });
+    } catch (err) {
+        console.error('Error creating team member:', err);
+        if (err.code === '23505') {
+            return res.status(400).json({ success: false, error: 'Email ou username já cadastrado' });
         }
-    };
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
 
-    /**
-     * Update a team member
-     * Expected body: { username, firstName, lastName, email, phone, cpf, registrationDate, role, status, address, permissions, oldPassword?, newPassword? }
-     */
-    const updateTeamMember = async (req, res) => {
-        const { id } = req.params;
-        const {
-            avatarUrl, username, firstName, lastName, email, phone, cpf,
-            registrationDate, role, status, address, permissions,
-            oldPassword, newPassword
-        } = req.body;
+const updateTeamMember = async (req, res) => {
+    const { id } = req.params;
+    const {
+        avatarUrl, username, firstName, lastName, email, phone, cpf,
+        registrationDate, role, status, address, permissions,
+        oldPassword, newPassword
+    } = req.body;
 
-        try {
+    try {
+        const duplicateCheck = await db.query(
+            'SELECT id, email, username FROM users WHERE (email = $1 OR username = $2) AND id != $3',
+            [email, username, id]
+        );
 
-            // Verificar duplicidade de Email/Username (excluindo o próprio usuário)
-            const duplicateCheck = await db.query(
-                'SELECT id, email, username FROM users WHERE (email = $1 OR username = $2) AND id != $3',
-                [email, username, id]
-            );
+        if (duplicateCheck.rows.length > 0) {
+            const conflict = duplicateCheck.rows[0];
+            if (conflict.email === email) return res.status(400).json({ success: false, error: 'Email em uso.' });
+            if (conflict.username === username) return res.status(400).json({ success: false, error: 'Username em uso.' });
+        }
 
-            if (duplicateCheck.rows.length > 0) {
-                const conflict = duplicateCheck.rows[0];
-                if (conflict.email === email) {
-                    return res.status(400).json({
-                        success: false,
-                        error: `Este email já está em uso pelo usuário ID ${conflict.id} (${conflict.username}).`
-                    });
-                }
-                if (conflict.username === username) {
-                    return res.status(400).json({
-                        success: false,
-                        error: `Este nome de usuário já está em uso pelo usuário ID ${conflict.id}.`
-                    });
-                }
-            }
+        if (cpf) {
+            const cpfCheck = await db.query('SELECT id FROM users WHERE cpf = $1 AND id != $2', [cpf, id]);
+            if (cpfCheck.rows.length > 0) return res.status(400).json({ success: false, error: 'CPF em uso.' });
+        }
 
-            // Verificar duplicidade de CPF (se fornecido)
-            if (cpf) {
-                const cpfCheck = await db.query(
-                    'SELECT id FROM users WHERE cpf = $1 AND id != $2',
-                    [cpf, id]
-                );
-                if (cpfCheck.rows.length > 0) {
-                    return res.status(400).json({ success: false, error: 'Este CPF já está em uso por outro usuário.' });
-                }
-            }
+        if (newPassword) {
+            if (!oldPassword) return res.status(400).json({ success: false, error: 'Senha antiga obrigatória.' });
+            const userResult = await db.query('SELECT password_hash FROM users WHERE id = $1', [id]);
+            if (userResult.rows.length === 0) return res.status(404).json({ success: false, error: 'Usuário não encontrado' });
+            const isOldPasswordValid = await bcrypt.compare(oldPassword, userResult.rows[0].password_hash);
+            if (!isOldPasswordValid) return res.status(400).json({ success: false, error: 'Senha antiga incorreta' });
 
-            // Se está tentando alterar senha, validar senha antiga
-            if (newPassword) {
-                if (!oldPassword) {
-                    return res.status(400).json({ success: false, error: 'Senha antiga é obrigatória para alterar a senha' });
-                }
+            const salt = await bcrypt.genSalt(10);
+            const password_hash = await bcrypt.hash(newPassword, salt);
 
-                // Buscar usuário atual para validar senha antiga
-                const userResult = await db.query('SELECT password_hash FROM users WHERE id = $1', [id]);
-                if (userResult.rows.length === 0) {
-                    return res.status(404).json({ success: false, error: 'Usuário não encontrado' });
-                }
-
-                const isOldPasswordValid = await bcrypt.compare(oldPassword, userResult.rows[0].password_hash);
-                if (!isOldPasswordValid) {
-                    return res.status(400).json({ success: false, error: 'Senha antiga incorreta' });
-                }
-
-                // Criptografar nova senha
-                const salt = await bcrypt.genSalt(10);
-                const password_hash = await bcrypt.hash(newPassword, salt);
-
-                // Atualizar com nova senha
-                const result = await db.query(`
+            const result = await db.query(`
                 UPDATE users SET
-            username = $1,
-                first_name = $2,
-                last_name = $3,
-                email = $4,
-                phone = $5,
-                cpf = $6,
-                registration_date = $7,
-                role = $8,
-                status = $9,
-                avatar_url = $10,
-                address_street = $11,
-                address_number = $12,
-                address_complement = $13,
-                address_district = $14,
-                address_city = $15,
-                address_state = $16,
-                address_zip = $17,
-                permissions = $18,
-                name = $19,
-                password_hash = $20,
-                updated_at = NOW()
+                username = $1, first_name = $2, last_name = $3, email = $4, phone = $5, cpf = $6,
+                registration_date = $7, role = $8, status = $9, avatar_url = $10,
+                address_street = $11, address_number = $12, address_complement = $13,
+                address_district = $14, address_city = $15, address_state = $16, address_zip = $17,
+                permissions = $18, name = $19, password_hash = $20, updated_at = NOW()
                 WHERE id = $21
                 RETURNING id, username, first_name, last_name, email, phone, cpf,
                 registration_date, role, status, avatar_url, updated_at
-                    `, [
-                    username, firstName, lastName, email, phone, cpf,
-                    registrationDate, role, status, avatarUrl,
-                    address?.street, address?.number, address?.complement,
-                    address?.district, address?.city, address?.state, address?.zip,
-                    JSON.stringify(permissions || []),
-                    `${firstName} ${lastName} `,
-                    password_hash,
-                    id
-                ]);
-
-                if (result.rows.length === 0) {
-                    return res.status(404).json({ success: false, error: 'Membro não encontrado' });
-                }
-
-                res.json({ success: true, member: result.rows[0], message: 'Senha alterada com sucesso' });
-            } else {
-                // Atualizar SEM alterar senha
-                const result = await db.query(`
+            `, [
+                username, firstName, lastName, email, phone, cpf,
+                registrationDate, role, status, avatarUrl,
+                address?.street, address?.number, address?.complement,
+                address?.district, address?.city, address?.state, address?.zip,
+                JSON.stringify(permissions || []),
+                `${firstName} ${lastName} `,
+                password_hash,
+                id
+            ]);
+            if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Membro não encontrado' });
+            res.json({ success: true, member: result.rows[0], message: 'Senha alterada com sucesso' });
+        } else {
+            const result = await db.query(`
                 UPDATE users SET
-            username = $1,
-                first_name = $2,
-                last_name = $3,
-                email = $4,
-                phone = $5,
-                cpf = $6,
-                registration_date = $7,
-                role = $8,
-                status = $9,
-                avatar_url = $10,
-                address_street = $11,
-                address_number = $12,
-                address_complement = $13,
-                address_district = $14,
-                address_city = $15,
-                address_state = $16,
-                address_zip = $17,
-                permissions = $18,
-                name = $19,
-                updated_at = NOW()
+                username = $1, first_name = $2, last_name = $3, email = $4, phone = $5, cpf = $6,
+                registration_date = $7, role = $8, status = $9, avatar_url = $10,
+                address_street = $11, address_number = $12, address_complement = $13,
+                address_district = $14, address_city = $15, address_state = $16, address_zip = $17,
+                permissions = $18, name = $19, updated_at = NOW()
                 WHERE id = $20
                 RETURNING id, username, first_name, last_name, email, phone, cpf,
                 registration_date, role, status, avatar_url, updated_at
-                    `, [
-                    username, firstName, lastName, email, phone, cpf,
-                    registrationDate, role, status, avatarUrl,
-                    address?.street, address?.number, address?.complement,
-                    address?.district, address?.city, address?.state, address?.zip,
-                    JSON.stringify(permissions || []),
-                    `${firstName} ${lastName} `,
-                    id
-                ]);
-
-                if (result.rows.length === 0) {
-                    return res.status(404).json({ success: false, error: 'Membro não encontrado' });
-                }
-
-                res.json({ success: true, member: result.rows[0] });
-            }
-        } catch (err) {
-            console.error('Error updating team member:', err);
-            if (err.code === '23505') {
-                return res.status(400).json({ success: false, error: 'Dados duplicados (email, username ou CPF) detectados.' });
-            }
-            res.status(500).json({ success: false, error: 'Database error: ' + err.message });
+            `, [
+                username, firstName, lastName, email, phone, cpf,
+                registrationDate, role, status, avatarUrl,
+                address?.street, address?.number, address?.complement,
+                address?.district, address?.city, address?.state, address?.zip,
+                JSON.stringify(permissions || []),
+                `${firstName} ${lastName} `,
+                id
+            ]);
+            if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Membro não encontrado' });
+            res.json({ success: true, member: result.rows[0] });
         }
-    };
+    } catch (err) {
+        console.error('Error updating team member:', err);
+        if (err.code === '23505') return res.status(400).json({ success: false, error: 'Dados duplicados.' });
+        res.status(500).json({ success: false, error: 'Database error: ' + err.message });
+    }
+};
 
-    /**
-     * Delete a team member (soft delete - set status to inactive)
-     */
-    const deleteTeamMember = async (req, res) => {
-        const { id } = req.params;
+const deleteTeamMember = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await db.query(`UPDATE users SET status = 'inactive', updated_at = NOW() WHERE id = $1 RETURNING id`, [id]);
+        if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Membro não encontrado' });
+        res.json({ success: true, message: 'Membro removido com sucesso' });
+    } catch (err) {
+        console.error('Error deleting team member:', err);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
 
-        try {
-            const result = await db.query(`
-            UPDATE users SET status = 'inactive', updated_at = NOW()
-            WHERE id = $1
-            RETURNING id
-                `, [id]);
-
-            if (result.rows.length === 0) {
-                return res.status(404).json({ success: false, error: 'Membro não encontrado' });
-            }
-
-            res.json({ success: true, message: 'Membro removido com sucesso' });
-        } catch (err) {
-            console.error('Error deleting team member:', err);
-            res.status(500).json({ success: false, error: 'Database error' });
-        }
-    };
-
-    module.exports = {
-        upload,
-        updateAvatar,
-        createUser,
-        login,
-        getTeamMembers,
-        createTeamMember,
-        updateTeamMember,
-        deleteTeamMember,
-        forgotPassword,
-        resetPasswordConfirm
-    };
+module.exports = {
+    upload,
+    updateAvatar,
+    createUser,
+    login,
+    getTeamMembers,
+    createTeamMember,
+    updateTeamMember,
+    deleteTeamMember,
+    forgotPassword,
+    resetPasswordConfirm
+};
