@@ -1,46 +1,41 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
-const path = require('path');
 
-// Tenta carregar .env do diretório atual (backend)
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
-
-// Fallback connection string (tenta 'postgres' se 'elite_finder_db' falhar)
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres';
+// Conexão direta com o banco Railway fornecido
+const connectionString = 'postgresql://postgres:aYLfhaDtABXovCxhPjBOFObCYQTgMvfZ@crossover.proxy.rlwy.net:59957/railway';
 
 const pool = new Pool({
     connectionString,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: { rejectUnauthorized: false } // Necessário para conexões externas seguras
 });
 
-const EMAIL = 'arsdatascience@gmail.com';
+const USER_ID = 76;
 const NEW_PASSWORD = 'Elite@2025';
 
 async function resetPassword() {
     try {
-        console.log(`🔄 Resetando senha para: ${EMAIL}`);
+        console.log(`🔄 Conectando ao Railway...`);
+        console.log(`🔄 Resetando senha para o usuário ID: ${USER_ID}`);
 
-        // 1. Check if user exists
-        const userRes = await pool.query('SELECT * FROM users WHERE email = $1', [EMAIL]);
+        // 1. Check if user exists (using table "user" singular)
+        const userRes = await pool.query('SELECT * FROM "user" WHERE id = $1', [USER_ID]);
 
+        if (userRes.rows.length === 0) {
+            console.log('❌ Usuário ID 76 não encontrado na tabela "user".');
+            process.exit(1);
+        }
+
+        const currentUser = userRes.rows[0];
+        console.log(`✅ Usuário encontrado: ${currentUser.email || currentUser.name}`);
+
+        // 2. Update password
         const salt = await bcrypt.genSalt(10);
         const hash = await bcrypt.hash(NEW_PASSWORD, salt);
 
-        if (userRes.rows.length === 0) {
-            console.log('⚠️ Usuário não encontrado. Criando novo usuário admin...');
-            await pool.query(
-                'INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4)',
-                ['Denis May', EMAIL, hash, 'admin']
-            );
-            console.log(`✅ Usuário criado!`);
-        } else {
-            await pool.query('UPDATE users SET password_hash = $1 WHERE email = $2', [hash, EMAIL]);
-            console.log(`✅ Senha atualizada!`);
-        }
+        await pool.query('UPDATE "user" SET password_hash = $1 WHERE id = $2', [hash, USER_ID]);
 
-        console.log(`\n🔐 Novas credenciais:`);
-        console.log(`Email: ${EMAIL}`);
-        console.log(`Senha: ${NEW_PASSWORD}`);
+        console.log(`✅ Senha atualizada com sucesso para: ${NEW_PASSWORD}`);
+        console.log(`📧 Email do usuário: ${currentUser.email}`);
 
         process.exit(0);
     } catch (error) {

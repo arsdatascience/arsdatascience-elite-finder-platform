@@ -147,6 +147,16 @@ export const apiClient = {
             }
             const response = await axiosInstance.post('/auth/register', { name, email, password });
             return response.data;
+        },
+        forgotPassword: async (email: string) => {
+            if (USE_MOCK) return { success: true, message: 'Mock: Instruções enviadas.' };
+            const response = await axiosInstance.post('/auth/forgot-password', { email });
+            return response.data;
+        },
+        resetPassword: async (token: string, newPassword: string) => {
+            if (USE_MOCK) return { success: true, message: 'Mock: Senha alterada.' };
+            const response = await axiosInstance.post('/auth/reset-password', { token, newPassword });
+            return response.data;
         }
     },
     clients: {

@@ -219,6 +219,8 @@ app.post('/api/users', userCtrl.createUser);
 
 // Login
 app.post('/api/auth/login', userCtrl.login);
+app.post('/api/auth/forgot-password', userCtrl.forgotPassword);
+app.post('/api/auth/reset-password', userCtrl.resetPasswordConfirm);
 
 // Update avatar for a user (requires multipart/form-data)
 app.post('/api/users/:id/avatar', userCtrl.upload.single('avatar'), userCtrl.updateAvatar);

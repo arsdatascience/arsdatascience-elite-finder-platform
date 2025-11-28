@@ -82,43 +82,12 @@ const login = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password_hash);
 
         if (!isMatch) {
-            console.log('[Login Fail] Password mismatch');
-            return res.status(400).json({ error: 'Credenciais inválidas' });
-        }
-
-        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
-
-        res.json({
-            token,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                avatar_url: user.avatar_url
-            }
-        });
-    } catch (err) {
-        console.error('Error logging in:', err);
-        res.status(500).json({ error: 'Server error' });
-    }
-};
-
-/**
- * Get all team members
- */
-const getTeamMembers = async (req, res) => {
-    try {
-        const result = await db.query(`
-            SELECT 
-                id, username, first_name, last_name, email, phone, cpf,
-                registration_date, role, status, avatar_url,
-                address_street, address_number, address_complement,
+            address_street, address_number, address_complement,
                 address_district, address_city, address_state, address_zip,
                 permissions, created_at, updated_at
             FROM users
             ORDER BY created_at DESC
-        `);
+                `);
 
         // Formatar dados para o frontend
         const members = result.rows.map(row => ({
@@ -152,6 +121,59 @@ const getTeamMembers = async (req, res) => {
     }
 };
 
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    try {
+        // Try finding in "user" table first (singular)
+        let result;
+        try {
+            result = await db.query('SELECT * FROM "user" WHERE email = $1', [email]);
+        } catch (e) {
+            // If "user" table fails, try "users"
+            result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        }
+        
+        const user = result.rows[0];
+
+        if (!user) {
+            return res.json({ success: true, message: 'Se o email existir, as instruções serão enviadas.' });
+        }
+
+        const resetToken = jwt.sign({ id: user.id, type: 'reset' }, JWT_SECRET, { expiresIn: '1h' });
+
+        res.json({ 
+            success: true, 
+            message: 'Link de recuperação gerado com sucesso.',
+            debugToken: resetToken 
+        });
+    } catch (err) {
+        console.error('Forgot Password Error:', err);
+        res.status(500).json({ error: 'Erro ao processar solicitação' });
+    }
+};
+
+const resetPasswordConfirm = async (req, res) => {
+    const { token, newPassword } = req.body;
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded.type !== 'reset') throw new Error('Invalid token type');
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(newPassword, salt);
+
+        try {
+            await db.query('UPDATE "user" SET password_hash = $1 WHERE id = $2', [hash, decoded.id]);
+        } catch (e) {
+            await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, decoded.id]);
+        }
+
+        res.json({ success: true, message: 'Senha alterada com sucesso' });
+    } catch (err) {
+        console.error('Reset Confirm Error:', err);
+        res.status(400).json({ error: 'Token inválido ou expirado' });
+    }
+};
+
 /**
  * Create a new team member
  * Expected body: { username, firstName, lastName, email, phone, cpf, registrationDate, role, address, permissions }
@@ -173,16 +195,16 @@ const createTeamMember = async (req, res) => {
         const password_hash = await bcrypt.hash(defaultPassword, salt);
 
         const result = await db.query(`
-            INSERT INTO users (
-                username, first_name, last_name, email, phone, cpf,
-                registration_date, role, status, password_hash, avatar_url,
-                address_street, address_number, address_complement,
-                address_district, address_city, address_state, address_zip,
-                permissions, name
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+            INSERT INTO users(
+                    username, first_name, last_name, email, phone, cpf,
+                    registration_date, role, status, password_hash, avatar_url,
+                    address_street, address_number, address_complement,
+                    address_district, address_city, address_state, address_zip,
+                    permissions, name
+                ) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
             RETURNING id, username, first_name, last_name, email, phone, cpf,
-                      registration_date, role, status, avatar_url, created_at
-        `, [
+                registration_date, role, status, avatar_url, created_at
+                    `, [
             username, firstName, lastName, email, phone, cpf,
             registrationDate || new Date().toISOString().split('T')[0],
             role || 'Vendedor',
@@ -192,7 +214,7 @@ const createTeamMember = async (req, res) => {
             address?.street, address?.number, address?.complement,
             address?.district, address?.city, address?.state, address?.zip,
             JSON.stringify(permissions || []),
-            `${firstName} ${lastName}` // Campo name para compatibilidade
+            `${ firstName } ${ lastName } ` // Campo name para compatibilidade
         ]);
 
         res.json({ success: true, member: result.rows[0] });
@@ -230,13 +252,13 @@ const updateTeamMember = async (req, res) => {
             if (conflict.email === email) {
                 return res.status(400).json({
                     success: false,
-                    error: `Este email já está em uso pelo usuário ID ${conflict.id} (${conflict.username}).`
+                    error: `Este email já está em uso pelo usuário ID ${ conflict.id } (${ conflict.username }).`
                 });
             }
             if (conflict.username === username) {
                 return res.status(400).json({
                     success: false,
-                    error: `Este nome de usuário já está em uso pelo usuário ID ${conflict.id}.`
+                    error: `Este nome de usuário já está em uso pelo usuário ID ${ conflict.id }.`
                 });
             }
         }
@@ -276,37 +298,37 @@ const updateTeamMember = async (req, res) => {
             // Atualizar com nova senha
             const result = await db.query(`
                 UPDATE users SET
-                    username = $1,
-                    first_name = $2,
-                    last_name = $3,
-                    email = $4,
-                    phone = $5,
-                    cpf = $6,
-                    registration_date = $7,
-                    role = $8,
-                    status = $9,
-                    avatar_url = $10,
-                    address_street = $11,
-                    address_number = $12,
-                    address_complement = $13,
-                    address_district = $14,
-                    address_city = $15,
-                    address_state = $16,
-                    address_zip = $17,
-                    permissions = $18,
-                    name = $19,
-                    password_hash = $20,
-                    updated_at = NOW()
+            username = $1,
+                first_name = $2,
+                last_name = $3,
+                email = $4,
+                phone = $5,
+                cpf = $6,
+                registration_date = $7,
+                role = $8,
+                status = $9,
+                avatar_url = $10,
+                address_street = $11,
+                address_number = $12,
+                address_complement = $13,
+                address_district = $14,
+                address_city = $15,
+                address_state = $16,
+                address_zip = $17,
+                permissions = $18,
+                name = $19,
+                password_hash = $20,
+                updated_at = NOW()
                 WHERE id = $21
                 RETURNING id, username, first_name, last_name, email, phone, cpf,
-                          registration_date, role, status, avatar_url, updated_at
-            `, [
+                registration_date, role, status, avatar_url, updated_at
+                    `, [
                 username, firstName, lastName, email, phone, cpf,
                 registrationDate, role, status, avatarUrl,
                 address?.street, address?.number, address?.complement,
                 address?.district, address?.city, address?.state, address?.zip,
                 JSON.stringify(permissions || []),
-                `${firstName} ${lastName}`,
+                `${ firstName } ${ lastName } `,
                 password_hash,
                 id
             ]);
@@ -320,36 +342,36 @@ const updateTeamMember = async (req, res) => {
             // Atualizar SEM alterar senha
             const result = await db.query(`
                 UPDATE users SET
-                    username = $1,
-                    first_name = $2,
-                    last_name = $3,
-                    email = $4,
-                    phone = $5,
-                    cpf = $6,
-                    registration_date = $7,
-                    role = $8,
-                    status = $9,
-                    avatar_url = $10,
-                    address_street = $11,
-                    address_number = $12,
-                    address_complement = $13,
-                    address_district = $14,
-                    address_city = $15,
-                    address_state = $16,
-                    address_zip = $17,
-                    permissions = $18,
-                    name = $19,
-                    updated_at = NOW()
+            username = $1,
+                first_name = $2,
+                last_name = $3,
+                email = $4,
+                phone = $5,
+                cpf = $6,
+                registration_date = $7,
+                role = $8,
+                status = $9,
+                avatar_url = $10,
+                address_street = $11,
+                address_number = $12,
+                address_complement = $13,
+                address_district = $14,
+                address_city = $15,
+                address_state = $16,
+                address_zip = $17,
+                permissions = $18,
+                name = $19,
+                updated_at = NOW()
                 WHERE id = $20
                 RETURNING id, username, first_name, last_name, email, phone, cpf,
-                          registration_date, role, status, avatar_url, updated_at
-            `, [
+                registration_date, role, status, avatar_url, updated_at
+                    `, [
                 username, firstName, lastName, email, phone, cpf,
                 registrationDate, role, status, avatarUrl,
                 address?.street, address?.number, address?.complement,
                 address?.district, address?.city, address?.state, address?.zip,
                 JSON.stringify(permissions || []),
-                `${firstName} ${lastName}`,
+                `${ firstName } ${ lastName } `,
                 id
             ]);
 
@@ -379,7 +401,7 @@ const deleteTeamMember = async (req, res) => {
             UPDATE users SET status = 'inactive', updated_at = NOW()
             WHERE id = $1
             RETURNING id
-        `, [id]);
+                `, [id]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Membro não encontrado' });
@@ -400,5 +422,7 @@ module.exports = {
     getTeamMembers,
     createTeamMember,
     updateTeamMember,
-    deleteTeamMember
+    deleteTeamMember,
+    forgotPassword,
+    resetPasswordConfirm
 };
