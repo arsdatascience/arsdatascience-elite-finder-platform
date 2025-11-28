@@ -14,14 +14,31 @@ class QdrantService {
     async getCollections() {
         try {
             const result = await this.client.getCollections();
+
+            // Fetch details for each collection to get counts
+            const detailedCollections = await Promise.all(result.collections.map(async (col) => {
+                try {
+                    const info = await this.client.getCollection(col.name);
+                    return {
+                        name: col.name,
+                        vectorsCount: info.vectors_count || 0,
+                        pointsCount: info.points_count || 0,
+                        status: info.status || 'unknown'
+                    };
+                } catch (err) {
+                    console.warn(`Failed to fetch info for collection ${col.name}`, err);
+                    return {
+                        name: col.name,
+                        vectorsCount: 0,
+                        pointsCount: 0,
+                        status: 'unknown'
+                    };
+                }
+            }));
+
             return {
                 success: true,
-                collections: result.collections.map(col => ({
-                    name: col.name,
-                    vectorsCount: col.vectors_count || 0,
-                    pointsCount: col.points_count || 0,
-                    status: col.status || 'unknown'
-                }))
+                collections: detailedCollections
             };
         } catch (error) {
             console.error('Erro ao buscar coleções do Qdrant:', error);
