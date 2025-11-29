@@ -48,12 +48,7 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.AGENT_BUILDER]: '/agent-builder',
 };
 
-// ... (rest of the file)
 
-          <Route path="/social-integrations" element={<SocialIntegrations />} />
-          <Route path="/images/generate" element={<ImageGenerationPage />} />
-          <Route
-            path="/automation"
 
 const PrivateRoute: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -154,6 +149,7 @@ const App: React.FC = () => {
           <Route path="/social" element={<SocialMedia onNavigate={handleNavigate} />} />
           <Route path="/social-calendar" element={<div className="h-full min-h-screen"><SocialCalendar /></div>} />
           <Route path="/social-integrations" element={<SocialIntegrations />} />
+          <Route path="/images/generate" element={<ImageGenerationPage />} />
           <Route
             path="/automation"
             element={
