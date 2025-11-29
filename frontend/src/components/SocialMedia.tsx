@@ -4,20 +4,34 @@ import { ContentGenerator } from './ContentGenerator';
 import { CLIENTS_LIST } from '../constants';
 import { ViewState } from '../types';
 import { COMPONENT_VERSIONS } from '../componentVersions';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../services/apiClient';
 
 interface SocialMediaProps {
     onNavigate: (view: ViewState) => void;
 }
 
-const POSTS = [
-    { id: 1, date: '24 Out', content: 'Lançamento da coleção de verão! 🌞 #verao #moda', platform: 'instagram', status: 'publicado', likes: 245, comments: 12 },
-    { id: 2, date: '26 Out', content: '5 Dicas para melhorar seu ROAS agora. Link na bio.', platform: 'linkedin', status: 'agendado', likes: 0, comments: 0 },
-    { id: 3, date: '28 Out', content: 'Bastidores do nosso escritório.', platform: 'instagram', status: 'rascunho', likes: 0, comments: 0 },
-];
+// Removendo POSTS estáticos em favor da API
+// const POSTS = ...
 
 export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
     const [showGenerator, setShowGenerator] = useState(false);
     const [selectedClient, setSelectedClient] = useState(CLIENTS_LIST[1].id);
+
+    const { data: apiPosts = [] } = useQuery({
+        queryKey: ['socialPosts', selectedClient],
+        queryFn: () => apiClient.social.getPosts(selectedClient)
+    });
+
+    const displayPosts = apiPosts.map((post: any) => ({
+        id: post.id,
+        date: new Date(post.scheduled_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+        content: post.content,
+        platform: post.platform,
+        status: post.status === 'published' ? 'publicado' : post.status === 'scheduled' ? 'agendado' : 'rascunho',
+        likes: 0,
+        comments: 0
+    })).slice(0, 5); // Mostrar apenas os 5 mais recentes/próximos
 
     // Simulate stats based on client
     const statsMultiplier = selectedClient === '1' ? 1 : selectedClient === '2' ? 0.1 : 0.5;
@@ -113,7 +127,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                             </button>
                         </div>
                         <div className="divide-y divide-gray-100">
-                            {POSTS.map(post => (
+                            {displayPosts.map((post: any) => (
                                 <div key={post.id} className="p-4 flex items-start gap-4 hover:bg-gray-50 transition-colors">
                                     <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 shrink-0">
                                         <Image size={24} />
