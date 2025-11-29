@@ -356,6 +356,8 @@ const deleteTeamMember = async (req, res) => {
     }
 };
 
+const createUser = createTeamMember;
+
 module.exports = {
     upload,
     updateAvatar,
