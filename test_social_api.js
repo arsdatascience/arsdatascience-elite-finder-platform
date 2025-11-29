@@ -3,8 +3,7 @@ const axios = require('axios');
 async function testApi() {
     try {
         const urls = [
-            'https://elite-finder-backend-production.up.railway.app',
-            'https://elite-finder-backend.up.railway.app',
+            'https://elite-finder.up.railway.app',
             'http://localhost:3001'
         ];
 
@@ -13,7 +12,7 @@ async function testApi() {
             try {
                 const res = await axios.get(`${baseUrl}/api/clients`);
                 console.log(`[SUCESSO] ${baseUrl}/api/clients: Status ${res.status}, Items: ${res.data.length}`);
-                
+
                 // Se funcionou, testar social
                 try {
                     const resSocial = await axios.get(`${baseUrl}/api/social/posts`);
