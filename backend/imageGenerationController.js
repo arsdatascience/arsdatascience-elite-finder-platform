@@ -12,8 +12,15 @@ cloudinary.config({
 });
 
 // Configuração Replicate e Hugging Face
+const replicateToken = process.env.REPLICATE_API_TOKEN;
+if (replicateToken) {
+    console.log(`[Config] Replicate Token configured: ${replicateToken.substring(0, 4)}...${replicateToken.substring(replicateToken.length - 4)}`);
+} else {
+    console.warn('[Config] Replicate Token NOT configured!');
+}
+
 const replicate = new Replicate({
-    auth: process.env.REPLICATE_API_TOKEN,
+    auth: replicateToken,
 });
 
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
@@ -48,7 +55,7 @@ async function uploadToCloudinary(imageUrl, folder = 'ai-generated') {
         };
     } catch (error) {
         console.error('Erro no upload Cloudinary:', error);
-        throw new Error('Falha ao salvar imagem na nuvem');
+        throw new Error('Falha ao salvar imagem na nuvem: ' + error.message);
     }
 }
 
@@ -134,22 +141,39 @@ const generateImage = async (req, res) => {
         const { prompt, negativePrompt, width, height, model } = value;
         const userId = req.user ? req.user.id : null;
 
-        let imageUrl;
+        let rawOutput;
         console.log(`[ImageGen] Gerando com modelo ${model}: "${prompt}"`);
 
         if (model === 'flux-schnell') {
-            imageUrl = await generateWithFluxSchnell({ prompt });
+            rawOutput = await generateWithFluxSchnell({ prompt });
         } else if (model === 'sdxl-lightning') {
-            imageUrl = await generateWithSDXLLightning({ prompt, negativePrompt, width, height });
+            rawOutput = await generateWithSDXLLightning({ prompt, negativePrompt, width, height });
         } else if (model === 'z-image-turbo') {
-            imageUrl = await generateWithZImageTurbo({ prompt, width, height });
+            rawOutput = await generateWithZImageTurbo({ prompt, width, height });
         } else if (model === 'stable-diffusion') {
-            imageUrl = await generateWithHuggingFace({ prompt, negativePrompt });
+            rawOutput = await generateWithHuggingFace({ prompt, negativePrompt });
         } else {
             return res.status(400).json({ error: 'Modelo não suportado.' });
         }
 
-        if (!imageUrl) throw new Error('Falha na geração da imagem (URL vazia)');
+        if (!rawOutput) throw new Error('Falha na geração da imagem (Output vazio)');
+
+        let imageUrl;
+        // Processar output para garantir formato aceito pelo Cloudinary (String URL ou Data URI)
+        if (typeof rawOutput !== 'string') {
+            console.log('[ImageGen] Output não é string, processando stream/objeto...');
+            if (rawOutput.url && typeof rawOutput.url === 'function') {
+                imageUrl = rawOutput.url().href;
+            } else if (typeof rawOutput.arrayBuffer === 'function') {
+                const buffer = Buffer.from(await rawOutput.arrayBuffer());
+                const mimeType = model === 'z-image-turbo' ? 'image/jpeg' : 'image/png';
+                imageUrl = `data:${mimeType};base64,${buffer.toString('base64')}`;
+            } else {
+                imageUrl = rawOutput.toString();
+            }
+        } else {
+            imageUrl = rawOutput;
+        }
 
         console.log('[ImageGen] Uploading to Cloudinary...');
         const uploadResult = await uploadToCloudinary(imageUrl);
