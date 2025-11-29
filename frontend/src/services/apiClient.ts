@@ -73,6 +73,16 @@ export const apiClient = {
             if (USE_MOCK) return mockApi.dashboard.getDeviceData();
             const response = await axiosInstance.get(`/dashboard/device-data?client=${clientId}&startDate=${startDate || ''}&endDate=${endDate || ''}`);
             return response.data;
+        },
+        getConversionSources: async (clientId: string, startDate?: string, endDate?: string) => {
+            if (USE_MOCK) return [
+                { label: 'Google Ads', val: 45, color: 'bg-blue-500' },
+                { label: 'Meta Ads', val: 32, color: 'bg-purple-500' },
+                { label: 'Busca Orgânica', val: 15, color: 'bg-green-500' },
+                { label: 'Direto/Indicação', val: 8, color: 'bg-yellow-500' }
+            ];
+            const response = await axiosInstance.get(`/dashboard/conversion-sources?client=${clientId}&startDate=${startDate || ''}&endDate=${endDate || ''}`);
+            return response.data;
         }
     },
     automation: {

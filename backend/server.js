@@ -244,6 +244,7 @@ app.get('/api/dashboard/kpis', dashboardCtrl.getKPIs);
 app.get('/api/dashboard/chart-data', dashboardCtrl.getChartData);
 app.get('/api/dashboard/funnel-data', dashboardCtrl.getFunnelData);
 app.get('/api/dashboard/device-data', dashboardCtrl.getDeviceData);
+app.get('/api/dashboard/conversion-sources', dashboardCtrl.getConversionSources);
 
 // --- CAMPAIGNS ---
 const campaignCtrl = require('./campaignController');

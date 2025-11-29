@@ -194,13 +194,18 @@ const getDeviceData = async (req, res) => {
     const clientId = client && client !== 'all' ? parseInt(client) : 1;
 
     try {
-        const result = await db.query('SELECT device_type as name, percentage as value FROM device_stats');
+        // Tentar buscar por client_id primeiro
+        let result = await db.query('SELECT device_type as name, percentage as value FROM device_stats WHERE client_id = $1', [clientId]);
+
+        if (result.rows.length === 0) {
+            // Fallback para dados globais se não tiver específico
+            result = await db.query('SELECT device_type as name, percentage as value FROM device_stats WHERE client_id IS NULL');
+        }
 
         if (result.rows.length === 0) {
             return res.json(generateMockData(clientId).deviceData);
         }
 
-        // ... (lógica existente)
         const dataWithColors = result.rows.map(row => ({
             ...row,
             value: parseFloat(row.value),
@@ -214,9 +219,41 @@ const getDeviceData = async (req, res) => {
     }
 };
 
+const getConversionSources = async (req, res) => {
+    const { client } = req.query;
+    const clientId = client && client !== 'all' ? parseInt(client) : 1;
+
+    try {
+        const result = await db.query('SELECT source_name as label, percentage as val FROM conversion_sources WHERE client_id = $1 ORDER BY percentage DESC', [clientId]);
+
+        if (result.rows.length === 0) {
+            // Mock default
+            return res.json([
+                { label: 'Google Ads', val: 45, color: 'bg-blue-500' },
+                { label: 'Meta Ads', val: 32, color: 'bg-purple-500' },
+                { label: 'Busca Orgânica', val: 15, color: 'bg-green-500' },
+                { label: 'Direto/Indicação', val: 8, color: 'bg-yellow-500' }
+            ]);
+        }
+
+        const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-indigo-500'];
+        const data = result.rows.map((row, index) => ({
+            ...row,
+            val: parseFloat(row.val),
+            color: colors[index % colors.length]
+        }));
+
+        res.json(data);
+    } catch (error) {
+        console.error('Error fetching conversion sources:', error);
+        res.json([]);
+    }
+};
+
 module.exports = {
     getKPIs,
     getChartData,
     getFunnelData,
-    getDeviceData
+    getDeviceData,
+    getConversionSources
 };

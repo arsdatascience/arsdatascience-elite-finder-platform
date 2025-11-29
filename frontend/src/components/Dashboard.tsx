@@ -67,6 +67,11 @@ export const Dashboard: React.FC = () => {
     queryFn: () => apiClient.dashboard.getDeviceData(selectedClient, dateRange.start, dateRange.end),
   });
 
+  const { data: conversionSources = [] } = useQuery({
+    queryKey: ['conversionSources', selectedClient, dateRange],
+    queryFn: () => apiClient.dashboard.getConversionSources(selectedClient, dateRange.start, dateRange.end),
+  });
+
   const formatK = (val: number) => {
     if (val >= 1000) return `R$${(val / 1000).toFixed(1)}k`;
     return String(val);
@@ -371,12 +376,7 @@ export const Dashboard: React.FC = () => {
         <motion.div variants={itemVariants} className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold text-gray-800 mb-6">Origem das Conversões</h3>
           <div className="space-y-6">
-            {[
-              { label: 'Google Ads', val: 45, color: 'bg-blue-500' },
-              { label: 'Meta Ads', val: 32, color: 'bg-purple-500' },
-              { label: 'Busca Orgânica', val: 15, color: 'bg-green-500' },
-              { label: 'Direto/Indicação', val: 8, color: 'bg-yellow-500' }
-            ].map((item) => (
+            {conversionSources.length > 0 ? conversionSources.map((item: any) => (
               <div key={item.label}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-600">{item.label}</span>
