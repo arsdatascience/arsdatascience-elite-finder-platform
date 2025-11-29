@@ -18,6 +18,7 @@ export enum ViewState {
   SOCIAL_INTEGRATIONS = 'SOCIAL_INTEGRATIONS',
   AGENT_BUILDER = 'AGENT_BUILDER',
   HOME = 'HOME',
+  IMAGE_GENERATION = 'IMAGE_GENERATION',
 }
 
 export enum LeadStatus {

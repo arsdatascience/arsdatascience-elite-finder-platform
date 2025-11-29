@@ -213,5 +213,26 @@ export const apiClient = {
             const response = await axiosInstance.delete(`/social/posts/${id}`);
             return response.data;
         }
+    },
+    imageGeneration: {
+        generate: async (data: any) => {
+            if (USE_MOCK) throw new Error('Mock not implemented for Image Gen');
+            const response = await axiosInstance.post('/images/generate', data);
+            return response.data;
+        },
+        list: async (limit = 20, page = 1) => {
+            if (USE_MOCK) return { images: [], total: 0 };
+            const response = await axiosInstance.get('/images', { params: { limit, page } });
+            return response.data;
+        },
+        delete: async (id: string) => {
+            if (USE_MOCK) return;
+            await axiosInstance.delete(`/images/${id}`);
+        },
+        getModels: async () => {
+            if (USE_MOCK) return [];
+            const response = await axiosInstance.get('/images/models');
+            return response.data;
+        }
     }
 };

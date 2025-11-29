@@ -367,6 +367,15 @@ app.get('/api/admin/n8n/stats', n8nDashboardCtrl.getDashboardStats);
 
 const runMigrations = require('./migrate');
 
+// --- IMAGE GENERATION ---
+const imageGenCtrl = require('./imageGenerationController');
+const authenticateToken = require('./middleware/auth');
+
+app.post('/api/images/generate', authenticateToken, imageGenCtrl.generateImage);
+app.get('/api/images', authenticateToken, imageGenCtrl.listImages);
+app.delete('/api/images/:id', authenticateToken, imageGenCtrl.deleteImage);
+app.get('/api/images/models', imageGenCtrl.getModels);
+
 // Iniciar servidor após migrações
 runMigrations().then(() => {
   server.listen(PORT, () => {

@@ -26,6 +26,8 @@ import { Login } from '@/components/Login';
 import { Register } from '@/components/Register';
 import { useAuth } from '@/contexts/AuthContext';
 
+import { ImageGenerationPage } from '@/components/ImageGenerationPage';
+
 const PATH_MAP: Record<ViewState, string> = {
   [ViewState.HOME]: '/',
   [ViewState.DASHBOARD]: '/dashboard',
@@ -36,6 +38,7 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.SOCIAL]: '/social',
   [ViewState.SOCIAL_CALENDAR]: '/social-calendar',
   [ViewState.SOCIAL_INTEGRATIONS]: '/social-integrations',
+  [ViewState.IMAGE_GENERATION]: '/images/generate',
   [ViewState.AUTOMATION]: '/automation',
   [ViewState.TRAINING]: '/training',
   [ViewState.REPORTS]: '/reports',
@@ -44,6 +47,13 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.SETTINGS]: '/settings',
   [ViewState.AGENT_BUILDER]: '/agent-builder',
 };
+
+// ... (rest of the file)
+
+          <Route path="/social-integrations" element={<SocialIntegrations />} />
+          <Route path="/images/generate" element={<ImageGenerationPage />} />
+          <Route
+            path="/automation"
 
 const PrivateRoute: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
