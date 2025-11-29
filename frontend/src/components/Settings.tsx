@@ -270,7 +270,7 @@ export const Settings: React.FC = () => {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
+      // const imageUrl = URL.createObjectURL(file);
       // setProfileData removido
       // Aqui você implementaria o upload real para o backend
       alert('Foto atualizada com sucesso! (Simulação)');

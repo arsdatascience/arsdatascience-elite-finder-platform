@@ -53,14 +53,14 @@ export const Campaigns: React.FC = () => {
       .then(res => res.json())
       .then(data => {
         setClients(data);
-        if (data.length > 0) setSelectedClient(data[0].id);
+        // if (data.length > 0) setSelectedClient(data[0].id); // Removido para padrão ser Todos
       })
       .catch(err => console.error('Erro ao buscar clientes:', err));
   }, []);
 
   // Fetch Analytics
   useEffect(() => {
-    if (!selectedClient) return;
+    // if (!selectedClient) return; // Removido para permitir busca global
 
     setLoading(true);
     const queryParams = new URLSearchParams({
@@ -74,8 +74,20 @@ export const Campaigns: React.FC = () => {
       .then(res => res.json())
       .then(data => {
         setKpis(data.kpis);
-        setChartData(data.chartData);
-        setPlatformData(data.platformData);
+        setChartData(data.chartData.map((item: any) => ({
+          ...item,
+          spend: Number(item.spend),
+          revenue: Number(item.revenue),
+          impressions: Number(item.impressions),
+          clicks: Number(item.clicks),
+          conversions: Number(item.conversions)
+        })));
+        setPlatformData(data.platformData.map((item: any) => ({
+          ...item,
+          spend: Number(item.spend),
+          revenue: Number(item.revenue),
+          conversions: Number(item.conversions)
+        })));
         setCampaigns(data.campaigns);
       })
       .catch(err => console.error('Erro ao buscar analytics:', err))
@@ -125,6 +137,7 @@ export const Campaigns: React.FC = () => {
               onChange={(e) => setSelectedClient(e.target.value)}
               className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer hover:bg-gray-100 transition-colors"
             >
+              <option value="">Todos os Clientes (Visão Global)</option>
               {clients.map(client => (
                 <option key={client.id} value={client.id}>{client.name}</option>
               ))}
@@ -159,11 +172,11 @@ export const Campaigns: React.FC = () => {
             key={platform}
             onClick={() => togglePlatform(platform)}
             className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${selectedPlatforms.includes(platform)
-                ? platform === 'google' ? 'bg-blue-100 text-blue-700 border-blue-200 border' :
-                  platform === 'meta' ? 'bg-indigo-100 text-indigo-700 border-indigo-200 border' :
-                    platform === 'youtube' ? 'bg-red-100 text-red-700 border-red-200 border' :
-                      'bg-cyan-100 text-cyan-700 border-cyan-200 border'
-                : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
+              ? platform === 'google' ? 'bg-blue-100 text-blue-700 border-blue-200 border' :
+                platform === 'meta' ? 'bg-indigo-100 text-indigo-700 border-indigo-200 border' :
+                  platform === 'youtube' ? 'bg-red-100 text-red-700 border-red-200 border' :
+                    'bg-cyan-100 text-cyan-700 border-cyan-200 border'
+              : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
               }`}
           >
             <div className={`w-2 h-2 rounded-full ${selectedPlatforms.includes(platform) ? 'bg-current' : 'bg-gray-300'}`}></div>
@@ -223,7 +236,7 @@ export const Campaigns: React.FC = () => {
           <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
             <TrendingUp size={20} className="text-gray-400" /> Evolução de Investimento vs. Receita
           </h3>
-          <div className="h-80">
+          <div className="h-80 w-full min-h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
@@ -253,7 +266,7 @@ export const Campaigns: React.FC = () => {
                 />
                 <Tooltip
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                  formatter={(value: number) => [`R$ ${value.toFixed(2)}`, '']}
+                  formatter={(value: any) => [`R$ ${Number(value || 0).toFixed(2)}`, '']}
                 />
                 <Legend />
                 <Area type="monotone" dataKey="spend" name="Investimento" stroke="#3B82F6" strokeWidth={2} fillOpacity={1} fill="url(#colorSpend)" />
@@ -268,7 +281,7 @@ export const Campaigns: React.FC = () => {
           <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
             <Layers size={20} className="text-gray-400" /> Share por Plataforma
           </h3>
-          <div className="h-80">
+          <div className="h-80 w-full min-h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -284,7 +297,7 @@ export const Campaigns: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
+                <Tooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -323,9 +336,9 @@ export const Campaigns: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${camp.platform === 'google' ? 'bg-blue-50 text-blue-700' :
-                        camp.platform === 'meta' ? 'bg-indigo-50 text-indigo-700' :
-                          camp.platform === 'youtube' ? 'bg-red-50 text-red-700' :
-                            'bg-cyan-50 text-cyan-700'
+                      camp.platform === 'meta' ? 'bg-indigo-50 text-indigo-700' :
+                        camp.platform === 'youtube' ? 'bg-red-50 text-red-700' :
+                          'bg-cyan-50 text-cyan-700'
                       }`}>
                       {camp.platform}
                     </span>

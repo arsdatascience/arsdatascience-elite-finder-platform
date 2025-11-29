@@ -52,11 +52,11 @@ exports.getCampaignAnalytics = async (req, res) => {
         const chartQuery = `
             SELECT 
                 m.date,
-                SUM(m.spend) as spend,
-                SUM(m.revenue) as revenue,
-                SUM(m.impressions) as impressions,
-                SUM(m.clicks) as clicks,
-                SUM(m.conversions) as conversions
+                COALESCE(SUM(m.spend), 0) as spend,
+                COALESCE(SUM(m.revenue), 0) as revenue,
+                COALESCE(SUM(m.impressions), 0) as impressions,
+                COALESCE(SUM(m.clicks), 0) as clicks,
+                COALESCE(SUM(m.conversions), 0) as conversions
             FROM campaigns c
             JOIN campaign_daily_metrics m ON c.id = m.campaign_id ${dateCondition}
             WHERE ${whereClause}
@@ -69,9 +69,9 @@ exports.getCampaignAnalytics = async (req, res) => {
         const platformQuery = `
             SELECT 
                 c.platform,
-                SUM(m.spend) as spend,
-                SUM(m.conversions) as conversions,
-                SUM(m.revenue) as revenue
+                COALESCE(SUM(m.spend), 0) as spend,
+                COALESCE(SUM(m.conversions), 0) as conversions,
+                COALESCE(SUM(m.revenue), 0) as revenue
             FROM campaigns c
             JOIN campaign_daily_metrics m ON c.id = m.campaign_id ${dateCondition}
             WHERE ${whereClause}

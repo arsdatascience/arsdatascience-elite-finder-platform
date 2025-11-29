@@ -61,14 +61,15 @@ const getKPIs = async (req, res) => {
         const spentQuery = await db.query(`SELECT SUM(spent) as total_spent FROM campaigns ${whereClause}`, params);
         const totalSpent = parseFloat(spentQuery.rows[0].total_spent || 0);
 
+        const revenueQuery = await db.query(`SELECT SUM(value) as total_revenue FROM leads WHERE status IN ('won', 'closed', 'venda') ${client && client !== 'all' ? 'AND client_id = $1' : ''}`, params);
+        const totalRevenue = parseFloat(revenueQuery.rows[0].total_revenue || 0);
+
         // Se não houver dados reais significativos (investimento zero ou receita zero), retornar mock para demonstração
-        if (totalSpent === 0 || totalRevenue === 0) {
+        if (totalSpent === 0 && totalRevenue === 0) {
             return res.json(generateMockData(clientId).kpis);
         }
 
         // Lógica real (simplificada)
-        const revenueQuery = await db.query(`SELECT SUM(value) as total_revenue FROM leads WHERE status IN ('won', 'closed', 'venda') ${client && client !== 'all' ? 'AND client_id = $1' : ''}`, params);
-        const totalRevenue = parseFloat(revenueQuery.rows[0].total_revenue || 0);
 
         const leadsQuery = await db.query(`SELECT COUNT(*) as total_leads FROM leads ${whereClause}`, params);
         const totalLeads = parseInt(leadsQuery.rows[0].total_leads || 0);

@@ -52,34 +52,42 @@ const updateAvatar = async (req, res) => {
         const avatarPath = `/uploads/${req.file.filename}`;
         await db.query('UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2', [avatarPath, id]);
         res.json({ success: true, avatarUrl: avatarPath });
-        try {
-            const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-            const user = result.rows[0];
-            if (!user) return res.status(400).json({ error: 'Credenciais inválidas' });
+    } catch (err) {
+        console.error('Error updating avatar:', err);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
 
-            const isMatch = await bcrypt.compare(password, user.password_hash);
-            if (!isMatch) return res.status(400).json({ error: 'Credenciais inválidas' });
+const login = async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = result.rows[0];
+        if (!user) return res.status(400).json({ error: 'Credenciais inválidas' });
 
-            const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
-            res.json({
-                token,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    avatar_url: user.avatar_url
-                }
-            });
-        } catch (err) {
-            console.error('Error logging in:', err);
-            res.status(500).json({ error: 'Server error' });
-        }
-    };
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (!isMatch) return res.status(400).json({ error: 'Credenciais inválidas' });
 
-    const getTeamMembers = async (req, res) => {
-        try {
-            const result = await db.query(`
+        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+        res.json({
+            token,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                avatar_url: user.avatar_url
+            }
+        });
+    } catch (err) {
+        console.error('Error logging in:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+};
+
+const getTeamMembers = async (req, res) => {
+    try {
+        const result = await db.query(`
             SELECT 
                 id, username, first_name, last_name, email, phone, cpf,
                 registration_date, role, status, avatar_url,
@@ -89,60 +97,60 @@ const updateAvatar = async (req, res) => {
             FROM users
             ORDER BY created_at DESC
         `);
-            const members = result.rows.map(row => ({
-                id: row.id,
-                avatarUrl: row.avatar_url,
-                username: row.username,
-                firstName: row.first_name,
-                lastName: row.last_name,
-                email: row.email,
-                phone: row.phone,
-                cpf: row.cpf,
-                registrationDate: row.registration_date,
-                role: row.role,
-                status: row.status,
-                address: {
-                    street: row.address_street,
-                    number: row.address_number,
-                    complement: row.address_complement,
-                    district: row.address_district,
-                    city: row.address_city,
-                    state: row.address_state,
-                    zip: row.address_zip
-                },
-                permissions: row.permissions || []
-            }));
-            res.json({ success: true, members });
-        } catch (err) {
-            console.error('Error fetching team members:', err);
-            res.status(500).json({ success: false, error: 'Database error' });
-        }
-    };
+        const members = result.rows.map(row => ({
+            id: row.id,
+            avatarUrl: row.avatar_url,
+            username: row.username,
+            firstName: row.first_name,
+            lastName: row.last_name,
+            email: row.email,
+            phone: row.phone,
+            cpf: row.cpf,
+            registrationDate: row.registration_date,
+            role: row.role,
+            status: row.status,
+            address: {
+                street: row.address_street,
+                number: row.address_number,
+                complement: row.address_complement,
+                district: row.address_district,
+                city: row.address_city,
+                state: row.address_state,
+                zip: row.address_zip
+            },
+            permissions: row.permissions || []
+        }));
+        res.json({ success: true, members });
+    } catch (err) {
+        console.error('Error fetching team members:', err);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
 
-    const forgotPassword = async (req, res) => {
-        const { email } = req.body;
-        console.log(`[Forgot Password] Solicitado para: ${email}`);
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    console.log(`[Forgot Password] Solicitado para: ${email}`);
+    try {
+        let result;
         try {
-            let result;
-            try {
-                result = await db.query('SELECT * FROM "user" WHERE email = $1', [email]);
-            } catch (e) {
-                result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-            }
+            result = await db.query('SELECT * FROM "user" WHERE email = $1', [email]);
+        } catch (e) {
+            result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        }
 
-            const user = result.rows[0];
-            if (!user) {
-                console.log('[Forgot Password] Usuário não encontrado.');
-                return res.json({ success: true, message: 'Se o email existir, as instruções serão enviadas.' });
-            }
+        const user = result.rows[0];
+        if (!user) {
+            console.log('[Forgot Password] Usuário não encontrado.');
+            return res.json({ success: true, message: 'Se o email existir, as instruções serão enviadas.' });
+        }
 
-            const resetToken = jwt.sign({ id: user.id, type: 'reset' }, JWT_SECRET, { expiresIn: '1h' });
+        const resetToken = jwt.sign({ id: user.id, type: 'reset' }, JWT_SECRET, { expiresIn: '1h' });
 
-            const mailOptions = {
-                from: `"Elite Finder Security" <${process.env.SMTP_SENDER || process.env.SMTP_USER}>`,
-                to: email,
-                subject: 'Recuperação de Senha - Elite Finder',
-                html: `
+        const mailOptions = {
+            from: `"Elite Finder Security" <${process.env.SMTP_SENDER || process.env.SMTP_USER}>`,
+            to: email,
+            subject: 'Recuperação de Senha - Elite Finder',
+            html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #2563eb;">Recuperação de Senha</h2>
                     <p>Você solicitou a redefinição de sua senha.</p>
@@ -156,67 +164,67 @@ const updateAvatar = async (req, res) => {
                     <p style="color: #6b7280; font-size: 12px; margin-top: 30px;">Este link expira em 1 hora.</p>
                 </div>
             `
-            };
+        };
 
-            console.log('[Forgot Password] Tentando enviar email...');
-            try {
-                await transporter.verify();
-                console.log('[Forgot Password] SMTP Verificado.');
-                await transporter.sendMail(mailOptions);
-                console.log('[Forgot Password] Email enviado com sucesso.');
-            } catch (mailError) {
-                console.error('[Forgot Password] ERRO SMTP:', mailError);
-                return res.status(500).json({ success: false, error: 'Falha no envio de email. Verifique logs do servidor.' });
-            }
-
-            res.json({
-                success: true,
-                message: 'Email de recuperação enviado com sucesso! Verifique sua caixa de entrada.'
-            });
-        } catch (err) {
-            console.error('Forgot Password Error:', err);
-            res.status(500).json({ error: 'Erro ao processar solicitação.' });
-        }
-    };
-
-    const resetPasswordConfirm = async (req, res) => {
-        const { token, newPassword } = req.body;
+        console.log('[Forgot Password] Tentando enviar email...');
         try {
-            const decoded = jwt.verify(token, JWT_SECRET);
-            if (decoded.type !== 'reset') throw new Error('Invalid token type');
-
-            const salt = await bcrypt.genSalt(10);
-            const hash = await bcrypt.hash(newPassword, salt);
-
-            try {
-                await db.query('UPDATE "user" SET password_hash = $1 WHERE id = $2', [hash, decoded.id]);
-            } catch (e) {
-                await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, decoded.id]);
-            }
-
-            res.json({ success: true, message: 'Senha alterada com sucesso' });
-        } catch (err) {
-            console.error('Reset Confirm Error:', err);
-            res.status(400).json({ error: 'Token inválido ou expirado' });
+            await transporter.verify();
+            console.log('[Forgot Password] SMTP Verificado.');
+            await transporter.sendMail(mailOptions);
+            console.log('[Forgot Password] Email enviado com sucesso.');
+        } catch (mailError) {
+            console.error('[Forgot Password] ERRO SMTP:', mailError);
+            return res.status(500).json({ success: false, error: 'Falha no envio de email. Verifique logs do servidor.' });
         }
-    };
 
-    const createTeamMember = async (req, res) => {
-        const {
-            avatarUrl, username, firstName, lastName, email, phone, cpf,
-            registrationDate, role, status, address, permissions
-        } = req.body;
+        res.json({
+            success: true,
+            message: 'Email de recuperação enviado com sucesso! Verifique sua caixa de entrada.'
+        });
+    } catch (err) {
+        console.error('Forgot Password Error:', err);
+        res.status(500).json({ error: 'Erro ao processar solicitação.' });
+    }
+};
 
-        if (!username || !firstName || !lastName || !email) {
-            return res.status(400).json({ success: false, error: 'Campos obrigatórios faltando' });
-        }
+const resetPasswordConfirm = async (req, res) => {
+    const { token, newPassword } = req.body;
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded.type !== 'reset') throw new Error('Invalid token type');
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(newPassword, salt);
 
         try {
-            const defaultPassword = 'Elite@2024';
-            const salt = await bcrypt.genSalt(10);
-            const password_hash = await bcrypt.hash(defaultPassword, salt);
+            await db.query('UPDATE "user" SET password_hash = $1 WHERE id = $2', [hash, decoded.id]);
+        } catch (e) {
+            await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, decoded.id]);
+        }
 
-            const result = await db.query(`
+        res.json({ success: true, message: 'Senha alterada com sucesso' });
+    } catch (err) {
+        console.error('Reset Confirm Error:', err);
+        res.status(400).json({ error: 'Token inválido ou expirado' });
+    }
+};
+
+const createTeamMember = async (req, res) => {
+    const {
+        avatarUrl, username, firstName, lastName, email, phone, cpf,
+        registrationDate, role, status, address, permissions
+    } = req.body;
+
+    if (!username || !firstName || !lastName || !email) {
+        return res.status(400).json({ success: false, error: 'Campos obrigatórios faltando' });
+    }
+
+    try {
+        const defaultPassword = 'Elite@2024';
+        const salt = await bcrypt.genSalt(10);
+        const password_hash = await bcrypt.hash(defaultPassword, salt);
+
+        const result = await db.query(`
             INSERT INTO users(
                     username, first_name, last_name, email, phone, cpf,
                     registration_date, role, status, password_hash, avatar_url,
@@ -227,64 +235,64 @@ const updateAvatar = async (req, res) => {
             RETURNING id, username, first_name, last_name, email, phone, cpf,
                 registration_date, role, status, avatar_url, created_at
                     `, [
-                username, firstName, lastName, email, phone, cpf,
-                registrationDate || new Date().toISOString().split('T')[0],
-                role || 'Vendedor',
-                status || 'active',
-                password_hash,
-                avatarUrl || null,
-                address?.street, address?.number, address?.complement,
-                address?.district, address?.city, address?.state, address?.zip,
-                JSON.stringify(permissions || []),
-                `${firstName} ${lastName} `
-            ]);
+            username, firstName, lastName, email, phone, cpf,
+            registrationDate || new Date().toISOString().split('T')[0],
+            role || 'Vendedor',
+            status || 'active',
+            password_hash,
+            avatarUrl || null,
+            address?.street, address?.number, address?.complement,
+            address?.district, address?.city, address?.state, address?.zip,
+            JSON.stringify(permissions || []),
+            `${firstName} ${lastName} `
+        ]);
 
-            res.json({ success: true, member: result.rows[0] });
-        } catch (err) {
-            console.error('Error creating team member:', err);
-            if (err.code === '23505') {
-                return res.status(400).json({ success: false, error: 'Email ou username já cadastrado' });
-            }
-            res.status(500).json({ success: false, error: 'Database error' });
+        res.json({ success: true, member: result.rows[0] });
+    } catch (err) {
+        console.error('Error creating team member:', err);
+        if (err.code === '23505') {
+            return res.status(400).json({ success: false, error: 'Email ou username já cadastrado' });
         }
-    };
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
 
-    const updateTeamMember = async (req, res) => {
-        const { id } = req.params;
-        const {
-            avatarUrl, username, firstName, lastName, email, phone, cpf,
-            registrationDate, role, status, address, permissions,
-            oldPassword, newPassword
-        } = req.body;
+const updateTeamMember = async (req, res) => {
+    const { id } = req.params;
+    const {
+        avatarUrl, username, firstName, lastName, email, phone, cpf,
+        registrationDate, role, status, address, permissions,
+        oldPassword, newPassword
+    } = req.body;
 
-        try {
-            const duplicateCheck = await db.query(
-                'SELECT id, email, username FROM users WHERE (email = $1 OR username = $2) AND id != $3',
-                [email, username, id]
-            );
+    try {
+        const duplicateCheck = await db.query(
+            'SELECT id, email, username FROM users WHERE (email = $1 OR username = $2) AND id != $3',
+            [email, username, id]
+        );
 
-            if (duplicateCheck.rows.length > 0) {
-                const conflict = duplicateCheck.rows[0];
-                if (conflict.email === email) return res.status(400).json({ success: false, error: 'Email em uso.' });
-                if (conflict.username === username) return res.status(400).json({ success: false, error: 'Username em uso.' });
-            }
+        if (duplicateCheck.rows.length > 0) {
+            const conflict = duplicateCheck.rows[0];
+            if (conflict.email === email) return res.status(400).json({ success: false, error: 'Email em uso.' });
+            if (conflict.username === username) return res.status(400).json({ success: false, error: 'Username em uso.' });
+        }
 
-            if (cpf) {
-                const cpfCheck = await db.query('SELECT id FROM users WHERE cpf = $1 AND id != $2', [cpf, id]);
-                if (cpfCheck.rows.length > 0) return res.status(400).json({ success: false, error: 'CPF em uso.' });
-            }
+        if (cpf) {
+            const cpfCheck = await db.query('SELECT id FROM users WHERE cpf = $1 AND id != $2', [cpf, id]);
+            if (cpfCheck.rows.length > 0) return res.status(400).json({ success: false, error: 'CPF em uso.' });
+        }
 
-            if (newPassword) {
-                if (!oldPassword) return res.status(400).json({ success: false, error: 'Senha antiga obrigatória.' });
-                const userResult = await db.query('SELECT password_hash FROM users WHERE id = $1', [id]);
-                if (userResult.rows.length === 0) return res.status(404).json({ success: false, error: 'Usuário não encontrado' });
-                const isOldPasswordValid = await bcrypt.compare(oldPassword, userResult.rows[0].password_hash);
-                if (!isOldPasswordValid) return res.status(400).json({ success: false, error: 'Senha antiga incorreta' });
+        if (newPassword) {
+            if (!oldPassword) return res.status(400).json({ success: false, error: 'Senha antiga obrigatória.' });
+            const userResult = await db.query('SELECT password_hash FROM users WHERE id = $1', [id]);
+            if (userResult.rows.length === 0) return res.status(404).json({ success: false, error: 'Usuário não encontrado' });
+            const isOldPasswordValid = await bcrypt.compare(oldPassword, userResult.rows[0].password_hash);
+            if (!isOldPasswordValid) return res.status(400).json({ success: false, error: 'Senha antiga incorreta' });
 
-                const salt = await bcrypt.genSalt(10);
-                const password_hash = await bcrypt.hash(newPassword, salt);
+            const salt = await bcrypt.genSalt(10);
+            const password_hash = await bcrypt.hash(newPassword, salt);
 
-                const result = await db.query(`
+            const result = await db.query(`
                 UPDATE users SET
                 username = $1, first_name = $2, last_name = $3, email = $4, phone = $5, cpf = $6,
                 registration_date = $7, role = $8, status = $9, avatar_url = $10,
@@ -295,19 +303,19 @@ const updateAvatar = async (req, res) => {
                 RETURNING id, username, first_name, last_name, email, phone, cpf,
                 registration_date, role, status, avatar_url, updated_at
             `, [
-                    username, firstName, lastName, email, phone, cpf,
-                    registrationDate, role, status, avatarUrl,
-                    address?.street, address?.number, address?.complement,
-                    address?.district, address?.city, address?.state, address?.zip,
-                    JSON.stringify(permissions || []),
-                    `${firstName} ${lastName} `,
-                    password_hash,
-                    id
-                ]);
-                if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Membro não encontrado' });
-                res.json({ success: true, member: result.rows[0], message: 'Senha alterada com sucesso' });
-            } else {
-                const result = await db.query(`
+                username, firstName, lastName, email, phone, cpf,
+                registrationDate, role, status, avatarUrl,
+                address?.street, address?.number, address?.complement,
+                address?.district, address?.city, address?.state, address?.zip,
+                JSON.stringify(permissions || []),
+                `${firstName} ${lastName} `,
+                password_hash,
+                id
+            ]);
+            if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Membro não encontrado' });
+            res.json({ success: true, member: result.rows[0], message: 'Senha alterada com sucesso' });
+        } else {
+            const result = await db.query(`
                 UPDATE users SET
                 username = $1, first_name = $2, last_name = $3, email = $4, phone = $5, cpf = $6,
                 registration_date = $7, role = $8, status = $9, avatar_url = $10,
@@ -318,45 +326,45 @@ const updateAvatar = async (req, res) => {
                 RETURNING id, username, first_name, last_name, email, phone, cpf,
                 registration_date, role, status, avatar_url, updated_at
             `, [
-                    username, firstName, lastName, email, phone, cpf,
-                    registrationDate, role, status, avatarUrl,
-                    address?.street, address?.number, address?.complement,
-                    address?.district, address?.city, address?.state, address?.zip,
-                    JSON.stringify(permissions || []),
-                    `${firstName} ${lastName} `,
-                    id
-                ]);
-                if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Membro não encontrado' });
-                res.json({ success: true, member: result.rows[0] });
-            }
-        } catch (err) {
-            console.error('Error updating team member:', err);
-            if (err.code === '23505') return res.status(400).json({ success: false, error: 'Dados duplicados.' });
-            res.status(500).json({ success: false, error: 'Database error: ' + err.message });
-        }
-    };
-
-    const deleteTeamMember = async (req, res) => {
-        const { id } = req.params;
-        try {
-            const result = await db.query(`UPDATE users SET status = 'inactive', updated_at = NOW() WHERE id = $1 RETURNING id`, [id]);
+                username, firstName, lastName, email, phone, cpf,
+                registrationDate, role, status, avatarUrl,
+                address?.street, address?.number, address?.complement,
+                address?.district, address?.city, address?.state, address?.zip,
+                JSON.stringify(permissions || []),
+                `${firstName} ${lastName} `,
+                id
+            ]);
             if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Membro não encontrado' });
-            res.json({ success: true, message: 'Membro removido com sucesso' });
-        } catch (err) {
-            console.error('Error deleting team member:', err);
-            res.status(500).json({ success: false, error: 'Database error' });
+            res.json({ success: true, member: result.rows[0] });
         }
-    };
+    } catch (err) {
+        console.error('Error updating team member:', err);
+        if (err.code === '23505') return res.status(400).json({ success: false, error: 'Dados duplicados.' });
+        res.status(500).json({ success: false, error: 'Database error: ' + err.message });
+    }
+};
 
-    module.exports = {
-        upload,
-        updateAvatar,
-        createUser,
-        login,
-        getTeamMembers,
-        createTeamMember,
-        updateTeamMember,
-        deleteTeamMember,
-        forgotPassword,
-        resetPasswordConfirm
-    };
+const deleteTeamMember = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await db.query(`UPDATE users SET status = 'inactive', updated_at = NOW() WHERE id = $1 RETURNING id`, [id]);
+        if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Membro não encontrado' });
+        res.json({ success: true, message: 'Membro removido com sucesso' });
+    } catch (err) {
+        console.error('Error deleting team member:', err);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
+
+module.exports = {
+    upload,
+    updateAvatar,
+    createUser,
+    login,
+    getTeamMembers,
+    createTeamMember,
+    updateTeamMember,
+    deleteTeamMember,
+    forgotPassword,
+    resetPasswordConfirm
+};
