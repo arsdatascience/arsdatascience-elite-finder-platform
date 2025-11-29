@@ -18,7 +18,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
     const [showGenerator, setShowGenerator] = useState(false);
     const [selectedClient, setSelectedClient] = useState(CLIENTS_LIST[1].id);
 
-    const { data: apiPosts = [] } = useQuery({
+    const { data: apiPosts = [], isLoading, isError } = useQuery({
         queryKey: ['socialPosts', selectedClient],
         queryFn: () => apiClient.social.getPosts(selectedClient)
     });
@@ -127,7 +127,16 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                             </button>
                         </div>
                         <div className="divide-y divide-gray-100">
-                            {displayPosts.length > 0 ? displayPosts.map((post: any) => (
+                            {isLoading ? (
+                                <div className="p-8 text-center text-gray-500">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                                    <p>Carregando posts...</p>
+                                </div>
+                            ) : isError ? (
+                                <div className="p-8 text-center text-red-500">
+                                    <p>Erro ao carregar posts. Verifique a conexão.</p>
+                                </div>
+                            ) : displayPosts.length > 0 ? displayPosts.map((post: any) => (
                                 <div key={post.id} className="p-4 flex items-start gap-4 hover:bg-gray-50 transition-colors">
                                     <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 shrink-0">
                                         <Image size={24} />
