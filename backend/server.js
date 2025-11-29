@@ -41,6 +41,16 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date(), version: '1.0.1' });
+});
+
+// Log request URL para debug
+app.use((req, res, next) => {
+  console.log(`[Request] ${req.method} ${req.url}`);
+  next();
+});
+
 
 // Conexão com Banco de Dados (PostgreSQL no Railway)
 // Importar do módulo database.js para evitar dependências circulares

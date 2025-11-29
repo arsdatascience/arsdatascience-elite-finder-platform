@@ -127,7 +127,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                             </button>
                         </div>
                         <div className="divide-y divide-gray-100">
-                            {displayPosts.map((post: any) => (
+                            {displayPosts.length > 0 ? displayPosts.map((post: any) => (
                                 <div key={post.id} className="p-4 flex items-start gap-4 hover:bg-gray-50 transition-colors">
                                     <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 shrink-0">
                                         <Image size={24} />
@@ -153,7 +153,11 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                                         )}
                                     </div>
                                 </div>
-                            ))}
+                            )) : (
+                                <div className="p-8 text-center text-gray-500">
+                                    <p>Nenhum post encontrado.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
