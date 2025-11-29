@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Grid3x3, List, Instagram, Facebook, Linkedin, Twitter, Edit2, Trash2, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Grid3x3, List, Instagram, Facebook, Linkedin, Twitter, Edit2, Trash2, Clock, Users } from 'lucide-react';
+import { CLIENTS_LIST } from '../constants';
 
 interface Post {
     id: string;
@@ -8,6 +9,7 @@ interface Post {
     status: string;
     scheduled_date: string;
     published_date?: string;
+    clientId?: string;
 }
 
 interface SocialCalendarProps {
@@ -19,10 +21,10 @@ interface SocialCalendarProps {
 }
 
 const MOCK_POSTS: Post[] = [
-    { id: '1', content: 'Lançamento Verão 2025', platform: 'instagram', status: 'scheduled', scheduled_date: new Date().toISOString() },
-    { id: '2', content: 'Promoção Relâmpago', platform: 'facebook', status: 'published', scheduled_date: new Date(Date.now() - 86400000).toISOString() },
-    { id: '3', content: 'Artigo no Blog: ROI', platform: 'linkedin', status: 'draft', scheduled_date: new Date(Date.now() + 172800000).toISOString() },
-    { id: '4', content: 'Dica do dia: SEO', platform: 'twitter', status: 'scheduled', scheduled_date: new Date(Date.now() + 86400000 * 2).toISOString() },
+    { id: '1', content: 'Lançamento Verão 2025', platform: 'instagram', status: 'scheduled', scheduled_date: new Date().toISOString(), clientId: '1' },
+    { id: '2', content: 'Promoção Relâmpago', platform: 'facebook', status: 'published', scheduled_date: new Date(Date.now() - 86400000).toISOString(), clientId: '1' },
+    { id: '3', content: 'Artigo no Blog: ROI', platform: 'linkedin', status: 'draft', scheduled_date: new Date(Date.now() + 172800000).toISOString(), clientId: '2' },
+    { id: '4', content: 'Dica do dia: SEO', platform: 'twitter', status: 'scheduled', scheduled_date: new Date(Date.now() + 86400000 * 2).toISOString(), clientId: '2' },
 ];
 
 export const SocialCalendar: React.FC<SocialCalendarProps> = ({
@@ -35,6 +37,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     const [currentDate, setCurrentDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
     const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['instagram', 'facebook', 'linkedin', 'twitter']);
+    const [selectedClient, setSelectedClient] = useState<string>('all');
     const [draggedPost, setDraggedPost] = useState<Post | null>(null);
     const [editingPostId, setEditingPostId] = useState<string | null>(null);
     const [editContent, setEditContent] = useState('');
@@ -74,9 +77,11 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         );
     };
 
-    const filteredPosts = (posts || MOCK_POSTS).filter(post =>
-        selectedPlatforms.includes(post.platform.toLowerCase())
-    );
+    const filteredPosts = (posts || MOCK_POSTS).filter(post => {
+        const platformMatch = selectedPlatforms.includes(post.platform.toLowerCase());
+        const clientMatch = selectedClient === 'all' || post.clientId === selectedClient;
+        return platformMatch && clientMatch;
+    });
 
     // Get days in month
     const getDaysInMonth = (date: Date) => {
@@ -208,6 +213,24 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                             ×
                         </button>
                     )}
+                </div>
+
+                {/* Client Filter Bar */}
+                <div className="px-6 py-3 bg-white border-b border-gray-100 flex items-center gap-3">
+                    <div className="flex items-center gap-2 text-gray-600">
+                        <Users size={18} />
+                        <span className="text-sm font-medium">Cliente:</span>
+                    </div>
+                    <select
+                        value={selectedClient}
+                        onChange={(e) => setSelectedClient(e.target.value)}
+                        className="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none min-w-[200px]"
+                    >
+                        <option value="all">Todos os Clientes</option>
+                        {CLIENTS_LIST.map(client => (
+                            <option key={client.id} value={client.id}>{client.name}</option>
+                        ))}
+                    </select>
                 </div>
 
                 {/* Toolbar */}
