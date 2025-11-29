@@ -37,9 +37,9 @@ const getPosts = async (req, res) => {
             type: 'campaign',
             content: `[Campanha] ${c.name}`,
             platform: c.platform,
-            status: c.status === 'active' ? 'published' : 'draft', // Mapeando status
-            scheduled_date: c.created_at || new Date(), // Fallback
-            clientId: clientId || c.client_id // Se filtrou, usa o filtro, senão usa o do banco (que não veio no select acima, corrigir query)
+            status: c.status === 'active' ? 'published' : 'draft',
+            scheduled_date: c.created_at || new Date(),
+            clientId: c.client_id
         }));
 
         // Corrigindo a query de campaigns para trazer client_id se não filtrou

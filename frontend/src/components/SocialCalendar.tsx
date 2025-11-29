@@ -38,14 +38,14 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
 }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
-    const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['instagram', 'facebook', 'linkedin', 'twitter']);
+    const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'google', 'meta']);
     const [selectedClient, setSelectedClient] = useState<string>('all');
     const [draggedPost, setDraggedPost] = useState<Post | null>(null);
     const [editingPostId, setEditingPostId] = useState<string | null>(null);
     const [editContent, setEditContent] = useState('');
     const queryClient = useQueryClient();
 
-    const { data: fetchedPosts = [] } = useQuery({
+    const { data: fetchedPosts, isLoading } = useQuery({
         queryKey: ['socialPosts', selectedClient],
         queryFn: () => apiClient.social.getPosts(selectedClient),
     });
@@ -68,7 +68,10 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         { id: 'instagram', name: 'Instagram', color: 'pink' },
         { id: 'facebook', name: 'Facebook', color: 'blue' },
         { id: 'linkedin', name: 'LinkedIn', color: 'indigo' },
-        { id: 'twitter', name: 'Twitter', color: 'sky' }
+        { id: 'twitter', name: 'Twitter', color: 'sky' },
+        { id: 'youtube', name: 'YouTube', color: 'red' },
+        { id: 'google', name: 'Google Ads', color: 'green' },
+        { id: 'meta', name: 'Meta Ads', color: 'purple' }
     ];
 
     const getPlatformIcon = (platform: string) => {
@@ -77,6 +80,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
             case 'facebook': return Facebook;
             case 'linkedin': return Linkedin;
             case 'twitter': return Twitter;
+            case 'youtube': return Users; // Usando Users como placeholder para Youtube se não tiver icone
             default: return CalendarIcon;
         }
     };
@@ -87,6 +91,9 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
             case 'facebook': return 'bg-blue-100 text-blue-600 border-blue-200 hover:bg-blue-200';
             case 'linkedin': return 'bg-indigo-100 text-indigo-600 border-indigo-200 hover:bg-indigo-200';
             case 'twitter': return 'bg-sky-100 text-sky-600 border-sky-200 hover:bg-sky-200';
+            case 'youtube': return 'bg-red-100 text-red-600 border-red-200 hover:bg-red-200';
+            case 'google': return 'bg-green-100 text-green-600 border-green-200 hover:bg-green-200';
+            case 'meta': return 'bg-purple-100 text-purple-600 border-purple-200 hover:bg-purple-200';
             default: return 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200';
         }
     };
@@ -99,7 +106,9 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         );
     };
 
-    const filteredPosts = (posts && posts !== MOCK_POSTS ? posts : (fetchedPosts.length > 0 ? fetchedPosts : MOCK_POSTS)).filter((post: Post) => {
+    const effectivePosts = (posts && posts !== MOCK_POSTS) ? posts : (fetchedPosts || []);
+
+    const filteredPosts = effectivePosts.filter((post: Post) => {
         const platformMatch = selectedPlatforms.includes(post.platform.toLowerCase());
         const clientMatch = selectedClient === 'all' || String(post.clientId) === String(selectedClient);
         return platformMatch && clientMatch;
