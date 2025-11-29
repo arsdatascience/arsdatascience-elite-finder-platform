@@ -386,7 +386,9 @@ export const Dashboard: React.FC = () => {
                   <div className={`${item.color} h-2.5 rounded-full shadow-sm`} style={{ width: `${item.val}%` }}></div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center text-gray-500 py-4">Sem dados de conversão</div>
+            )}
           </div>
 
           <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
