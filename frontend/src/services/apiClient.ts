@@ -54,24 +54,24 @@ export const apiClient = {
     },
 
     dashboard: {
-        getKPIs: async (clientId: string, platform: string): Promise<Metric[]> => {
+        getKPIs: async (clientId: string, platform: string, startDate?: string, endDate?: string): Promise<Metric[]> => {
             if (USE_MOCK) return mockApi.dashboard.getKPIs(clientId, platform);
-            const response = await axiosInstance.get(`/dashboard/kpis?client=${clientId}&platform=${platform}`);
+            const response = await axiosInstance.get(`/dashboard/kpis?client=${clientId}&platform=${platform}&startDate=${startDate || ''}&endDate=${endDate || ''}`);
             return response.data;
         },
-        getChartData: async (clientId: string) => {
+        getChartData: async (clientId: string, startDate?: string, endDate?: string) => {
             if (USE_MOCK) return mockApi.dashboard.getChartData(clientId);
-            const response = await axiosInstance.get(`/dashboard/chart-data?client=${clientId}`);
+            const response = await axiosInstance.get(`/dashboard/chart-data?client=${clientId}&startDate=${startDate || ''}&endDate=${endDate || ''}`);
             return response.data;
         },
-        getFunnelData: async (clientId: string) => {
+        getFunnelData: async (clientId: string, startDate?: string, endDate?: string) => {
             if (USE_MOCK) return mockApi.dashboard.getFunnelData();
-            const response = await axiosInstance.get(`/dashboard/funnel-data?client=${clientId}`);
+            const response = await axiosInstance.get(`/dashboard/funnel-data?client=${clientId}&startDate=${startDate || ''}&endDate=${endDate || ''}`);
             return response.data;
         },
-        getDeviceData: async (clientId: string) => {
+        getDeviceData: async (clientId: string, startDate?: string, endDate?: string) => {
             if (USE_MOCK) return mockApi.dashboard.getDeviceData();
-            const response = await axiosInstance.get(`/dashboard/device-data?client=${clientId}`);
+            const response = await axiosInstance.get(`/dashboard/device-data?client=${clientId}&startDate=${startDate || ''}&endDate=${endDate || ''}`);
             return response.data;
         }
     },

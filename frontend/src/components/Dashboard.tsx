@@ -35,6 +35,10 @@ const itemVariants: Variants = {
 export const Dashboard: React.FC = () => {
   const [selectedClient, setSelectedClient] = useState('all');
   const [selectedPlatform, setSelectedPlatform] = useState<'all' | 'google' | 'meta'>('all');
+  const [dateRange, setDateRange] = useState({
+    start: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0]
+  });
 
   // React Query Hooks
   const { data: clients = CLIENTS_LIST } = useQuery({
@@ -44,23 +48,23 @@ export const Dashboard: React.FC = () => {
   });
 
   const { data: currentKPIs = KPIS, isLoading: isLoadingKPIs } = useQuery({
-    queryKey: ['kpis', selectedClient, selectedPlatform],
-    queryFn: () => apiClient.dashboard.getKPIs(selectedClient, selectedPlatform),
+    queryKey: ['kpis', selectedClient, selectedPlatform, dateRange],
+    queryFn: () => apiClient.dashboard.getKPIs(selectedClient, selectedPlatform, dateRange.start, dateRange.end),
   });
 
   const { data: chartData = [], isLoading: isLoadingChart } = useQuery({
-    queryKey: ['chartData', selectedClient],
-    queryFn: () => apiClient.dashboard.getChartData(selectedClient),
+    queryKey: ['chartData', selectedClient, dateRange],
+    queryFn: () => apiClient.dashboard.getChartData(selectedClient, dateRange.start, dateRange.end),
   });
 
   const { data: funnelData = COMPARATIVE_FUNNEL_DATA } = useQuery({
-    queryKey: ['funnelData', selectedClient],
-    queryFn: () => apiClient.dashboard.getFunnelData(selectedClient),
+    queryKey: ['funnelData', selectedClient, dateRange],
+    queryFn: () => apiClient.dashboard.getFunnelData(selectedClient, dateRange.start, dateRange.end),
   });
 
   const { data: deviceData = DEVICE_DATA } = useQuery({
-    queryKey: ['deviceData', selectedClient],
-    queryFn: () => apiClient.dashboard.getDeviceData(selectedClient),
+    queryKey: ['deviceData', selectedClient, dateRange],
+    queryFn: () => apiClient.dashboard.getDeviceData(selectedClient, dateRange.start, dateRange.end),
   });
 
   const formatK = (val: number) => {
@@ -111,11 +115,22 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* Seletor de Período */}
-            <select className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm">
-              <option>Últimos 7 Dias</option>
-              <option>Últimos 30 Dias</option>
-              <option>Este Trimestre</option>
-            </select>
+            {/* Seletor de Período */}
+            <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-gray-300 shadow-sm">
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                className="px-2 py-1.5 text-sm border-none focus:ring-0 text-gray-700 bg-transparent outline-none"
+              />
+              <span className="text-gray-400">-</span>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                className="px-2 py-1.5 text-sm border-none focus:ring-0 text-gray-700 bg-transparent outline-none"
+              />
+            </div>
           </div>
 
           {/* Filtro de Plataforma (Abas) */}
