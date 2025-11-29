@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import {
     Brain, Save, Database, MessageSquare,
     Shield, Fingerprint, Wand2, Smartphone, Check,
-    LayoutTemplate, X, Loader2, RefreshCw, Settings, Zap
+    LayoutTemplate, X, Loader2, RefreshCw, Zap
 } from 'lucide-react';
 // Tipos baseados na especificação do usuário
 interface AgentConfig {
@@ -220,7 +220,7 @@ const INITIAL_CONFIG: AgentConfig = {
 export const AgentBuilder: React.FC = () => {
     const [searchParams] = useSearchParams();
     const templateId = searchParams.get('template');
-    const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'vector' | 'prompts' | 'channels'>('identity');
+    const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'vector' | 'prompts' | 'channels' | 'advanced'>('identity');
     const [config, setConfig] = useState<AgentConfig>(INITIAL_CONFIG);
 
     // Estado para Qdrant
@@ -646,12 +646,12 @@ export const AgentBuilder: React.FC = () => {
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Agente</label>
-                                            <input type="text" value={config.identity.name} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, name: e.target.value } })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+                                            <label htmlFor="agent-name" className="block text-sm font-medium text-gray-700 mb-1">Nome do Agente</label>
+                                            <input id="agent-name" type="text" value={config.identity.name} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, name: e.target.value } })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Categoria Jurídica</label>
-                                            <select className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white">
+                                            <label htmlFor="agent-category" className="block text-sm font-medium text-gray-700 mb-1">Categoria Jurídica</label>
+                                            <select id="agent-category" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white">
                                                 <option value="service">Atendimento ao Cliente</option>
                                                 <option value="sales">Vendas & Comercial</option>
                                                 <option value="specialist">Especialista Técnico</option>
@@ -659,12 +659,13 @@ export const AgentBuilder: React.FC = () => {
                                             </select>
                                         </div>
                                         <div className="md:col-span-2">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Descrição do Agente</label>
-                                            <textarea className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" rows={2} value={config.identity.description} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, description: e.target.value } })} />
+                                            <label htmlFor="agent-description" className="block text-sm font-medium text-gray-700 mb-1">Descrição do Agente</label>
+                                            <textarea id="agent-description" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" rows={2} value={config.identity.description} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, description: e.target.value } })} />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Classe do Agente</label>
+                                            <label htmlFor="agent-class" className="block text-sm font-medium text-gray-700 mb-1">Classe do Agente</label>
                                             <select
+                                                id="agent-class"
                                                 value={config.identity.class}
                                                 onChange={(e) => setConfig({ ...config, identity: { ...config.identity, class: e.target.value } })}
                                                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
@@ -679,9 +680,10 @@ export const AgentBuilder: React.FC = () => {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Nível de Especialização</label>
+                                            <label htmlFor="agent-level" className="block text-sm font-medium text-gray-700 mb-1">Nível de Especialização</label>
                                             <div className="flex items-center gap-4">
                                                 <input
+                                                    id="agent-level"
                                                     type="range"
                                                     min="1"
                                                     max="5"
@@ -1069,7 +1071,7 @@ export const AgentBuilder: React.FC = () => {
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Modo de Fragmentação (Chunking)</label>
                                             <select
                                                 value={config.vectorConfig.chunkingMode}
-                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, chunkingMode: e.target.value as any } })}
+                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, chunkingMode: e.target.value as 'semantic' | 'fixed' | 'hierarchical' } })}
                                                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 bg-white"
                                             >
                                                 <option value="semantic">Semântico (Recomendado)</option>
@@ -1092,7 +1094,7 @@ export const AgentBuilder: React.FC = () => {
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Estratégia de Busca</label>
                                             <select
                                                 value={config.vectorConfig.searchMode || 'semantic'}
-                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, searchMode: e.target.value as any } })}
+                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, searchMode: e.target.value as 'semantic' | 'keyword' | 'hybrid' } })}
                                                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 bg-white"
                                             >
                                                 <option value="semantic">Semântica (Vetorial)</option>
@@ -1472,7 +1474,7 @@ export const AgentBuilder: React.FC = () => {
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Estratégia</label>
                                             <select
                                                 value={config.vectorConfig.chunkingStrategy}
-                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, chunkingStrategy: e.target.value as any } })}
+                                                onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, chunkingStrategy: e.target.value as 'paragraph' | 'fixed' | 'semantic' } })}
                                                 className="w-full px-3 py-2 border rounded-lg"
                                             >
                                                 <option value="paragraph">Parágrafo (Recomendado)</option>
@@ -1505,7 +1507,7 @@ export const AgentBuilder: React.FC = () => {
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Sobreposição (chars)</label>
                                             <input
                                                 type="number"
-                                                value={config.vectorConfig.chunkOverlap}
+                                                value={config.vectorConfig.chunkOverlap ?? 100}
                                                 onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, chunkOverlap: parseInt(e.target.value) } })}
                                                 className="w-full px-3 py-2 border rounded-lg"
                                             />

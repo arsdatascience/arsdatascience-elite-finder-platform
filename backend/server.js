@@ -11,7 +11,29 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || '*',
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'https://marketinghub.aiiam.com.br',
+      'https://elitefinder.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ];
+
+    // Adiciona origens do env se houver (suporta lista separada por vírgula)
+    if (process.env.FRONTEND_URL) {
+      process.env.FRONTEND_URL.split(',').forEach(url => {
+        if (url) allowedOrigins.push(url.trim().replace(/\/$/, '')); // Remove barra final se houver
+      });
+    }
+
+    // Permitir requests sem origin (como mobile apps ou curl) ou se estiver na lista
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log(`[CORS] Bloqueado: ${origin} (Permitidos: ${allowedOrigins.join(', ')})`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200
 };
@@ -110,6 +132,24 @@ initializeDatabase();
 // Import database controller
 const dbController = require('./dbController');
 const userCtrl = require('./userController');
+
+// --- SEGURANÇA E OBSERVABILIDADE ---
+const { client } = require('./metrics/n8nMetrics');
+const n8nRateLimiter = require('./middleware/n8nRateLimiter');
+
+// Endpoint de Métricas para Prometheus
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
+  } catch (ex) {
+    res.status(500).send(ex);
+  }
+});
+
+// Aplicar Rate Limiter em rotas sensíveis
+app.use('/webhooks/', n8nRateLimiter);
+app.use('/api/auth/', n8nRateLimiter);
 
 // 1. Health Check (Railway uses this)
 app.get('/', (req, res) => {
@@ -258,6 +298,10 @@ app.post('/api/social/publish/twitter', socialIntegration.publishToTwitter);
 const socialAccountCtrl = require('./socialAccountController');
 app.get('/api/clients', dbController.getClients);
 app.get('/api/clients/:clientId/social-accounts', socialAccountCtrl.getSocialAccounts);
+
+// --- ADMIN UTILS ---
+const seedController = require('./admin/seedController');
+app.get('/api/admin/seed-campaigns', seedController.seedCampaigns);
 app.post('/api/social-accounts', socialAccountCtrl.addSocialAccount);
 app.delete('/api/social-accounts/:accountId', socialAccountCtrl.deleteSocialAccount);
 
@@ -297,6 +341,10 @@ const resetCtrl = require('./resetController');
 app.get('/api/seed-campaigns', seedCtrl.seedCampaigns);
 app.get('/api/reset-password', resetCtrl.resetPassword);
 app.post('/api/admin/cleanup', adminCtrl.cleanupDatabase);
+
+// N8N Dashboard Stats
+const n8nDashboardCtrl = require('./admin/n8nDashboardController');
+app.get('/api/admin/n8n/stats', n8nDashboardCtrl.getDashboardStats);
 
 const runMigrations = require('./migrate');
 

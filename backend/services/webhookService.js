@@ -1,4 +1,6 @@
 const axios = require('axios');
+const n8nLogger = require('../utils/n8nLogger');
+const { n8nMetrics } = require('../metrics/n8nMetrics'); // Será criado a seguir
 
 // Configurações do n8n via Variáveis de Ambiente
 const N8N_CONFIG = {
@@ -9,8 +11,7 @@ const N8N_CONFIG = {
     timeout: parseInt(process.env.N8N_DEFAULT_TIMEOUT || '30000')
 };
 
-// Mapeamento de Eventos para Endpoints (Paths)
-// Certifique-se de que estes endpoints existam nos seus workflows do n8n (Webhook Node)
+// Mapeamento de Eventos
 const WEBHOOK_PATHS = {
     'USER_CREATED': '/webhook/user-created',
     'CAMPAIGN_CREATED': '/webhook/campaign-created',
@@ -18,25 +19,19 @@ const WEBHOOK_PATHS = {
 };
 
 const WebhookService = {
-    /**
-     * Dispara um evento para o n8n com retries e autenticação
-     * @param {string} eventName - Nome do evento
-     * @param {object} payload - Dados do evento
-     */
     async trigger(eventName, payload) {
         const path = WEBHOOK_PATHS[eventName];
 
         if (!path) {
-            console.warn(`[Webhook] Evento não mapeado: ${eventName}`);
+            n8nLogger.warn(`Evento não mapeado: ${eventName}`);
             return;
         }
 
-        // Remove barra duplicada se houver
         const baseUrl = N8N_CONFIG.baseUrl.replace(/\/$/, '');
         const endpoint = path.startsWith('/') ? path : `/${path}`;
         const url = `${baseUrl}${endpoint}`;
 
-        console.log(`[Webhook] Disparando ${eventName} para ${url}...`);
+        n8nLogger.info(`Iniciando disparo de webhook`, { event: eventName, url });
 
         const headers = {
             'Content-Type': 'application/json',
@@ -44,15 +39,13 @@ const WebhookService = {
             'X-Timestamp': new Date().toISOString()
         };
 
-        // Adiciona autenticação se configurada
         if (N8N_CONFIG.apiKey) {
             headers['X-N8N-API-KEY'] = N8N_CONFIG.apiKey;
         }
 
-        // Executa de forma assíncrona (fire-and-forget do ponto de vista do controller)
-        // mas mantemos a Promise interna para logar o resultado
+        // Fire-and-forget com tratamento de erro em background
         this._sendWithRetry(url, eventName, payload, headers).catch(err => {
-            console.error(`[Webhook] Erro não tratado no envio: ${err.message}`);
+            n8nLogger.error(`Erro crítico não tratado no envio do webhook`, { error: err.message, event: eventName });
         });
     },
 
@@ -61,8 +54,11 @@ const WebhookService = {
         let success = false;
 
         while (attempt < N8N_CONFIG.maxRetries && !success) {
+            const endTimer = n8nMetrics ? n8nMetrics.webhookDuration.startTimer({ event: eventName }) : () => { };
+
             try {
                 attempt++;
+
                 await axios.post(url, {
                     event: eventName,
                     timestamp: new Date().toISOString(),
@@ -72,22 +68,40 @@ const WebhookService = {
                     headers: headers
                 });
 
-                console.log(`[Webhook] Sucesso: ${eventName} (Tentativa ${attempt})`);
+                endTimer(); // Registra duração no Prometheus
+                if (n8nMetrics) n8nMetrics.webhookCalls.inc({ event: eventName, status: 'success' });
+
+                n8nLogger.info(`Webhook enviado com sucesso`, {
+                    event: eventName,
+                    attempt
+                });
                 success = true;
 
             } catch (err) {
-                console.error(`[Webhook] Falha na tentativa ${attempt} para ${eventName}: ${err.message}`);
+                if (n8nMetrics) n8nMetrics.webhookCalls.inc({ event: eventName, status: 'error' });
+
+                n8nLogger.warn(`Falha no envio do webhook`, {
+                    event: eventName,
+                    attempt,
+                    error: err.message
+                });
 
                 if (attempt < N8N_CONFIG.maxRetries) {
-                    // Backoff exponencial simples (1s, 2s, 3s...)
-                    const delay = N8N_CONFIG.retryDelay * attempt;
+                    if (n8nMetrics) n8nMetrics.retryAttempts.inc({ event: eventName });
+
+                    // Exponential Backoff com Jitter
+                    const baseDelay = N8N_CONFIG.retryDelay * Math.pow(2, attempt - 1);
+                    const jitter = Math.random() * 0.2 * baseDelay; // 0-20% jitter
+                    const delay = baseDelay + jitter;
+
                     await new Promise(resolve => setTimeout(resolve, delay));
                 }
             }
         }
 
         if (!success) {
-            console.error(`[Webhook] Erro permanente ao enviar ${eventName} após ${N8N_CONFIG.maxRetries} tentativas.`);
+            n8nLogger.error(`Falha permanente no webhook após ${N8N_CONFIG.maxRetries} tentativas`, { event: eventName });
+            // Futuro: Enviar para Dead Letter Queue (DLQ)
         }
     }
 };

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Eye, EyeOff, Cpu, Check, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock } from 'lucide-react';
+import { Save, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Brain, Eye, EyeOff, Cpu, Check, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 
 // Schema de Validação com Zod
@@ -45,7 +45,7 @@ const memberSchema = z.object({
 
 type MemberFormData = z.infer<typeof memberSchema>;
 
-type SettingsTab = 'profile' | 'integrations' | 'team' | 'billing' | 'notifications';
+type SettingsTab = 'profile' | 'integrations' | 'team' | 'billing' | 'notifications' | 'security';
 
 interface TeamMember {
   id: number;
@@ -101,7 +101,7 @@ const maskPhone = (value: string) => {
     .replace(/\D/g, '')
     .replace(/^(\d{2})(\d)/g, '($1) $2')
     .replace(/(\d{5})(\d)/, '$1-$2')
-    .substr(0, 15);
+    .substring(0, 15);
 };
 
 const maskCPF = (value: string) => {
@@ -117,7 +117,7 @@ const maskCEP = (value: string) => {
   return value
     .replace(/\D/g, '')
     .replace(/(\d{5})(\d)/, '$1-$2')
-    .substr(0, 9);
+    .substring(0, 9);
 };
 
 // Gerador de Senha Segura
@@ -156,16 +156,12 @@ export const Settings: React.FC = () => {
   const [openAiKey, setOpenAiKey] = useState('');
   const [showOpenAiKey, setShowOpenAiKey] = useState(false);
   const [isEditingOpenAi, setIsEditingOpenAi] = useState(false);
+  const [anthropicKey, setAnthropicKey] = useState('');
+  const [showAnthropicKey, setShowAnthropicKey] = useState(false);
+  const [isEditingAnthropic, setIsEditingAnthropic] = useState(false);
 
   // Estados para Perfil
-  const [profileData, setProfileData] = useState({
-    name: 'Denis May',
-    email: 'denismay@arsdatascience.com.br',
-    phone: '(11) 98765-4321',
-    company: 'ARS Data Science',
-    role: 'CEO & Founder',
-    avatarUrl: 'https://i.pravatar.cc/100?u=denis'
-  });
+  // Estados para Perfil (Removido profileData pois usamos currentUser)
   const fileInputRef = useRef<HTMLInputElement>(null);
   const memberFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -186,7 +182,7 @@ export const Settings: React.FC = () => {
       }
     };
 
-    if (activeTab === 'team') {
+    if (activeTab === 'team' || activeTab === 'profile') {
       fetchMembers();
     }
   }, [activeTab]);
@@ -230,7 +226,7 @@ export const Settings: React.FC = () => {
           throw new Error(error.error || 'Erro ao atualizar membro');
         }
 
-        const result = await response.json();
+        await response.json();
         setTeamMembers(prev => prev.map(m => m.id === currentMember.id ? { ...m, ...data } : m));
         alert('✅ Membro atualizado com sucesso!');
       } else {
@@ -267,6 +263,7 @@ export const Settings: React.FC = () => {
   useEffect(() => {
     setGeminiKey(localStorage.getItem('gemini_api_key') || '');
     setOpenAiKey(localStorage.getItem('openai_api_key') || '');
+    setAnthropicKey(localStorage.getItem('anthropic_api_key') || '');
   }, []);
 
   // --- Handlers de Perfil ---
@@ -274,7 +271,7 @@ export const Settings: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
-      setProfileData(prev => ({ ...prev, avatarUrl: imageUrl }));
+      // setProfileData removido
       // Aqui você implementaria o upload real para o backend
       alert('Foto atualizada com sucesso! (Simulação)');
     }
@@ -322,6 +319,29 @@ export const Settings: React.FC = () => {
     alert('Chave da API OpenAI atualizada com sucesso!');
   };
 
+  const handleSaveAnthropic = () => {
+    localStorage.setItem('anthropic_api_key', anthropicKey);
+    setIsEditingAnthropic(false);
+    alert('Chave da API Anthropic atualizada com sucesso!');
+  };
+
+  const handleLogout = () => {
+    if (window.confirm('Tem certeza que deseja sair da conta?')) {
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('userRole');
+      // Limpar outros itens se necessário, mas manter as chaves de API pode ser útil ou não, dependendo da regra de negócio.
+      // Por segurança, vamos limpar tudo relacionado a sessão.
+      window.location.href = '/login';
+    }
+  };
+
+  const handleSystemCleanup = async () => {
+    if (window.confirm('ATENÇÃO: Isso irá resetar todos os dados de clientes e leads do banco de dados local. Deseja continuar?')) {
+      // Simulação de limpeza
+      alert('Limpeza de sistema simulada com sucesso.');
+    }
+  };
+
   // Real Integrations Data (Mockado para UI)
   const [integrations] = useState([
     { id: 1, dbId: 1, name: 'Google Ads', platform: 'google_ads', status: 'connected', icon: Search, lastSync: '10 min atrás' },
@@ -334,7 +354,7 @@ export const Settings: React.FC = () => {
       case 'profile':
         // Simulando que o usuário logado é o primeiro da lista de membros (ou um estado de user context)
         // Na prática, você buscaria isso de um contexto de autenticação
-        const currentUser = teamMembers.find(m => m.id === 1) || teamMembers[0];
+        const currentUser = teamMembers.find(m => m.id === 1) || teamMembers[0] || INITIAL_MEMBER_STATE;
 
         return (
           <div className="space-y-6 animate-fade-in">
@@ -596,6 +616,53 @@ export const Settings: React.FC = () => {
               </div>
             </div>
 
+            {/* Anthropic API */}
+            <div className="border border-gray-200 rounded-xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-orange-400 to-red-500 rounded-lg flex items-center justify-center">
+                    <Brain size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900">Anthropic API (Claude)</h4>
+                    <p className="text-xs text-gray-500">Para modelos Claude 3.5 Sonnet e Opus</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsEditingAnthropic(!isEditingAnthropic)}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  {isEditingAnthropic ? 'Cancelar' : 'Editar'}
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <input
+                    type={showAnthropicKey ? 'text' : 'password'}
+                    value={anthropicKey}
+                    onChange={(e) => setAnthropicKey(e.target.value)}
+                    disabled={!isEditingAnthropic}
+                    placeholder="Cole sua chave da API Anthropic aqui (sk-ant-...)"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 disabled:bg-gray-50"
+                  />
+                  <button
+                    onClick={() => setShowAnthropicKey(!showAnthropicKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showAnthropicKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {isEditingAnthropic && (
+                  <button
+                    onClick={handleSaveAnthropic}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  >
+                    <Save size={18} />
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Lista de Integrações */}
             <div className="grid grid-cols-1 gap-4">
               <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mt-2">Plataformas Nativas</h4>
@@ -741,6 +808,28 @@ export const Settings: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <h4 className="text-sm font-bold text-gray-900 mb-2">Área de Demonstração</h4>
+              <p className="text-sm text-gray-500 mb-4">Use este botão para gerar dados fictícios de campanhas e testar os gráficos.</p>
+              <button
+                onClick={async () => {
+                  if (confirm('Isso irá apagar dados de campanhas existentes e gerar novos dados aleatórios. Continuar?')) {
+                    try {
+                      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/seed-campaigns`);
+                      const data = await res.json();
+                      if (data.success) alert('Dados gerados com sucesso! Recarregue a página de Campanhas.');
+                      else alert('Erro: ' + JSON.stringify(data));
+                    } catch (e) {
+                      alert('Erro ao conectar com servidor.');
+                    }
+                  }
+                }}
+                className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 text-sm font-medium"
+              >
+                Gerar Dados de Campanha (Seed)
+              </button>
+            </div>
           </div>
         );
 
@@ -763,6 +852,9 @@ export const Settings: React.FC = () => {
             <button onClick={() => setActiveTab('profile')} className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'profile' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
               <User size={18} /> Perfil
             </button>
+            <button onClick={() => setActiveTab('security')} className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'security' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+              <Lock size={18} /> Segurança
+            </button>
             <button onClick={() => setActiveTab('integrations')} className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'integrations' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
               <LinkIcon size={18} /> Integrações
             </button>
@@ -773,7 +865,7 @@ export const Settings: React.FC = () => {
               <CreditCard size={18} /> Faturamento
             </button>
             <div className="h-px bg-gray-200 my-2 mx-2"></div>
-            <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-red-600 hover:bg-red-50 transition-colors">
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-red-600 hover:bg-red-50 transition-colors">
               <LogOut size={18} /> Sair da Conta
             </button>
           </nav>
@@ -1076,3 +1168,4 @@ export const Settings: React.FC = () => {
     </div>
   );
 };
+export default Settings; 
