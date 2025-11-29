@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
+app.set('trust proxy', 1); // Necessário para Railway/Vercel e rate-limiter
 const PORT = process.env.PORT || 3001;
 
 // Middleware

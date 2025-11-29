@@ -237,7 +237,7 @@ export const Campaigns: React.FC = () => {
             <TrendingUp size={20} className="text-gray-400" /> Evolução de Investimento vs. Receita
           </h3>
           <div className="h-80 w-full min-h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
@@ -282,7 +282,7 @@ export const Campaigns: React.FC = () => {
             <Layers size={20} className="text-gray-400" /> Share por Plataforma
           </h3>
           <div className="h-80 w-full min-h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={platformData}
