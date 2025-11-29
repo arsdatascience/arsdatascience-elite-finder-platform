@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Grid3x3, List, Instagram, Facebook, Linkedin, Twitter, Edit2, Trash2, Clock, Users } from 'lucide-react';
 import { CLIENTS_LIST } from '../constants';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../services/apiClient';
 
 interface Post {
     id: string;
@@ -41,6 +43,26 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     const [draggedPost, setDraggedPost] = useState<Post | null>(null);
     const [editingPostId, setEditingPostId] = useState<string | null>(null);
     const [editContent, setEditContent] = useState('');
+    const queryClient = useQueryClient();
+
+    const { data: fetchedPosts = [] } = useQuery({
+        queryKey: ['socialPosts', selectedClient],
+        queryFn: () => apiClient.social.getPosts(selectedClient),
+    });
+
+    const updatePostMutation = useMutation({
+        mutationFn: (variables: { id: string, data: any }) => apiClient.social.updatePost(variables.id, variables.data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['socialPosts'] });
+        }
+    });
+
+    const deletePostMutation = useMutation({
+        mutationFn: (id: string) => apiClient.social.deletePost(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['socialPosts'] });
+        }
+    });
 
     const platforms = [
         { id: 'instagram', name: 'Instagram', color: 'pink' },
@@ -77,9 +99,9 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         );
     };
 
-    const filteredPosts = (posts || MOCK_POSTS).filter(post => {
+    const filteredPosts = (posts && posts !== MOCK_POSTS ? posts : (fetchedPosts.length > 0 ? fetchedPosts : MOCK_POSTS)).filter((post: Post) => {
         const platformMatch = selectedPlatforms.includes(post.platform.toLowerCase());
-        const clientMatch = selectedClient === 'all' || post.clientId === selectedClient;
+        const clientMatch = selectedClient === 'all' || String(post.clientId) === String(selectedClient);
         return platformMatch && clientMatch;
     });
 
@@ -143,7 +165,11 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         const newDate = new Date(targetYear, targetMonth, day);
         const newDateStr = newDate.toISOString();
 
-        onPostUpdate(draggedPost.id, newDateStr);
+        if (onPostUpdate) {
+            onPostUpdate(draggedPost.id, newDateStr);
+        } else {
+            updatePostMutation.mutate({ id: draggedPost.id, data: { scheduled_date: newDateStr } });
+        }
         setDraggedPost(null);
     };
 
@@ -154,6 +180,9 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     };
 
     const saveEdit = () => {
+        if (editingPostId) {
+            updatePostMutation.mutate({ id: editingPostId, data: { content: editContent } });
+        }
         setEditingPostId(null);
         setEditContent('');
     };
@@ -399,19 +428,21 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                                     >
                                                                         <Edit2 size={10} />
                                                                     </button>
-                                                                    {onPostDelete && (
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                if (confirm('Deletar este post?')) {
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (confirm('Deletar este post?')) {
+                                                                                if (onPostDelete) {
                                                                                     onPostDelete(post.id);
+                                                                                } else {
+                                                                                    deletePostMutation.mutate(post.id);
                                                                                 }
-                                                                            }}
-                                                                            className="p-0.5 hover:bg-red-500/20 rounded"
-                                                                        >
-                                                                            <Trash2 size={10} />
-                                                                        </button>
-                                                                    )}
+                                                                            }
+                                                                        }}
+                                                                        className="p-0.5 hover:bg-red-500/20 rounded"
+                                                                    >
+                                                                        <Trash2 size={10} />
+                                                                    </button>
                                                                 </div>
                                                             </div>
                                                         )}

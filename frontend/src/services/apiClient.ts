@@ -190,5 +190,28 @@ export const apiClient = {
             const response = await axiosInstance.delete(`/clients/${id}`);
             return response.data;
         }
+    },
+    social: {
+        getPosts: async (clientId?: string) => {
+            if (USE_MOCK) return [];
+            const url = clientId && clientId !== 'all' ? `/social/posts?client=${clientId}` : '/social/posts';
+            const response = await axiosInstance.get(url);
+            return response.data;
+        },
+        createPost: async (post: any) => {
+            if (USE_MOCK) return post;
+            const response = await axiosInstance.post('/social/posts', post);
+            return response.data;
+        },
+        updatePost: async (id: string, data: any) => {
+            if (USE_MOCK) return { ...data, id };
+            const response = await axiosInstance.put(`/social/posts/${id}`, data);
+            return response.data;
+        },
+        deletePost: async (id: string) => {
+            if (USE_MOCK) return { success: true };
+            const response = await axiosInstance.delete(`/social/posts/${id}`);
+            return response.data;
+        }
     }
 };

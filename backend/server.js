@@ -128,6 +128,13 @@ async function initializeDatabase() {
 // Last updated: 2025-11-24 22:38
 initializeDatabase();
 
+// --- SOCIAL ---
+const socialCtrl = require('./socialController');
+app.get('/api/social/posts', socialCtrl.getPosts);
+app.post('/api/social/posts', socialCtrl.createPost);
+app.put('/api/social/posts/:id', socialCtrl.updatePost);
+app.delete('/api/social/posts/:id', socialCtrl.deletePost);
+
 // --- ROTAS ---
 
 // Import database controller
