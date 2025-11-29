@@ -292,6 +292,7 @@ export const Campaigns: React.FC = () => {
                   outerRadius={80}
                   paddingAngle={5}
                   dataKey="spend"
+                  nameKey="platform"
                 >
                   {platformData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
