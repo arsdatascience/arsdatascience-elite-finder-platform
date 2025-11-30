@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Lead, LeadStatus } from '@/types';
 import { COMPONENT_VERSIONS } from '@/componentVersions';
-import { LEADS_DATA, CLIENTS_LIST } from '@/constants';
+import { CLIENTS_LIST } from '@/constants';
 import {
   CheckCircle, Plus, Download, Save,
   MoreVertical, Clock, Tag, Users, Filter, Search, X,
@@ -316,8 +316,45 @@ export const FlightControl: React.FC = () => {
   const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
   const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [localLeads, setLocalLeads] = useState<Lead[]>(LEADS_DATA);
+  const [localLeads, setLocalLeads] = useState<Lead[]>([]);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  const fetchLeads = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leads`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        const adaptedLeads: Lead[] = data.map((l: any) => ({
+          id: l.id,
+          name: l.name,
+          email: l.email,
+          phone: l.phone,
+          company: l.company,
+          source: l.source,
+          status: (l.status || 'NEW').toUpperCase() as LeadStatus,
+          value: Number(l.value),
+          notes: l.notes,
+          assignedTo: l.assigned_to || 'Não atribuído',
+          lastContact: new Date(l.updated_at || l.created_at).toLocaleDateString(),
+          productInterest: 'Geral',
+          tags: []
+        }));
+        setLocalLeads(adaptedLeads);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar leads:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   // Filter leads
@@ -354,8 +391,48 @@ export const FlightControl: React.FC = () => {
     });
   }, [localLeads, selectedClient, searchTerm, selectedSource, selectedValue, selectedAssignee]);
 
-  const handleAddLead = (newLead: any) => {
-    setLocalLeads([newLead, ...localLeads]);
+  const handleAddLead = async (newLead: any) => {
+    try {
+      const token = localStorage.getItem('token');
+      const payload = {
+        ...newLead,
+        status: newLead.status.toLowerCase()
+      };
+
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leads`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const savedLead = await res.json();
+        const adapted: Lead = {
+          id: savedLead.id,
+          name: savedLead.name,
+          email: savedLead.email,
+          phone: savedLead.phone,
+          company: savedLead.company,
+          source: savedLead.source,
+          status: (savedLead.status || 'NEW').toUpperCase() as LeadStatus,
+          value: Number(savedLead.value),
+          notes: savedLead.notes,
+          assignedTo: 'Você',
+          lastContact: new Date().toLocaleDateString(),
+          productInterest: 'Geral',
+          tags: []
+        };
+        setLocalLeads([adapted, ...localLeads]);
+      } else {
+        alert('Erro ao criar lead');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de conexão');
+    }
   };
 
   const handleExport = () => {
@@ -413,25 +490,59 @@ export const FlightControl: React.FC = () => {
     e.preventDefault();
   };
 
-  const handleDrop = (newStatus: LeadStatus) => {
+  const handleDrop = async (newStatus: LeadStatus) => {
     if (!draggedLead) return;
 
+    // Otimistic Update
+    const oldLeads = [...localLeads];
     setLocalLeads(prev => prev.map(lead =>
       lead.id === draggedLead.id ? { ...lead, status: newStatus } : lead
     ));
     setDraggedLead(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${import.meta.env.VITE_API_URL}/api/leads/${draggedLead.id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus.toLowerCase() })
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      setLocalLeads(oldLeads); // Revert
+      alert('Erro ao atualizar status');
+    }
   };
 
-  const handleUpdateLead = (leadId: string, updates: Partial<Lead>) => {
+  const handleUpdateLead = async (leadId: string, updates: Partial<Lead>) => {
+    // Otimistic Update
     setLocalLeads(prev => prev.map(lead =>
       lead.id === leadId ? { ...lead, ...updates } : lead
     ));
+
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${import.meta.env.VITE_API_URL}/api/leads/${leadId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updates)
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar lead:', error);
+      alert('Erro ao salvar alterações');
+    }
   };
 
   const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-  const sources = Array.from(new Set(LEADS_DATA.map(l => l.source)));
-  const assignees = Array.from(new Set(LEADS_DATA.map(l => l.assignedTo)));
+  const sources = Array.from(new Set(localLeads.map(l => l.source)));
+  const assignees = Array.from(new Set(localLeads.map(l => l.assignedTo)));
 
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col animate-fade-in">

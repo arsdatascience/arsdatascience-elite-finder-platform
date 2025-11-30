@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { Save, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Brain, Eye, EyeOff, Cpu, Check, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import { useAuth } from '@/contexts/AuthContext';
+import { UsageStats } from './UsageStats';
+import { AdminPlans } from './AdminPlans';
 
 // Schema de Validação com Zod
 const memberSchema = z.object({
@@ -30,23 +32,19 @@ const memberSchema = z.object({
     zip: z.string().min(9, 'CEP inválido') // Ajustado para validar com máscara
   })
 }).refine((data) => {
-  // Se estiver alterando senha, validar que ambos os campos foram preenchidos
-  if (data.newPassword && !data.oldPassword) {
-    return false;
-  }
   if (data.newPassword && data.newPassword.length < 8) {
     return false;
   }
   return true;
 }, {
-  message: "Para alterar senha, informe a senha antiga e uma nova senha com no mínimo 8 caracteres",
+  message: "A nova senha deve ter no mínimo 8 caracteres",
   path: ["newPassword"]
 });
 
 
 type MemberFormData = z.infer<typeof memberSchema>;
 
-type SettingsTab = 'profile' | 'integrations' | 'team' | 'billing' | 'notifications' | 'security';
+type SettingsTab = 'profile' | 'integrations' | 'team' | 'billing' | 'notifications' | 'security' | 'subscription' | 'admin';
 
 interface TeamMember {
   id: number;
@@ -131,20 +129,19 @@ const generateSecurePassword = (): string => {
   const allChars = uppercase + lowercase + numbers + symbols;
 
   let password = '';
-  // Garantir pelo menos um de cada tipo
   password += uppercase[Math.floor(Math.random() * uppercase.length)];
   password += lowercase[Math.floor(Math.random() * lowercase.length)];
   password += numbers[Math.floor(Math.random() * numbers.length)];
   password += symbols[Math.floor(Math.random() * symbols.length)];
 
-  // Completar o restante
   for (let i = password.length; i < length; i++) {
     password += allChars[Math.floor(Math.random() * allChars.length)];
   }
 
-  // Embaralhar a senha
   return password.split('').sort(() => Math.random() - 0.5).join('');
 };
+
+
 
 
 export const Settings: React.FC = () => {
@@ -195,6 +192,9 @@ export const Settings: React.FC = () => {
   const [wantsToChangePassword, setWantsToChangePassword] = useState(false);
 
   // React Hook Form Setup
+
+
+  // React Hook Form Setup
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<MemberFormData>({
     resolver: zodResolver(memberSchema),
     defaultValues: INITIAL_MEMBER_STATE
@@ -210,6 +210,12 @@ export const Settings: React.FC = () => {
   const onSubmitMember = async (data: MemberFormData) => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+      // Validação de Segurança: Se não for Admin e estiver trocando senha, exigir senha antiga
+      if (user?.role !== 'Admin' && isEditingMember && wantsToChangePassword && !data.oldPassword) {
+        alert('Por segurança, informe sua senha atual para definir uma nova.');
+        return;
+      }
 
       if (isEditingMember) {
         // Atualizar membro existente
@@ -266,7 +272,7 @@ export const Settings: React.FC = () => {
       }
 
       setIsMemberModalOpen(false);
-      setShowPassword(false);
+
     } catch (error: any) {
       console.error('Erro ao salvar membro:', error);
       alert('❌ ' + error.message);
@@ -928,71 +934,117 @@ export const Settings: React.FC = () => {
           </div>
         );
 
+      case 'subscription':
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <h3 className="text-lg font-bold text-gray-900">Assinatura e Limites</h3>
+            <p className="text-sm text-gray-500">Acompanhe o uso do seu plano atual.</p>
+            <UsageStats />
+          </div>
+        );
+
+      case 'admin':
+        return <AdminPlans />;
+
       default:
         return null;
     }
   };
 
   return (
-    <div className="space-y-6 h-full flex flex-col animate-fade-in relative">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800">Configurações <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.Settings}</span></h2>
-        <p className="text-sm text-gray-500">Gerencie sua conta, integrações e preferências do sistema.</p>
+    <div className="flex h-[calc(100vh-2rem)] bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Sidebar de Configurações */}
+      <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-800">Configurações</h2>
+          <span className="text-xs text-gray-500">v{COMPONENT_VERSIONS.Settings}</span>
+        </div>
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'profile' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <User size={18} /> Perfil
+          </button>
+          <button
+            onClick={() => setActiveTab('subscription')}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'subscription' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <CreditCard size={18} /> Assinatura
+          </button>
+
+          <button
+            onClick={() => setActiveTab('integrations')}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'integrations' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <LinkIcon size={18} /> Integrações
+          </button>
+          <button
+            onClick={() => setActiveTab('team')}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'team' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <User size={18} /> Equipe
+          </button>
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'security' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+          >
+            <Shield size={18} /> Segurança
+          </button>
+
+          {user?.role === 'Admin' && (
+            <button
+              onClick={() => setActiveTab('admin')}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'admin' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <Shield size={18} className="text-purple-600" /> Admin
+            </button>
+          )}
+        </nav>
+        <div className="p-4 border-t border-gray-200">
+          <button
+            onClick={handleSystemCleanup}
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors mb-2"
+          >
+            <Trash2 size={18} /> Resetar Sistema
+          </button>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <LogOut size={18} /> Sair
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6 flex-1">
-        {/* Sidebar Navigation */}
-        <div className="w-full md:w-64 shrink-0">
-          <nav className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-2 space-y-1">
-            <button onClick={() => setActiveTab('profile')} className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'profile' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-              <User size={18} /> Perfil
-            </button>
-            <button onClick={() => setActiveTab('security')} className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'security' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-              <Lock size={18} /> Segurança
-            </button>
-            <button onClick={() => setActiveTab('integrations')} className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'integrations' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-              <LinkIcon size={18} /> Integrações
-            </button>
-            <button onClick={() => setActiveTab('team')} className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'team' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-              <Shield size={18} /> Equipe e Permissões
-            </button>
-            <button onClick={() => setActiveTab('billing')} className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'billing' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-              <CreditCard size={18} /> Faturamento
-            </button>
-            <div className="h-px bg-gray-200 my-2 mx-2"></div>
-            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-red-600 hover:bg-red-50 transition-colors">
-              <LogOut size={18} /> Sair da Conta
-            </button>
-          </nav>
-        </div>
-
-        {/* Content Area */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 overflow-y-auto">
+      {/* Conteúdo Principal */}
+      <div className="flex-1 overflow-y-auto bg-white">
+        <div className="p-8 max-w-4xl mx-auto">
           {renderTabContent()}
         </div>
       </div>
 
-      {/* MODAL DE MEMBRO */}
+      {/* Modal de Membro */}
       {isMemberModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
-              <h3 className="text-xl font-bold text-gray-900">{isEditingMember ? 'Editar Membro' : 'Adicionar Novo Membro'}</h3>
+              <h3 className="text-xl font-bold text-gray-900">
+                {isEditingMember ? 'Editar Membro' : 'Adicionar Membro'}
+              </h3>
               <button onClick={() => setIsMemberModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                 <X size={24} />
               </button>
             </div>
 
-
-
-            <form onSubmit={handleSubmit(onSubmitMember)} className="p-6 space-y-8">
-              {/* Foto do Membro */}
+            <form onSubmit={handleSubmit(onSubmitMember)} className="p-6 space-y-6">
+              {/* Avatar Upload no Modal */}
               <div className="flex justify-center">
                 <div className="relative group cursor-pointer" onClick={() => memberFileInputRef.current?.click()}>
                   <img
-                    src={currentMember.avatarUrl || `https://i.pravatar.cc/150?u=${currentMember.email}`}
+                    src={currentMember.avatarUrl || "https://github.com/shadcn.png"}
                     alt="Avatar"
-                    className="w-24 h-24 rounded-full border-4 border-blue-100 object-cover"
+                    className="w-24 h-24 rounded-full border-4 border-gray-100 object-cover"
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                     <Edit2 className="text-white" size={20} />
@@ -1007,166 +1059,67 @@ export const Settings: React.FC = () => {
                 </div>
               </div>
 
-              {/* Dados Pessoais */}
-              <section>
-                <h4 className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
-                  <User size={16} className="text-blue-600" /> Dados Pessoais
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Username</label>
-                    <input {...register('username')} className={`w-full p-2 border rounded-lg ${errors.username ? 'border-red-500' : ''}`} />
-                    {errors.username && <span className="text-xs text-red-500">{errors.username.message}</span>}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Nome</label>
-                    <input {...register('firstName')} className={`w-full p-2 border rounded-lg ${errors.firstName ? 'border-red-500' : ''}`} />
-                    {errors.firstName && <span className="text-xs text-red-500">{errors.firstName.message}</span>}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Sobrenome</label>
-                    <input {...register('lastName')} className={`w-full p-2 border rounded-lg ${errors.lastName ? 'border-red-500' : ''}`} />
-                    {errors.lastName && <span className="text-xs text-red-500">{errors.lastName.message}</span>}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">E-mail</label>
-                    <input {...register('email')} className={`w-full p-2 border rounded-lg ${errors.email ? 'border-red-500' : ''}`} />
-                    {errors.email && <span className="text-xs text-red-500">{errors.email.message}</span>}
-                  </div>
-                  {/* Senha - Condicional: obrigatória ao criar, opcional ao editar */}
-                  {!isEditingMember ? (
-                    // CRIANDO NOVO MEMBRO: Senha obrigatória
-                    <div className="md:col-span-2">
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Senha *</label>
-                      <div className="flex gap-2">
-                        <div className="flex-1 relative">
-                          <input
-                            {...register('password', { required: 'Senha obrigatória ao criar usuário' })}
-                            type={showPassword ? 'text' : 'password'}
-                            className={`w-full p-2 pr-10 border rounded-lg ${errors.password ? 'border-red-500' : ''}`}
-                            placeholder="Mínimo 8 caracteres"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                          >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newPassword = generateSecurePassword();
-                            setValue('password', newPassword);
-                            setShowPassword(true);
-                          }}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-xs whitespace-nowrap flex items-center gap-2"
-                        >
-                          <Shield size={16} /> Gerar Senha
-                        </button>
-                      </div>
-                      {errors.password && <span className="text-xs text-red-500">{errors.password.message}</span>}
-                    </div>
-                  ) : (
-                    // EDITANDO MEMBRO: Opção de alterar senha
-                    <div className="md:col-span-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
-                      <div className="flex items-center justify-between mb-3">
-                        <h5 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                          <Lock size={16} className="text-orange-600" /> Alteração de Senha
-                        </h5>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={wantsToChangePassword}
-                            onChange={(e) => {
-                              setWantsToChangePassword(e.target.checked);
-                              if (!e.target.checked) {
-                                setValue('oldPassword', '');
-                                setValue('newPassword', '');
-                              }
-                            }}
-                            className="rounded text-blue-600"
-                          />
-                          <span className="text-xs text-gray-600">Alterar senha</span>
-                        </label>
-                      </div>
-
-                      {wantsToChangePassword && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Senha Antiga *</label>
-                            <input
-                              {...register('oldPassword')}
-                              type="password"
-                              className={`w-full p-2 border rounded-lg ${errors.oldPassword ? 'border-red-500' : ''}`}
-                              placeholder="Digite a senha atual"
-                            />
-                            {errors.oldPassword && <span className="text-xs text-red-500">{errors.oldPassword.message}</span>}
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Nova Senha *</label>
-                            <div className="flex gap-2">
-                              <input
-                                {...register('newPassword')}
-                                type={showPassword ? 'text' : 'password'}
-                                className={`flex-1 p-2 border rounded-lg ${errors.newPassword ? 'border-red-500' : ''}`}
-                                placeholder="Mínimo 8 caracteres"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const pwd = generateSecurePassword();
-                                  setValue('newPassword', pwd);
-                                  setShowPassword(true);
-                                }}
-                                className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs"
-                                title="Gerar senha segura"
-                              >
-                                <Shield size={16} />
-                              </button>
-                            </div>
-                            {errors.newPassword && <span className="text-xs text-red-500">{errors.newPassword.message}</span>}
-                          </div>
-                        </div>
-                      )}
-
-                      {!wantsToChangePassword && (
-                        <p className="text-xs text-gray-500 italic">Marque a opção acima para alterar a senha</p>
-                      )}
-                    </div>
-                  )}
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Telefone</label>
-                    <input
-                      {...register('phone')}
-                      onChange={(e) => {
-                        e.target.value = maskPhone(e.target.value);
-                        register('phone').onChange(e);
-                      }}
-                      className={`w-full p-2 border rounded-lg ${errors.phone ? 'border-red-500' : ''}`}
-                    />
-                    {errors.phone && <span className="text-xs text-red-500">{errors.phone.message}</span>}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">CPF</label>
-                    <input
-                      {...register('cpf')}
-                      onChange={(e) => {
-                        e.target.value = maskCPF(e.target.value);
-                        register('cpf').onChange(e);
-                      }}
-                      className={`w-full p-2 border rounded-lg ${errors.cpf ? 'border-red-500' : ''}`}
-                    />
-                    {errors.cpf && <span className="text-xs text-red-500">{errors.cpf.message}</span>}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Data de Cadastro</label>
-                    <input type="date" {...register('registrationDate')} className={`w-full p-2 border rounded-lg ${errors.registrationDate ? 'border-red-500' : ''}`} />
-                    {errors.registrationDate && <span className="text-xs text-red-500">{errors.registrationDate.message}</span>}
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                  <input {...register('firstName')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="João" />
+                  {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>}
                 </div>
-              </section>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sobrenome *</label>
+                  <input {...register('lastName')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Silva" />
+                  {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Username *</label>
+                  <input {...register('username')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="joaosilva" />
+                  {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                  <input {...register('email')} type="email" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="joao@exemplo.com" />
+                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefone *</label>
+                  <input
+                    {...register('phone')}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="(11) 99999-9999"
+                    onChange={(e) => {
+                      e.target.value = maskPhone(e.target.value);
+                      setValue('phone', e.target.value);
+                    }}
+                  />
+                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">CPF *</label>
+                  <input
+                    {...register('cpf')}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="000.000.000-00"
+                    onChange={(e) => {
+                      e.target.value = maskCPF(e.target.value);
+                      setValue('cpf', e.target.value);
+                    }}
+                  />
+                  {errors.cpf && <p className="text-red-500 text-xs mt-1">{errors.cpf.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
+                  <select {...register('role')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                    <option value="Vendedor">Vendedor</option>
+                    <option value="Gerente">Gerente</option>
+                    <option value="Suporte">Suporte</option>
+                    <option value="Admin">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Data de Registro</label>
+                  <input {...register('registrationDate')} type="date" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                </div>
+              </div>
 
               {/* Endereço */}
               <section>
@@ -1246,6 +1199,72 @@ export const Settings: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              </section>
+
+              {/* Senha e Segurança */}
+              <section className="border-t pt-4 mt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-sm uppercase tracking-wider"><Lock size={16} className="text-blue-600" /> Segurança</h4>
+                  {isEditingMember && (
+                    <button
+                      type="button"
+                      onClick={() => setWantsToChangePassword(!wantsToChangePassword)}
+                      className="text-xs text-blue-600 font-medium hover:underline"
+                    >
+                      {wantsToChangePassword ? 'Cancelar alteração de senha' : 'Alterar senha'}
+                    </button>
+                  )}
+                </div>
+
+                {(!isEditingMember || wantsToChangePassword) && (
+                  <div className="space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    {isEditingMember && user?.role !== 'Admin' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Senha Atual (Obrigatório)</label>
+                        <input
+                          type="password"
+                          {...register('oldPassword')}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          placeholder="Sua senha atual"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-sm font-medium text-gray-700">Nova Senha</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const pass = generateSecurePassword();
+                            setValue(isEditingMember ? 'newPassword' : 'password', pass);
+                            // Forçar atualização visual se necessário, mas o setValue deve cuidar
+                            setShowPassword(true);
+                          }}
+                          className="text-xs text-purple-600 font-bold hover:underline flex items-center gap-1"
+                        >
+                          <Shield size={12} /> Gerar Senha Forte
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          {...register(isEditingMember ? 'newPassword' : 'password')}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                          placeholder="Mínimo de 8 caracteres"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                      {errors.newPassword && <p className="text-red-500 text-xs mt-1">{errors.newPassword.message}</p>}
+                      {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+                    </div>
+                  </div>
+                )}
               </section>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">

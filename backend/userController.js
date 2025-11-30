@@ -416,6 +416,49 @@ const getApiKeys = async (req, res) => {
 
 const createUser = createTeamMember;
 
+const getUserUsage = async (req, res) => {
+    const userId = req.user.id;
+    try {
+        // 1. Buscar plano e limites
+        const userRes = await db.query(`
+            SELECT u.plan_id, p.name as plan_name, p.limits 
+            FROM users u 
+            LEFT JOIN plans p ON u.plan_id = p.id 
+            WHERE u.id = $1
+        `, [userId]);
+
+        const userPlan = userRes.rows[0];
+        const limits = userPlan?.limits || { social_posts_per_day: 3, ai_generations_per_day: 5 };
+        const planName = userPlan?.plan_name || 'Free';
+
+        // 2. Calcular uso (Posts nas últimas 24h)
+        const postsRes = await db.query(`
+            SELECT COUNT(*) as count 
+            FROM social_posts 
+            WHERE user_id = $1 
+            AND created_at > NOW() - INTERVAL '1 day'
+        `, [userId]);
+
+        const postsUsage = parseInt(postsRes.rows[0].count);
+
+        // 3. Calcular uso (IA - Mockado por enquanto)
+        const aiUsage = 0;
+
+        res.json({
+            plan: planName,
+            limits,
+            usage: {
+                social_posts: postsUsage,
+                ai_generations: aiUsage
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching user usage:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
 module.exports = {
     upload,
     updateAvatar,
@@ -428,5 +471,6 @@ module.exports = {
     forgotPassword,
     resetPasswordConfirm,
     updateApiKeys,
-    getApiKeys
+    getApiKeys,
+    getUserUsage
 };

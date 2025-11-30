@@ -40,11 +40,27 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
+const stripeController = require('./stripeController');
+
+// Webhook Stripe (Precisa ser antes do express.json() global para validar assinatura)
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeController.handleWebhook);
+
 app.use(express.json());
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date(), version: '1.0.1' });
 });
+
+// Rota de Checkout (Protegida)
+app.post('/api/stripe/create-checkout-session', authenticateToken, stripeController.createCheckoutSession);
+
+const planController = require('./planController');
+const checkAdmin = require('./middleware/checkAdmin');
+// Rotas de Admin - Gestão de Planos
+app.get('/api/admin/plans', authenticateToken, checkAdmin, planController.getAllPlans);
+app.post('/api/admin/plans', authenticateToken, checkAdmin, planController.createPlan);
+app.put('/api/admin/plans/:id', authenticateToken, checkAdmin, planController.updatePlan);
+app.delete('/api/admin/plans/:id', authenticateToken, checkAdmin, planController.deletePlan);
 
 // Log request URL para debug
 app.use((req, res, next) => {
@@ -299,6 +315,8 @@ app.get('/api/campaigns', dbController.getCampaigns);
 
 // Leads
 app.get('/api/leads', dbController.getLeads);
+app.post('/api/leads', dbController.createLead); // Faltava essa também
+app.put('/api/leads/:id', dbController.updateLead);
 app.patch('/api/leads/:id/status', dbController.updateLeadStatus);
 
 // Chat Messages
@@ -336,8 +354,8 @@ app.post('/webhooks/whatsapp', (req, res) => {
 const aiController = require('./aiController');
 
 app.post('/api/ai/analyze', authenticateToken, aiController.analyzeChatConversation);
-app.post('/api/ai/generate', authenticateToken, aiController.generateMarketingContent);
-app.post('/api/ai/chat', authenticateToken, aiController.askEliteAssistant);
+app.post('/api/ai/generate', authenticateToken, checkLimit('ai_generation'), aiController.generateMarketingContent);
+app.post('/api/ai/chat', authenticateToken, checkLimit('ai_generation'), aiController.askEliteAssistant);
 // AI Analysis Routes
 app.post('/api/ai/analyze-strategy', authenticateToken, aiController.analyzeConversationStrategy);
 app.post('/api/ai/generate-config', authenticateToken, aiController.generateAgentConfig);
@@ -374,7 +392,8 @@ app.post('/api/auth/reset-password', userCtrl.resetPasswordConfirm);
 app.post('/api/users/:id/avatar', userCtrl.upload.single('avatar'), userCtrl.updateAvatar);
 
 // Manage API Keys (SaaS Security)
-app.post('/api/users/:id/api-keys', userCtrl.updateApiKeys);
+app.post('/api/users/:id/api-keys', authenticateToken, userCtrl.updateApiKeys);
+app.get('/api/users/usage', authenticateToken, userCtrl.getUserUsage);
 app.get('/api/users/:id/api-keys', userCtrl.getApiKeys);
 
 // --- TEAM MEMBERS MANAGEMENT ---
@@ -469,7 +488,7 @@ const imageGenCtrl = require('./imageGenerationController');
 const promptTemplateController = require('./promptTemplateController');
 // const authenticateToken = require('./middleware/auth'); // Moved to top
 
-app.post('/api/images/generate', authenticateToken, imageGenCtrl.generateImage);
+app.post('/api/images/generate', authenticateToken, checkLimit('ai_generation'), imageGenCtrl.generateImage);
 app.get('/api/images', authenticateToken, imageGenCtrl.listImages);
 app.delete('/api/images/:id', authenticateToken, imageGenCtrl.deleteImage);
 app.post('/api/images/translate', authenticateToken, imageGenCtrl.translateText);

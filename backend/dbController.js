@@ -157,6 +157,23 @@ const updateLeadStatus = async (req, res) => {
         res.json(result.rows[0]);
     } catch (error) {
         console.error('Error updating lead:', error);
+    }
+};
+
+const updateLead = async (req, res) => {
+    const { id } = req.params;
+    const { name, email, phone, company, source, status, value, notes } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE leads SET name = COALESCE($1, name), email = COALESCE($2, email), phone = COALESCE($3, phone), company = COALESCE($4, company), source = COALESCE($5, source), status = COALESCE($6, status), value = COALESCE($7, value), notes = COALESCE($8, notes), updated_at = NOW() WHERE id = $9 RETURNING *',
+            [name, email, phone, company, source, status, value, notes, id]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Lead not found' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error updating lead:', error);
         res.status(500).json({ error: 'Failed to update lead' });
     }
 };
@@ -319,6 +336,7 @@ module.exports = {
     getLeads,
     createLead,
     updateLeadStatus,
+    updateLead,
     getChatMessages,
     getSocialPosts,
     getWorkflows,
