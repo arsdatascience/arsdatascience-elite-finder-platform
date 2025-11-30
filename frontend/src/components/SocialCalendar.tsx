@@ -610,56 +610,56 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                     </div>
                 </div>
             </div>
-        </div>
+
 
             {
-        suggestionModal && (
-            <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 animate-in fade-in">
-                <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
-                            <Sparkles size={24} />
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-lg text-gray-800">Sugestão de Post com IA</h3>
-                            <p className="text-sm text-gray-500">{suggestionModal.holiday.name}</p>
+                suggestionModal && (
+                    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 animate-in fade-in">
+                        <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
+                                    <Sparkles size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-lg text-gray-800">Sugestão de Post com IA</h3>
+                                    <p className="text-sm text-gray-500">{suggestionModal.holiday.name}</p>
+                                </div>
+                            </div>
+
+                            <p className="text-sm text-gray-600 mb-6">
+                                Deseja que a IA gere uma sugestão de conteúdo criativo para o feriado <strong>{suggestionModal.holiday.name}</strong> no dia {suggestionModal.date.toLocaleDateString()}?
+                            </p>
+
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={() => setSuggestionModal(null)}
+                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium"
+                                    disabled={isGenerating}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={generateSuggestion}
+                                    disabled={isGenerating}
+                                    className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-2"
+                                >
+                                    {isGenerating ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            Gerando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles size={16} />
+                                            Gerar Sugestão
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
-
-                    <p className="text-sm text-gray-600 mb-6">
-                        Deseja que a IA gere uma sugestão de conteúdo criativo para o feriado <strong>{suggestionModal.holiday.name}</strong> no dia {suggestionModal.date.toLocaleDateString()}?
-                    </p>
-
-                    <div className="flex gap-3 justify-end">
-                        <button
-                            onClick={() => setSuggestionModal(null)}
-                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium"
-                            disabled={isGenerating}
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            onClick={generateSuggestion}
-                            disabled={isGenerating}
-                            className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-2"
-                        >
-                            {isGenerating ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    Gerando...
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles size={16} />
-                                    Gerar Sugestão
-                                </>
-                            )}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )
-    }
+                )
+            }
         </div >
     );
 };
