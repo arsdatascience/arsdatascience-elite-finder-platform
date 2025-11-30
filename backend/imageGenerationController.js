@@ -419,13 +419,18 @@ const getAnalytics = async (req, res) => {
 
         const recentImagesResult = await db.query(`SELECT id, prompt, model, created_at, width, height, cost FROM generated_images WHERE user_id = $1 ${filterClause} ORDER BY created_at DESC LIMIT 50`, params);
 
+        const recentImages = recentImagesResult.rows.map(img => ({
+            ...img,
+            cost: parseFloat(img.cost || 0)
+        }));
+
         res.json({
             success: true, data: {
                 totalImages: parseInt(totalResult.rows[0].count),
                 imagesByModel,
                 activity,
                 totalCredits: parseFloat(imagesByModel.reduce((acc, curr) => acc + curr.cost, 0).toFixed(2)),
-                recentImages: recentImagesResult.rows
+                recentImages
             }
         });
     } catch (error) {
