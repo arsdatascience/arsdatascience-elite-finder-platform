@@ -1,141 +1,153 @@
-# 🚀 Elite Finder Platform v1.0
+# 🚀 Elite Finder Platform - Manual Completo
 
-O **Elite Finder** é uma plataforma "All-in-One" de nível empresarial para gestão de marketing digital, automação de vendas, CRM e criação de conteúdo impulsionada por Inteligência Artificial. Projetada para agências e profissionais de marketing que buscam centralizar suas operações e escalar resultados.
-
----
-
-## 🌟 Funcionalidades Principais
-
-### 🎨 AI Creative Studio (Geração de Imagens)
-Um estúdio completo para criação de ativos visuais de alta performance.
-- **Múltiplos Modelos de IA**: Suporte integrado para **Flux Schnell/Dev**, **DALL-E 3** e **Gemini Flash Image**.
-- **Templates de Prompt Inteligentes**: Biblioteca com mais de **110 templates** organizados por nicho (Saúde, Tech, Varejo, etc.) e sistema para criar e salvar seus próprios templates.
-- **Ferramentas de Edição Avançada**:
-  - **Editor Integrado**: Recorte, filtros, ajustes de cor e desenho livre.
-  - **Upscale**: Aumento de resolução de imagens com IA.
-  - **Remoção de Fundo**: Extração automática de fundo para criação de produtos e stickers.
-  - **Variações**: Gere versões alternativas de qualquer imagem criada.
-- **Facilitadores de Produtividade**:
-  - **Tradução Automática**: Traduza prompts do Português para Inglês (e vice-versa) com um clique.
-  - **Histórico de Prompts**: Reutilize seus melhores prompts facilmente.
-  - **Formatos Personalizados**: Escolha entre formatos padrão (1:1, 16:9, 9:16) ou defina dimensões personalizadas.
-- **Analytics de IA**: Dashboard dedicado para monitorar custos, consumo de créditos e modelos mais utilizados.
-
-### 📊 Dashboard & Business Intelligence
-- **Visão Unificada**: KPIs em tempo real de todas as campanhas e canais.
-- **Funil de Vendas**: Acompanhamento visual da jornada do cliente.
-- **Relatórios**: Gráficos de desempenho, conversões por origem e ROI.
-
-### 🤖 Automação de Marketing
-- **Workflows Visuais**: Criação de fluxos de automação com gatilhos e ações.
-- **Integrações**: Conexão com plataformas de anúncios (Google Ads, Meta Ads) e CRMs.
-
-### 👥 CRM & Gestão de Clientes
-- **Gestão de Leads**: Pipeline de vendas, status e qualificação.
-- **Perfil de Clientes**: Histórico completo de interações e dados.
-
-### 📱 Social Media Management
-- **Agendamento de Posts**: Planejamento e publicação de conteúdo.
-- **Gestão de Mídia**: Biblioteca de ativos digitais.
-
-### 🏢 Gestão Administrativa
-- **Controle de Equipe**: Gestão de usuários, papéis e permissões.
-- **Configurações do Sistema**: Personalização da plataforma.
+Bem-vindo à documentação oficial da **Elite Finder Platform**. Este documento detalha todas as funcionalidades, módulos e ferramentas disponíveis no sistema.
 
 ---
 
-## 🛠️ Stack Tecnológico
+## 📚 Índice
 
-### Frontend
-- **React 18** com TypeScript
-- **Vite** (Build Tool)
-- **Tailwind CSS** (Estilização)
-- **Lucide React** (Ícones)
-- **Recharts** (Visualização de Dados)
-- **Framer Motion** (Animações)
-
-### Backend
-- **Node.js** & **Express**
-- **PostgreSQL** (Banco de Dados)
-- **OpenAI API** (DALL-E, GPT)
-- **Google Generative AI** (Gemini)
-- **Replicate API** (Flux Models)
+1. [Visão Geral](#-visão-geral)
+2. [Dashboard & Analytics](#-dashboard--analytics)
+3. [CRM & Gestão de Clientes](#-crm--gestão-de-clientes)
+4. [Automação de Marketing](#-automação-de-marketing)
+5. [AI Creative Studio (Geração de Imagens)](#-ai-creative-studio)
+6. [Social Media Management](#-social-media-management)
+7. [Gestão de Equipe & Configurações](#-gestão-de-equipe--configurações)
+8. [Instalação Técnica](#-instalação-técnica)
 
 ---
 
-## 🚀 Instalação e Configuração
+## 🌟 Visão Geral
 
-### Pré-requisitos
-- Node.js (v18+)
-- PostgreSQL
-- Chaves de API (OpenAI, Google, Replicate)
-
-### Passo a Passo
-
-1. **Clone o repositório**
-   ```bash
-   git clone https://github.com/seu-usuario/elite-finder-appv1.git
-   cd elite-finder-appv1
-   ```
-
-2. **Configuração do Backend**
-   ```bash
-   cd backend
-   npm install
-   
-   # Crie um arquivo .env na pasta backend com as seguintes variáveis:
-   # PORT=3001
-   # DATABASE_URL=postgresql://user:pass@localhost:5432/elite_finder
-   # OPENAI_API_KEY=sk-...
-   # GOOGLE_API_KEY=...
-   # REPLICATE_API_TOKEN=...
-   # JWT_SECRET=sua_chave_secreta
-   
-   # Execute as migrações do banco de dados (o servidor faz isso automaticamente ao iniciar)
-   npm start
-   ```
-
-3. **Configuração do Frontend**
-   ```bash
-   cd frontend
-   npm install
-   
-   # Crie um arquivo .env na pasta frontend (opcional, defaults configurados):
-   # VITE_API_URL=http://localhost:3001/api
-   
-   npm run dev
-   ```
-
-4. **Acesso**
-   - Frontend: `http://localhost:5173`
-   - Backend: `http://localhost:3001`
+O Elite Finder é uma solução "All-in-One" que centraliza operações de agências digitais. Ele elimina a necessidade de múltiplas ferramentas desconexas, integrando CRM, Automação, IA e Analytics em uma única interface coesa.
 
 ---
 
-## 📂 Estrutura do Projeto
+## 📊 Dashboard & Analytics
 
+O centro de comando da sua operação. Aqui você tem uma visão panorâmica do desempenho do negócio.
+
+### Funcionalidades Principais:
+- **KPIs em Tempo Real**: Monitore métricas vitais como *Total de Leads*, *Custo por Lead (CPL)*, *Taxa de Conversão* e *ROI*.
+- **Filtros Inteligentes**: Visualize dados por período (Hoje, 7 dias, 30 dias) ou por cliente específico.
+- **Gráficos de Tendência**:
+  - *Evolução de Leads*: Linha do tempo mostrando a aquisição de leads.
+  - *Origem de Tráfego*: Gráfico de pizza detalhando canais (Google, Meta, Orgânico).
+- **Funil de Vendas Visual**: Acompanhe a jornada do cliente desde a visita até o fechamento.
+
+---
+
+## 👥 CRM & Gestão de Clientes
+
+Gerencie o relacionamento com seus clientes e leads de forma estruturada.
+
+### Funcionalidades:
+- **Lista de Clientes**: Cadastro completo de empresas/clientes com dados de contato, setor e status.
+- **Pipeline de Leads**:
+  - Visualização em Lista ou Kanban (em breve).
+  - Status personalizáveis (Novo, Qualificado, Proposta, Fechado).
+- **Histórico de Interações**: Registro automático de atividades e notas manuais.
+- **Integração com WhatsApp**: (Módulo Beta) Inicie conversas diretamente do CRM.
+
+---
+
+## 🤖 Automação de Marketing
+
+Crie máquinas de vendas que trabalham 24/7.
+
+### Funcionalidades:
+- **Construtor de Workflows**: Interface visual "Drag-and-Drop" para criar sequências lógicas.
+- **Gatilhos (Triggers)**:
+  - *Novo Lead Cadastrado*
+  - *Tag Adicionada*
+  - *Status Alterado*
+- **Ações**:
+  - *Enviar Email*
+  - *Enviar Mensagem WhatsApp*
+  - *Aguardar (Delay)*
+  - *Atribuir a Vendedor*
+- **Templates de Automação**: Fluxos pré-configurados para *Boas-vindas*, *Recuperação de Carrinho* e *Nutrição*.
+
+---
+
+## 🎨 AI Creative Studio
+
+Um estúdio de design completo impulsionado por Inteligência Artificial Generativa.
+
+### 1. Geração de Imagens (Text-to-Image)
+Transforme texto em imagens de alta qualidade.
+- **Modelos Suportados**:
+  - **Flux Schnell**: Geração ultra-rápida (padrão).
+  - **Flux Dev**: Alta fidelidade e detalhes.
+  - **DALL-E 3**: Melhor compreensão de prompts complexos.
+  - **Gemini Flash**: Opção versátil do Google.
+- **Configurações Avançadas**: Controle total sobre *Steps*, *Guidance Scale*, *Seed* e *Batch Size*.
+
+### 2. Biblioteca de Templates
+Não comece do zero. Use nossos templates otimizados.
+- **Categorias**: Saúde, Tech, Varejo, Moda, Arquitetura, etc.
+- **Templates Personalizados**: Crie e salve seus próprios estilos de prompt para manter a consistência da marca.
+- **Seletor Visual**: Navegue por exemplos visuais antes de aplicar.
+
+### 3. Ferramentas de Edição & Pós-Processamento
+- **Editor Integrado**: Corte, ajuste cores, aplique filtros e desenhe sobre a imagem.
+- **Upscale (4x)**: Aumente a resolução das imagens sem perder qualidade.
+- **Remoção de Fundo**: Isole objetos e pessoas com um clique.
+- **Variações**: Crie versões alternativas de uma imagem existente mantendo a composição.
+
+### 4. Facilitadores
+- **Tradução Automática**: Escreva em português e traduza para inglês (melhor compreendido pelas IAs) com um clique.
+- **Histórico**: Acesso rápido às últimas 50 gerações.
+- **Analytics de IA**: Dashboard de consumo de créditos e modelos mais usados.
+
+---
+
+## 📱 Social Media Management
+
+Planeje e distribua conteúdo em escala.
+
+### Funcionalidades:
+- **Calendário Editorial**: Visão mensal e semanal das publicações.
+- **Agendamento Multi-plataforma**: (Em desenvolvimento) Instagram, Facebook, LinkedIn.
+- **Biblioteca de Mídia**: Armazenamento centralizado de imagens e vídeos.
+- **Status de Aprovação**: Fluxo de revisão entre agência e cliente.
+
+---
+
+## 🏢 Gestão de Equipe & Configurações
+
+Controle quem acessa o quê.
+
+- **Gestão de Usuários**: Convide membros da equipe.
+- **Papéis e Permissões**:
+  - *Admin*: Acesso total.
+  - *Editor*: Pode criar conteúdo, mas não altera configurações.
+  - *Visualizador*: Apenas leitura (ideal para clientes).
+- **White Label**: Personalize a plataforma com sua logo e cores (Configurações > Aparência).
+
+---
+
+## 🛠️ Instalação Técnica
+
+### Requisitos
+- Node.js v18+
+- PostgreSQL 14+
+- Chaves de API: OpenAI, Google (Gemini), Replicate.
+
+### Comandos Rápidos
+
+**Backend:**
+```bash
+cd backend
+npm install
+npm start
 ```
-elite-finder-appv1/
-├── backend/
-│   ├── migrations/       # Scripts SQL para estrutura do banco
-│   ├── routes/           # Rotas da API (se separado)
-│   ├── server.js         # Ponto de entrada e configuração do Express
-│   ├── imageGenerationController.js # Lógica de IA
-│   └── ...
-├── frontend/
-│   ├── src/
-│   │   ├── components/   # Componentes React reutilizáveis
-│   │   │   ├── image-generation/ # Módulos do AI Studio
-│   │   │   └── ...
-│   │   ├── services/     # Clientes de API (Axios)
-│   │   ├── lib/          # Utilitários e constantes (ex: templates)
-│   │   └── types/        # Definições de tipos TypeScript
-│   └── ...
-└── ...
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
----
-
-## 📄 Licença
-
-Este projeto é proprietário e desenvolvido para uso exclusivo da **Elite Creative Studio**.
+Para documentação técnica detalhada de API e Banco de Dados, consulte a pasta `/docs`.
