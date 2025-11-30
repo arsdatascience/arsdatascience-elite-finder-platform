@@ -381,3 +381,19 @@ CREATE TABLE IF NOT EXISTS agent_custom_parameters (
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+C R E A T E   T A B L E   I F   N O T   E X I S T S   p r o m p t _ t e m p l a t e s   (  
+         i d   S E R I A L   P R I M A R Y   K E Y ,  
+         u s e r _ i d   I N T E G E R   R E F E R E N C E S   u s e r s ( i d )   O N   D E L E T E   C A S C A D E ,  
+         n a m e   V A R C H A R ( 2 5 5 )   N O T   N U L L ,  
+         d e s c r i p t i o n   T E X T ,  
+         p r o m p t   T E X T   N O T   N U L L ,  
+         n e g a t i v e _ p r o m p t   T E X T ,  
+         c a t e g o r y   V A R C H A R ( 5 0 )   N O T   N U L L ,  
+         i s _ p u b l i c   B O O L E A N   D E F A U L T   f a l s e ,  
+         c r e a t e d _ a t   T I M E S T A M P   D E F A U L T   N O W ( ) ,  
+         u p d a t e d _ a t   T I M E S T A M P   D E F A U L T   N O W ( )  
+ ) ;  
+  
+ C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ p r o m p t _ t e m p l a t e s _ u s e r _ i d   O N   p r o m p t _ t e m p l a t e s ( u s e r _ i d ) ;  
+ C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ p r o m p t _ t e m p l a t e s _ c a t e g o r y   O N   p r o m p t _ t e m p l a t e s ( c a t e g o r y ) ;  
+ 

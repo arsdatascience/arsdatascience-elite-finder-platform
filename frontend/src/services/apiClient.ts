@@ -214,6 +214,22 @@ export const apiClient = {
             return response.data;
         }
     },
+    promptTemplates: {
+        create: async (data: any) => {
+            if (USE_MOCK) return data;
+            const response = await axiosInstance.post('/templates', data);
+            return response.data;
+        },
+        list: async () => {
+            if (USE_MOCK) return [];
+            const response = await axiosInstance.get('/templates');
+            return response.data;
+        },
+        delete: async (id: number) => {
+            if (USE_MOCK) return;
+            await axiosInstance.delete(`/templates/${id}`);
+        }
+    },
     imageGeneration: {
         generate: async (data: any) => {
             if (USE_MOCK) throw new Error('Mock not implemented for Image Gen');

@@ -384,6 +384,7 @@ const runMigrations = require('./migrate');
 
 // --- IMAGE GENERATION ---
 const imageGenCtrl = require('./imageGenerationController');
+const promptTemplateController = require('./promptTemplateController');
 const authenticateToken = require('./middleware/auth');
 
 app.post('/api/images/generate', authenticateToken, imageGenCtrl.generateImage);
@@ -397,6 +398,11 @@ app.post('/api/images/upscale', authenticateToken, imageGenCtrl.upscaleImage);
 app.post('/api/images/remove-background', authenticateToken, imageGenCtrl.removeBackground);
 app.get('/api/images/prompts', authenticateToken, imageGenCtrl.getRecentPrompts);
 app.get('/api/images/analytics', authenticateToken, imageGenCtrl.getAnalytics);
+
+// Rotas de Templates de Prompt
+app.post('/api/templates', authenticateToken, promptTemplateController.createTemplate);
+app.get('/api/templates', authenticateToken, promptTemplateController.listTemplates);
+app.delete('/api/templates/:id', authenticateToken, promptTemplateController.deleteTemplate);
 
 // Iniciar servidor após migrações
 runMigrations().then(() => {
