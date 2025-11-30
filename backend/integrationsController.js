@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const { encrypt, decrypt } = require('./utils/crypto');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -41,12 +42,12 @@ const updateIntegrationStatus = async (req, res) => {
 
         if (access_token !== undefined) {
             updates.push(`access_token = $${paramCount++}`);
-            values.push(access_token);
+            values.push(encrypt(access_token));
         }
 
         if (refresh_token !== undefined) {
             updates.push(`refresh_token = $${paramCount++}`);
-            values.push(refresh_token);
+            values.push(encrypt(refresh_token));
         }
 
         if (config !== undefined) {
@@ -91,6 +92,8 @@ const syncIntegration = async (req, res) => {
         }
 
         const platform = integration.rows[0].platform;
+        const accessToken = decrypt(integration.rows[0].access_token);
+        // const refreshToken = decrypt(integration.rows[0].refresh_token);
 
         // Here you would implement actual API calls to each platform
         // For now, we'll just update the last_sync timestamp
@@ -130,7 +133,7 @@ const handleGoogleAdsCallback = async (req, res) => {
            last_sync = NOW(),
            updated_at = NOW()
        WHERE user_id = $2 AND platform = 'google_ads'`,
-            ['simulated_google_token', user_id]
+            [encrypt('simulated_google_token'), user_id]
         );
 
         res.redirect('/settings?integration=google_ads&status=success');
@@ -158,7 +161,7 @@ const handleMetaAdsCallback = async (req, res) => {
            last_sync = NOW(),
            updated_at = NOW()
        WHERE user_id = $2 AND platform = 'meta_ads'`,
-            ['simulated_meta_token', user_id]
+            [encrypt('simulated_meta_token'), user_id]
         );
 
         res.redirect('/settings?integration=meta_ads&status=success');
@@ -188,7 +191,7 @@ const setupWhatsAppWebhook = async (req, res) => {
            updated_at = NOW()
        WHERE user_id = $3 AND platform = 'whatsapp'`,
             [
-                access_token,
+                encrypt(access_token),
                 JSON.stringify({ phone_number_id, verify_token }),
                 user_id
             ]

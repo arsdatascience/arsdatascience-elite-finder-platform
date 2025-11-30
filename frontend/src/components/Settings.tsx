@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Save, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Brain, Eye, EyeOff, Cpu, Check, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Schema de Validação com Zod
 const memberSchema = z.object({
@@ -147,6 +148,7 @@ const generateSecurePassword = (): string => {
 
 
 export const Settings: React.FC = () => {
+  const { user, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState<SettingsTab>('integrations');
 
   // --- Estados para Integrações ---
@@ -226,8 +228,18 @@ export const Settings: React.FC = () => {
           throw new Error(error.error || 'Erro ao atualizar membro');
         }
 
-        await response.json();
+        const result = await response.json();
         setTeamMembers(prev => prev.map(m => m.id === currentMember.id ? { ...m, ...data } : m));
+
+        // Se estiver editando o próprio usuário, atualizar o contexto global
+        if (user && user.id === currentMember.id) {
+          updateUser({
+            name: `${data.firstName} ${data.lastName}`,
+            email: data.email,
+            role: data.role
+          });
+        }
+
         alert('✅ Membro atualizado com sucesso!');
       } else {
         // Criar novo membro
@@ -259,29 +271,82 @@ export const Settings: React.FC = () => {
     }
   };
 
-  // Carregar chaves salvas
+  // Carregar chaves salvas do Backend (SaaS Security)
   useEffect(() => {
-    setGeminiKey(localStorage.getItem('gemini_api_key') || '');
-    setOpenAiKey(localStorage.getItem('openai_api_key') || '');
-    setAnthropicKey(localStorage.getItem('anthropic_api_key') || '');
-  }, []);
+    const fetchKeys = async () => {
+      if (!user) return;
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${user.id}/api-keys`);
+        const data = await res.json();
+        if (data.success) {
+          // Se a chave vier mascarada (sk-...), mantemos. Se o usuário editar, ele vai sobrescrever.
+          if (data.keys.gemini) setGeminiKey(data.keys.gemini);
+          if (data.keys.openai) setOpenAiKey(data.keys.openai);
+          if (data.keys.anthropic) setAnthropicKey(data.keys.anthropic);
+        }
+      } catch (e) { console.error('Erro ao carregar chaves:', e); }
+    };
+    fetchKeys();
+  }, [user]);
 
   // --- Handlers de Perfil ---
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // const imageUrl = URL.createObjectURL(file);
-      // setProfileData removido
-      // Aqui você implementaria o upload real para o backend
-      alert('Foto atualizada com sucesso! (Simulação)');
+    if (file && user) {
+      try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${user.id}/avatar`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Falha no upload');
+
+        const data = await response.json();
+        if (data.avatarUrl) {
+          updateUser({ avatar_url: data.avatarUrl });
+          alert('Foto atualizada com sucesso!');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao atualizar foto.');
+      }
     }
   };
 
-  const handleMemberPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMemberPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setCurrentMember(prev => ({ ...prev, avatarUrl: imageUrl }));
+    if (file && currentMember.id) {
+      try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${currentMember.id}/avatar`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Falha no upload');
+
+        const data = await response.json();
+        if (data.avatarUrl) {
+          setCurrentMember(prev => ({ ...prev, avatarUrl: data.avatarUrl }));
+          // Se for o usuário logado, atualiza o contexto também
+          if (user && user.id === currentMember.id) {
+            updateUser({ avatar_url: data.avatarUrl });
+          }
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Erro ao fazer upload da foto.');
+      }
+    } else if (file) {
+      // Novo membro (ainda sem ID), apenas preview local (não será salvo até criar o membro, mas o backend precisa de ID para upload)
+      // Solução: Upload só permitido após criar o membro ou implementar upload temporário.
+      // Por enquanto, vamos alertar que precisa salvar primeiro.
+      alert('Salve o novo membro antes de adicionar uma foto.');
     }
   };
 
@@ -307,22 +372,43 @@ export const Settings: React.FC = () => {
 
 
   // --- Handlers de Integração (Mantidos da versão anterior) ---
+  // --- Handlers de Integração (Atualizados para SaaS) ---
+  const saveApiKey = async (provider: string, key: string) => {
+    if (!user) return;
+    try {
+      const body: any = {};
+      if (provider === 'gemini') body.gemini_key = key;
+      if (provider === 'openai') body.openai_key = key;
+      if (provider === 'anthropic') body.anthropic_key = key;
+
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${user.id}/api-keys`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) throw new Error('Falha ao salvar');
+
+      alert(`Chave da API ${provider} atualizada com segurança!`);
+    } catch (error) {
+      console.error(error);
+      alert('Erro ao salvar chave.');
+    }
+  };
+
   const handleSaveGemini = () => {
-    localStorage.setItem('gemini_api_key', geminiKey);
+    saveApiKey('gemini', geminiKey);
     setIsEditingGemini(false);
-    alert('Chave da API Gemini atualizada com sucesso!');
   };
 
   const handleSaveOpenAi = () => {
-    localStorage.setItem('openai_api_key', openAiKey);
+    saveApiKey('openai', openAiKey);
     setIsEditingOpenAi(false);
-    alert('Chave da API OpenAI atualizada com sucesso!');
   };
 
   const handleSaveAnthropic = () => {
-    localStorage.setItem('anthropic_api_key', anthropicKey);
+    saveApiKey('anthropic', anthropicKey);
     setIsEditingAnthropic(false);
-    alert('Chave da API Anthropic atualizada com sucesso!');
   };
 
   const handleLogout = () => {
@@ -352,9 +438,16 @@ export const Settings: React.FC = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'profile':
-        // Simulando que o usuário logado é o primeiro da lista de membros (ou um estado de user context)
-        // Na prática, você buscaria isso de um contexto de autenticação
-        const currentUser = teamMembers.find(m => m.id === 1) || teamMembers[0] || INITIAL_MEMBER_STATE;
+        // Usar usuário do contexto
+        const currentUser = user ? {
+          ...INITIAL_MEMBER_STATE,
+          id: user.id,
+          firstName: user.name.split(' ')[0],
+          lastName: user.name.split(' ').slice(1).join(' '),
+          email: user.email,
+          role: user.role,
+          avatarUrl: user.avatar_url
+        } : INITIAL_MEMBER_STATE;
 
         return (
           <div className="space-y-6 animate-fade-in">
@@ -742,9 +835,9 @@ export const Settings: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <img
-                              src={`https://i.pravatar.cc/40?u=${member.email || 'default'}`}
+                              src={member.avatarUrl || `https://i.pravatar.cc/40?u=${member.email || 'default'}`}
                               alt={member.firstName || 'Unknown'}
-                              className="w-10 h-10 rounded-full"
+                              className="w-10 h-10 rounded-full object-cover"
                             />
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">

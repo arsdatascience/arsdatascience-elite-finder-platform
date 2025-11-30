@@ -4,6 +4,9 @@ import { NAV_ITEMS } from '@/constants';
 import { ViewState } from '@/types';
 import { Rocket } from 'lucide-react';
 
+import { useAuth } from '@/contexts/AuthContext';
+import { UserCircle } from 'lucide-react';
+
 interface SidebarProps {
   activeView: ViewState;
   onNavigate: (view: ViewState) => void;
@@ -11,6 +14,8 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen }) => {
+  const { user } = useAuth();
+
   return (
     <div className={`fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
       <div className="flex items-center justify-center h-20 border-b border-slate-800">
@@ -45,10 +50,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen
 
       <div className="absolute bottom-0 w-full p-4 border-t border-slate-800">
         <div className="flex items-center gap-3">
-          <img src="https://i.pravatar.cc/40?u=denis" alt="User" className="w-10 h-10 rounded-full border-2 border-blue-500" />
-          <div>
-            <p className="text-sm font-medium text-white">Denis May</p>
-            <p className="text-xs text-slate-500">Área Administrativa</p>
+          {user?.avatar_url ? (
+            <img src={user.avatar_url} alt="User" className="w-10 h-10 rounded-full border-2 border-blue-500 object-cover" />
+          ) : (
+            <div className="w-10 h-10 rounded-full border-2 border-blue-500 bg-slate-800 flex items-center justify-center text-slate-400">
+              <UserCircle size={24} />
+            </div>
+          )}
+          <div className="overflow-hidden">
+            <p className="text-sm font-medium text-white truncate">{user?.name || 'Usuário'}</p>
+            <p className="text-xs text-slate-500 truncate">{user?.role || 'Membro'}</p>
           </div>
         </div>
       </div>

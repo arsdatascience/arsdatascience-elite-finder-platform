@@ -140,8 +140,19 @@ async function initializeDatabase() {
             ADD COLUMN IF NOT EXISTS metadata JSONB;
         `);
       console.log('✅ Migração de Analytics verificada/aplicada.');
+
+      // Migração para Chaves de API Criptografadas (SaaS Security)
+      console.log('🔄 Verificando migrações de Segurança (API Keys)...');
+      await pool.query(`
+            ALTER TABLE users 
+            ADD COLUMN IF NOT EXISTS openai_key TEXT,
+            ADD COLUMN IF NOT EXISTS gemini_key TEXT,
+            ADD COLUMN IF NOT EXISTS anthropic_key TEXT;
+      `);
+      console.log('✅ Migração de Segurança verificada/aplicada.');
+
     } catch (err) {
-      console.error('⚠️ Erro na migração de Analytics:', err.message);
+      console.error('⚠️ Erro na migração:', err.message);
     }
   } catch (error) {
     console.error('⚠️  Database initialization error:', error.message);
@@ -262,13 +273,13 @@ app.post('/webhooks/whatsapp', (req, res) => {
 // --- AI SERVICES ---
 const aiController = require('./aiController');
 
-app.post('/api/ai/analyze', aiController.analyzeChatConversation);
-app.post('/api/ai/generate', aiController.generateMarketingContent);
-app.post('/api/ai/chat', aiController.askEliteAssistant);
+app.post('/api/ai/analyze', authenticateToken, aiController.analyzeChatConversation);
+app.post('/api/ai/generate', authenticateToken, aiController.generateMarketingContent);
+app.post('/api/ai/chat', authenticateToken, aiController.askEliteAssistant);
 // AI Analysis Routes
-app.post('/api/ai/analyze-strategy', aiController.analyzeConversationStrategy);
-app.post('/api/ai/generate-config', aiController.generateAgentConfig);
-app.post('/api/ai/save-analysis', aiController.saveAnalysis);
+app.post('/api/ai/analyze-strategy', authenticateToken, aiController.analyzeConversationStrategy);
+app.post('/api/ai/generate-config', authenticateToken, aiController.generateAgentConfig);
+app.post('/api/ai/save-analysis', authenticateToken, aiController.saveAnalysis);
 
 
 // --- DASHBOARD ANALYTICS ---
@@ -299,6 +310,10 @@ app.post('/api/auth/reset-password', userCtrl.resetPasswordConfirm);
 
 // Update avatar for a user (requires multipart/form-data)
 app.post('/api/users/:id/avatar', userCtrl.upload.single('avatar'), userCtrl.updateAvatar);
+
+// Manage API Keys (SaaS Security)
+app.post('/api/users/:id/api-keys', userCtrl.updateApiKeys);
+app.get('/api/users/:id/api-keys', userCtrl.getApiKeys);
 
 // --- TEAM MEMBERS MANAGEMENT ---
 app.get('/api/team/members', userCtrl.getTeamMembers);

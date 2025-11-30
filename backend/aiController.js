@@ -3,44 +3,47 @@
 
 const { ClaudeService, ClaudeModel } = require('./services/anthropicService');
 const db = require('./database');
+const { decrypt } = require('./utils/crypto');
 
-const getEffectiveApiKey = (provider = 'openai') => {
+const getEffectiveApiKey = async (provider = 'openai', userId = null) => {
+  // 1. Try to get from User DB (SaaS Multi-tenant)
+  if (userId) {
+    try {
+      const result = await db.query('SELECT openai_key, gemini_key, anthropic_key FROM users WHERE id = $1', [userId]);
+      if (result.rows.length > 0) {
+        const keys = result.rows[0];
+        let userKey = null;
+        if (provider === 'gemini' && keys.gemini_key) userKey = decrypt(keys.gemini_key);
+        else if (provider === 'anthropic' && keys.anthropic_key) userKey = decrypt(keys.anthropic_key);
+        else if ((provider === 'openai' || !provider) && keys.openai_key) userKey = decrypt(keys.openai_key);
+
+        if (userKey) {
+          console.log(`🔑 Using User API Key for ${provider}`);
+          return userKey;
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching user API key:', err);
+    }
+  }
+
+  // 2. Fallback to System Env Vars
   if (provider === 'gemini') {
     let apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       const allKeys = Object.keys(process.env);
       const geminiKey = allKeys.find(k => k.includes('GEMINI') && k.includes('KEY'));
-      if (geminiKey) {
-        console.log(`⚠️  Using fallback Gemini key: ${geminiKey}`);
-        apiKey = process.env[geminiKey];
-      }
-    }
-    if (!apiKey) {
-      console.error('⚠️  GEMINI_API_KEY environment variable is not set!');
-      return null;
+      if (geminiKey) apiKey = process.env[geminiKey];
     }
     return apiKey;
   } else if (provider === 'anthropic') {
-    let apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      console.error('⚠️  ANTHROPIC_API_KEY environment variable is not set!');
-      return null;
-    }
-    return apiKey;
+    return process.env.ANTHROPIC_API_KEY;
   } else {
-    // Default to OpenAI
     let apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       const allKeys = Object.keys(process.env);
       const openaiKey = allKeys.find(k => k.includes('OPENAI') && k.includes('KEY'));
-      if (openaiKey) {
-        console.log(`⚠️  Using fallback OpenAI key: ${openaiKey}`);
-        apiKey = process.env[openaiKey];
-      }
-    }
-    if (!apiKey) {
-      console.error('⚠️  OPENAI_API_KEY environment variable is not set!');
-      return null;
+      if (openaiKey) apiKey = process.env[openaiKey];
     }
     return apiKey;
   }
@@ -176,7 +179,8 @@ const callAnthropic = async (prompt, apiKey, model, jsonMode = false) => {
 
 const analyzeChatConversation = async (req, res) => {
   const { messages, provider = 'openai', model } = req.body;
-  const apiKey = getEffectiveApiKey(provider);
+  const userId = req.user ? req.user.id : null; // Get from auth middleware
+  const apiKey = await getEffectiveApiKey(provider, userId);
 
   if (!apiKey) return res.status(500).json({ error: `${provider.toUpperCase()} API Key not configured` });
 
@@ -268,7 +272,8 @@ const generateMarketingContent = async (req, res) => {
   const request = req.body;
   const provider = request.provider || 'openai';
   const model = request.model;
-  const apiKey = getEffectiveApiKey(provider);
+  const userId = req.user ? req.user.id : null;
+  const apiKey = await getEffectiveApiKey(provider, userId);
 
   if (!apiKey) return res.status(500).json({ error: `${provider.toUpperCase()} API Key not configured` });
 
@@ -332,7 +337,8 @@ const generateMarketingContent = async (req, res) => {
 
 const askEliteAssistant = async (req, res) => {
   const { history, question, provider = 'openai', model } = req.body;
-  const apiKey = getEffectiveApiKey(provider);
+  const userId = req.user ? req.user.id : null;
+  const apiKey = await getEffectiveApiKey(provider, userId);
 
   if (!apiKey) return res.status(500).json({ error: `${provider.toUpperCase()} API Key not configured` });
 
@@ -389,7 +395,8 @@ const askEliteAssistant = async (req, res) => {
 const analyzeConversationStrategy = async (req, res) => {
   const { messages, agentContext } = req.body;
   const provider = 'openai'; // Default provider for this specific task
-  const apiKey = getEffectiveApiKey(provider);
+  const userId = req.user ? req.user.id : null;
+  const apiKey = await getEffectiveApiKey(provider, userId);
 
   try {
     const prompt = `
@@ -431,7 +438,8 @@ const analyzeConversationStrategy = async (req, res) => {
  */
 const generateAgentConfig = async (req, res) => {
   const { description, provider = 'openai' } = req.body;
-  const apiKey = getEffectiveApiKey(provider);
+  const userId = req.user ? req.user.id : null;
+  const apiKey = await getEffectiveApiKey(provider, userId);
 
   if (!description) {
     return res.status(400).json({ error: 'Description is required' });

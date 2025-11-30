@@ -4,6 +4,7 @@ const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const { encrypt, decrypt } = require('./utils/crypto');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'elite-secret-key-change-me';
 
@@ -356,6 +357,63 @@ const deleteTeamMember = async (req, res) => {
     }
 };
 
+const updateApiKeys = async (req, res) => {
+    const { id } = req.params;
+    const { openai_key, gemini_key, anthropic_key } = req.body;
+
+    try {
+        const updates = [];
+        const values = [];
+        let paramCount = 1;
+
+        if (openai_key !== undefined) {
+            updates.push(`openai_key = $${paramCount++}`);
+            values.push(openai_key ? encrypt(openai_key) : null);
+        }
+        if (gemini_key !== undefined) {
+            updates.push(`gemini_key = $${paramCount++}`);
+            values.push(gemini_key ? encrypt(gemini_key) : null);
+        }
+        if (anthropic_key !== undefined) {
+            updates.push(`anthropic_key = $${paramCount++}`);
+            values.push(anthropic_key ? encrypt(anthropic_key) : null);
+        }
+
+        if (updates.length === 0) return res.json({ success: true });
+
+        values.push(id);
+        const query = `UPDATE users SET ${updates.join(', ')}, updated_at = NOW() WHERE id = $${paramCount}`;
+
+        await db.query(query, values);
+        res.json({ success: true, message: 'Chaves de API atualizadas com segurança.' });
+    } catch (err) {
+        console.error('Error updating API keys:', err);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
+
+const getApiKeys = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await db.query('SELECT openai_key, gemini_key, anthropic_key FROM users WHERE id = $1', [id]);
+        if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'User not found' });
+
+        const keys = result.rows[0];
+        // Retornar apenas se existe ou mascarado, nunca a chave completa para o frontend
+        res.json({
+            success: true,
+            keys: {
+                openai: keys.openai_key ? 'sk-...' + decrypt(keys.openai_key).slice(-4) : '',
+                gemini: keys.gemini_key ? 'AI...' + decrypt(keys.gemini_key).slice(-4) : '',
+                anthropic: keys.anthropic_key ? 'sk-...' + decrypt(keys.anthropic_key).slice(-4) : ''
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching API keys:', err);
+        res.status(500).json({ success: false, error: 'Database error' });
+    }
+};
+
 const createUser = createTeamMember;
 
 module.exports = {
@@ -368,5 +426,7 @@ module.exports = {
     updateTeamMember,
     deleteTeamMember,
     forgotPassword,
-    resetPasswordConfirm
+    resetPasswordConfirm,
+    updateApiKeys,
+    getApiKeys
 };

@@ -9,10 +9,12 @@ export const analyzeChatConversation = async (
 ): Promise<AnalysisResult> => {
     try {
         console.log("📤 Sending analysis request:", { messages, provider, model });
+        const token = localStorage.getItem('token');
         const response = await fetch(`${API_URL}/api/ai/analyze`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ messages, provider, model }),
         });
@@ -30,10 +32,12 @@ export const analyzeChatConversation = async (
 
 export const generateMarketingContent = async (request: ContentRequest): Promise<ContentResult> => {
     try {
+        const token = localStorage.getItem('token');
         const response = await fetch(`${API_URL}/api/ai/generate`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(request),
         });
@@ -56,10 +60,12 @@ export const askEliteAssistant = async (
     model?: string
 ): Promise<string> => {
     try {
+        const token = localStorage.getItem('token');
         const response = await fetch(`${API_URL}/api/ai/chat`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ history, question, provider, model }),
         });
