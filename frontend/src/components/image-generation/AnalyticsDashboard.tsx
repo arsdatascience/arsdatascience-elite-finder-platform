@@ -61,6 +61,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
 
     if (!data) return null;
 
+    const safeImagesByModel = data.imagesByModel || [];
+    const pieCells = safeImagesByModel.map((entry: any, index: number) => (
+        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+    ));
+
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200 overflow-y-auto">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl flex flex-col my-8 animate-in zoom-in-95 duration-200 max-h-[90vh]">
@@ -180,7 +185,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
-                                            data={data.imagesByModel}
+                                            data={safeImagesByModel}
                                             cx="50%"
                                             cy="50%"
                                             innerRadius={60}
@@ -188,16 +193,14 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                                             paddingAngle={5}
                                             dataKey="value"
                                         >
-                                            {data.imagesByModel.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
+                                            {pieCells}
                                         </Pie>
                                         <Tooltip />
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>
                             <div className="flex flex-wrap justify-center gap-4 mt-4">
-                                {data.imagesByModel.map((entry, index) => (
+                                {safeImagesByModel.map((entry: any, index: number) => (
                                     <div key={index} className="flex items-center gap-2 text-xs text-gray-600">
                                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
                                         <span>{entry.name}: {entry.value} ({(entry.cost || 0).toFixed(2)} tokens)</span>
