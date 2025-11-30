@@ -128,6 +128,21 @@ async function initializeDatabase() {
     }
 
     console.log(`✅ Database schema initialized! (${successCount} executed, ${skipCount} skipped, ${errorCount} errors)`);
+
+    // Migração Automática para Analytics de Imagens
+    console.log('🔄 Verificando migrações de Analytics...');
+    try {
+      await pool.query(`
+            ALTER TABLE generated_images 
+            ADD COLUMN IF NOT EXISTS cost NUMERIC(10, 4) DEFAULT 0,
+            ADD COLUMN IF NOT EXISTS provider VARCHAR(50) DEFAULT 'replicate',
+            ADD COLUMN IF NOT EXISTS generation_time INTEGER,
+            ADD COLUMN IF NOT EXISTS metadata JSONB;
+        `);
+      console.log('✅ Migração de Analytics verificada/aplicada.');
+    } catch (err) {
+      console.error('⚠️ Erro na migração de Analytics:', err.message);
+    }
   } catch (error) {
     console.error('⚠️  Database initialization error:', error.message);
     // Don't crash the app if schema already exists
