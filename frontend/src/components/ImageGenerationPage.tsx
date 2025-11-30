@@ -38,6 +38,7 @@ export const ImageGenerationPage: React.FC = () => {
         { label: 'Paisagem (16:9)', width: 1344, height: 768 },
         { label: 'Retrato (9:16)', width: 768, height: 1344 },
         { label: 'Foto (3:2)', width: 1216, height: 832 },
+        { label: 'Personalizado', width: 1024, height: 1024 },
     ];
 
     useEffect(() => {
@@ -254,7 +255,7 @@ export const ImageGenerationPage: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Formato</label>
                                 <select
-                                    value={SIZES.findIndex(s => s.label === size.label)}
+                                    value={SIZES.findIndex(s => s.label === size.label) !== -1 ? SIZES.findIndex(s => s.label === size.label) : 4}
                                     onChange={(e) => setSize(SIZES[parseInt(e.target.value)])}
                                     className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
                                 >
@@ -262,6 +263,31 @@ export const ImageGenerationPage: React.FC = () => {
                                         <option key={i} value={i}>{s.label}</option>
                                     ))}
                                 </select>
+
+                                {size.label === 'Personalizado' && (
+                                    <div className="grid grid-cols-2 gap-4 mt-3 animate-in fade-in slide-in-from-top-1">
+                                        <div>
+                                            <label className="block text-xs text-gray-500 mb-1">Largura (px)</label>
+                                            <input
+                                                type="number"
+                                                value={size.width}
+                                                onChange={(e) => setSize({ ...size, width: Number(e.target.value) })}
+                                                step="64" min="256" max="2048"
+                                                className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-gray-500 mb-1">Altura (px)</label>
+                                            <input
+                                                type="number"
+                                                value={size.height}
+                                                onChange={(e) => setSize({ ...size, height: Number(e.target.value) })}
+                                                step="64" min="256" max="2048"
+                                                className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <details className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
