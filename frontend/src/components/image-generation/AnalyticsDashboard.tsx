@@ -62,7 +62,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
     if (!data) return null;
 
     const safeImagesByModel = data.imagesByModel || [];
-    const pieCells = safeImagesByModel.map((entry: any, index: number) => (
+    const pieCells = safeImagesByModel.map((_entry: any, index: number) => (
         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
     ));
 

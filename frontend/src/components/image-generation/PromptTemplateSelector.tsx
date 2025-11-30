@@ -20,7 +20,15 @@ const categoryLabels: Record<string, string> = {
     'pets': 'Pets',
     'marketing-communication': 'Marketing e Comunicação',
     'custom': 'Personalizado',
-    'all': 'Todos'
+    'all': 'Todos',
+    // Traduções para categorias legadas ou extras
+    'sales': 'Vendas',
+    'support': 'Suporte',
+    'technical': 'Técnico',
+    'whatsapp': 'WhatsApp',
+    'automation': 'Automação',
+    'legal': 'Jurídico',
+    'marketing': 'Marketing'
 };
 
 export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ onSelect }) => {
@@ -75,7 +83,8 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
         }
     };
 
-    const allTemplates = [...customTemplates, ...PROMPT_TEMPLATES];
+    // Filtrar templates inválidos (sem nome ou prompt) e combinar
+    const allTemplates = [...customTemplates, ...PROMPT_TEMPLATES].filter(t => t.name && t.name.trim() !== '' && t.prompt);
     const uniqueCategories = Array.from(new Set(allTemplates.map(t => t.category)));
 
     // Ordenar categorias: 'all', depois as predefinidas na ordem do objeto labels, depois outras (custom)
