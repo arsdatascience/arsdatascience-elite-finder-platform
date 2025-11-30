@@ -375,6 +375,12 @@ app.post('/api/images/generate', authenticateToken, imageGenCtrl.generateImage);
 app.get('/api/images', authenticateToken, imageGenCtrl.listImages);
 app.delete('/api/images/:id', authenticateToken, imageGenCtrl.deleteImage);
 app.get('/api/images/models', imageGenCtrl.getModels);
+app.post('/api/images/edit', authenticateToken, imageGenCtrl.editImage);
+app.post('/api/images/:id/variations', authenticateToken, imageGenCtrl.createVariations);
+app.post('/api/images/upscale', authenticateToken, imageGenCtrl.upscaleImage);
+app.post('/api/images/remove-background', authenticateToken, imageGenCtrl.removeBackground);
+app.get('/api/images/prompts', authenticateToken, imageGenCtrl.getRecentPrompts);
+app.get('/api/images/analytics', authenticateToken, imageGenCtrl.getAnalytics);
 
 // Iniciar servidor após migrações
 runMigrations().then(() => {

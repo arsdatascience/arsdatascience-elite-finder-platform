@@ -161,9 +161,10 @@ export interface GenerateImageRequest {
   num_inference_steps?: number;
   guidance_scale?: number;
   seed?: number;
+  num_outputs?: number;
 }
 
 export interface GenerateImageResponse {
   success: boolean;
-  data: GeneratedImage;
+  data: GeneratedImage | GeneratedImage[];
 }

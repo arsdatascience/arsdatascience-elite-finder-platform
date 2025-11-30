@@ -233,6 +233,36 @@ export const apiClient = {
             if (USE_MOCK) return [];
             const response = await axiosInstance.get('/images/models');
             return response.data;
+        },
+        edit: async (data: any) => {
+            if (USE_MOCK) throw new Error('Mock not implemented');
+            const response = await axiosInstance.post('/images/edit', data);
+            return response.data;
+        },
+        createVariations: async (id: string, count: number = 4) => {
+            if (USE_MOCK) throw new Error('Mock not implemented');
+            const response = await axiosInstance.post(`/images/${id}/variations`, { count });
+            return response.data; // Retorna { success: true, data: GeneratedImage[] }
+        },
+        upscale: async (data: { imageUrl: string, scale: number }) => {
+            if (USE_MOCK) throw new Error('Mock not implemented');
+            const response = await axiosInstance.post('/images/upscale', data);
+            return response.data;
+        },
+        removeBackground: async (imageUrl: string) => {
+            if (USE_MOCK) throw new Error('Mock not implemented');
+            const response = await axiosInstance.post('/images/remove-background', { imageUrl });
+            return response.data;
+        },
+        getRecentPrompts: async () => {
+            if (USE_MOCK) return [];
+            const response = await axiosInstance.get('/images/prompts');
+            return response.data;
+        },
+        getAnalytics: async () => {
+            if (USE_MOCK) return { success: true, data: { totalImages: 0, imagesByModel: [], activity: [], totalCredits: 0 } };
+            const response = await axiosInstance.get('/images/analytics');
+            return response.data;
         }
     }
 };

@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../services/apiClient';
 import { GeneratedImage, ImageModel } from '../types';
-import { Sparkles, Download, RefreshCw, Trash2, Copy, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, Download, RefreshCw, Trash2, Copy, Image as ImageIcon, Edit2, Maximize, Scissors, Clock, BarChart2 } from 'lucide-react';
+import { ImageEditor } from './image-generation/ImageEditor';
+import { VariationsGenerator } from './image-generation/VariationsGenerator';
+import { ImageUpscaler } from './image-generation/ImageUpscaler';
+import { BackgroundRemover } from './image-generation/BackgroundRemover';
+import { PromptTemplateSelector } from './image-generation/PromptTemplateSelector';
+import PromptHistory from './image-generation/PromptHistory';
+import { ImageLightbox } from './ui/ImageLightbox';
+import { AnalyticsDashboard } from './image-generation/AnalyticsDashboard';
 
 export const ImageGenerationPage: React.FC = () => {
     const [prompt, setPrompt] = useState('');
@@ -17,6 +25,12 @@ export const ImageGenerationPage: React.FC = () => {
     const [steps, setSteps] = useState(25);
     const [guidance, setGuidance] = useState(7.5);
     const [seed, setSeed] = useState<number | ''>('');
+    const [batchSize, setBatchSize] = useState(1);
+
+    const [activeTool, setActiveTool] = useState<'none' | 'edit' | 'variations' | 'upscale' | 'remove-bg'>('none');
+    const [lightboxImage, setLightboxImage] = useState<GeneratedImage | null>(null);
+    const [showHistory, setShowHistory] = useState(false);
+    const [showAnalytics, setShowAnalytics] = useState(false);
 
     const SIZES = [
         { label: 'Quadrado (1:1)', width: 1024, height: 1024 },
@@ -53,6 +67,7 @@ export const ImageGenerationPage: React.FC = () => {
         setLoading(true);
         setError(null);
         setGeneratedImage(null);
+        setActiveTool('none');
 
         try {
             const result = await apiClient.imageGeneration.generate({
@@ -63,12 +78,14 @@ export const ImageGenerationPage: React.FC = () => {
                 height: size.height,
                 num_inference_steps: steps,
                 guidance_scale: guidance,
-                seed: seed === '' ? undefined : Number(seed)
+                seed: seed === '' ? undefined : Number(seed),
+                num_outputs: batchSize
             });
 
             if (result.success) {
-                setGeneratedImage(result.data);
-                loadGallery(); // Atualiza galeria
+                const newImages = Array.isArray(result.data) ? result.data : [result.data];
+                setGeneratedImage(newImages[0]);
+                loadGallery();
             } else {
                 setError('Falha na geração da imagem.');
             }
@@ -113,16 +130,40 @@ export const ImageGenerationPage: React.FC = () => {
         alert('Prompt copiado!');
     };
 
+    const handleToolSuccess = (newImage: GeneratedImage | GeneratedImage[]) => {
+        loadGallery();
+        if (!Array.isArray(newImage)) {
+            setGeneratedImage(newImage);
+        } else {
+            setGeneratedImage(newImage[0]);
+        }
+        setActiveTool('none');
+    };
+
+    const handleTemplateSelect = (template: any) => {
+        setPrompt(template.prompt.replace('[SUBJECT]', prompt || 'subject'));
+        if (template.negativePrompt) setNegativePrompt(template.negativePrompt);
+    };
+
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-purple-100 rounded-xl text-purple-600">
-                    <Sparkles size={24} />
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="p-3 bg-purple-100 rounded-xl text-purple-600">
+                        <Sparkles size={24} />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-800">Geração de Imagens IA</h1>
+                        <p className="text-gray-500">Crie visuais incríveis para suas campanhas em segundos.</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Geração de Imagens IA</h1>
-                    <p className="text-gray-500">Crie visuais incríveis para suas campanhas em segundos.</p>
-                </div>
+                <button
+                    onClick={() => setShowAnalytics(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium"
+                >
+                    <BarChart2 size={18} />
+                    Analytics
+                </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -131,7 +172,19 @@ export const ImageGenerationPage: React.FC = () => {
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                         <form onSubmit={handleGenerate} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Prompt (Descrição)</label>
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="block text-sm font-medium text-gray-700">Prompt (Descrição)</label>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowHistory(true)}
+                                            className="text-xs flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium"
+                                        >
+                                            <Clock size={14} /> Histórico
+                                        </button>
+                                        <PromptTemplateSelector onSelect={handleTemplateSelect} />
+                                    </div>
+                                </div>
                                 <textarea
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
@@ -176,7 +229,7 @@ export const ImageGenerationPage: React.FC = () => {
                             <details className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
                                 <summary className="cursor-pointer font-medium hover:text-purple-600 flex items-center justify-between">
                                     <span>Opções Avançadas</span>
-                                    <span className="text-xs text-gray-400">(Steps, Guidance, Seed)</span>
+                                    <span className="text-xs text-gray-400">(Steps, Guidance, Seed, Batch)</span>
                                 </summary>
                                 <div className="mt-4 space-y-4">
                                     <div>
@@ -206,6 +259,19 @@ export const ImageGenerationPage: React.FC = () => {
                                                 className="w-full accent-purple-600"
                                             />
                                         </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">Quantidade (Batch Size): {batchSize}</label>
+                                        <div className="flex items-center gap-4">
+                                            <input
+                                                type="range" min="1" max="4" value={batchSize}
+                                                onChange={(e) => setBatchSize(Number(e.target.value))}
+                                                className="flex-1 accent-purple-600"
+                                            />
+                                            <span className="text-sm font-bold text-purple-600 w-6 text-center">{batchSize}</span>
+                                        </div>
+                                        <p className="text-[10px] text-gray-400 mt-1">Gera múltiplas imagens de uma vez (Max 4).</p>
                                     </div>
 
                                     <div>
@@ -249,19 +315,100 @@ export const ImageGenerationPage: React.FC = () => {
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 min-h-[400px] flex flex-col items-center justify-center relative">
                         {generatedImage ? (
                             <div className="w-full space-y-4">
-                                <div className="relative group rounded-lg overflow-hidden shadow-lg border border-gray-100">
-                                    <img src={generatedImage.url} alt={generatedImage.prompt} className="w-full h-auto max-h-[600px] object-contain bg-gray-50" />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                        <button
-                                            onClick={() => handleDownload(generatedImage.url, generatedImage.prompt)}
-                                            className="p-3 bg-white rounded-full text-gray-800 hover:bg-gray-100 transition-colors"
-                                            title="Download"
-                                        >
-                                            <Download size={24} />
-                                        </button>
+                                <div
+                                    className="relative group rounded-lg overflow-hidden shadow-lg border border-gray-100 bg-gray-50 cursor-zoom-in"
+                                    onClick={() => setLightboxImage(generatedImage)}
+                                >
+                                    <img
+                                        src={generatedImage.url}
+                                        alt={generatedImage.prompt}
+                                        className="w-full h-auto max-h-[600px] object-contain mx-auto"
+                                    />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4 pointer-events-none">
+                                        {/* Overlay actions if needed */}
                                     </div>
                                 </div>
-                                <div className="flex justify-between items-start bg-gray-50 p-4 rounded-lg">
+
+                                {/* Advanced Tools Toolbar */}
+                                <div className="flex flex-wrap gap-2 justify-center border-b border-gray-100 pb-4">
+                                    <button
+                                        onClick={() => handleDownload(generatedImage.url, generatedImage.prompt)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors text-sm font-medium"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Download
+                                    </button>
+
+                                    <div className="w-px h-8 bg-gray-300 mx-2 self-center hidden md:block"></div>
+
+                                    <button
+                                        onClick={() => setActiveTool(activeTool === 'edit' ? 'none' : 'edit')}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${activeTool === 'edit' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'}`}
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                        Editar
+                                    </button>
+
+                                    <button
+                                        onClick={() => setActiveTool(activeTool === 'variations' ? 'none' : 'variations')}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${activeTool === 'variations' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'}`}
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                        Variações
+                                    </button>
+
+                                    <button
+                                        onClick={() => setActiveTool(activeTool === 'upscale' ? 'none' : 'upscale')}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${activeTool === 'upscale' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'}`}
+                                    >
+                                        <Maximize className="w-4 h-4" />
+                                        Upscale
+                                    </button>
+
+                                    <button
+                                        onClick={() => setActiveTool(activeTool === 'remove-bg' ? 'none' : 'remove-bg')}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${activeTool === 'remove-bg' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'}`}
+                                    >
+                                        <Scissors className="w-4 h-4" />
+                                        Remover Fundo
+                                    </button>
+                                </div>
+
+                                {/* Active Tool Area */}
+                                {activeTool !== 'none' && (
+                                    <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        {activeTool === 'edit' && (
+                                            <ImageEditor
+                                                originalImage={generatedImage}
+                                                onEdited={handleToolSuccess}
+                                                onError={setError}
+                                            />
+                                        )}
+                                        {activeTool === 'variations' && (
+                                            <VariationsGenerator
+                                                image={generatedImage}
+                                                onGenerated={handleToolSuccess}
+                                                onError={setError}
+                                            />
+                                        )}
+                                        {activeTool === 'upscale' && (
+                                            <ImageUpscaler
+                                                image={generatedImage}
+                                                onUpscaled={handleToolSuccess}
+                                                onError={setError}
+                                            />
+                                        )}
+                                        {activeTool === 'remove-bg' && (
+                                            <BackgroundRemover
+                                                image={generatedImage}
+                                                onRemoved={handleToolSuccess}
+                                                onError={setError}
+                                            />
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="flex justify-between items-start bg-gray-50 p-4 rounded-lg border border-gray-100">
                                     <div>
                                         <p className="text-sm font-medium text-gray-900 line-clamp-2" title={generatedImage.prompt}>{generatedImage.prompt}</p>
                                         <p className="text-xs text-gray-500 mt-1">{generatedImage.width}x{generatedImage.height} • {generatedImage.model}</p>
@@ -293,7 +440,11 @@ export const ImageGenerationPage: React.FC = () => {
                                 {gallery.map(img => (
                                     <div
                                         key={img.id}
-                                        onClick={() => setGeneratedImage(img)}
+                                        onClick={() => {
+                                            setGeneratedImage(img);
+                                            setActiveTool('none');
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }}
                                         className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all relative group aspect-square ${generatedImage?.id === img.id ? 'border-purple-500 ring-2 ring-purple-200' : 'border-transparent hover:border-gray-300'}`}
                                     >
                                         <img src={img.thumbnailUrl || img.url} alt={img.prompt} className="w-full h-full object-cover" />
@@ -309,6 +460,20 @@ export const ImageGenerationPage: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            <ImageLightbox image={lightboxImage} onClose={() => setLightboxImage(null)} />
+
+            {showHistory && (
+                <PromptHistory
+                    onSelect={(p) => {
+                        setPrompt(p);
+                        setShowHistory(false);
+                    }}
+                    onClose={() => setShowHistory(false)}
+                />
+            )}
+
+            {showAnalytics && <AnalyticsDashboard onClose={() => setShowAnalytics(false)} />}
         </div>
     );
 };
