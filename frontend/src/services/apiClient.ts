@@ -212,6 +212,18 @@ export const apiClient = {
             if (USE_MOCK) return { success: true };
             const response = await axiosInstance.delete(`/social/posts/${id}`);
             return response.data;
+        },
+        getHolidays: async () => {
+            if (USE_MOCK) return [];
+            const response = await axiosInstance.get('/social/holidays');
+            return response.data;
+        }
+    },
+    ai: {
+        generateMarketingContent: async (data: any) => {
+            if (USE_MOCK) return { body: 'Conteúdo gerado via Mock', headlines: ['Título Mock 1', 'Título Mock 2'], imageIdea: 'Ideia de imagem mock' };
+            const response = await axiosInstance.post('/ai/generate', data);
+            return response.data;
         }
     },
     promptTemplates: {

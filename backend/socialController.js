@@ -115,9 +115,39 @@ const deletePost = async (req, res) => {
     }
 };
 
+const HOLIDAYS = [
+    { date: '01-01', name: 'Ano Novo' },
+    { date: '03-08', name: 'Dia Internacional da Mulher' },
+    { date: '03-15', name: 'Dia do Consumidor' },
+    { date: '04-21', name: 'Tiradentes' },
+    { date: '05-01', name: 'Dia do Trabalho' },
+    { date: '06-12', name: 'Dia dos Namorados' },
+    { date: '09-07', name: 'Independência do Brasil' },
+    { date: '10-12', name: 'Dia das Crianças' },
+    { date: '11-02', name: 'Finados' },
+    { date: '11-15', name: 'Proclamação da República' },
+    { date: '11-20', name: 'Dia da Consciência Negra' },
+    { date: '12-25', name: 'Natal' },
+    { date: '12-31', name: 'Véspera de Ano Novo' }
+];
+
+const getHolidays = (req, res) => {
+    const currentYear = new Date().getFullYear();
+    // Adicionar lógica simples para datas móveis se necessário, ou deixar fixas por enquanto
+    // Carnaval, Páscoa, Dia das Mães/Pais variam. Para MVP, vou adicionar fixos aproximados ou deixar o usuário editar.
+    // Vou adicionar alguns fixos comuns.
+
+    const holidaysWithYear = HOLIDAYS.map(h => ({
+        ...h,
+        date: `${currentYear}-${h.date}`
+    }));
+    res.json(holidaysWithYear);
+};
+
 module.exports = {
     getPosts,
     createPost,
     updatePost,
-    deletePost
+    deletePost,
+    getHolidays
 };

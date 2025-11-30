@@ -159,6 +159,7 @@ app.get('/api/social/posts', socialCtrl.getPosts);
 app.post('/api/social/posts', socialCtrl.createPost);
 app.put('/api/social/posts/:id', socialCtrl.updatePost);
 app.delete('/api/social/posts/:id', socialCtrl.deletePost);
+app.get('/api/social/holidays', socialCtrl.getHolidays);
 
 // --- ROTAS ---
 
