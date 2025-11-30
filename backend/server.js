@@ -314,10 +314,11 @@ app.post('/api/clients', dbController.createClient);
 app.get('/api/campaigns', dbController.getCampaigns);
 
 // Leads
-app.get('/api/leads', dbController.getLeads);
-app.post('/api/leads', dbController.createLead); // Faltava essa também
-app.put('/api/leads/:id', dbController.updateLead);
-app.patch('/api/leads/:id/status', dbController.updateLeadStatus);
+// Leads
+app.get('/api/leads', authenticateToken, dbController.getLeads);
+app.post('/api/leads', authenticateToken, dbController.createLead);
+app.put('/api/leads/:id', authenticateToken, dbController.updateLead);
+app.patch('/api/leads/:id/status', authenticateToken, dbController.updateLeadStatus);
 
 // Chat Messages
 app.get('/api/chat-messages', dbController.getChatMessages);
@@ -341,6 +342,7 @@ app.get('/auth/google-ads/callback', integrationsController.handleGoogleAdsCallb
 app.get('/auth/meta-ads/callback', integrationsController.handleMetaAdsCallback);
 
 app.post('/api/integrations/whatsapp/setup', integrationsController.setupWhatsAppWebhook);
+app.post('/api/integrations/n8n', authenticateToken, integrationsController.saveN8nConfig);
 
 // --- WEBHOOKS ---
 app.post('/webhooks/whatsapp', (req, res) => {

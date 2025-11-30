@@ -207,11 +207,50 @@ const setupWhatsAppWebhook = async (req, res) => {
     }
 };
 
+    }
+};
+
+// ============================================
+// N8N - Save Configuration
+// ============================================
+const saveN8nConfig = async (req, res) => {
+    const { webhookUrl } = req.body;
+    const userId = req.user.id;
+
+    try {
+        // Verifica se já existe
+        const existing = await pool.query(
+            "SELECT id FROM integrations WHERE user_id = $1 AND platform = 'n8n'",
+            [userId]
+        );
+
+        if (existing.rows.length > 0) {
+            // Atualiza
+            await pool.query(
+                "UPDATE integrations SET config = $1, status = 'connected', updated_at = NOW() WHERE id = $2",
+                [JSON.stringify({ webhookUrl }), existing.rows[0].id]
+            );
+        } else {
+            // Cria
+            await pool.query(
+                "INSERT INTO integrations (user_id, platform, status, config) VALUES ($1, 'n8n', 'connected', $2)",
+                [userId, JSON.stringify({ webhookUrl })]
+            );
+        }
+
+        res.json({ success: true, message: 'N8n configuration saved' });
+    } catch (error) {
+        console.error('Error saving n8n config:', error);
+        res.status(500).json({ error: 'Failed to save configuration' });
+    }
+};
+
 module.exports = {
     getIntegrations,
     updateIntegrationStatus,
     syncIntegration,
     handleGoogleAdsCallback,
     handleMetaAdsCallback,
-    setupWhatsAppWebhook
+    setupWhatsAppWebhook,
+    saveN8nConfig
 };

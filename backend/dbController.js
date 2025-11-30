@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const { triggerWebhook } = require('./services/webhookService');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -139,7 +140,13 @@ const createLead = async (req, res) => {
             'INSERT INTO leads (client_id, name, email, phone, company, source, status, value, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
             [client_id, name, email, phone, company, source, status || 'new', value || 0, notes]
         );
-        res.status(201).json(result.rows[0]);
+        const newLead = result.rows[0];
+        res.status(201).json(newLead);
+
+        // Webhook
+        if (req.user && req.user.id) {
+            triggerWebhook(req.user.id, 'lead.created', newLead);
+        }
     } catch (error) {
         console.error('Error creating lead:', error);
         res.status(500).json({ error: 'Failed to create lead' });
@@ -154,7 +161,13 @@ const updateLeadStatus = async (req, res) => {
             'UPDATE leads SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
             [status, id]
         );
-        res.json(result.rows[0]);
+        const updatedLead = result.rows[0];
+        res.json(updatedLead);
+
+        // Webhook
+        if (req.user && req.user.id) {
+            triggerWebhook(req.user.id, 'lead.status_updated', updatedLead);
+        }
     } catch (error) {
         console.error('Error updating lead:', error);
     }
