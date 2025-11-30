@@ -26,6 +26,9 @@ export interface GenerateImageRequest {
     width?: number;
     height?: number;
     model?: string;
+    num_inference_steps?: number;
+    guidance_scale?: number;
+    seed?: number;
 }
 
 export interface GenerateImageResponse {
