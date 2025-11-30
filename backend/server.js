@@ -11,6 +11,7 @@ app.set('trust proxy', 1); // Necessário para Railway/Vercel e rate-limiter
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+const authenticateToken = require('./middleware/auth');
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
@@ -401,7 +402,8 @@ const runMigrations = require('./migrate');
 // --- IMAGE GENERATION ---
 const imageGenCtrl = require('./imageGenerationController');
 const promptTemplateController = require('./promptTemplateController');
-const authenticateToken = require('./middleware/auth');
+const promptTemplateController = require('./promptTemplateController');
+// const authenticateToken = require('./middleware/auth'); // Moved to top
 
 app.post('/api/images/generate', authenticateToken, imageGenCtrl.generateImage);
 app.get('/api/images', authenticateToken, imageGenCtrl.listImages);
