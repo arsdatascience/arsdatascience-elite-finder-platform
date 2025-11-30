@@ -229,14 +229,16 @@ export const Settings: React.FC = () => {
         }
 
         const result = await response.json();
-        setTeamMembers(prev => prev.map(m => m.id === currentMember.id ? { ...m, ...data } : m));
+        const updatedMember = result.member;
+
+        setTeamMembers(prev => prev.map(m => m.id === currentMember.id ? { ...m, ...updatedMember } : m));
 
         // Se estiver editando o próprio usuário, atualizar o contexto global
         if (user && user.id === currentMember.id) {
           updateUser({
-            name: `${data.firstName} ${data.lastName}`,
-            email: data.email,
-            role: data.role
+            name: `${updatedMember.firstName} ${updatedMember.lastName}`,
+            email: updatedMember.email,
+            role: updatedMember.role
           });
         }
 
