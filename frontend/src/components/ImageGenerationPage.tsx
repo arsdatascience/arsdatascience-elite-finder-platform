@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../services/apiClient';
-import { GeneratedImage, ImageModel } from '../image-generation-types';
+import { GeneratedImage, ImageModel } from '../types';
 import { Sparkles, Download, RefreshCw, Trash2, Copy, Image as ImageIcon } from 'lucide-react';
 
 export const ImageGenerationPage: React.FC = () => {
