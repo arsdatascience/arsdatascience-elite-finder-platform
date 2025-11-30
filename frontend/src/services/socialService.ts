@@ -25,8 +25,15 @@ export const saveSocialPost = async (postData: any) => {
     formData.append('client_id', '1');
 
     try {
+        const token = localStorage.getItem('token');
+        const headers: HeadersInit = {};
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(`${API_URL}/api/social-posts`, {
             method: 'POST',
+            headers: headers,
             body: formData,
         });
 

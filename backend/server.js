@@ -170,6 +170,46 @@ async function initializeDatabase() {
       `);
       console.log('✅ Migração de Fila de Jobs verificada/aplicada.');
 
+      // Migração para Planos e Limites (SaaS)
+      console.log('🔄 Verificando migrações de Planos e Limites...');
+      await pool.query(`
+            CREATE TABLE IF NOT EXISTS plans (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(50) UNIQUE NOT NULL,
+                price DECIMAL(10, 2) DEFAULT 0,
+                limits JSONB DEFAULT '{}',
+                features JSONB DEFAULT '[]',
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- Adicionar plan_id em users
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='plan_id') THEN
+                    ALTER TABLE users ADD COLUMN plan_id INTEGER REFERENCES plans(id) ON DELETE SET NULL;
+                END IF;
+            END $$;
+            
+            -- Adicionar user_id em social_posts para rate limiting
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='social_posts' AND column_name='user_id') THEN
+                    ALTER TABLE social_posts ADD COLUMN user_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+                END IF;
+            END $$;
+
+            -- Inserir planos padrão
+            INSERT INTO plans (name, price, limits, features) VALUES 
+            ('Free', 0.00, '{"social_posts_per_day": 3, "ai_generations_per_day": 5, "team_members": 1}', '["basic_analytics", "1_social_account"]'),
+            ('Pro', 29.90, '{"social_posts_per_day": 50, "ai_generations_per_day": 100, "team_members": 5}', '["advanced_analytics", "5_social_accounts", "priority_support"]'),
+            ('Enterprise', 99.90, '{"social_posts_per_day": 1000, "ai_generations_per_day": 1000, "team_members": 20}', '["all_features", "unlimited_social_accounts", "dedicated_manager"]')
+            ON CONFLICT (name) DO NOTHING;
+            
+            -- Atribuir plano Free para usuários sem plano
+            UPDATE users SET plan_id = (SELECT id FROM plans WHERE name = 'Free') WHERE plan_id IS NULL;
+      `);
+      console.log('✅ Migração de Planos e Limites verificada/aplicada.');
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
@@ -267,8 +307,11 @@ app.get('/api/chat-messages', dbController.getChatMessages);
 // Social Posts
 // Social Posts
 const socialMediaController = require('./socialMediaController');
+const checkLimit = require('./middleware/usageLimiter');
+
+// --- SOCIAL MEDIA ROUTES ---
 app.get('/api/social-posts', socialMediaController.getPosts);
-app.post('/api/social-posts', socialMediaController.upload.single('media'), socialMediaController.createPost);
+app.post('/api/social-posts', authenticateToken, checkLimit('social_post'), socialMediaController.upload.single('media'), socialMediaController.createPost);
 
 // Automation Workflows
 app.get('/api/workflows', dbController.getWorkflows);
@@ -414,6 +457,10 @@ app.post('/api/admin/cleanup', adminCtrl.cleanupDatabase);
 // N8N Dashboard Stats
 const n8nDashboardCtrl = require('./admin/n8nDashboardController');
 app.get('/api/admin/n8n/stats', n8nDashboardCtrl.getDashboardStats);
+
+// Queue Monitoring
+const queueCtrl = require('./queueController');
+app.get('/api/admin/queue-status', queueCtrl.getQueueStatus);
 
 const runMigrations = require('./migrate');
 

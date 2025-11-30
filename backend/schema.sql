@@ -376,24 +376,218 @@ CREATE TABLE IF NOT EXISTS agent_custom_parameters (
     display_order INTEGER DEFAULT 0,
     helper_text TEXT,
     is_required BOOLEAN DEFAULT false,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    external_id VARCHAR(255),
+    channel VARCHAR(50) DEFAULT 'web',
+    status VARCHAR(50) DEFAULT 'active',
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- CHAT MESSAGES
+-- ============================================
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id SERIAL PRIMARY KEY,
+    session_id INTEGER REFERENCES chat_sessions(id) ON DELETE CASCADE,
+    role VARCHAR(50) NOT NULL,
+    content TEXT NOT NULL,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Correção robusta para lead_id em chat_messages
+DO $$
+BEGIN
+    -- 1. Se a coluna existe mas não é UUID, dropamos para recriar corretamente
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='chat_messages' AND column_name='lead_id' AND data_type != 'uuid'
+    ) THEN
+        ALTER TABLE chat_messages DROP COLUMN lead_id;
+    END IF;
+
+    -- 2. Se a coluna não existe (ou foi dropada acima), criamos como UUID
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name='chat_messages' AND column_name='lead_id'
+    ) THEN
+        ALTER TABLE chat_messages ADD COLUMN lead_id UUID;
+    END IF;
+END $$;
+
+-- Tentar adicionar a FK.
+DO $$
+BEGIN
+    -- Remove constraint antiga se existir para evitar conflito
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'chat_messages_lead_id_fkey') THEN
+        ALTER TABLE chat_messages DROP CONSTRAINT chat_messages_lead_id_fkey;
+    END IF;
+
+    BEGIN
+        ALTER TABLE chat_messages ADD CONSTRAINT chat_messages_lead_id_fkey FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL;
+    EXCEPTION WHEN OTHERS THEN
+        RAISE NOTICE 'Não foi possível adicionar FK chat_messages_lead_id_fkey: %', SQLERRM;
+    END;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_lead_id ON chat_messages(lead_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id);
+
+-- ============================================
+-- INTEGRATIONS
+-- ============================================
+CREATE TABLE IF NOT EXISTS integrations (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    platform VARCHAR(50) NOT NULL,
+    status VARCHAR(50) DEFAULT 'disconnected',
+    access_token TEXT,
+    refresh_token TEXT,
+    config JSONB DEFAULT '{}',
+    last_sync TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- AUTOMATION WORKFLOWS
+-- ============================================
+CREATE TABLE IF NOT EXISTS automation_workflows (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'active',
+    triggers TEXT,
+    steps_count INTEGER DEFAULT 0,
+    enrolled_count INTEGER DEFAULT 0,
+    conversion_rate VARCHAR(50),
+    flow_data JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS automation_workflow_steps (
+    id SERIAL PRIMARY KEY,
+    workflow_id INTEGER REFERENCES automation_workflows(id) ON DELETE CASCADE,
+    type VARCHAR(50),
+    value TEXT,
+    step_order INTEGER,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- SOCIAL POSTS
+-- ============================================
+CREATE TABLE IF NOT EXISTS social_posts (
+    id SERIAL PRIMARY KEY,
+    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    content TEXT,
+    media_url TEXT,
+    platform VARCHAR(50),
+    scheduled_date TIMESTAMP,
+    status VARCHAR(50),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- TRAINING
+-- ============================================
+CREATE TABLE IF NOT EXISTS training_modules (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    video_url TEXT,
+    duration INTEGER,
+    order_index INTEGER,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS training_progress (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    module_id INTEGER REFERENCES training_modules(id) ON DELETE CASCADE,
+    status VARCHAR(50),
+    progress INTEGER DEFAULT 0,
+    last_accessed TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- KPIS & ANALYTICS
+-- ============================================
+CREATE TABLE IF NOT EXISTS kpis (
+    id SERIAL PRIMARY KEY,
+    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    label VARCHAR(100),
+    value VARCHAR(100),
+    change DECIMAL(5, 2),
+    trend VARCHAR(20),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS device_stats (
+    id SERIAL PRIMARY KEY,
+    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    device_type VARCHAR(50),
+    percentage DECIMAL(5, 2),
+    conversions INTEGER,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+
+-- ============================================
+-- AGENT TEMPLATES
+-- ============================================
+CREATE TABLE IF NOT EXISTS agent_templates (
+    id SERIAL PRIMARY KEY,
+    template_id VARCHAR(100) UNIQUE NOT NULL,
+    template_name VARCHAR(255) NOT NULL,
+    template_description TEXT,
+    template_version VARCHAR(50) DEFAULT '1.0.0',
+    category VARCHAR(100),
+    base_config JSONB NOT NULL,
+    default_parameters JSONB DEFAULT '[]'::jsonb,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS agent_parameter_groups (
+    id SERIAL PRIMARY KEY,
+    group_id VARCHAR(100) NOT NULL,
+    group_label VARCHAR(255) NOT NULL,
+    display_order INTEGER DEFAULT 0,
+    chatbot_id INTEGER,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS agent_custom_parameters (
+    id SERIAL PRIMARY KEY,
+    chatbot_id INTEGER,
+    parameter_key VARCHAR(100) NOT NULL,
+    parameter_value TEXT,
+    parameter_type VARCHAR(50) DEFAULT 'text',
+    category VARCHAR(100),
+    display_label VARCHAR(255),
+    display_order INTEGER DEFAULT 0,
+    helper_text TEXT,
+    is_required BOOLEAN DEFAULT false,
     is_visible BOOLEAN DEFAULT true,
     validation_rules JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
-C R E A T E   T A B L E   I F   N O T   E X I S T S   p r o m p t _ t e m p l a t e s   (  
-         i d   S E R I A L   P R I M A R Y   K E Y ,  
-         u s e r _ i d   I N T E G E R   R E F E R E N C E S   u s e r s ( i d )   O N   D E L E T E   C A S C A D E ,  
-         n a m e   V A R C H A R ( 2 5 5 )   N O T   N U L L ,  
-         d e s c r i p t i o n   T E X T ,  
-         p r o m p t   T E X T   N O T   N U L L ,  
-         n e g a t i v e _ p r o m p t   T E X T ,  
-         c a t e g o r y   V A R C H A R ( 5 0 )   N O T   N U L L ,  
-         i s _ p u b l i c   B O O L E A N   D E F A U L T   f a l s e ,  
-         c r e a t e d _ a t   T I M E S T A M P   D E F A U L T   N O W ( ) ,  
-         u p d a t e d _ a t   T I M E S T A M P   D E F A U L T   N O W ( )  
- ) ;  
-  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ p r o m p t _ t e m p l a t e s _ u s e r _ i d   O N   p r o m p t _ t e m p l a t e s ( u s e r _ i d ) ;  
- C R E A T E   I N D E X   I F   N O T   E X I S T S   i d x _ p r o m p t _ t e m p l a t e s _ c a t e g o r y   O N   p r o m p t _ t e m p l a t e s ( c a t e g o r y ) ;  
- 
+CREATE TABLE IF NOT EXISTS prompt_templates (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    prompt TEXT NOT NULL,
+    negative_prompt TEXT,
+    category VARCHAR(50) NOT NULL,
+    is_public BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_user_id ON prompt_templates(user_id);
+CREATE INDEX IF NOT EXISTS idx_prompt_templates_category ON prompt_templates(category);

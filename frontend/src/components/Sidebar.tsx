@@ -5,7 +5,7 @@ import { ViewState } from '@/types';
 import { Rocket } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { UserCircle } from 'lucide-react';
+import { UserCircle, Shield } from 'lucide-react';
 
 interface SidebarProps {
   activeView: ViewState;
@@ -45,6 +45,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen
               </button>
             );
           })}
+          {user?.role === 'admin' && (
+            <button
+              onClick={() => onNavigate(ViewState.ADMIN)}
+              className="flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 text-purple-400 hover:bg-purple-900/20 hover:text-purple-300 mt-4 border border-purple-500/30"
+            >
+              <Shield className="w-5 h-5 mr-3" />
+              Admin Panel
+            </button>
+          )}
         </nav>
       </div>
 

@@ -27,6 +27,7 @@ import { Register } from '@/components/Register';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { ImageGenerationPage } from '@/components/ImageGenerationPage';
+import AdminDashboard from '@/components/AdminDashboard';
 
 const PATH_MAP: Record<ViewState, string> = {
   [ViewState.HOME]: '/',
@@ -46,6 +47,7 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.ELITE_ASSISTANT]: '/elite-assistant',
   [ViewState.SETTINGS]: '/settings',
   [ViewState.AGENT_BUILDER]: '/agent-builder',
+  [ViewState.ADMIN]: '/admin',
 };
 
 
@@ -165,7 +167,9 @@ const App: React.FC = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/agent-builder" element={<AgentBuilder />} />
           <Route path="/templates" element={<TemplateManager />} />
+          <Route path="/templates" element={<TemplateManager />} />
           <Route path="/whatsapp-simulator" element={<WhatsAppSimulator />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Route>
       </Route>
 
