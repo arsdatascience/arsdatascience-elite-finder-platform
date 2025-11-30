@@ -44,6 +44,12 @@ export const ImageGenerationPage: React.FC = () => {
         }
     };
 
+    const [steps, setSteps] = useState(25);
+    const [guidance, setGuidance] = useState(7.5);
+    const [seed, setSeed] = useState<number | ''>('');
+
+    // ... (useEffect e loadModels iguais)
+
     const handleGenerate = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -56,7 +62,10 @@ export const ImageGenerationPage: React.FC = () => {
                 negativePrompt,
                 model,
                 width: size.width,
-                height: size.height
+                height: size.height,
+                num_inference_steps: steps,
+                guidance_scale: guidance,
+                seed: seed === '' ? undefined : Number(seed)
             });
 
             if (result.success) {
@@ -72,120 +81,117 @@ export const ImageGenerationPage: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Tem certeza que deseja deletar esta imagem?')) return;
+    const handleDownload = async (url: string, prompt: string) => {
         try {
-            await apiClient.imageGeneration.delete(id);
-            setGallery(prev => prev.filter(img => img.id !== id));
-            if (generatedImage?.id === id) setGeneratedImage(null);
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `${prompt.substring(0, 30).replace(/[^a-z0-9]/gi, '_')}-${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
         } catch (err) {
-            alert('Erro ao deletar imagem.');
+            console.error('Erro no download:', err);
+            window.open(url, '_blank');
         }
     };
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        alert('Prompt copiado!');
-    };
+    // ... (handleDelete e copyToClipboard iguais)
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-purple-100 rounded-xl text-purple-600">
-                    <Sparkles size={24} />
-                </div>
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Geração de Imagens IA</h1>
-                    <p className="text-gray-500">Crie visuais incríveis para suas campanhas em segundos.</p>
-                </div>
-            </div>
+        // ... (cabeçalho igual)
+        {/* ... (inputs anteriores iguais) */ }
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Form Section */}
-                <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                        <form onSubmit={handleGenerate} className="space-y-5">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Prompt (Descrição)</label>
-                                <textarea
-                                    value={prompt}
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                    placeholder="Descreva a imagem detalhadamente..."
-                                    className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none resize-none text-sm"
-                                    maxLength={1000}
-                                    required
-                                />
-                                <div className="text-right text-xs text-gray-400 mt-1">{prompt.length}/1000</div>
-                            </div>
+        < details className = "text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100" >
+                                <summary className="cursor-pointer font-medium hover:text-purple-600 flex items-center justify-between">
+                                    <span>Opções Avançadas</span>
+                                    <span className="text-xs text-gray-400">(Steps, Guidance, Seed)</span>
+                                </summary>
+                                <div className="mt-4 space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">Prompt Negativo</label>
+                                        <textarea
+                                            value={negativePrompt}
+                                            onChange={(e) => setNegativePrompt(e.target.value)}
+                                            placeholder="Ex: blurry, low quality, distorted..."
+                                            className="w-full h-16 p-2 border border-gray-300 rounded text-xs resize-none"
+                                        />
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1" title="Mais passos = maior qualidade (e tempo)">Passos (Steps): {steps}</label>
+                                            <input 
+                                                type="range" min="1" max="50" value={steps} 
+                                                onChange={(e) => setSteps(Number(e.target.value))}
+                                                className="w-full accent-purple-600"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1" title="Quão fiel ao prompt (7-10 é ideal)">Guidance Scale: {guidance}</label>
+                                            <input 
+                                                type="range" min="1" max="20" step="0.5" value={guidance} 
+                                                onChange={(e) => setGuidance(Number(e.target.value))}
+                                                className="w-full accent-purple-600"
+                                            />
+                                        </div>
+                                    </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Modelo IA</label>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {models.length > 0 ? models.map(m => (
-                                        <button
-                                            key={m.id}
-                                            type="button"
-                                            onClick={() => setModel(m.id)}
-                                            className={`p-3 border rounded-lg text-left transition-all ${model === m.id ? 'border-purple-500 bg-purple-50 ring-1 ring-purple-500' : 'border-gray-200 hover:bg-gray-50'}`}
-                                        >
-                                            <div className="font-medium text-sm text-gray-900">{m.name}</div>
-                                            <div className="text-xs text-gray-500">{m.description}</div>
-                                        </button>
-                                    )) : <p className="text-sm text-gray-500">Carregando modelos...</p>}
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">Seed (Semente Aleatória)</label>
+                                        <div className="flex gap-2">
+                                            <input 
+                                                type="number" 
+                                                placeholder="Aleatório"
+                                                value={seed}
+                                                onChange={(e) => setSeed(e.target.value === '' ? '' : Number(e.target.value))}
+                                                className="flex-1 p-2 border border-gray-300 rounded text-xs"
+                                            />
+                                            <button 
+                                                type="button"
+                                                onClick={() => setSeed(Math.floor(Math.random() * 1000000))}
+                                                className="px-3 py-1 bg-gray-200 text-gray-600 rounded text-xs hover:bg-gray-300"
+                                            >
+                                                🎲
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            </details >
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Formato</label>
-                                <select
-                                    value={SIZES.findIndex(s => s.label === size.label)}
-                                    onChange={(e) => setSize(SIZES[parseInt(e.target.value)])}
-                                    className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
-                                >
-                                    {SIZES.map((s, i) => (
-                                        <option key={i} value={i}>{s.label}</option>
-                                    ))}
-                                </select>
-                            </div>
+    <button
+        type="submit"
+        disabled={loading || !prompt.trim()}
+        className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+    >
+        {loading ? <RefreshCw className="animate-spin" size={20} /> : <Sparkles size={20} />}
+        {loading ? 'Gerando...' : 'Gerar Imagem'}
+    </button>
+{ error && <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">{error}</div> }
+                        </form >
+                    </div >
+                </div >
 
-                            <details className="text-sm text-gray-600">
-                                <summary className="cursor-pointer font-medium hover:text-purple-600">Opções Avançadas</summary>
-                                <div className="mt-3">
-                                    <label className="block text-xs font-medium text-gray-500 mb-1">Prompt Negativo (O que evitar)</label>
-                                    <textarea
-                                        value={negativePrompt}
-                                        onChange={(e) => setNegativePrompt(e.target.value)}
-                                        placeholder="Ex: blurry, low quality, distorted..."
-                                        className="w-full h-20 p-2 border border-gray-300 rounded-lg text-sm resize-none"
-                                    />
-                                </div>
-                            </details>
-
-                            <button
-                                type="submit"
-                                disabled={loading || !prompt.trim()}
-                                className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-                            >
-                                {loading ? <RefreshCw className="animate-spin" size={20} /> : <Sparkles size={20} />}
-                                {loading ? 'Gerando...' : 'Gerar Imagem'}
-                            </button>
-                            {error && <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">{error}</div>}
-                        </form>
-                    </div>
-                </div>
-
-                {/* Preview & Gallery Section */}
-                <div className="lg:col-span-2 space-y-8">
-                    {/* Main Preview */}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 min-h-[400px] flex flex-col items-center justify-center relative">
-                        {generatedImage ? (
-                            <div className="w-full space-y-4">
+    {/* Preview & Gallery Section */ }
+    < div className = "lg:col-span-2 space-y-8" >
+        {/* Main Preview */ }
+        < div className = "bg-white p-6 rounded-xl shadow-sm border border-gray-200 min-h-[400px] flex flex-col items-center justify-center relative" >
+        {
+            generatedImage?(
+                            <div className = "w-full space-y-4" >
                                 <div className="relative group rounded-lg overflow-hidden shadow-lg border border-gray-100">
                                     <img src={generatedImage.url} alt={generatedImage.prompt} className="w-full h-auto max-h-[600px] object-contain bg-gray-50" />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                        <a href={generatedImage.url} download target="_blank" rel="noreferrer" className="p-3 bg-white rounded-full text-gray-800 hover:bg-gray-100 transition-colors" title="Download">
+                                        <button 
+                                            onClick={() => handleDownload(generatedImage.url, generatedImage.prompt)} 
+                                            className="p-3 bg-white rounded-full text-gray-800 hover:bg-gray-100 transition-colors" 
+                                            title="Download"
+                                        >
                                             <Download size={24} />
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-start bg-gray-50 p-4 rounded-lg">
@@ -200,42 +206,44 @@ export const ImageGenerationPage: React.FC = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="text-center text-gray-400">
-                                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <ImageIcon size={40} className="opacity-50" />
-                                </div>
-                                <p className="text-lg font-medium">Sua obra de arte aparecerá aqui</p>
-                                <p className="text-sm">Preencha o formulário ao lado para começar.</p>
-                            </div>
-                        )}
-                    </div>
+    <div className="text-center text-gray-400">
+        <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ImageIcon size={40} className="opacity-50" />
+        </div>
+        <p className="text-lg font-medium">Sua obra de arte aparecerá aqui</p>
+        <p className="text-sm">Preencha o formulário ao lado para começar.</p>
+    </div>
+)}
+                    </div >
 
-                    {/* Gallery Grid */}
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <ImageIcon size={20} /> Galeria Recente
-                        </h3>
-                        {gallery.length > 0 ? (
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {gallery.map(img => (
-                                    <div
-                                        key={img.id}
-                                        onClick={() => setGeneratedImage(img)}
-                                        className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all relative group aspect-square ${generatedImage?.id === img.id ? 'border-purple-500 ring-2 ring-purple-200' : 'border-transparent hover:border-gray-300'}`}
-                                    >
-                                        <img src={img.thumbnailUrl || img.url} alt={img.prompt} className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                                            <p className="text-white text-[10px] line-clamp-2">{img.prompt}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-gray-500 text-sm italic">Nenhuma imagem gerada ainda.</p>
-                        )}
+    {/* Gallery Grid */ }
+    < div >
+    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <ImageIcon size={20} /> Galeria Recente
+    </h3>
+{
+    gallery.length > 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {gallery.map(img => (
+                <div
+                    key={img.id}
+                    onClick={() => setGeneratedImage(img)}
+                    className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all relative group aspect-square ${generatedImage?.id === img.id ? 'border-purple-500 ring-2 ring-purple-200' : 'border-transparent hover:border-gray-300'}`}
+                >
+                    <img src={img.thumbnailUrl || img.url} alt={img.prompt} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                        <p className="text-white text-[10px] line-clamp-2">{img.prompt}</p>
                     </div>
                 </div>
-            </div>
+            ))}
         </div>
+    ) : (
+        <p className="text-gray-500 text-sm italic">Nenhuma imagem gerada ainda.</p>
+    )
+}
+                    </div >
+                </div >
+            </div >
+        </div >
     );
 };
