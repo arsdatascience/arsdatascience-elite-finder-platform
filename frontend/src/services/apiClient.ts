@@ -263,6 +263,11 @@ export const apiClient = {
             if (USE_MOCK) return { success: true, data: { totalImages: 0, imagesByModel: [], activity: [], totalCredits: 0, recentImages: [] } };
             const response = await axiosInstance.get('/images/analytics', { params: { model } });
             return response.data;
+        },
+        translate: async (text: string, targetLang: 'pt' | 'en') => {
+            if (USE_MOCK) return { translatedText: text };
+            const response = await axiosInstance.post('/images/translate', { text, targetLang });
+            return response.data;
         }
     }
 };

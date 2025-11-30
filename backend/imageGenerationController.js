@@ -447,4 +447,24 @@ const getAnalytics = async (req, res) => {
     }
 };
 
-module.exports = { generateImage, listImages, deleteImage, getModels, editImage, createVariations, upscaleImage, removeBackground, getRecentPrompts, getAnalytics };
+const translateText = async (req, res) => {
+    try {
+        const { text, targetLang } = req.body;
+        if (!text) return res.status(400).json({ error: 'Texto obrigatório' });
+
+        const prompt = `Translate the following text to ${targetLang === 'pt' ? 'Portuguese (Brazil)' : 'English (US)'}. Return only the translated text, nothing else.\n\nText: "${text}"`;
+
+        const response = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.3,
+        });
+
+        res.json({ translatedText: response.choices[0].message.content.trim() });
+    } catch (error) {
+        console.error('Erro Tradução:', error);
+        res.status(500).json({ error: 'Falha na tradução' });
+    }
+};
+
+module.exports = { generateImage, listImages, deleteImage, getModels, editImage, createVariations, upscaleImage, removeBackground, getRecentPrompts, getAnalytics, translateText };

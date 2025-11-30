@@ -88,6 +88,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                                 <option value="sdxl-lightning">SDXL Lightning</option>
                                 <option value="z-image-turbo">Z-Image Turbo</option>
                                 <option value="stable-diffusion">Stable Diffusion</option>
+                                <option value="dall-e-3">DALL-E 3</option>
+                                <option value="gemini-2.5-flash-image">Gemini Flash</option>
                             </select>
                         </div>
                         <button onClick={onClose} className="text-gray-500 hover:text-gray-700 p-2 hover:bg-gray-200 rounded-full transition-all">

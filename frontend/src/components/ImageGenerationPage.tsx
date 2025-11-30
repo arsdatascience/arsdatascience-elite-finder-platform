@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiClient } from '../services/apiClient';
 import { GeneratedImage, ImageModel } from '../types';
-import { Sparkles, Download, RefreshCw, Trash2, Copy, Image as ImageIcon, Edit2, Maximize, Scissors, Clock, BarChart2 } from 'lucide-react';
+import { Sparkles, Download, RefreshCw, Trash2, Copy, Image as ImageIcon, Edit2, Maximize, Scissors, Clock, BarChart2, Languages } from 'lucide-react';
 import { ImageEditor } from './image-generation/ImageEditor';
 import { VariationsGenerator } from './image-generation/VariationsGenerator';
 import { ImageUpscaler } from './image-generation/ImageUpscaler';
@@ -10,6 +10,7 @@ import { PromptTemplateSelector } from './image-generation/PromptTemplateSelecto
 import PromptHistory from './image-generation/PromptHistory';
 import { ImageLightbox } from './ui/ImageLightbox';
 import { AnalyticsDashboard } from './image-generation/AnalyticsDashboard';
+import { PromptTemplate } from '../lib/prompt-templates';
 
 export const ImageGenerationPage: React.FC = () => {
     const [prompt, setPrompt] = useState('');
@@ -140,9 +141,24 @@ export const ImageGenerationPage: React.FC = () => {
         setActiveTool('none');
     };
 
-    const handleTemplateSelect = (template: any) => {
+    const handleTemplateSelect = (template: PromptTemplate) => {
         setPrompt(template.prompt.replace('[SUBJECT]', prompt || 'subject'));
         if (template.negativePrompt) setNegativePrompt(template.negativePrompt);
+    };
+
+    const handleTranslate = async (targetLang: 'pt' | 'en') => {
+        if (!prompt) return;
+        try {
+            setLoading(true);
+            const res = await apiClient.imageGeneration.translate(prompt, targetLang);
+            if (res.translatedText) {
+                setPrompt(res.translatedText);
+            }
+        } catch (error) {
+            console.error('Erro ao traduzir:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -193,7 +209,29 @@ export const ImageGenerationPage: React.FC = () => {
                                     maxLength={1000}
                                     required
                                 />
-                                <div className="text-right text-xs text-gray-400 mt-1">{prompt.length}/1000</div>
+                                <div className="flex justify-between items-center mt-1">
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleTranslate('en')}
+                                            className="text-xs text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1 hover:bg-purple-50 px-2 py-1 rounded transition-colors"
+                                            disabled={loading}
+                                            title="Traduzir para Inglês (Melhor para IAs)"
+                                        >
+                                            <Languages size={12} /> Traduzir para Inglês
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleTranslate('pt')}
+                                            className="text-xs text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1 hover:bg-purple-50 px-2 py-1 rounded transition-colors"
+                                            disabled={loading}
+                                            title="Traduzir para Português"
+                                        >
+                                            <Languages size={12} /> Traduzir para Português
+                                        </button>
+                                    </div>
+                                    <div className="text-xs text-gray-400">{prompt.length}/1000</div>
+                                </div>
                             </div>
 
                             <div>

@@ -389,6 +389,7 @@ const authenticateToken = require('./middleware/auth');
 app.post('/api/images/generate', authenticateToken, imageGenCtrl.generateImage);
 app.get('/api/images', authenticateToken, imageGenCtrl.listImages);
 app.delete('/api/images/:id', authenticateToken, imageGenCtrl.deleteImage);
+app.post('/api/images/translate', authenticateToken, imageGenCtrl.translateText);
 app.get('/api/images/models', imageGenCtrl.getModels);
 app.post('/api/images/edit', authenticateToken, imageGenCtrl.editImage);
 app.post('/api/images/:id/variations', authenticateToken, imageGenCtrl.createVariations);
