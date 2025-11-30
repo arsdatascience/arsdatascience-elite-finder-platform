@@ -152,6 +152,24 @@ async function initializeDatabase() {
       `);
       console.log('✅ Migração de Segurança verificada/aplicada.');
 
+      // Migração para Fila de Jobs (SaaS Scalability)
+      console.log('🔄 Verificando migrações de Fila de Jobs...');
+      await pool.query(`
+            CREATE TABLE IF NOT EXISTS jobs (
+                id SERIAL PRIMARY KEY,
+                type VARCHAR(50) NOT NULL,
+                payload JSONB NOT NULL,
+                status VARCHAR(20) DEFAULT 'pending',
+                result JSONB,
+                error TEXT,
+                scheduled_for TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_jobs_status_scheduled ON jobs(status, scheduled_for);
+      `);
+      console.log('✅ Migração de Fila de Jobs verificada/aplicada.');
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
@@ -402,7 +420,6 @@ const runMigrations = require('./migrate');
 // --- IMAGE GENERATION ---
 const imageGenCtrl = require('./imageGenerationController');
 const promptTemplateController = require('./promptTemplateController');
-const promptTemplateController = require('./promptTemplateController');
 // const authenticateToken = require('./middleware/auth'); // Moved to top
 
 app.post('/api/images/generate', authenticateToken, imageGenCtrl.generateImage);
@@ -424,6 +441,11 @@ app.delete('/api/templates/:id', authenticateToken, promptTemplateController.del
 
 // Iniciar servidor após migrações
 runMigrations().then(() => {
+  // Iniciar Job Processor (Queue Worker)
+  const jobProcessor = require('./services/jobProcessor');
+  jobProcessor.start();
+  console.log('🚀 Job Processor started');
+
   server.listen(PORT, () => {
     console.log(`🔥 Server running on port ${PORT}`);
   });

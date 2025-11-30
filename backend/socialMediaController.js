@@ -54,11 +54,46 @@ const createPost = async (req, res) => {
         ];
 
         const result = await db.query(query, values);
+        const newPost = result.rows[0];
+
+        // Se for agendado, criar Job na fila (SaaS Queue)
+        if ((status === 'scheduled' || status === 'published') && scheduled_at) {
+            // Buscar Integration ID
+            // TODO: Usar req.user.id quando autenticação estiver habilitada nesta rota
+            const userId = req.user ? req.user.id : 1;
+
+            const intResult = await db.query(
+                'SELECT id FROM integrations WHERE user_id = $1 AND platform = $2 AND status = $3',
+                [userId, platform, 'connected']
+            );
+
+            if (intResult.rows.length > 0) {
+                const integrationId = intResult.rows[0].id;
+
+                await db.query(`
+                    INSERT INTO jobs (type, payload, scheduled_for)
+                    VALUES ($1, $2, $3)
+                `, [
+                    'publish_social_post',
+                    JSON.stringify({
+                        postId: newPost.id,
+                        integrationId,
+                        platform,
+                        content,
+                        mediaUrl: media_url
+                    }),
+                    scheduled_at
+                ]);
+                console.log(`📅 Job de publicação agendado para ${scheduled_at}`);
+            } else {
+                console.warn(`⚠️ Nenhuma integração encontrada para ${platform}. Post salvo mas não agendado na fila.`);
+            }
+        }
 
         res.status(201).json({
             success: true,
             message: 'Post created successfully',
-            post: result.rows[0]
+            post: newPost
         });
 
     } catch (error) {
