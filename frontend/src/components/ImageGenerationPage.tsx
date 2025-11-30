@@ -11,7 +11,7 @@ export const ImageGenerationPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [generatedImage, setGeneratedImage] = useState<GeneratedImage | null>(null);
     const [gallery, setGallery] = useState<GeneratedImage[]>([]);
-    const [models, setModels] = useState<any[]>([]);
+    const [models, setModels] = useState<ImageModel[]>([]);
     const [error, setError] = useState<string | null>(null);
 
     const [steps, setSteps] = useState(25);
