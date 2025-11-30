@@ -8,6 +8,8 @@ const { GoogleGenAI } = require("@google/genai");
 
 // Configurações
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+if (!process.env.OPENAI_API_KEY) console.warn('⚠️ OPENAI_API_KEY não encontrada! DALL-E falhará.');
+
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
@@ -127,16 +129,23 @@ async function generateWithHuggingFace(input) {
 }
 
 async function generateWithDallE3(input, quality = 'standard') {
-    const response = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: input.prompt,
-        n: 1,
-        size: "1024x1024",
-        quality: quality,
-        response_format: "b64_json",
-        style: "vivid"
-    });
-    return `data:image/png;base64,${response.data[0].b64_json}`;
+    console.log(`[DALL-E] Iniciando geração (${quality})... Prompt: ${input.prompt.substring(0, 50)}...`);
+    try {
+        const response = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: input.prompt,
+            n: 1,
+            size: "1024x1024",
+            quality: quality,
+            response_format: "b64_json",
+            style: "vivid"
+        });
+        console.log('[DALL-E] Imagem gerada com sucesso.');
+        return `data:image/png;base64,${response.data[0].b64_json}`;
+    } catch (error) {
+        console.error('[DALL-E] Erro crítico:', error);
+        throw error;
+    }
 }
 
 async function generateWithGemini(input) {

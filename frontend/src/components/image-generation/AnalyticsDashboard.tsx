@@ -145,7 +145,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                             <h4 className="text-lg font-semibold text-gray-800 mb-6">Atividade Recente</h4>
-                            <div className="h-64 w-full">
+                            <div style={{ width: '100%', height: 300 }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={data.activity}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
