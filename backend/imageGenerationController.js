@@ -56,203 +56,29 @@ const removeBgSchema = Joi.object({
     imageUrl: Joi.string().uri().required()
 });
 
-// ... (uploadToCloudinary permanece igual)
-
-// Geradores Específicos
-async function generateWithFluxSchnell(input) {
-    const params = {
-        prompt: input.prompt,
-        num_outputs: input.num_outputs || 1,
-        aspect_ratio: "1:1", // Flux Schnell usa aspect_ratio ou width/height, mas prefere aspect_ratio para presets
-        output_format: "png",
-        output_quality: 90
-    };
-    if (input.seed) params.seed = input.seed;
-
-    const output = await replicate.run(
-        "black-forest-labs/flux-schnell",
-        { input: params }
-    );
-    return output; // Retorna array de URLs
-}
-
-async function generateWithSDXLLightning(input) {
-    const params = {
-        prompt: input.prompt,
-        negative_prompt: input.negativePrompt || "low quality, bad quality",
-        width: input.width,
-        height: input.height,
-        num_outputs: input.num_outputs || 1,
-        scheduler: "K_EULER",
-        num_inference_steps: input.num_inference_steps || 4,
-        guidance_scale: input.guidance_scale || 0 // SDXL Lightning usa guidance 0 geralmente
-    };
-    if (input.seed) params.seed = input.seed;
-
-    const output = await replicate.run(
-        "bytedance/sdxl-lightning-4step:5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637",
-        { input: params }
-    );
-    return output; // Retorna array de URLs
-}
-
-async function generateWithZImageTurbo(input) {
-    const params = {
-        prompt: input.prompt,
-        width: input.width,
-        height: input.height,
-        output_format: "jpg",
-        guidance_scale: input.guidance_scale || 0,
-        output_quality: 80,
-        num_inference_steps: input.num_inference_steps || 8
-    };
-    if (input.seed) params.seed = input.seed;
-
-    const output = await replicate.run(
-        "prunaai/z-image-turbo",
-        { input: params }
-    );
-    return output[0];
-}
-
-async function generateWithHuggingFace(input) {
+// Função de Upload para Cloudinary
+const uploadToCloudinary = async (fileUrl, folder = 'generated') => {
     try {
-        const response = await hf.textToImage({
-            model: 'stabilityai/stable-diffusion-xl-base-1.0',
-            inputs: input.prompt,
-            parameters: {
-                negative_prompt: input.negativePrompt,
-                num_inference_steps: input.num_inference_steps || 25,
-                guidance_scale: input.guidance_scale || 7.5,
-                // Seed não é diretamente suportado no textToImage simples do HF Inference, mas ok
-            }
+        const result = await cloudinary.uploader.upload(fileUrl, {
+            folder: folder,
         });
-
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const base64 = buffer.toString('base64');
-        return `data:image/jpeg;base64,${base64}`;
+        return {
+            url: result.secure_url,
+            thumbnailUrl: result.secure_url,
+            publicId: result.public_id
+        };
     } catch (error) {
-        console.error('Erro Hugging Face:', error);
-        throw new Error('Falha na geração com Hugging Face: ' + error.message);
+        console.error('Erro no upload para Cloudinary:', error);
+        throw new Error('Falha no upload da imagem para Cloudinary.');
     }
-}
-
-async function generateWithImg2Img(input) {
-    // SDXL Lightning suporta img2img se passarmos 'image' e 'strength'
-    // Caso o modelo específico não suporte, podemos usar o stable-diffusion-img2img genérico
-    const params = {
-        image: input.imageUrl,
-        prompt: input.prompt,
-        negative_prompt: input.negativePrompt || "low quality, bad quality",
-        strength: input.strength,
-        num_outputs: 1,
-        scheduler: "K_EULER",
-        num_inference_steps: 4,
-        guidance_scale: 0,
-        output_format: "png"
-    };
-    if (input.seed) params.seed = input.seed;
-
-    const output = await replicate.run(
-        "bytedance/sdxl-lightning-4step:5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637",
-        { input: params }
-    );
-    return output[0];
-}
-
-async function generateUpscale(input) {
-    const output = await replicate.run(
-        "nightmareai/real-esrgan:42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b",
-        {
-            input: {
-                image: input.imageUrl,
-                scale: input.scale,
-                face_enhance: false
-            }
-        }
-    );
-    return output;
-}
-
-async function generateRemoveBg(input) {
-    const output = await replicate.run(
-        "cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003",
-        {
-            input: {
-                image: input.imageUrl
-            }
-        }
-    );
-    return output;
-}
-
-const Replicate = require('replicate');
-const { HfInference } = require('@huggingface/inference');
-const cloudinary = require('cloudinary').v2;
-const db = require('./database');
-const Joi = require('joi');
-
-// Configuração Cloudinary
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-// Configuração Replicate e Hugging Face
-const replicateToken = process.env.REPLICATE_API_TOKEN;
-if (replicateToken) {
-    console.log(`[Config] Replicate Token configured: ${replicateToken.substring(0, 4)}...${replicateToken.substring(replicateToken.length - 4)}`);
-} else {
-    console.warn('[Config] Replicate Token NOT configured!');
-}
-
-const replicate = new Replicate({
-    auth: replicateToken,
-});
-
-const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
-
-// Validação
-const generateSchema = Joi.object({
-    prompt: Joi.string().min(1).max(1000).required(),
-    negativePrompt: Joi.string().max(500).allow('', null),
-    width: Joi.number().integer().min(256).max(2048).default(1024),
-    height: Joi.number().integer().min(256).max(2048).default(1024),
-    model: Joi.string().valid('flux-schnell', 'sdxl-lightning', 'stable-diffusion', 'z-image-turbo').default('flux-schnell'),
-    num_inference_steps: Joi.number().integer().min(1).max(50).optional(),
-    guidance_scale: Joi.number().min(0).max(20).optional(),
-    seed: Joi.number().integer().optional(),
-    num_outputs: Joi.number().integer().min(1).max(4).default(1)
-});
-
-const editSchema = Joi.object({
-    imageUrl: Joi.string().uri().required(),
-    prompt: Joi.string().required(),
-    strength: Joi.number().min(0).max(1).default(0.75),
-    negativePrompt: Joi.string().allow('', null),
-    model: Joi.string().default('sdxl-lightning'),
-    seed: Joi.number().integer().optional()
-});
-
-const upscaleSchema = Joi.object({
-    imageUrl: Joi.string().uri().required(),
-    scale: Joi.number().valid(2, 4).default(2)
-});
-
-const removeBgSchema = Joi.object({
-    imageUrl: Joi.string().uri().required()
-});
-
-// ... (uploadToCloudinary permanece igual)
+};
 
 // Geradores Específicos
 async function generateWithFluxSchnell(input) {
     const params = {
         prompt: input.prompt,
         num_outputs: input.num_outputs || 1,
-        aspect_ratio: "1:1", // Flux Schnell usa aspect_ratio ou width/height, mas prefere aspect_ratio para presets
+        aspect_ratio: "1:1",
         output_format: "png",
         output_quality: 90
     };
@@ -262,7 +88,7 @@ async function generateWithFluxSchnell(input) {
         "black-forest-labs/flux-schnell",
         { input: params }
     );
-    return output; // Retorna array de URLs
+    return output;
 }
 
 async function generateWithSDXLLightning(input) {
@@ -274,7 +100,7 @@ async function generateWithSDXLLightning(input) {
         num_outputs: input.num_outputs || 1,
         scheduler: "K_EULER",
         num_inference_steps: input.num_inference_steps || 4,
-        guidance_scale: input.guidance_scale || 0 // SDXL Lightning usa guidance 0 geralmente
+        guidance_scale: input.guidance_scale || 0
     };
     if (input.seed) params.seed = input.seed;
 
@@ -282,7 +108,7 @@ async function generateWithSDXLLightning(input) {
         "bytedance/sdxl-lightning-4step:5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637",
         { input: params }
     );
-    return output; // Retorna array de URLs
+    return output;
 }
 
 async function generateWithZImageTurbo(input) {
@@ -301,7 +127,7 @@ async function generateWithZImageTurbo(input) {
         "prunaai/z-image-turbo",
         { input: params }
     );
-    return output; // Retorna array de URLs
+    return output;
 }
 
 async function generateWithHuggingFace(input) {
@@ -315,7 +141,6 @@ async function generateWithHuggingFace(input) {
                     negative_prompt: input.negativePrompt,
                     num_inference_steps: input.num_inference_steps || 25,
                     guidance_scale: input.guidance_scale || 7.5,
-                    // Seed não é diretamente suportado no textToImage simples do HF Inference, mas ok
                 }
             });
 
@@ -332,8 +157,6 @@ async function generateWithHuggingFace(input) {
 }
 
 async function generateWithImg2Img(input) {
-    // SDXL Lightning suporta img2img se passarmos 'image' e 'strength'
-    // Caso o modelo específico não suporte, podemos usar o stable-diffusion-img2img genérico
     const params = {
         image: input.imageUrl,
         prompt: input.prompt,
@@ -399,7 +222,6 @@ const generateImage = async (req, res) => {
         } else if (model === 'sdxl-lightning') {
             rawOutput = await generateWithSDXLLightning(inputParams);
         } else if (model === 'z-image-turbo') {
-            // Z-Image Turbo pode não suportar batch nativo, geramos 1 ou fazemos loop (aqui simplificado para 1)
             rawOutput = await generateWithZImageTurbo(inputParams);
         } else if (model === 'stable-diffusion') {
             rawOutput = await generateWithHuggingFace(inputParams);
@@ -423,11 +245,8 @@ const generateImage = async (req, res) => {
                 finalUrl = url.toString();
             }
 
-            // Upload para Cloudinary
-            // Assuming uploadToCloudinary is defined elsewhere and handles the 'generated' folder
             const uploadResult = await uploadToCloudinary(finalUrl, 'generated');
 
-            // Salvar no DB
             const query = `
                 INSERT INTO generated_images 
                 (url, thumbnail_url, prompt, negative_prompt, model, width, height, user_id, cloudinary_public_id, thumbnail_public_id)
@@ -553,7 +372,7 @@ const editImage = async (req, res) => {
 
         if (!rawOutput) throw new Error('Falha na edição da imagem');
 
-        const uploadResult = await uploadToCloudinary(rawOutput); // rawOutput do replicate geralmente é URL ou stream
+        const uploadResult = await uploadToCloudinary(rawOutput);
 
         const query = `
             INSERT INTO generated_images 
@@ -561,7 +380,6 @@ const editImage = async (req, res) => {
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             RETURNING *
         `;
-        // Assumindo 1024x1024 para simplificar, ou poderíamos pegar metadata do cloudinary
         const values = [
             uploadResult.url,
             uploadResult.thumbnailUrl,
@@ -592,35 +410,30 @@ const createVariations = async (req, res) => {
 
         if (count < 1 || count > 4) return res.status(400).json({ error: 'Count deve ser entre 1 e 4' });
 
-        // Buscar imagem original
         const imgQuery = 'SELECT * FROM generated_images WHERE id = $1';
         const imgResult = await db.query(imgQuery, [id]);
         if (imgResult.rows.length === 0) return res.status(404).json({ error: 'Imagem não encontrada' });
 
         const original = imgResult.rows[0];
 
-        // Gerar variações em paralelo
-        // Usaremos o mesmo modelo original se possível, ou fallback para flux-schnnell
         const modelToUse = original.model.includes('flux') ? 'flux-schnell' : 'sdxl-lightning';
 
         const promises = [];
         for (let i = 0; i < count; i++) {
             const seed = Math.floor(Math.random() * 1000000);
             const inputParams = {
-                prompt: original.prompt.replace('[EDITED] ', ''), // Limpar prefixo se houver
+                prompt: original.prompt.replace('[EDITED] ', ''),
                 negativePrompt: original.negative_prompt,
                 width: original.width,
                 height: original.height,
                 num_inference_steps: 4,
                 guidance_scale: 0,
                 seed,
-                num_outputs: 1 // Each variation is a single output
+                num_outputs: 1
             };
 
-            // Reutiliza funções existentes
             const task = (modelToUse === 'flux-schnell' ? generateWithFluxSchnell(inputParams) : generateWithSDXLLightning(inputParams))
                 .then(async (rawOutput) => {
-                    // rawOutput from generators is now always an array, take the first element
                     const singleOutput = Array.isArray(rawOutput) ? rawOutput[0] : rawOutput;
                     const uploadResult = await uploadToCloudinary(singleOutput);
                     const query = `
@@ -667,12 +480,6 @@ const upscaleImage = async (req, res) => {
         const rawOutput = await generateUpscale({ imageUrl, scale });
         const uploadResult = await uploadToCloudinary(rawOutput);
 
-        // Tentar obter dimensões reais seria ideal, mas vamos estimar
-        // Se original era 1024, agora é 1024*scale. 
-        // Para simplificar, salvamos sem validar dimensão exata ou fazemos um fetch antes (caro).
-        // Vamos salvar com dimensões "desconhecidas" ou baseadas no scale se tivéssemos a original.
-        // Como não temos a original aqui (só URL), vamos por 0 ou padrão.
-
         const query = `
             INSERT INTO generated_images 
             (url, thumbnail_url, prompt, negative_prompt, model, width, height, user_id, cloudinary_public_id, thumbnail_public_id)
@@ -685,7 +492,7 @@ const upscaleImage = async (req, res) => {
             `[UPSCALED ${scale}x]`,
             null,
             `real-esrgan-${scale}x`,
-            0, // Dimensão desconhecida sem processar
+            0,
             0,
             userId,
             uploadResult.publicId,
