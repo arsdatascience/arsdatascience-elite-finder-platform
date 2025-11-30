@@ -133,7 +133,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
         platform,
         tone,
         topic,
-        provider,
+        provider: provider as 'gemini' | 'openai',
         model
       });
       setResult(res);
