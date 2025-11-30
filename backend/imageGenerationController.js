@@ -574,33 +574,58 @@ const getAnalytics = async (req, res) => {
         const userId = req.user ? req.user.id : null;
         if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-        // 1. Total Images
-        const totalQuery = 'SELECT COUNT(*) FROM generated_images WHERE user_id = $1';
-        const totalResult = await db.query(totalQuery, [userId]);
+        const modelFilter = req.query.model; // Filtro opcional
+
+        // Base query params
+        const params = [userId];
+        let filterClause = '';
+        if (modelFilter && modelFilter !== 'all') {
+            filterClause = 'AND model = $2';
+            params.push(modelFilter);
+        }
+
+        // 1. Total Images (Filtered)
+        const totalQuery = `SELECT COUNT(*) FROM generated_images WHERE user_id = $1 ${filterClause}`;
+        const totalResult = await db.query(totalQuery, params);
         const totalImages = parseInt(totalResult.rows[0].count);
 
         // 2. Images by Model
         const modelQuery = `
             SELECT model, COUNT(*) as count 
             FROM generated_images 
-            WHERE user_id = $1 
+            WHERE user_id = $1 ${filterClause}
             GROUP BY model 
             ORDER BY count DESC
         `;
-        const modelResult = await db.query(modelQuery, [userId]);
-        const imagesByModel = modelResult.rows.map(r => ({ name: r.model, value: parseInt(r.count) }));
+        const modelResult = await db.query(modelQuery, params);
 
-        // 3. Activity (Last 30 days)
+        // Calcular custo por modelo
+        const imagesByModel = modelResult.rows.map(r => {
+            let costPerImage = 0.04;
+            if (r.model.includes('flux')) costPerImage = 0.05;
+            if (r.model.includes('sdxl')) costPerImage = 0.03;
+            if (r.model.includes('esrgan')) costPerImage = 0.1;
+
+            const totalCost = costPerImage * parseInt(r.count);
+
+            return {
+                name: r.model,
+                value: parseInt(r.count),
+                cost: parseFloat(totalCost.toFixed(3)),
+                costPerImage
+            };
+        });
+
+        // 3. Activity (Last 30 days) (Filtered)
         const activityQuery = `
             SELECT DATE(created_at) as date, COUNT(*) as count 
             FROM generated_images 
-            WHERE user_id = $1 AND created_at > NOW() - INTERVAL '30 days' 
+            WHERE user_id = $1 AND created_at > NOW() - INTERVAL '30 days' ${filterClause}
             GROUP BY DATE(created_at) 
             ORDER BY date ASC
         `;
-        const activityResult = await db.query(activityQuery, [userId]);
+        const activityResult = await db.query(activityQuery, params);
 
-        // Fill missing days with 0
         const activity = [];
         const today = new Date();
         for (let i = 29; i >= 0; i--) {
@@ -614,14 +639,29 @@ const getAnalytics = async (req, res) => {
             activity.push({ date: dateStr, count: found ? parseInt(found.count) : 0 });
         }
 
-        // 4. Estimated Cost (Simulated)
-        let totalCredits = 0;
-        modelResult.rows.forEach(r => {
-            let cost = 0.04; // default
-            if (r.model.includes('flux')) cost = 0.05;
-            if (r.model.includes('sdxl')) cost = 0.03;
-            if (r.model.includes('esrgan')) cost = 0.1;
-            totalCredits += cost * parseInt(r.count);
+        // 4. Total Credits (Filtered)
+        const totalCredits = imagesByModel.reduce((acc, curr) => acc + curr.cost, 0);
+
+        // 5. Recent Images with Cost (New!)
+        const recentImagesQuery = `
+            SELECT id, prompt, model, created_at, width, height 
+            FROM generated_images 
+            WHERE user_id = $1 ${filterClause}
+            ORDER BY created_at DESC 
+            LIMIT 50
+        `;
+        const recentImagesResult = await db.query(recentImagesQuery, params);
+
+        const recentImages = recentImagesResult.rows.map(img => {
+            let cost = 0.04;
+            if (img.model.includes('flux')) cost = 0.05;
+            if (img.model.includes('sdxl')) cost = 0.03;
+            if (img.model.includes('esrgan')) cost = 0.1;
+
+            return {
+                ...img,
+                cost: cost
+            };
         });
 
         res.json({
@@ -630,7 +670,8 @@ const getAnalytics = async (req, res) => {
                 totalImages,
                 imagesByModel,
                 activity,
-                totalCredits: parseFloat(totalCredits.toFixed(2))
+                totalCredits: parseFloat(totalCredits.toFixed(2)),
+                recentImages
             }
         });
 

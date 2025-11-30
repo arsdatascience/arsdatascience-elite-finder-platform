@@ -259,9 +259,9 @@ export const apiClient = {
             const response = await axiosInstance.get('/images/prompts');
             return response.data;
         },
-        getAnalytics: async () => {
-            if (USE_MOCK) return { success: true, data: { totalImages: 0, imagesByModel: [], activity: [], totalCredits: 0 } };
-            const response = await axiosInstance.get('/images/analytics');
+        getAnalytics: async (model?: string) => {
+            if (USE_MOCK) return { success: true, data: { totalImages: 0, imagesByModel: [], activity: [], totalCredits: 0, recentImages: [] } };
+            const response = await axiosInstance.get('/images/analytics', { params: { model } });
             return response.data;
         }
     }
