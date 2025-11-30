@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiClient } from '../../services/apiClient';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { X, TrendingUp, Image as ImageIcon, DollarSign, Activity, Filter } from 'lucide-react';
 
 interface AnalyticsData {
@@ -118,7 +118,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <p className="text-sm text-gray-500 font-medium">Custo Total (Tokens)</p>
-                                    <h3 className="text-3xl font-bold text-gray-800 mt-1">{data.totalCredits.toFixed(3)}</h3>
+                                    <h3 className="text-3xl font-bold text-gray-800 mt-1">{(data.totalCredits || 0).toFixed(3)}</h3>
                                 </div>
                                 <div className="p-2 bg-green-50 text-green-600 rounded-lg">
                                     <DollarSign size={20} />
@@ -200,7 +200,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                                 {data.imagesByModel.map((entry, index) => (
                                     <div key={index} className="flex items-center gap-2 text-xs text-gray-600">
                                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
-                                        <span>{entry.name}: {entry.value} ({entry.cost.toFixed(2)} tokens)</span>
+                                        <span>{entry.name}: {entry.value} ({(entry.cost || 0).toFixed(2)} tokens)</span>
                                     </div>
                                 ))}
                             </div>
@@ -242,7 +242,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                                                     {img.prompt}
                                                 </td>
                                                 <td className="px-6 py-3 text-right font-medium text-gray-900">
-                                                    {img.cost.toFixed(3)}
+                                                    {(img.cost || 0).toFixed(3)}
                                                 </td>
                                             </tr>
                                         ))
