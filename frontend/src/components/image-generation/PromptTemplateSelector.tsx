@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PROMPT_TEMPLATES, PromptTemplate } from '../../lib/prompt-templates';
-import { BookTemplate, X, Check, Plus, Trash2, Save } from 'lucide-react';
+import { BookTemplate, X, Plus, Trash2, Save } from 'lucide-react';
 import { apiClient } from '../../services/apiClient';
 
 interface PromptTemplateSelectorProps {
