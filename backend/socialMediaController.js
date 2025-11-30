@@ -30,6 +30,8 @@ const createPost = async (req, res) => {
             // In production, you would upload this to S3 or similar
             // For now, we'll serve it statically
             media_url = `/uploads/${req.file.filename}`;
+        } else if (req.body.media_url) {
+            media_url = req.body.media_url;
         }
 
         // Default client_id if not provided (e.g., for testing)

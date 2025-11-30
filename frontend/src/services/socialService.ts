@@ -17,6 +17,8 @@ export const saveSocialPost = async (postData: any) => {
 
     if (postData.image) {
         formData.append('media', postData.image);
+    } else if (postData.imageUrl) {
+        formData.append('media_url', postData.imageUrl);
     }
 
     // Default client ID for now

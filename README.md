@@ -1,4 +1,4 @@
-# 🚀 Elite Finder Platform - Manual Completo
+i# 🚀 Elite Finder Platform - Manual Completo
 
 Bem-vindo à documentação oficial da **Elite Finder Platform**. Este documento detalha todas as funcionalidades, módulos e ferramentas disponíveis no sistema.
 

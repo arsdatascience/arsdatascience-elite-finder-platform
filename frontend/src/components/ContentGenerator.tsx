@@ -6,6 +6,7 @@ import { Sparkles, X, Copy, Loader2, Image as ImageIcon, Hash, MousePointerClick
 import { CLIENTS_LIST } from '../constants';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import { AIProvider, AI_MODELS, OpenAIModel, GeminiModel } from '@/constants/aiModels';
+import { apiClient } from '../services/apiClient';
 
 interface ContentGeneratorProps {
   isOpen: boolean;
@@ -49,6 +50,9 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
   const [addToCalendar, setAddToCalendar] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<any[]>([]);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 
   // Account Selection
   const [selectedClient, setSelectedClient] = useState<string>('');
@@ -102,6 +106,21 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
       setSelectedAccount(accounts[0].id);
     }
   }, [selectedClient]);
+
+  useEffect(() => {
+    if (galleryOpen) {
+      apiClient.imageGeneration.list(50, 1).then(res => {
+        setGalleryImages(res.images || []);
+      });
+    }
+  }, [galleryOpen]);
+
+  const handleSelectFromGallery = (url: string) => {
+    setSelectedImageUrl(url);
+    setImagePreview(url);
+    setSelectedImage(null);
+    setGalleryOpen(false);
+  };
 
   if (!isOpen && mode === 'modal') return null;
 
@@ -161,6 +180,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
         scheduledTime,
         addToCalendar,
         image: selectedImage,
+        imageUrl: selectedImageUrl,
         clientId: selectedClient,
         accountId: selectedAccount // Include selected account
       };
@@ -587,6 +607,45 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
           )}
         </div>
       </div>
+
+      {/* Gallery Modal */}
+      {galleryOpen && (
+        <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                <Sparkles className="text-purple-600" size={20} />
+                Galeria do Estúdio Criativo
+              </h3>
+              <button onClick={() => setGalleryOpen(false)} className="p-1 hover:bg-gray-100 rounded-full">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              {galleryImages.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {galleryImages.map((img: any) => (
+                    <div
+                      key={img.id}
+                      onClick={() => handleSelectFromGallery(img.url)}
+                      className="aspect-square rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:ring-2 hover:ring-purple-500 hover:shadow-lg transition-all relative group"
+                    >
+                      <img src={img.url} alt={img.prompt} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <ImageIcon size={48} className="mx-auto mb-3 opacity-20" />
+                  <p>Nenhuma imagem encontrada na galeria.</p>
+                  <p className="text-sm">Gere imagens no Estúdio Criativo primeiro.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
