@@ -93,6 +93,14 @@ const AdminDashboard: React.FC = () => {
     const [tenants, setTenants] = useState<any[]>([]);
     const [systemUsage, setSystemUsage] = useState<any>(null);
 
+    const ADMIN_TABS = [
+        { id: 'overview', label: 'Visão Geral', icon: LayoutDashboard },
+        { id: 'tenants', label: 'Clientes (Tenants)', icon: Building },
+        { id: 'users', label: 'Usuários', icon: Users },
+        { id: 'plans', label: 'Planos & Limites', icon: CreditCard },
+        { id: 'system', label: 'Sistema & Logs', icon: Activity },
+    ];
+
     // Estados para Edição de Usuário
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -442,9 +450,31 @@ const AdminDashboard: React.FC = () => {
     );
 
     return (
-        <div className="flex h-full bg-[#0f172a] text-white min-h-screen">
-            {/* Sidebar Admin */}
-            <div className="w-64 bg-[#1e293b] border-r border-slate-700 flex flex-col">
+        <div className="flex flex-col md:flex-row h-full bg-[#0f172a] text-white min-h-screen">
+            {/* Mobile Nav */}
+            <div className="md:hidden w-full bg-[#1e293b] border-b border-slate-700 overflow-x-auto shrink-0">
+                <div className="p-4 border-b border-slate-700">
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                        Admin Panel
+                    </h1>
+                </div>
+                <nav className="flex p-2 gap-2 min-w-max">
+                    {ADMIN_TABS.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'
+                                }`}
+                        >
+                            <tab.icon size={16} />
+                            {tab.label}
+                        </button>
+                    ))}
+                </nav>
+            </div>
+
+            {/* Sidebar Admin (Desktop) */}
+            <div className="hidden md:flex w-64 bg-[#1e293b] border-r border-slate-700 flex-col shrink-0">
                 <div className="p-6 border-b border-slate-700">
                     <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
                         Admin Panel
@@ -452,11 +482,15 @@ const AdminDashboard: React.FC = () => {
                     <p className="text-xs text-slate-500 mt-1">SaaS Management</p>
                 </div>
                 <nav className="flex-1 p-4 space-y-2">
-                    <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<LayoutDashboard />} label="Visão Geral" />
-                    <NavItem active={activeTab === 'tenants'} onClick={() => setActiveTab('tenants')} icon={<Building />} label="Clientes (Tenants)" />
-                    <NavItem active={activeTab === 'users'} onClick={() => setActiveTab('users')} icon={<Users />} label="Usuários" />
-                    <NavItem active={activeTab === 'plans'} onClick={() => setActiveTab('plans')} icon={<CreditCard />} label="Planos & Limites" />
-                    <NavItem active={activeTab === 'system'} onClick={() => setActiveTab('system')} icon={<Activity />} label="Sistema & Logs" />
+                    {ADMIN_TABS.map(tab => (
+                        <NavItem
+                            key={tab.id}
+                            active={activeTab === tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            icon={<tab.icon />}
+                            label={tab.label}
+                        />
+                    ))}
                 </nav>
             </div>
 

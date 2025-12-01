@@ -5,7 +5,7 @@ import { ViewState } from '@/types';
 import { Rocket } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { UserCircle, Shield } from 'lucide-react';
+import { UserCircle, Shield, X } from 'lucide-react';
 
 interface SidebarProps {
   activeView: ViewState;
@@ -18,11 +18,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen
 
   return (
     <div className={`fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
-      <div className="flex items-center justify-center h-20 border-b border-slate-800">
+      <div className="flex items-center justify-between px-4 h-20 border-b border-slate-800">
         <div className="flex items-center gap-2 font-bold text-xl tracking-wider text-blue-400">
           <Rocket className="w-6 h-6" />
           <span>Elite<span className="text-white">Finder</span></span>
         </div>
+        <button
+          onClick={() => onNavigate(activeView)} // Hack para fechar (já que onNavigate fecha no Layout) ou idealmente passar uma prop onClose
+          className="md:hidden text-slate-400 hover:text-white"
+        >
+          <X size={24} />
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">

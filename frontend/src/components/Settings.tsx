@@ -460,6 +460,14 @@ export const Settings: React.FC = () => {
     { id: 3, dbId: 3, name: 'WhatsApp Business', platform: 'whatsapp', status: 'disconnected', icon: MessageSquare, lastSync: '-' },
   ]);
 
+  const SETTINGS_TABS = [
+    { id: 'profile', label: 'Perfil', icon: User },
+    { id: 'subscription', label: 'Planos e Limites', icon: CreditCard },
+    { id: 'integrations', label: 'Integrações', icon: LinkIcon },
+    { id: 'team', label: 'Equipe', icon: User },
+    { id: 'security', label: 'Segurança', icon: Shield },
+  ];
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'profile':
@@ -961,45 +969,54 @@ export const Settings: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-      {/* Sidebar de Configurações */}
-      <div className="w-64 bg-gray-50 border-r border-gray-200 flex flex-col">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-2rem)] bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Mobile Nav */}
+      <div className="md:hidden w-full bg-gray-50 border-b border-gray-200 overflow-x-auto shrink-0">
+        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-800">Configurações</h2>
+          <span className="text-xs text-gray-500">v{COMPONENT_VERSIONS.Settings}</span>
+        </div>
+        <nav className="flex p-2 gap-2 min-w-max">
+          {SETTINGS_TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm border border-blue-100' : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                }`}
+            >
+              <tab.icon size={16} />
+              {tab.label}
+            </button>
+          ))}
+          {user?.role === 'Admin' && (
+            <button
+              onClick={() => setActiveTab('admin')}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'admin' ? 'bg-white text-blue-600 shadow-sm border border-blue-100' : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                }`}
+            >
+              <Shield size={16} className="text-purple-600" />
+              Admin
+            </button>
+          )}
+        </nav>
+      </div>
+
+      {/* Sidebar de Configurações (Desktop) */}
+      <div className="hidden md:flex w-64 bg-gray-50 border-r border-gray-200 flex-col shrink-0">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-800">Configurações</h2>
           <span className="text-xs text-gray-500">v{COMPONENT_VERSIONS.Settings}</span>
         </div>
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'profile' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            <User size={18} /> Perfil
-          </button>
-          <button
-            onClick={() => setActiveTab('subscription')}
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'subscription' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            <CreditCard size={18} /> Planos e Limites
-          </button>
-
-          <button
-            onClick={() => setActiveTab('integrations')}
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'integrations' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            <LinkIcon size={18} /> Integrações
-          </button>
-          <button
-            onClick={() => setActiveTab('team')}
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'team' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            <User size={18} /> Equipe
-          </button>
-          <button
-            onClick={() => setActiveTab('security')}
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'security' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
-          >
-            <Shield size={18} /> Segurança
-          </button>
+          {SETTINGS_TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <tab.icon size={18} /> {tab.label}
+            </button>
+          ))}
 
           {user?.role === 'Admin' && (
             <button

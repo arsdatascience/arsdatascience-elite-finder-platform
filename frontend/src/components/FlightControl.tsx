@@ -545,7 +545,7 @@ export const FlightControl: React.FC = () => {
   const assignees = Array.from(new Set(localLeads.map(l => l.assignedTo)));
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col animate-fade-in">
+    <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)] flex flex-col animate-fade-in overflow-hidden">
       {/* Header */}
       <div className="mb-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">

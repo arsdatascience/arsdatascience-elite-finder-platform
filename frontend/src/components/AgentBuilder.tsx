@@ -223,6 +223,15 @@ export const AgentBuilder: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'vector' | 'prompts' | 'channels' | 'advanced'>('identity');
     const [config, setConfig] = useState<AgentConfig>(INITIAL_CONFIG);
 
+    const TABS = [
+        { id: 'identity', label: 'Identidade & Perfil', icon: Fingerprint },
+        { id: 'ai', label: 'Parâmetros de IA', icon: Brain },
+        { id: 'vector', label: 'Base Vetorial (RAG)', icon: Database },
+        { id: 'prompts', label: 'Engenharia de Prompt', icon: MessageSquare },
+        { id: 'channels', label: 'Canais & Integrações', icon: Smartphone },
+        { id: 'advanced', label: 'Otimização Avançada', icon: Zap },
+    ];
+
     // Estado para Qdrant
     const [qdrantCollections, setQdrantCollections] = useState<any[]>([]);
     const [loadingCollections, setLoadingCollections] = useState(false);
@@ -591,48 +600,39 @@ export const AgentBuilder: React.FC = () => {
                     </button>
                 </div>
             </div>
-            <div className="flex flex-1 overflow-hidden">
-                {/* Sidebar Navigation */}
-                <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-                    <nav className="p-4 space-y-1">
-                        <button
-                            onClick={() => setActiveTab('identity')}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'identity' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            <Fingerprint size={18} /> Identidade & Perfil
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('ai')}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'ai' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            <Brain size={18} /> Parâmetros de IA
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('vector')}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'vector' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            <Database size={18} /> Base Vetorial (RAG)
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('prompts')}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'prompts' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            <MessageSquare size={18} /> Engenharia de Prompt
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('channels')}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'channels' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            <Smartphone size={18} /> Canais & Integrações
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('advanced')}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === 'advanced' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            <Zap size={18} /> Otimização Avançada
-                        </button>
+            <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+                {/* Mobile Navigation */}
+                <div className="md:hidden w-full bg-white border-b border-gray-200 overflow-x-auto shrink-0">
+                    <nav className="flex p-2 gap-2 min-w-max">
+                        {TABS.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as any)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-600 hover:bg-gray-50 border border-transparent'
+                                    }`}
+                            >
+                                <tab.icon size={16} />
+                                {tab.label}
+                            </button>
+                        ))}
                     </nav>
+                </div>
 
+                {/* Desktop Sidebar Navigation */}
+                <div className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col shrink-0">
+                    <nav className="p-4 space-y-1">
+                        {TABS.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as any)}
+                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
+                                    }`}
+                            >
+                                <tab.icon size={18} />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </nav>
                 </div>
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-8">
