@@ -47,6 +47,12 @@ const updateSchema = async () => {
             ALTER TABLE tenants ADD COLUMN IF NOT EXISTS address_zip VARCHAR(10);
         `);
 
+        // Atualizar tabela training_modules
+        console.log('Atualizando tabela training_modules...');
+        await client.query(`
+            ALTER TABLE training_modules ADD COLUMN IF NOT EXISTS audience VARCHAR(20) DEFAULT 'team';
+        `);
+
         await client.query('COMMIT');
         console.log('Schema atualizado com sucesso!');
     } catch (error) {

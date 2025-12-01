@@ -5,7 +5,8 @@ const financialController = {
     // --- TRANSACTIONS ---
 
     getTransactions: async (req, res) => {
-        const { tenant_id } = req.user;
+        const { tenant_id, role } = req.user;
+        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin';
         const { startDate, endDate, type, status, category_id, client_id } = req.query;
 
         try {
@@ -25,7 +26,7 @@ const financialController = {
             const params = [];
             let paramCount = 1;
 
-            if (tenant_id) {
+            if (!isSuperAdmin && tenant_id) {
                 query += ` AND t.tenant_id = $${paramCount++}`;
                 params.push(tenant_id);
             }
@@ -140,22 +141,31 @@ const financialController = {
     // --- DASHBOARD & ANALYTICS ---
 
     getFinancialDashboard: async (req, res) => {
-        const { tenant_id } = req.user;
+        const { tenant_id, role } = req.user;
+        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin';
         const { startDate, endDate, client_id } = req.query;
 
         try {
-            let filterClause = 'WHERE tenant_id = $1 AND date >= $2 AND date <= $3';
-            const params = [tenant_id];
+            let filterClause = 'WHERE 1=1';
+            const params = [];
+            let paramCount = 1;
+
+            if (!isSuperAdmin && tenant_id) {
+                filterClause += ` AND tenant_id = $${paramCount++}`;
+                params.push(tenant_id);
+            }
 
             // Definir datas padrão se não vierem (mês atual)
             const start = startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
             const end = endDate || new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
 
+            filterClause += ` AND date >= $${paramCount++}`;
             params.push(start);
+            filterClause += ` AND date <= $${paramCount++}`;
             params.push(end);
 
             if (client_id) {
-                filterClause += ` AND client_id = $4`;
+                filterClause += ` AND client_id = $${paramCount++}`;
                 params.push(client_id);
             }
 
@@ -181,9 +191,24 @@ const financialController = {
             `;
 
             // Para despesas por categoria, precisamos ajustar o filtro pois tem JOIN
-            let categoryFilterClause = 'WHERE t.tenant_id = $1 AND t.type = \'expense\' AND t.status = \'paid\' AND t.date >= $2 AND t.date <= $3';
+            // Usando alias 't' para transactions
+            let categoryFilterClause = 'WHERE t.type = \'expense\' AND t.status = \'paid\'';
+            const catParams = [];
+            let catParamCount = 1;
+
+            if (!isSuperAdmin && tenant_id) {
+                categoryFilterClause += ` AND t.tenant_id = $${catParamCount++}`;
+                catParams.push(tenant_id);
+            }
+
+            categoryFilterClause += ` AND t.date >= $${catParamCount++}`;
+            catParams.push(start);
+            categoryFilterClause += ` AND t.date <= $${catParamCount++}`;
+            catParams.push(end);
+
             if (client_id) {
-                categoryFilterClause += ` AND t.client_id = $4`;
+                categoryFilterClause += ` AND t.client_id = $${catParamCount++}`;
+                catParams.push(client_id);
             }
 
             const categoryExpensesQuery = `
@@ -196,16 +221,12 @@ const financialController = {
             `;
 
             // Query para Despesas por Cliente
-            let clientFilterClause = 'WHERE t.tenant_id = $1 AND t.type = \'expense\' AND t.status = \'paid\' AND t.date >= $2 AND t.date <= $3';
-            if (client_id) {
-                clientFilterClause += ` AND t.client_id = $4`;
-            }
-
+            // Reutilizando a lógica de filtro de categoria pois é similar (expense, paid, date range)
             const clientExpensesQuery = `
                 SELECT cl.name, SUM(t.amount) as value
                 FROM financial_transactions t
                 JOIN clients cl ON t.client_id = cl.id
-                ${clientFilterClause}
+                ${categoryFilterClause}
                 GROUP BY cl.name
                 ORDER BY value DESC
             `;
@@ -213,8 +234,8 @@ const financialController = {
             const [totals, cashFlow, categoryExpenses, clientExpenses] = await Promise.all([
                 db.query(totalsQuery, params),
                 db.query(cashFlowQuery, params),
-                db.query(categoryExpensesQuery, params),
-                db.query(clientExpensesQuery, params)
+                db.query(categoryExpensesQuery, catParams),
+                db.query(clientExpensesQuery, catParams)
             ]);
 
             res.json({
@@ -234,9 +255,20 @@ const financialController = {
     // --- AUXILIARY (Categories, Suppliers, Clients) ---
 
     getClients: async (req, res) => {
-        const { tenant_id } = req.user;
+        const { tenant_id, role } = req.user;
+        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin';
+
         try {
-            const result = await db.query(`SELECT id, name FROM clients WHERE tenant_id = $1 ORDER BY name`, [tenant_id]);
+            let query = `SELECT id, name FROM clients`;
+            let params = [];
+
+            if (!isSuperAdmin && tenant_id) {
+                query += ` WHERE tenant_id = $1`;
+                params.push(tenant_id);
+            }
+
+            query += ` ORDER BY name`;
+            const result = await db.query(query, params);
             res.json({ success: true, data: result.rows });
         } catch (error) {
             console.error('Error fetching clients:', error);
@@ -271,6 +303,25 @@ const financialController = {
             res.json({ success: true, data: result.rows[0] });
         } catch (error) {
             console.error('Error creating category:', error);
+            res.status(500).json({ success: false, error: 'Database error' });
+        }
+    },
+
+    updateCategory: async (req, res) => {
+        const { id } = req.params;
+        const { name, type, color } = req.body;
+        try {
+            const result = await db.query(`
+                UPDATE financial_categories 
+                SET name = $1, type = $2, color = $3
+                WHERE id = $4
+                RETURNING *
+            `, [name, type, color, id]);
+
+            if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Category not found' });
+            res.json({ success: true, data: result.rows[0] });
+        } catch (error) {
+            console.error('Error updating category:', error);
             res.status(500).json({ success: false, error: 'Database error' });
         }
     },

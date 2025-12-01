@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, CheckCircle, Award, Clock, Star, TrendingUp, Video } from 'lucide-react';
+import { BookOpen, CheckCircle, Award, Clock, Star, TrendingUp, Video, Users, Briefcase } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 
 interface TrainingModule {
@@ -12,6 +12,7 @@ interface TrainingModule {
     video_url: string;
     thumbnail_url: string;
     order_index: number;
+    audience: 'team' | 'client';
 }
 
 interface UserProgress {
@@ -28,6 +29,7 @@ export const Training: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selectedModule, setSelectedModule] = useState<TrainingModule | null>(null);
     const [filter, setFilter] = useState<string>('all'); // 'all', 'completed', 'in_progress', 'not_started'
+    const [audienceFilter, setAudienceFilter] = useState<'team' | 'client'>('team');
 
     useEffect(() => {
         fetchModules();
@@ -38,14 +40,22 @@ export const Training: React.FC = () => {
         try {
             const response = await fetch(`${API_URL}/api/training/modules`);
             const data = await response.json();
-            setModules(data);
+            // Se o backend não retornar audience, assumir 'team' para compatibilidade
+            const modulesWithAudience = data.map((m: any) => ({ ...m, audience: m.audience || 'team' }));
+            setModules(modulesWithAudience);
         } catch (error) {
             console.error('Error fetching modules:', error);
             // Fallback to mock data
             setModules([
-                { id: 1, title: 'Técnicas Avançadas de Vendas', description: 'Domine a arte de fechar negócios com técnicas comprovadas de persuasão e negociação.', category: 'Vendas', duration_minutes: 45, difficulty: 'Avançado', video_url: '', thumbnail_url: '', order_index: 1 },
-                { id: 2, title: 'Excelência no Atendimento (SAC)', description: 'Como transformar reclamações em fidelidade e encantar clientes em cada interação.', category: 'Atendimento', duration_minutes: 60, difficulty: 'Intermediário', video_url: '', thumbnail_url: '', order_index: 2 },
-                { id: 3, title: 'Gestão de CRM e Pipeline', description: 'Maximize o uso do seu CRM para organizar leads e aumentar a conversão.', category: 'Ferramentas', duration_minutes: 90, difficulty: 'Iniciante', video_url: '', thumbnail_url: '', order_index: 3 },
+                // Colaboradores (Antigos)
+                { id: 1, title: 'Fundamentos de Google Ads', description: 'Aprenda os conceitos básicos de campanhas de pesquisa e display.', category: 'Fundamentos', duration_minutes: 45, difficulty: 'Iniciante', video_url: '', thumbnail_url: '', order_index: 1, audience: 'team' },
+                { id: 2, title: 'Meta Ads Avançado', description: 'Estratégias avançadas de segmentação e retargeting no Facebook e Instagram.', category: 'Avançado', duration_minutes: 60, difficulty: 'Avançado', video_url: '', thumbnail_url: '', order_index: 2, audience: 'team' },
+                { id: 3, title: 'Automação de Marketing', description: 'Criação de fluxos de automação para nutrição de leads.', category: 'Especialização', duration_minutes: 90, difficulty: 'Intermediário', video_url: '', thumbnail_url: '', order_index: 3, audience: 'team' },
+
+                // Clientes (Novos)
+                { id: 4, title: 'Técnicas Avançadas de Vendas', description: 'Domine a arte de fechar negócios com técnicas comprovadas de persuasão e negociação.', category: 'Vendas', duration_minutes: 45, difficulty: 'Avançado', video_url: '', thumbnail_url: '', order_index: 1, audience: 'client' },
+                { id: 5, title: 'Excelência no Atendimento (SAC)', description: 'Como transformar reclamações em fidelidade e encantar clientes em cada interação.', category: 'Atendimento', duration_minutes: 60, difficulty: 'Intermediário', video_url: '', thumbnail_url: '', order_index: 2, audience: 'client' },
+                { id: 6, title: 'Gestão de CRM e Pipeline', description: 'Maximize o uso do seu CRM para organizar leads e aumentar a conversão.', category: 'Ferramentas', duration_minutes: 90, difficulty: 'Iniciante', video_url: '', thumbnail_url: '', order_index: 3, audience: 'client' },
             ]);
         } finally {
             setLoading(false);
@@ -80,6 +90,10 @@ export const Training: React.FC = () => {
     };
 
     const filteredModules = modules.filter(module => {
+        // Filtro de Audiência
+        if (module.audience !== audienceFilter) return false;
+
+        // Filtro de Status
         const moduleProgress = getModuleProgress(module.id);
         if (filter === 'completed') return moduleProgress?.completed;
         if (filter === 'in_progress') return moduleProgress && !moduleProgress.completed && moduleProgress.progress_percent > 0;
@@ -103,7 +117,7 @@ export const Training: React.FC = () => {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-800">Academia de Treinamento <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.Training}</span></h2>
-                    <p className="text-sm text-gray-500">Capacite sua equipe com playbooks de vendas orientados por IA.</p>
+                    <p className="text-sm text-gray-500">Capacite sua equipe e clientes com conteúdo educacional de alta qualidade.</p>
                 </div>
             </div>
 
@@ -129,6 +143,32 @@ export const Training: React.FC = () => {
                         <p className="font-bold">Elite Learner</p>
                         <p className="text-xs text-indigo-200">Ranking Atual</p>
                     </div>
+                </div>
+            </div>
+
+            {/* Audience Tabs */}
+            <div className="flex justify-center mb-6">
+                <div className="bg-gray-100 p-1 rounded-lg inline-flex">
+                    <button
+                        onClick={() => setAudienceFilter('team')}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-medium transition-all ${audienceFilter === 'team'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        <Users size={18} />
+                        Para Colaboradores
+                    </button>
+                    <button
+                        onClick={() => setAudienceFilter('client')}
+                        className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-medium transition-all ${audienceFilter === 'client'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                    >
+                        <Briefcase size={18} />
+                        Para Clientes
+                    </button>
                 </div>
             </div>
 
@@ -178,7 +218,7 @@ export const Training: React.FC = () => {
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                 >
-                    Todos ({modules.length})
+                    Todos
                 </button>
                 <button
                     onClick={() => setFilter('not_started')}
@@ -199,7 +239,7 @@ export const Training: React.FC = () => {
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'completed' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                 >
-                    Concluídos ({completedModules})
+                    Concluídos
                 </button>
             </div>
 
@@ -279,8 +319,6 @@ export const Training: React.FC = () => {
                     <p className="text-gray-500">Nenhum módulo encontrado nesta categoria.</p>
                 </div>
             )}
-
-            {/* AI Simulator Promo Removed */}
         </div>
     );
 };

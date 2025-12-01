@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
     DollarSign, Plus,
     ArrowUpCircle, ArrowDownCircle, Edit2,
-    BarChart3, Wallet, Tag, FileText, Loader2, Users
+    BarChart3, Wallet, Tag, FileText, Loader2, Users, Calendar, Filter, Download
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell
 } from 'recharts';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface Transaction {
     id: number;
@@ -16,9 +18,11 @@ interface Transaction {
     type: 'income' | 'expense';
     date: string;
     status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+    category_id?: number;
     category_name: string;
     category_color: string;
     supplier_name?: string;
+    client_id?: number;
     client_name?: string;
     notes?: string;
 }
@@ -66,10 +70,18 @@ export const FinancialModule: React.FC = () => {
 
     // Filtros
     const [selectedClient, setSelectedClient] = useState<string>('');
-    // const [dateRange, setDateRange] = useState({ start: '', end: '' });
+    const [selectedCategory, setSelectedCategory] = useState<string>('');
+    const [dateRange, setDateRange] = useState({
+        start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+        end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0]
+    });
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
+
+    // Estado de Edição
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
 
     const [newTransaction, setNewTransaction] = useState<NewTransactionState>({
         description: '',
@@ -92,24 +104,29 @@ export const FinancialModule: React.FC = () => {
         const loadData = async () => {
             setLoading(true);
             await Promise.all([
-                fetchDashboard(),
                 fetchCategories(),
-                fetchClients(),
+                fetchClients()
+            ]);
+            // Fetch data based on filters
+            await Promise.all([
+                fetchDashboard(),
                 activeTab === 'transactions' ? fetchTransactions() : Promise.resolve()
             ]);
             setLoading(false);
         };
         loadData();
-    }, [activeTab, selectedClient]); // Recarrega quando muda a aba ou o cliente selecionado
+    }, [activeTab, selectedClient, selectedCategory, dateRange]);
 
     const fetchDashboard = async () => {
         const token = localStorage.getItem('token');
         try {
-            let url = `${import.meta.env.VITE_API_URL}/api/financial/dashboard`;
-            if (selectedClient) {
-                url += `?client_id=${selectedClient}`;
-            }
-            const res = await fetch(url, {
+            const params = new URLSearchParams();
+            if (selectedClient) params.append('client_id', selectedClient);
+            if (selectedCategory) params.append('category_id', selectedCategory);
+            if (dateRange.start) params.append('startDate', dateRange.start);
+            if (dateRange.end) params.append('endDate', dateRange.end);
+
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financial/dashboard?${params.toString()}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -122,11 +139,13 @@ export const FinancialModule: React.FC = () => {
     const fetchTransactions = async () => {
         const token = localStorage.getItem('token');
         try {
-            let url = `${import.meta.env.VITE_API_URL}/api/financial/transactions`;
-            if (selectedClient) {
-                url += `?client_id=${selectedClient}`;
-            }
-            const res = await fetch(url, {
+            const params = new URLSearchParams();
+            if (selectedClient) params.append('client_id', selectedClient);
+            if (selectedCategory) params.append('category_id', selectedCategory);
+            if (dateRange.start) params.append('startDate', dateRange.start);
+            if (dateRange.end) params.append('endDate', dateRange.end);
+
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financial/transactions?${params.toString()}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -162,11 +181,41 @@ export const FinancialModule: React.FC = () => {
         }
     };
 
+    const handleEditTransaction = (transaction: Transaction) => {
+        setEditingId(transaction.id);
+        setNewTransaction({
+            description: transaction.description,
+            amount: Number(transaction.amount),
+            type: transaction.type,
+            category_id: transaction.category_id ? String(transaction.category_id) : '',
+            client_id: transaction.client_id ? String(transaction.client_id) : '',
+            date: transaction.date.split('T')[0],
+            status: transaction.status === 'overdue' || transaction.status === 'cancelled' ? 'pending' : transaction.status
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleEditCategory = (category: Category) => {
+        setEditingCategoryId(category.id);
+        setNewCategory({
+            name: category.name,
+            type: category.type,
+            color: category.color
+        });
+        setIsCategoryModalOpen(true);
+    };
+
     const handleSaveTransaction = async () => {
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financial/transactions`, {
-                method: 'POST',
+            const url = editingId
+                ? `${import.meta.env.VITE_API_URL}/api/financial/transactions/${editingId}`
+                : `${import.meta.env.VITE_API_URL}/api/financial/transactions`;
+
+            const method = editingId ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -175,6 +224,7 @@ export const FinancialModule: React.FC = () => {
             });
             if (res.ok) {
                 setIsModalOpen(false);
+                setEditingId(null);
                 fetchTransactions();
                 fetchDashboard();
                 setNewTransaction({
@@ -195,8 +245,14 @@ export const FinancialModule: React.FC = () => {
     const handleSaveCategory = async () => {
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financial/categories`, {
-                method: 'POST',
+            const url = editingCategoryId
+                ? `${import.meta.env.VITE_API_URL}/api/financial/categories/${editingCategoryId}`
+                : `${import.meta.env.VITE_API_URL}/api/financial/categories`;
+
+            const method = editingCategoryId ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -205,6 +261,7 @@ export const FinancialModule: React.FC = () => {
             });
             if (res.ok) {
                 setIsCategoryModalOpen(false);
+                setEditingCategoryId(null);
                 fetchCategories();
                 setNewCategory({ name: '', type: 'expense', color: '#ef4444' });
             }
@@ -217,8 +274,48 @@ export const FinancialModule: React.FC = () => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     };
 
-    const exportToPDF = () => {
-        alert("Para habilitar a exportação, instale: npm install jspdf jspdf-autotable");
+    const exportDashboardToPDF = async () => {
+        const element = document.getElementById('financial-dashboard-content');
+        if (!element) return;
+
+        try {
+            // Temporariamente mostrar loading
+            const originalLoading = loading;
+            // Não setar loading global para não remover o componente da tela
+            // setLoading(true); 
+
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#f8fafc' // bg-slate-50
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = pdfWidth;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pdfHeight;
+
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pdfHeight;
+            }
+
+            pdf.save(`relatorio-financeiro-${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (error) {
+            console.error("Erro ao gerar PDF:", error);
+            alert("Erro ao gerar PDF. Tente novamente.");
+        }
     };
 
     if (loading && !dashboardData && transactions.length === 0) {
@@ -232,7 +329,7 @@ export const FinancialModule: React.FC = () => {
     return (
         <div className="p-6 bg-slate-50 min-h-screen">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
                         <Wallet className="text-blue-600" /> Gestão Financeira
@@ -240,48 +337,92 @@ export const FinancialModule: React.FC = () => {
                     <p className="text-slate-500">Controle completo de receitas, despesas e fluxo de caixa.</p>
                 </div>
 
-                <div className="flex flex-wrap gap-2 items-center">
-                    {/* Filtro de Cliente */}
-                    <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200">
-                        <Users size={16} className="text-slate-500" />
-                        <select
-                            value={selectedClient}
-                            onChange={(e) => setSelectedClient(e.target.value)}
-                            className="bg-transparent text-slate-600 text-sm focus:outline-none min-w-[150px]"
-                        >
-                            <option value="">Todos os Clientes</option>
-                            {clients.map(client => (
-                                <option key={client.id} value={client.id}>{client.name}</option>
-                            ))}
-                        </select>
+                <div className="flex flex-wrap gap-2 items-center w-full xl:w-auto">
+                    {/* Filtros */}
+                    <div className="flex flex-wrap gap-2 items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
+                        <div className="flex items-center gap-2 px-2 border-r border-slate-200">
+                            <Calendar size={16} className="text-slate-400" />
+                            <input
+                                type="date"
+                                value={dateRange.start}
+                                onChange={e => setDateRange({ ...dateRange, start: e.target.value })}
+                                className="text-xs text-slate-600 focus:outline-none"
+                            />
+                            <span className="text-slate-400">-</span>
+                            <input
+                                type="date"
+                                value={dateRange.end}
+                                onChange={e => setDateRange({ ...dateRange, end: e.target.value })}
+                                className="text-xs text-slate-600 focus:outline-none"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 px-2 border-r border-slate-200">
+                            <Users size={16} className="text-slate-400" />
+                            <select
+                                value={selectedClient}
+                                onChange={(e) => setSelectedClient(e.target.value)}
+                                className="bg-transparent text-slate-600 text-xs focus:outline-none min-w-[100px]"
+                            >
+                                <option value="">Todos Clientes</option>
+                                {clients.map(client => (
+                                    <option key={client.id} value={client.id}>{client.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="flex items-center gap-2 px-2">
+                            <Filter size={16} className="text-slate-400" />
+                            <select
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                className="bg-transparent text-slate-600 text-xs focus:outline-none min-w-[100px]"
+                            >
+                                <option value="">Todas Categorias</option>
+                                {categories.map(cat => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
 
-                    <div className="flex gap-2 bg-white p-1 rounded-lg border border-slate-200">
+                    {/* Tabs */}
+                    <div className="flex gap-1 bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
                         <button
                             onClick={() => setActiveTab('dashboard')}
-                            className={`px-4 py-2 rounded-md font-medium text-sm transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
-                            <BarChart3 size={16} className="inline mr-2" /> Visão Geral
+                            <BarChart3 size={14} className="inline mr-1" /> Visão Geral
                         </button>
                         <button
                             onClick={() => setActiveTab('transactions')}
-                            className={`px-4 py-2 rounded-md font-medium text-sm transition-colors ${activeTab === 'transactions' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'transactions' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
-                            <DollarSign size={16} className="inline mr-2" /> Transações
+                            <DollarSign size={14} className="inline mr-1" /> Transações
                         </button>
                         <button
                             onClick={() => setActiveTab('settings')}
-                            className={`px-4 py-2 rounded-md font-medium text-sm transition-colors ${activeTab === 'settings' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'settings' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
-                            <Tag size={16} className="inline mr-2" /> Categorias
+                            <Tag size={14} className="inline mr-1" /> Categorias
                         </button>
                     </div>
+
+                    {/* Export Button (Only visible on dashboard) */}
+                    {activeTab === 'dashboard' && (
+                        <button
+                            onClick={exportDashboardToPDF}
+                            className="bg-slate-800 text-white px-3 py-1.5 rounded-lg hover:bg-slate-900 transition-colors flex items-center gap-2 text-xs font-medium shadow-sm"
+                        >
+                            <Download size={14} /> PDF
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* Dashboard Content */}
             {activeTab === 'dashboard' && dashboardData && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div id="financial-dashboard-content" className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 p-2">
                     {/* KPI Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
@@ -325,9 +466,9 @@ export const FinancialModule: React.FC = () => {
                         {/* Fluxo de Caixa */}
                         <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Fluxo de Caixa (Diário)</h3>
-                            <div className="h-80">
+                            <div className="h-80 w-full min-h-[320px]">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={dashboardData.cashFlow}>
+                                    <BarChart data={dashboardData.cashFlow.length > 0 ? dashboardData.cashFlow : [{ day: new Date().toISOString(), income: 0, expense: 0 }]}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                                         <XAxis dataKey="day" tick={{ fontSize: 12 }} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })} />
                                         <YAxis tick={{ fontSize: 12 }} tickFormatter={(val) => `R$${val / 1000}k`} />
@@ -346,11 +487,11 @@ export const FinancialModule: React.FC = () => {
                         {/* Despesas por Categoria */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Categoria</h3>
-                            <div className="h-80">
+                            <div className="h-80 w-full min-h-[320px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
-                                            data={dashboardData.categoryExpenses}
+                                            data={dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]}
                                             cx="50%"
                                             cy="50%"
                                             innerRadius={60}
@@ -358,11 +499,11 @@ export const FinancialModule: React.FC = () => {
                                             paddingAngle={5}
                                             dataKey="value"
                                         >
-                                            {dashboardData.categoryExpenses.map((entry, index) => (
+                                            {(dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]).map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.color || '#cbd5e1'} />
                                             ))}
                                         </Pie>
-                                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                                        <Tooltip formatter={(value: number) => typeof value === 'number' ? formatCurrency(value) : value} />
                                         <Legend verticalAlign="bottom" height={36} />
                                     </PieChart>
                                 </ResponsiveContainer>
@@ -374,9 +515,13 @@ export const FinancialModule: React.FC = () => {
                     <div className="grid grid-cols-1 gap-6">
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Cliente</h3>
-                            <div className="h-80">
+                            <div className="h-80 w-full min-h-[320px]">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={dashboardData.clientExpenses} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                    <BarChart
+                                        data={dashboardData.clientExpenses.length > 0 ? dashboardData.clientExpenses : [{ name: 'Sem dados', value: 0 }]}
+                                        layout="vertical"
+                                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                                    >
                                         <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
                                         <XAxis type="number" tickFormatter={(val) => `R$${val / 1000}k`} />
                                         <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12 }} />
@@ -401,13 +546,19 @@ export const FinancialModule: React.FC = () => {
                         <h3 className="text-lg font-bold text-slate-800">Histórico de Transações</h3>
                         <div className="flex gap-2">
                             <button
-                                onClick={exportToPDF}
-                                className="bg-white text-slate-600 border border-slate-200 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2"
-                            >
-                                <FileText size={18} /> Exportar PDF
-                            </button>
-                            <button
-                                onClick={() => setIsModalOpen(true)}
+                                onClick={() => {
+                                    setEditingId(null);
+                                    setNewTransaction({
+                                        description: '',
+                                        amount: 0,
+                                        type: 'expense',
+                                        category_id: '',
+                                        client_id: '',
+                                        date: new Date().toISOString().split('T')[0],
+                                        status: 'paid'
+                                    });
+                                    setIsModalOpen(true);
+                                }}
                                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                             >
                                 <Plus size={18} /> Nova Transação
@@ -456,7 +607,12 @@ export const FinancialModule: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="p-4 text-right">
-                                            <button className="text-slate-400 hover:text-blue-600 p-1"><Edit2 size={16} /></button>
+                                            <button
+                                                onClick={() => handleEditTransaction(t)}
+                                                className="text-slate-400 hover:text-blue-600 p-1"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -482,7 +638,11 @@ export const FinancialModule: React.FC = () => {
                             <p className="text-sm text-slate-500">Gerencie as categorias de receitas e despesas.</p>
                         </div>
                         <button
-                            onClick={() => setIsCategoryModalOpen(true)}
+                            onClick={() => {
+                                setEditingCategoryId(null);
+                                setNewCategory({ name: '', type: 'expense', color: '#ef4444' });
+                                setIsCategoryModalOpen(true);
+                            }}
                             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
                         >
                             <Plus size={18} /> Nova Categoria
@@ -502,7 +662,12 @@ export const FinancialModule: React.FC = () => {
                                             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: c.color }}></div>
                                             <span className="font-medium text-slate-700">{c.name}</span>
                                         </div>
-                                        <button className="text-slate-400 hover:text-blue-600"><Edit2 size={16} /></button>
+                                        <button
+                                            onClick={() => handleEditCategory(c)}
+                                            className="text-slate-400 hover:text-blue-600"
+                                        >
+                                            <Edit2 size={16} />
+                                        </button>
                                     </div>
                                 ))}
                                 {categories.filter(c => c.type === 'income').length === 0 && (
@@ -523,7 +688,12 @@ export const FinancialModule: React.FC = () => {
                                             <div className="w-4 h-4 rounded-full" style={{ backgroundColor: c.color }}></div>
                                             <span className="font-medium text-slate-700">{c.name}</span>
                                         </div>
-                                        <button className="text-slate-400 hover:text-blue-600"><Edit2 size={16} /></button>
+                                        <button
+                                            onClick={() => handleEditCategory(c)}
+                                            className="text-slate-400 hover:text-blue-600"
+                                        >
+                                            <Edit2 size={16} />
+                                        </button>
                                     </div>
                                 ))}
                                 {categories.filter(c => c.type === 'expense').length === 0 && (
@@ -539,7 +709,9 @@ export const FinancialModule: React.FC = () => {
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95 duration-200">
-                        <h3 className="text-xl font-bold text-slate-900 mb-4">Nova Transação</h3>
+                        <h3 className="text-xl font-bold text-slate-900 mb-4">
+                            {editingId ? 'Editar Transação' : 'Nova Transação'}
+                        </h3>
 
                         <div className="space-y-4">
                             <div>
@@ -641,7 +813,7 @@ export const FinancialModule: React.FC = () => {
                                     onClick={handleSaveTransaction}
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                                 >
-                                    Salvar Transação
+                                    {editingId ? 'Atualizar' : 'Salvar Transação'}
                                 </button>
                             </div>
                         </div>
@@ -653,7 +825,9 @@ export const FinancialModule: React.FC = () => {
             {isCategoryModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200">
-                        <h3 className="text-xl font-bold text-slate-900 mb-4">Nova Categoria</h3>
+                        <h3 className="text-xl font-bold text-slate-900 mb-4">
+                            {editingCategoryId ? 'Editar Categoria' : 'Nova Categoria'}
+                        </h3>
 
                         <div className="space-y-4">
                             <div>
@@ -703,7 +877,7 @@ export const FinancialModule: React.FC = () => {
                                     onClick={handleSaveCategory}
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                                 >
-                                    Salvar
+                                    {editingCategoryId ? 'Atualizar' : 'Salvar'}
                                 </button>
                             </div>
                         </div>

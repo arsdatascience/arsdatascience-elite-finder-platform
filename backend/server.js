@@ -529,10 +529,8 @@ app.delete('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantContro
 // --- FINANCIAL MODULE ---
 const financialCtrl = require('./financialController');
 
-// Dashboard
+// Rotas Financeiras
 app.get('/api/financial/dashboard', authenticateToken, financialCtrl.getFinancialDashboard);
-
-// Transactions
 app.get('/api/financial/transactions', authenticateToken, financialCtrl.getTransactions);
 app.post('/api/financial/transactions', authenticateToken, financialCtrl.createTransaction);
 app.put('/api/financial/transactions/:id', authenticateToken, financialCtrl.updateTransaction);
@@ -540,8 +538,10 @@ app.delete('/api/financial/transactions/:id', authenticateToken, financialCtrl.d
 
 // Auxiliares
 app.get('/api/financial/categories', authenticateToken, financialCtrl.getCategories);
-app.post('/api/financial/sync', authenticateToken, financialCtrl.runSync);
 app.post('/api/financial/categories', authenticateToken, financialCtrl.createCategory);
+app.put('/api/financial/categories/:id', authenticateToken, financialCtrl.updateCategory);
+
+app.post('/api/financial/sync', authenticateToken, financialCtrl.runSync);
 app.get('/api/financial/suppliers', authenticateToken, financialCtrl.getSuppliers);
 app.post('/api/financial/suppliers', authenticateToken, financialCtrl.createSupplier);
 app.get('/api/financial/clients', authenticateToken, financialCtrl.getClients);

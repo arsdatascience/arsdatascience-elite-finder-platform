@@ -234,21 +234,6 @@ CREATE TABLE IF NOT EXISTS social_posts (
 
 -- ============================================
 -- TRAINING
--- ============================================
-CREATE TABLE IF NOT EXISTS training_modules (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    video_url TEXT,
-    duration INTEGER,
-    order_index INTEGER,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS training_progress (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    module_id INTEGER REFERENCES training_modules(id) ON DELETE CASCADE,
     status VARCHAR(50),
     progress INTEGER DEFAULT 0,
     last_accessed TIMESTAMP DEFAULT NOW()
