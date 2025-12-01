@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     DollarSign, Plus,
     ArrowUpCircle, ArrowDownCircle, Edit2,
-    BarChart3, Wallet, Tag, FileText, Loader2, Users, Calendar, Filter, Download
+    BarChart3, Wallet, Tag, Loader2, Users, Calendar, Filter, Download
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -567,6 +567,7 @@ export const FinancialModule: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                    <div className="text-xs text-slate-300 text-center mt-8">v2.1 - Updated</div>
                 </div>
             )}
 
