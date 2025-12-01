@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { AdminPlans } from './AdminPlans';
 import { AdminTenants } from './AdminTenants';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
     LayoutDashboard,
     Users,
@@ -14,8 +17,41 @@ import {
     CheckCircle,
     AlertTriangle,
     Building,
-    LogOut
+    LogOut,
+    Lock,
+    Shield,
+    Eye,
+    EyeOff,
+    Save,
+    X,
+    MapPin,
+    Upload
 } from 'lucide-react';
+
+// Schema de Validação
+const userSchema = z.object({
+    username: z.string().min(3, 'Mínimo de 3 caracteres').optional(),
+    firstName: z.string().min(2, 'Nome obrigatório'),
+    lastName: z.string().min(2, 'Sobrenome obrigatório'),
+    email: z.string().email('Email inválido'),
+    password: z.string().optional(),
+    newPassword: z.string().optional(),
+    phone: z.string().optional(),
+    cpf: z.string().optional(),
+    role: z.string(),
+    status: z.string(),
+    address: z.object({
+        street: z.string().optional(),
+        number: z.string().optional(),
+        complement: z.string().optional(),
+        district: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        zip: z.string().optional()
+    }).optional()
+});
+
+type UserFormData = z.infer<typeof userSchema>;
 
 // Interfaces
 interface QueueStats {
@@ -31,11 +67,19 @@ interface QueueStats {
 interface User {
     id: number;
     name: string;
+    first_name?: string;
+    last_name?: string;
+    username?: string;
     email: string;
     role: string;
     status: string;
     plan?: string;
     created_at: string;
+    tenant_name?: string;
+    avatar_url?: string;
+    phone?: string;
+    cpf?: string;
+    address?: any;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -43,6 +87,15 @@ const AdminDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
     const [users, setUsers] = useState<User[]>([]);
+
+    // Estados para Edição de Usuário
+    const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
+
+    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<UserFormData>({
+        resolver: zodResolver(userSchema)
+    });
 
     // Fetch Data
     useEffect(() => {
@@ -62,11 +115,87 @@ const AdminDashboard: React.FC = () => {
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users`);
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await res.json();
             if (Array.isArray(data)) setUsers(data);
         } catch (error) {
             console.error('Erro ao buscar usuários:', error);
+        }
+    };
+
+    const handleEditUser = (user: User) => {
+        setEditingUser(user);
+        reset({
+            username: user.username || user.name.split(' ')[0].toLowerCase(),
+            firstName: user.first_name || user.name.split(' ')[0],
+            lastName: user.last_name || user.name.split(' ').slice(1).join(' '),
+            email: user.email,
+            role: user.role,
+            status: user.status,
+            phone: user.phone || '',
+            cpf: user.cpf || '',
+            address: user.address || {}
+        });
+        setIsUserModalOpen(true);
+    };
+
+    const handleDeleteUser = async (id: number) => {
+        if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setUsers(prev => prev.filter(u => u.id !== id));
+            } else {
+                alert('Erro ao excluir usuário');
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const onSubmitUser = async (data: UserFormData) => {
+        try {
+            const token = localStorage.getItem('token');
+            const url = editingUser
+                ? `${import.meta.env.VITE_API_URL}/api/users/${editingUser.id}` // Ajustar endpoint se necessário
+                : `${import.meta.env.VITE_API_URL}/api/users`;
+
+            const method = editingUser ? 'PUT' : 'POST';
+
+            // Se for criação, concatenar nome
+            const payload = {
+                ...data,
+                name: `${data.firstName} ${data.lastName}`
+            };
+
+            const res = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                fetchUsers();
+                setIsUserModalOpen(false);
+                setEditingUser(null);
+                alert('Usuário salvo com sucesso!');
+            } else {
+                const err = await res.json();
+                alert('Erro: ' + (err.error || 'Erro desconhecido'));
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Erro de conexão');
         }
     };
 
@@ -103,13 +232,25 @@ const AdminDashboard: React.FC = () => {
         <div className="bg-[#1e293b] rounded-xl border border-slate-700 overflow-hidden">
             <div className="p-6 border-b border-slate-700 flex justify-between items-center">
                 <h3 className="text-xl font-semibold text-white">Gerenciar Usuários</h3>
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                    <input
-                        type="text"
-                        placeholder="Buscar usuário..."
-                        className="bg-[#0f172a] border border-slate-600 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
-                    />
+                <div className="flex gap-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                        <input
+                            type="text"
+                            placeholder="Buscar usuário..."
+                            className="bg-[#0f172a] border border-slate-600 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                        />
+                    </div>
+                    <button
+                        onClick={() => {
+                            setEditingUser(null);
+                            reset({ role: 'Vendedor', status: 'active' });
+                            setIsUserModalOpen(true);
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                        + Novo Usuário
+                    </button>
                 </div>
             </div>
             <div className="overflow-x-auto">
@@ -117,6 +258,7 @@ const AdminDashboard: React.FC = () => {
                     <thead className="bg-[#0f172a] text-slate-200 uppercase font-medium">
                         <tr>
                             <th className="px-6 py-4">Usuário</th>
+                            <th className="px-6 py-4">Empresa</th>
                             <th className="px-6 py-4">Role</th>
                             <th className="px-6 py-4">Status</th>
                             <th className="px-6 py-4">Plano</th>
@@ -131,6 +273,9 @@ const AdminDashboard: React.FC = () => {
                                     <div>{user.name}</div>
                                     <div className="text-xs text-slate-500">{user.email}</div>
                                 </td>
+                                <td className="px-6 py-4 text-slate-300">
+                                    {user.tenant_name || '-'}
+                                </td>
                                 <td className="px-6 py-4">
                                     <span className={`px-2 py-1 rounded-full text-xs ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
                                         {user.role}
@@ -144,8 +289,12 @@ const AdminDashboard: React.FC = () => {
                                 <td className="px-6 py-4">{user.plan || 'Free'}</td>
                                 <td className="px-6 py-4">{new Date(user.created_at).toLocaleDateString()}</td>
                                 <td className="px-6 py-4 text-right">
-                                    <button className="text-blue-400 hover:text-blue-300 mr-3"><Edit className="w-4 h-4" /></button>
-                                    <button className="text-red-400 hover:text-red-300"><Trash2 className="w-4 h-4" /></button>
+                                    <button onClick={() => handleEditUser(user)} className="text-blue-400 hover:text-blue-300 mr-3">
+                                        <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={() => handleDeleteUser(user.id)} className="text-red-400 hover:text-red-300">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -243,6 +392,213 @@ const AdminDashboard: React.FC = () => {
                 {activeTab === 'system' && renderSystem()}
                 {activeTab === 'plans' && <div className="text-gray-900"><AdminPlans /></div>}
             </div>
+
+            {/* Modal de Edição de Usuário */}
+            {isUserModalOpen && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-in fade-in">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
+                            <h3 className="text-xl font-bold text-gray-900">
+                                {editingUser ? 'Editar Usuário' : 'Novo Usuário'}
+                            </h3>
+                            <button onClick={() => setIsUserModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmit(onSubmitUser)} className="p-6 space-y-8">
+                            {/* Informações Pessoais */}
+                            <section>
+                                <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <Users size={16} /> Informações Pessoais
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                                        <input
+                                            {...register('firstName')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Primeiro nome"
+                                        />
+                                        {errors.firstName && <span className="text-red-500 text-xs">{errors.firstName.message}</span>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Sobrenome *</label>
+                                        <input
+                                            {...register('lastName')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Sobrenome"
+                                        />
+                                        {errors.lastName && <span className="text-red-500 text-xs">{errors.lastName.message}</span>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                                        <input
+                                            {...register('email')}
+                                            type="email"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="email@empresa.com"
+                                        />
+                                        {errors.email && <span className="text-red-500 text-xs">{errors.email.message}</span>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                                        <input
+                                            {...register('phone')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="(00) 00000-0000"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+                                        <input
+                                            {...register('cpf')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="000.000.000-00"
+                                        />
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Endereço */}
+                            <section className="pt-6 border-t border-gray-100">
+                                <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <MapPin size={16} /> Endereço
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="md:col-span-1">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+                                        <input
+                                            {...register('address.zip')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="00000-000"
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Rua</label>
+                                        <input
+                                            {...register('address.street')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Nome da rua"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                                        <input
+                                            {...register('address.number')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="123"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
+                                        <input
+                                            {...register('address.complement')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Apto 101"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                                        <input
+                                            {...register('address.district')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Bairro"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                                        <input
+                                            {...register('address.city')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Cidade"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                                        <input
+                                            {...register('address.state')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="UF"
+                                            maxLength={2}
+                                        />
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Permissões e Segurança */}
+                            <section className="pt-6 border-t border-gray-100">
+                                <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <Shield size={16} /> Permissões e Segurança
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Função (Role)</label>
+                                        <select
+                                            {...register('role')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                        >
+                                            <option value="Vendedor">Vendedor</option>
+                                            <option value="Gerente">Gerente</option>
+                                            <option value="Admin">Admin</option>
+                                            <option value="super_admin">Super Admin</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                        <select
+                                            {...register('status')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                        >
+                                            <option value="active">Ativo</option>
+                                            <option value="inactive">Inativo</option>
+                                            <option value="suspended">Suspenso</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {editingUser ? 'Nova Senha (deixe em branco para manter)' : 'Senha Inicial'}
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                {...register('newPassword')}
+                                                type={showPassword ? 'text' : 'password'}
+                                                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                                                placeholder={editingUser ? '••••••••' : 'Senha segura'}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                            >
+                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 sticky bottom-0 bg-white pb-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsUserModalOpen(false)}
+                                    className="px-6 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                >
+                                    <Save size={18} />
+                                    Salvar Usuário
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

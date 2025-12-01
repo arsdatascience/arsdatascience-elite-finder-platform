@@ -451,12 +451,7 @@ export const Settings: React.FC = () => {
     }
   };
 
-  const handleSystemCleanup = async () => {
-    if (window.confirm('ATENÇÃO: Isso irá resetar todos os dados de clientes e leads do banco de dados local. Deseja continuar?')) {
-      // Simulação de limpeza
-      alert('Limpeza de sistema simulada com sucesso.');
-    }
-  };
+
 
   // Real Integrations Data (Mockado para UI)
   const [integrations] = useState([
@@ -830,14 +825,6 @@ export const Settings: React.FC = () => {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={handleSystemCleanup}
-                  className="px-4 py-2 bg-red-100 text-red-700 border border-red-200 rounded-lg hover:bg-red-200 flex items-center gap-2"
-                  title="Limpar clientes extras e resetar IDs"
-                >
-                  <Trash2 size={18} />
-                  Limpar Banco
-                </button>
-                <button
                   onClick={handleOpenAddMember}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
                 >
@@ -1024,12 +1011,6 @@ export const Settings: React.FC = () => {
           )}
         </nav>
         <div className="p-4 border-t border-gray-200">
-          <button
-            onClick={handleSystemCleanup}
-            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors mb-2"
-          >
-            <Trash2 size={18} /> Resetar Sistema
-          </button>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"

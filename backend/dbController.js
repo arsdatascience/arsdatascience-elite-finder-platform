@@ -19,7 +19,13 @@ const pool = new Pool({
 // ============================================
 const getUsers = async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, name, email, role, avatar_url, created_at FROM users ORDER BY created_at DESC');
+        const result = await pool.query(`
+            SELECT u.id, u.name, u.first_name, u.last_name, u.email, u.role, u.avatar_url, u.created_at, u.status,
+                   t.name as tenant_name
+            FROM users u
+            LEFT JOIN tenants t ON u.tenant_id = t.id
+            ORDER BY u.created_at DESC
+        `);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching users:', error);
