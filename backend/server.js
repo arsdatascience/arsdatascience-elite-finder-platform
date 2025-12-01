@@ -62,6 +62,13 @@ app.post('/api/admin/plans', authenticateToken, checkAdmin, planController.creat
 app.put('/api/admin/plans/:id', authenticateToken, checkAdmin, planController.updatePlan);
 app.delete('/api/admin/plans/:id', authenticateToken, checkAdmin, planController.deletePlan);
 
+// Rota de Análise de Áudio (Whisper + GPT-4o)
+const audioController = require('./audioController');
+app.post('/api/audio/analyze', authenticateToken, audioController.uploadMiddleware, audioController.analyzeAudio);
+app.get('/api/audio/history', authenticateToken, audioController.getHistory);
+app.get('/api/audio/analysis/:id', authenticateToken, audioController.getAnalysis);
+app.delete('/api/audio/analysis/:id', authenticateToken, audioController.deleteAnalysis);
+
 // Log request URL para debug
 app.use((req, res, next) => {
   console.log(`[Request] ${req.method} ${req.url}`);

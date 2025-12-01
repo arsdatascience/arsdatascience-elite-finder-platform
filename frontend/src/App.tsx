@@ -28,6 +28,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 import { ImageGenerationPage } from '@/components/ImageGenerationPage';
 import AdminDashboard from '@/components/AdminDashboard';
+import { AudioAnalysis } from '@/components/AudioAnalysis';
 
 const PATH_MAP: Record<ViewState, string> = {
   [ViewState.HOME]: '/',
@@ -40,6 +41,7 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.SOCIAL_CALENDAR]: '/social-calendar',
   [ViewState.SOCIAL_INTEGRATIONS]: '/social-integrations',
   [ViewState.IMAGE_GENERATION]: '/images/generate',
+  [ViewState.AUDIO_ANALYSIS]: '/audio-analysis',
   [ViewState.AUTOMATION]: '/automation',
   [ViewState.TRAINING]: '/training',
   [ViewState.REPORTS]: '/reports',
@@ -171,6 +173,7 @@ const App: React.FC = () => {
           <Route path="/social-calendar" element={<div className="h-full min-h-screen"><SocialCalendar /></div>} />
           <Route path="/social-integrations" element={<SocialIntegrations />} />
           <Route path="/images/generate" element={<ImageGenerationPage />} />
+          <Route path="/audio-analysis" element={<AudioAnalysis />} />
           <Route
             path="/automation"
             element={

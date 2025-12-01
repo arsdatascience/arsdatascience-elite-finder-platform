@@ -591,3 +591,19 @@ CREATE TABLE IF NOT EXISTS prompt_templates (
 
 CREATE INDEX IF NOT EXISTS idx_prompt_templates_user_id ON prompt_templates(user_id);
 CREATE INDEX IF NOT EXISTS idx_prompt_templates_category ON prompt_templates(category);
+
+-- ============================================
+-- AUDIO ANALYSIS
+-- ============================================
+CREATE TABLE IF NOT EXISTS audio_analyses (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    filename VARCHAR(255) NOT NULL,
+    summary TEXT,
+    global_sentiment JSONB,
+    speakers JSONB,
+    segments JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audio_analyses_user_id ON audio_analyses(user_id);

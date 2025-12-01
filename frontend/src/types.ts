@@ -20,6 +20,7 @@ export enum ViewState {
   ADMIN = 'ADMIN',
   HOME = 'HOME',
   IMAGE_GENERATION = 'IMAGE_GENERATION',
+  AUDIO_ANALYSIS = 'AUDIO_ANALYSIS',
 }
 
 export enum LeadStatus {
