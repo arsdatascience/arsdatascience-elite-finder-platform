@@ -516,12 +516,6 @@ app.put('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantControlle
 app.delete('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantController.deleteTenant);
 
 // Rotas de Planos (Admin)
-const planController = require('./planController');
-app.get('/api/admin/plans', authenticateToken, checkAdmin, planController.getAllPlans);
-app.post('/api/admin/plans', authenticateToken, checkAdmin, planController.createPlan);
-app.put('/api/admin/plans/:id', authenticateToken, checkAdmin, planController.updatePlan);
-app.delete('/api/admin/plans/:id', authenticateToken, checkAdmin, planController.deletePlan);
-
 // Rotas de Estatísticas do Sistema (Admin)
 app.get('/api/admin/usage-stats', authenticateToken, checkAdmin, adminCtrl.getSystemUsage);
 
