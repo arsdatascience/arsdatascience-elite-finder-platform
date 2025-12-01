@@ -206,10 +206,17 @@ const financialController = {
             categoryFilterClause += ` AND t.date <= $${catParamCount++}`;
             catParams.push(end);
 
-            if (client_id) {
+            if (client_id && client_id !== 'undefined' && client_id !== 'null') {
                 categoryFilterClause += ` AND t.client_id = $${catParamCount++}`;
                 catParams.push(client_id);
             }
+
+            console.log('DEBUG Dashboard:', {
+                filterClause,
+                categoryFilterClause,
+                params,
+                catParams
+            });
 
             const categoryExpensesQuery = `
                 SELECT c.name, c.color, SUM(t.amount) as value
