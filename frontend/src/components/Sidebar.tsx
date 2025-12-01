@@ -31,7 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto sidebar-scroll">
         <nav className="mt-8 px-4 space-y-2 pb-24">
           {NAV_ITEMS.map((item) => {
             // Ocultar Settings para usuários comuns (apenas admin e super_admin acessam)

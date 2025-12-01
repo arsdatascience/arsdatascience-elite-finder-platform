@@ -23,6 +23,23 @@ body {
   background: #94a3b8; 
 }
 
+/* Sidebar Scrollbar */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: #0f172a; /* slate-900 */
+  border-right: 1px solid #0f172a; /* Borda direita da mesma cor */
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #334155; /* slate-700 */
+  border-radius: 3px;
+  border: 1px solid #0f172a; /* Espaço entre thumb e track */
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #475569; /* slate-600 */
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
