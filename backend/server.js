@@ -558,6 +558,7 @@ runMigrations().then(() => {
   const jobProcessor = require('./services/jobProcessor');
   jobProcessor.start();
   console.log('🚀 Job Processor started');
+  console.log('🔄 Force Deploy: ' + new Date().toISOString());
 
   server.listen(PORT, () => {
     console.log(`🔥 Server running on port ${PORT}`);
