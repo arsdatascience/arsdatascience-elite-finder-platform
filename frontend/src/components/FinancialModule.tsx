@@ -1,4 +1,13 @@
-
+import React, { useState, useEffect } from 'react';
+import {
+    DollarSign, Plus,
+    ArrowUpCircle, ArrowDownCircle, Edit2,
+    BarChart3, Wallet, Tag, FileText, Loader2
+} from 'lucide-react';
+import {
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+    PieChart, Pie, Cell
+} from 'recharts';
 
 interface Transaction {
     id: number;
@@ -13,6 +22,13 @@ interface Transaction {
     notes?: string;
 }
 
+interface Category {
+    id: number;
+    name: string;
+    type: 'income' | 'expense';
+    color: string;
+}
+
 interface DashboardData {
     summary: {
         total_income: number;
@@ -20,8 +36,17 @@ interface DashboardData {
         pending_income: number;
         pending_expense: number;
     };
-    cashFlow: any[];
-    categoryExpenses: any[];
+    cashFlow: { day: string; income: number; expense: number }[];
+    categoryExpenses: { name: string; value: number; color: string }[];
+}
+
+interface NewTransactionState {
+    description: string;
+    amount: number;
+    type: 'income' | 'expense';
+    category_id: string;
+    date: string;
+    status: 'pending' | 'paid';
 }
 
 export const FinancialModule: React.FC = () => {
@@ -31,12 +56,11 @@ export const FinancialModule: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Filtros
-    const [dateRange, setDateRange] = useState({ start: '', end: '' });
+    // Filtros (Preparado para uso futuro)
+    // const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
-    // Novo estado para criação
-    const [categories, setCategories] = useState<any[]>([]);
-    const [newTransaction, setNewTransaction] = useState({
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [newTransaction, setNewTransaction] = useState<NewTransactionState>({
         description: '',
         amount: 0,
         type: 'expense',
@@ -46,10 +70,17 @@ export const FinancialModule: React.FC = () => {
     });
 
     useEffect(() => {
-        fetchDashboard();
-        fetchCategories();
-        if (activeTab === 'transactions') fetchTransactions();
-    }, [activeTab, dateRange]);
+        const loadData = async () => {
+            setLoading(true);
+            await Promise.all([
+                fetchDashboard(),
+                fetchCategories(),
+                activeTab === 'transactions' ? fetchTransactions() : Promise.resolve()
+            ]);
+            setLoading(false);
+        };
+        loadData();
+    }, [activeTab]);
 
     const fetchDashboard = async () => {
         const token = localStorage.getItem('token');
@@ -65,7 +96,6 @@ export const FinancialModule: React.FC = () => {
     };
 
     const fetchTransactions = async () => {
-        setLoading(true);
         const token = localStorage.getItem('token');
         try {
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financial/transactions`, {
@@ -75,8 +105,6 @@ export const FinancialModule: React.FC = () => {
             if (data.success) setTransactions(data.data);
         } catch (error) {
             console.error(error);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -129,6 +157,14 @@ export const FinancialModule: React.FC = () => {
     const exportToPDF = () => {
         alert("Para habilitar a exportação, instale: npm install jspdf jspdf-autotable");
     };
+
+    if (loading && !dashboardData && transactions.length === 0) {
+        return (
+            <div className="flex items-center justify-center h-screen bg-slate-50">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="p-6 bg-slate-50 min-h-screen">
@@ -385,7 +421,7 @@ export const FinancialModule: React.FC = () => {
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
                                     <select
                                         value={newTransaction.type}
-                                        onChange={e => setNewTransaction({ ...newTransaction, type: e.target.value as any })}
+                                        onChange={e => setNewTransaction({ ...newTransaction, type: e.target.value as 'income' | 'expense' })}
                                         className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
                                     >
                                         <option value="income">Receita</option>
@@ -396,7 +432,7 @@ export const FinancialModule: React.FC = () => {
                                     <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
                                     <select
                                         value={newTransaction.status}
-                                        onChange={e => setNewTransaction({ ...newTransaction, status: e.target.value as any })}
+                                        onChange={e => setNewTransaction({ ...newTransaction, status: e.target.value as 'paid' | 'pending' })}
                                         className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
                                     >
                                         <option value="paid">Pago</option>
