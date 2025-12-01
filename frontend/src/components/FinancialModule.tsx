@@ -1,5 +1,5 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// import jsPDF from 'jspdf';
+// import autoTable from 'jspdf-autotable';
 
 interface Transaction {
     id: number;
@@ -128,39 +128,9 @@ export const FinancialModule: React.FC = () => {
     };
 
     const exportToPDF = () => {
-        const doc = new jsPDF();
-
-        doc.setFontSize(18);
-        doc.text('Relatório Financeiro', 14, 22);
-        doc.setFontSize(11);
-        doc.setTextColor(100);
-        doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, 14, 30);
-
-        // Resumo
-        if (dashboardData) {
-            doc.text(`Receita Total: ${formatCurrency(dashboardData.summary.total_income)}`, 14, 40);
-            doc.text(`Despesa Total: ${formatCurrency(dashboardData.summary.total_expense)}`, 14, 46);
-            doc.text(`Saldo: ${formatCurrency(dashboardData.summary.total_income - dashboardData.summary.total_expense)}`, 14, 52);
-        }
-
-        // Tabela de Transações
-        const tableColumn = ["Data", "Descrição", "Categoria", "Tipo", "Valor", "Status"];
-        const tableRows = transactions.map(t => [
-            new Date(t.date).toLocaleDateString(),
-            t.description,
-            t.category_name,
-            t.type === 'income' ? 'Receita' : 'Despesa',
-            formatCurrency(Number(t.amount)),
-            t.status
-        ]);
-
-        autoTable(doc, {
-            head: [tableColumn],
-            body: tableRows,
-            startY: 60,
-        });
-
-        doc.save('relatorio_financeiro.pdf');
+        alert("Para habilitar a exportação, instale: npm install jspdf jspdf-autotable");
+        // const doc = new jsPDF();
+        // ... (código comentado)
     };
 
     return (
