@@ -32,12 +32,36 @@ const createCheckoutSession = async (req, res) => {
         return res.status(400).json({ error: 'Plano inválido ou não configurado' });
     }
 
+    let priceId = PLAN_PRICES[planName];
+
+    // Correção automática: Se for um Product ID (prod_), buscar o Price ID correspondente
+    if (priceId.startsWith('prod_')) {
+        try {
+            console.log(`⚠️ Detectado Product ID (${priceId}) em vez de Price ID. Buscando preço...`);
+            const prices = await stripe.prices.list({
+                product: priceId,
+                active: true,
+                limit: 1,
+            });
+
+            if (prices.data.length > 0) {
+                priceId = prices.data[0].id;
+                console.log(`✅ Preço encontrado: ${priceId}`);
+            } else {
+                throw new Error('Nenhum preço ativo encontrado para este produto.');
+            }
+        } catch (err) {
+            console.error('Erro ao buscar preço do produto:', err);
+            return res.status(500).json({ error: 'Erro de configuração do Stripe: Preço não encontrado para o produto.' });
+        }
+    }
+
     try {
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [
                 {
-                    price: PLAN_PRICES[planName],
+                    price: priceId,
                     quantity: 1,
                 },
             ],
