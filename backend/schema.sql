@@ -576,3 +576,91 @@ CREATE TABLE IF NOT EXISTS audio_analyses (
 );
 
 CREATE INDEX IF NOT EXISTS idx_audio_analyses_user_id ON audio_analyses(user_id);
+
+-- ============================================
+-- FINANCIAL MODULE
+-- ============================================
+
+-- 1. Categorias Financeiras (Plano de Contas)
+CREATE TABLE IF NOT EXISTS financial_categories (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(20) CHECK (type IN ('income', 'expense')),
+    color VARCHAR(20) DEFAULT '#cbd5e1',
+    is_default BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 2. Fornecedores (Suppliers)
+CREATE TABLE IF NOT EXISTS suppliers (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    contact_name VARCHAR(100),
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    service_type VARCHAR(100), -- ex: 'Marketing', 'Software', 'Consultoria'
+    tax_id VARCHAR(50), -- CNPJ/CPF
+    pix_key VARCHAR(100),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 3. Transações Financeiras (Receitas e Despesas)
+CREATE TABLE IF NOT EXISTS financial_transactions (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    description VARCHAR(255) NOT NULL,
+    amount DECIMAL(12, 2) NOT NULL,
+    type VARCHAR(20) CHECK (type IN ('income', 'expense')),
+    category_id INTEGER REFERENCES financial_categories(id) ON DELETE SET NULL,
+    supplier_id INTEGER REFERENCES suppliers(id) ON DELETE SET NULL,
+    
+    -- Vínculos Estratégicos
+    campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL, -- Custo de Mídia
+    client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL, -- Receita de Cliente ou Custo vinculado
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL, -- Pagamento de Colaborador/Comissão
+    
+    -- Datas
+    date DATE NOT NULL, -- Data de competência
+    due_date DATE, -- Data de vencimento
+    payment_date DATE, -- Data de pagamento real
+    
+    -- Status e Detalhes
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'overdue', 'cancelled')),
+    payment_method VARCHAR(50), -- Boleto, PIX, Cartão, Transferência
+    recurrence VARCHAR(20) DEFAULT 'none', -- none, monthly, yearly
+    notes TEXT,
+    
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Índices para performance
+CREATE INDEX IF NOT EXISTS idx_fin_trans_tenant ON financial_transactions(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_fin_trans_date ON financial_transactions(date);
+CREATE INDEX IF NOT EXISTS idx_fin_trans_status ON financial_transactions(status);
+CREATE INDEX IF NOT EXISTS idx_fin_trans_type ON financial_transactions(type);
+
+-- Inserir Categorias Padrão (se não existirem)
+INSERT INTO financial_categories (name, type, color, is_default) 
+SELECT 'Receita de Serviços', 'income', '#22c55e', true
+WHERE NOT EXISTS (SELECT 1 FROM financial_categories WHERE name = 'Receita de Serviços');
+
+INSERT INTO financial_categories (name, type, color, is_default) 
+SELECT 'Mídia Paga (Ads)', 'expense', '#ef4444', true
+WHERE NOT EXISTS (SELECT 1 FROM financial_categories WHERE name = 'Mídia Paga (Ads)');
+
+INSERT INTO financial_categories (name, type, color, is_default) 
+SELECT 'Ferramentas & Software', 'expense', '#3b82f6', true
+WHERE NOT EXISTS (SELECT 1 FROM financial_categories WHERE name = 'Ferramentas & Software');
+
+INSERT INTO financial_categories (name, type, color, is_default) 
+SELECT 'Pessoal & Salários', 'expense', '#eab308', true
+WHERE NOT EXISTS (SELECT 1 FROM financial_categories WHERE name = 'Pessoal & Salários');
+
+INSERT INTO financial_categories (name, type, color, is_default) 
+SELECT 'Impostos', 'expense', '#64748b', true
+WHERE NOT EXISTS (SELECT 1 FROM financial_categories WHERE name = 'Impostos');

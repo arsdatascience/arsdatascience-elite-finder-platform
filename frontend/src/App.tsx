@@ -29,6 +29,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ImageGenerationPage } from '@/components/ImageGenerationPage';
 import AdminDashboard from '@/components/AdminDashboard';
 import { AudioAnalysis } from '@/components/AudioAnalysis';
+import { FinancialModule } from '@/components/FinancialModule';
 
 const PATH_MAP: Record<ViewState, string> = {
   [ViewState.HOME]: '/',
@@ -42,6 +43,7 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.SOCIAL_INTEGRATIONS]: '/social-integrations',
   [ViewState.IMAGE_GENERATION]: '/images/generate',
   [ViewState.AUDIO_ANALYSIS]: '/audio-analysis',
+  [ViewState.FINANCIAL_MODULE]: '/financial', // Adicionado
   [ViewState.AUTOMATION]: '/automation',
   [ViewState.TRAINING]: '/training',
   [ViewState.REPORTS]: '/reports',

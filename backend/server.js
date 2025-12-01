@@ -526,6 +526,24 @@ app.put('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantControlle
 app.delete('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantController.deleteTenant);
 
 // Rotas de Planos (Admin)
+// --- FINANCIAL MODULE ---
+const financialCtrl = require('./financialController');
+
+// Dashboard
+app.get('/api/financial/dashboard', authenticateToken, financialCtrl.getFinancialDashboard);
+
+// Transactions
+app.get('/api/financial/transactions', authenticateToken, financialCtrl.getTransactions);
+app.post('/api/financial/transactions', authenticateToken, financialCtrl.createTransaction);
+app.put('/api/financial/transactions/:id', authenticateToken, financialCtrl.updateTransaction);
+app.delete('/api/financial/transactions/:id', authenticateToken, financialCtrl.deleteTransaction);
+
+// Auxiliares
+app.get('/api/financial/categories', authenticateToken, financialCtrl.getCategories);
+app.post('/api/financial/categories', authenticateToken, financialCtrl.createCategory);
+app.get('/api/financial/suppliers', authenticateToken, financialCtrl.getSuppliers);
+app.post('/api/financial/suppliers', authenticateToken, financialCtrl.createSupplier);
+
 // Rotas de Estatísticas do Sistema (Admin)
 app.get('/api/admin/usage-stats', authenticateToken, checkAdmin, adminCtrl.getSystemUsage);
 

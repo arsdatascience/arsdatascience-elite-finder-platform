@@ -1,6 +1,6 @@
 // Navigation and data constants
 import { Campaign, Lead, LeadStatus, Metric, ChatMessage } from './types';
-import { Home, LayoutDashboard, Megaphone, Plane, MessageSquare, Settings, Share2, GitBranch, BookOpen, Sparkles, Users, FileText, Bot, Calendar, Palette, Mic } from 'lucide-react';
+import { Home, LayoutDashboard, Megaphone, Plane, MessageSquare, Settings, Share2, GitBranch, BookOpen, Sparkles, Users, FileText, Bot, Calendar, Palette, Mic, Wallet } from 'lucide-react';
 
 export const NAV_ITEMS = [
   // Home
@@ -20,6 +20,7 @@ export const NAV_ITEMS = [
   { id: 'ELITE_ASSISTANT', label: 'Assistente Elite', icon: Bot },
   { id: 'AUDIO_ANALYSIS', label: 'Análise de Áudio', icon: Mic },
   { id: 'AGENT_BUILDER', label: 'Agente Builder', icon: Bot },
+  { id: 'FINANCIAL_MODULE', label: 'Financeiro', icon: Wallet },
   { id: 'SETTINGS', label: 'Configurações', icon: Settings },
   // New items
   { id: 'SOCIAL_CALENDAR', label: 'Calendário Social', icon: Calendar },

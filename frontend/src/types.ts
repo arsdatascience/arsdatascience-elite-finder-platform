@@ -21,6 +21,7 @@ export enum ViewState {
   HOME = 'HOME',
   IMAGE_GENERATION = 'IMAGE_GENERATION',
   AUDIO_ANALYSIS = 'AUDIO_ANALYSIS',
+  FINANCIAL_MODULE = 'FINANCIAL_MODULE',
 }
 
 export enum LeadStatus {
