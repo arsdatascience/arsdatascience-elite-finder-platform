@@ -366,14 +366,36 @@ export const Settings: React.FC = () => {
   };
 
   const handleEditMember = (member: TeamMember) => {
-    setCurrentMember(member);
+    // Garantir que todos os campos existam para evitar erros no formulário
+    const safeMember = {
+      ...INITIAL_MEMBER_STATE,
+      ...member,
+      address: { ...INITIAL_MEMBER_STATE.address, ...(member.address || {}) },
+      permissions: member.permissions || []
+    };
+    setCurrentMember(safeMember);
     setIsEditingMember(true);
     setIsMemberModalOpen(true);
   };
 
-  const handleDeleteMember = (id: number) => {
+  const handleDeleteMember = async (id: number) => {
     if (window.confirm('Tem certeza que deseja remover este membro da equipe?')) {
-      setTeamMembers(prev => prev.filter(m => m.id !== id));
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/team/members/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          setTeamMembers(prev => prev.filter(m => m.id !== id));
+          alert('Membro removido com sucesso.');
+        } else {
+          const data = await response.json();
+          alert('Erro ao remover membro: ' + (data.error || 'Erro desconhecido'));
+        }
+      } catch (error) {
+        console.error('Erro ao deletar:', error);
+        alert('Erro ao conectar com o servidor.');
+      }
     }
   };
 
