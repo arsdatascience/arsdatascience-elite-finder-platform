@@ -210,6 +210,49 @@ const financialController = {
         }
     },
 
+    createCategory: async (req, res) => {
+        const { tenant_id } = req.user;
+        const { name, type, color } = req.body;
+        try {
+            const result = await db.query(`
+                INSERT INTO financial_categories (tenant_id, name, type, color)
+                VALUES ($1, $2, $3, $4)
+                RETURNING *
+            `, [tenant_id, name, type, color]);
+            res.json({ success: true, data: result.rows[0] });
+        } catch (error) {
+            console.error('Error creating category:', error);
+            res.status(500).json({ success: false, error: 'Database error' });
+        }
+    },
+
+    getSuppliers: async (req, res) => {
+        const { tenant_id } = req.user;
+        try {
+            const result = await db.query(`SELECT * FROM suppliers WHERE tenant_id = $1 ORDER BY name`, [tenant_id]);
+            res.json({ success: true, data: result.rows });
+        } catch (error) {
+            console.error('Error fetching suppliers:', error);
+            res.status(500).json({ success: false, error: 'Database error' });
+        }
+    },
+
+    createSupplier: async (req, res) => {
+        const { tenant_id } = req.user;
+        const { name, contact_name, email, phone, service_type, tax_id, pix_key, notes } = req.body;
+        try {
+            const result = await db.query(`
+                INSERT INTO suppliers (tenant_id, name, contact_name, email, phone, service_type, tax_id, pix_key, notes)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                RETURNING *
+            `, [tenant_id, name, contact_name, email, phone, service_type, tax_id, pix_key, notes]);
+            res.json({ success: true, data: result.rows[0] });
+        } catch (error) {
+            console.error('Error creating supplier:', error);
+            res.status(500).json({ success: false, error: 'Database error' });
+        }
+    },
+
     // --- JOBS ---
 
     runSync: async (req, res) => {
