@@ -40,6 +40,7 @@ const userSchema = z.object({
     cpf: z.string().optional(),
     role: z.string(),
     status: z.string(),
+    tenant_id: z.string().optional(),
     address: z.object({
         street: z.string().optional(),
         number: z.string().optional(),
@@ -76,6 +77,7 @@ interface User {
     plan?: string;
     created_at: string;
     tenant_name?: string;
+    tenant_id?: number;
     avatar_url?: string;
     phone?: string;
     cpf?: string;
@@ -87,6 +89,9 @@ const AdminDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
     const [users, setUsers] = useState<User[]>([]);
+
+    const [tenants, setTenants] = useState<any[]>([]);
+    const [systemUsage, setSystemUsage] = useState<any>(null);
 
     // Estados para Edição de Usuário
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -101,7 +106,14 @@ const AdminDashboard: React.FC = () => {
     useEffect(() => {
         fetchQueueStats();
         fetchUsers();
+        fetchTenants();
     }, []);
+
+    useEffect(() => {
+        if (activeTab === 'system') {
+            fetchSystemUsage();
+        }
+    }, [activeTab]);
 
     const fetchQueueStats = async () => {
         try {
@@ -126,6 +138,32 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
+    const fetchTenants = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/tenants`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (Array.isArray(data)) setTenants(data);
+        } catch (error) {
+            console.error('Erro ao buscar tenants:', error);
+        }
+    };
+
+    const fetchSystemUsage = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/usage-stats`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            setSystemUsage(data);
+        } catch (error) {
+            console.error('Erro ao buscar estatísticas de uso:', error);
+        }
+    };
+
     const handleEditUser = (user: User) => {
         setEditingUser(user);
         reset({
@@ -135,6 +173,7 @@ const AdminDashboard: React.FC = () => {
             email: user.email,
             role: user.role,
             status: user.status,
+            tenant_id: user.tenant_id ? String(user.tenant_id) : '',
             phone: user.phone || '',
             cpf: user.cpf || '',
             address: user.address || {}
@@ -306,37 +345,97 @@ const AdminDashboard: React.FC = () => {
 
     const renderSystem = () => (
         <div className="space-y-6">
-            <div className="bg-[#1e293b] rounded-xl border border-slate-700 p-6">
-                <h3 className="text-xl font-semibold text-white mb-4">Status da Fila de Jobs</h3>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-[#0f172a] p-4 rounded-lg">
-                        <div className="text-slate-400 text-sm">Pending Jobs</div>
-                        <div className="text-2xl font-bold text-yellow-400">{queueStats?.stats?.pending || 0}</div>
+            {/* Filas de Jobs */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-[#1e293b] rounded-xl border border-slate-700 p-6">
+                    <h3 className="text-xl font-semibold text-white mb-4">Status da Fila de Jobs</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-[#0f172a] p-4 rounded-lg">
+                            <div className="text-slate-400 text-sm">Pending Jobs</div>
+                            <div className="text-2xl font-bold text-yellow-400">{queueStats?.stats?.pending || 0}</div>
+                        </div>
+                        <div className="bg-[#0f172a] p-4 rounded-lg">
+                            <div className="text-slate-400 text-sm">Processing</div>
+                            <div className="text-2xl font-bold text-blue-400">{queueStats?.stats?.processing || 0}</div>
+                        </div>
                     </div>
-                    <div className="bg-[#0f172a] p-4 rounded-lg">
-                        <div className="text-slate-400 text-sm">Processing</div>
-                        <div className="text-2xl font-bold text-blue-400">{queueStats?.stats?.processing || 0}</div>
+                </div>
+
+                <div className="bg-[#1e293b] rounded-xl border border-slate-700 p-6">
+                    <h3 className="text-xl font-semibold text-white mb-4">Falhas Recentes</h3>
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                        {queueStats?.recentFailures.map((job: any) => (
+                            <div key={job.id} className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex justify-between items-center">
+                                <div>
+                                    <div className="text-red-400 font-medium">{job.type}</div>
+                                    <div className="text-xs text-red-300/70">{job.error}</div>
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                    {new Date(job.updated_at).toLocaleString()}
+                                </div>
+                            </div>
+                        ))}
+                        {(!queueStats?.recentFailures || queueStats.recentFailures.length === 0) && (
+                            <div className="text-slate-500 text-center py-4">Nenhuma falha recente. Sistema saudável! 🚀</div>
+                        )}
                     </div>
                 </div>
             </div>
 
-            <div className="bg-[#1e293b] rounded-xl border border-slate-700 p-6">
-                <h3 className="text-xl font-semibold text-white mb-4">Falhas Recentes</h3>
-                <div className="space-y-3">
-                    {queueStats?.recentFailures.map(job => (
-                        <div key={job.id} className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex justify-between items-center">
-                            <div>
-                                <div className="text-red-400 font-medium">{job.type}</div>
-                                <div className="text-xs text-red-300/70">{job.error}</div>
-                            </div>
-                            <div className="text-xs text-slate-500">
-                                {new Date(job.updated_at).toLocaleString()}
-                            </div>
-                        </div>
-                    ))}
-                    {(!queueStats?.recentFailures || queueStats.recentFailures.length === 0) && (
-                        <div className="text-slate-500 text-center py-4">Nenhuma falha recente. Sistema saudável! 🚀</div>
-                    )}
+            {/* Monitoramento de Uso */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Uso por Tenant */}
+                <div className="bg-[#1e293b] rounded-xl border border-slate-700 p-6">
+                    <h3 className="text-xl font-semibold text-white mb-4">Uso por Empresa (Tenant)</h3>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-slate-400">
+                            <thead className="bg-[#0f172a] text-slate-200">
+                                <tr>
+                                    <th className="p-3">Empresa</th>
+                                    <th className="p-3 text-right">Total Posts</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-700">
+                                {systemUsage?.tenants?.map((t: any) => (
+                                    <tr key={t.id}>
+                                        <td className="p-3">{t.name}</td>
+                                        <td className="p-3 text-right font-bold text-white">{t.total_posts}</td>
+                                    </tr>
+                                ))}
+                                {(!systemUsage?.tenants || systemUsage.tenants.length === 0) && (
+                                    <tr><td colSpan={2} className="p-4 text-center text-slate-500">Sem dados de uso.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Top Usuários */}
+                <div className="bg-[#1e293b] rounded-xl border border-slate-700 p-6">
+                    <h3 className="text-xl font-semibold text-white mb-4">Top Usuários (Uso)</h3>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-slate-400">
+                            <thead className="bg-[#0f172a] text-slate-200">
+                                <tr>
+                                    <th className="p-3">Usuário</th>
+                                    <th className="p-3">Empresa</th>
+                                    <th className="p-3 text-right">Total Posts</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-700">
+                                {systemUsage?.users?.map((u: any) => (
+                                    <tr key={u.id}>
+                                        <td className="p-3">{u.name}</td>
+                                        <td className="p-3 text-xs">{u.tenant_name || '-'}</td>
+                                        <td className="p-3 text-right font-bold text-white">{u.total_posts}</td>
+                                    </tr>
+                                ))}
+                                {(!systemUsage?.users || systemUsage.users.length === 0) && (
+                                    <tr><td colSpan={3} className="p-4 text-center text-slate-500">Sem dados de uso.</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -523,6 +622,24 @@ const AdminDashboard: React.FC = () => {
                                             maxLength={2}
                                         />
                                     </div>
+                                </div>
+                            </section>
+
+                            {/* Empresa (Tenant) */}
+                            <section className="pt-6 border-t border-gray-100">
+                                <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <Building size={16} /> Empresa (Tenant)
+                                </h4>
+                                <div>
+                                    <select
+                                        {...register('tenant_id')}
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                    >
+                                        <option value="">Sem empresa (Global)</option>
+                                        {tenants.map(tenant => (
+                                            <option key={tenant.id} value={String(tenant.id)}>{tenant.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </section>
 

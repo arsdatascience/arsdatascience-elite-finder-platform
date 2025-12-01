@@ -44,6 +44,40 @@ const cleanupDatabase = async (req, res) => {
     }
 };
 
+const getSystemUsage = async (req, res) => {
+    try {
+        // Uso por Tenant (Total de Posts)
+        const tenantsUsage = await db.query(`
+            SELECT t.id, t.name, COUNT(sp.id) as total_posts
+            FROM tenants t
+            LEFT JOIN users u ON u.tenant_id = t.id
+            LEFT JOIN social_posts sp ON sp.user_id = u.id
+            GROUP BY t.id, t.name
+            ORDER BY total_posts DESC
+        `);
+
+        // Uso por Usuário (Top 10)
+        const usersUsage = await db.query(`
+            SELECT u.id, u.name, t.name as tenant_name, COUNT(sp.id) as total_posts
+            FROM users u
+            LEFT JOIN tenants t ON u.tenant_id = t.id
+            LEFT JOIN social_posts sp ON sp.user_id = u.id
+            GROUP BY u.id, u.name, t.name
+            ORDER BY total_posts DESC
+            LIMIT 10
+        `);
+
+        res.json({
+            tenants: tenantsUsage.rows,
+            users: usersUsage.rows
+        });
+    } catch (error) {
+        console.error('Erro ao buscar estatísticas do sistema:', error);
+        res.status(500).json({ error: 'Erro ao buscar estatísticas' });
+    }
+};
+
 module.exports = {
-    cleanupDatabase
+    cleanupDatabase,
+    getSystemUsage
 };
