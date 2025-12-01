@@ -5,7 +5,7 @@ import { ViewState } from '@/types';
 import { Rocket } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { UserCircle, Shield, X } from 'lucide-react';
+import { UserCircle, Shield, X, LogOut } from 'lucide-react';
 
 interface SidebarProps {
   activeView: ViewState;
@@ -14,7 +14,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <div className={`fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
@@ -69,12 +69,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen
         </nav>
       </div>
 
-      <div className="absolute bottom-0 w-full p-4 border-t border-slate-800">
-        <div className="flex items-center gap-3">
+      <div className="absolute bottom-0 w-full p-4 border-t border-slate-800 flex items-center justify-between">
+        <div className="flex items-center gap-3 overflow-hidden">
           {user?.avatar_url ? (
-            <img src={user.avatar_url} alt="User" className="w-10 h-10 rounded-full border-2 border-blue-500 object-cover" />
+            <img src={user.avatar_url} alt="User" className="w-10 h-10 rounded-full border-2 border-blue-500 object-cover flex-shrink-0" />
           ) : (
-            <div className="w-10 h-10 rounded-full border-2 border-blue-500 bg-slate-800 flex items-center justify-center text-slate-400">
+            <div className="w-10 h-10 rounded-full border-2 border-blue-500 bg-slate-800 flex items-center justify-center text-slate-400 flex-shrink-0">
               <UserCircle size={24} />
             </div>
           )}
@@ -83,6 +83,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen
             <p className="text-xs text-slate-500 truncate">{user?.role || 'Membro'}</p>
           </div>
         </div>
+        <button
+          onClick={logout}
+          className="text-slate-400 hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-slate-800"
+          title="Sair"
+        >
+          <LogOut size={20} />
+        </button>
       </div>
     </div>
   );
