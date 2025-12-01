@@ -262,7 +262,12 @@ export const AudioAnalysis: React.FC = () => {
                 </div>
                 <div className="flex bg-slate-100 p-1 rounded-lg">
                     <button
-                        onClick={() => setActiveTab('new')}
+                        onClick={() => {
+                            setActiveTab('new');
+                            setFile(null);
+                            setResult(null);
+                            setError(null);
+                        }}
                         className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'new' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         <Plus size={16} /> Nova Análise
@@ -363,7 +368,7 @@ export const AudioAnalysis: React.FC = () => {
                                         <div className="px-4 py-2 bg-slate-100 rounded-lg">
                                             <span className="text-xs text-slate-500 uppercase font-bold">Sentimento Global</span>
                                             <div className={`text-lg font-bold ${result.globalSentiment.label === 'Positivo' ? 'text-green-600' :
-                                                    result.globalSentiment.label === 'Negativo' ? 'text-red-600' : 'text-slate-600'
+                                                result.globalSentiment.label === 'Negativo' ? 'text-red-600' : 'text-slate-600'
                                                 }`}>
                                                 {result.globalSentiment.label} ({(result.globalSentiment.score * 100).toFixed(0)}%)
                                             </div>
@@ -424,8 +429,8 @@ export const AudioAnalysis: React.FC = () => {
                                                 <p className="text-slate-800 mb-2">{segment.text}</p>
                                                 <div className="flex items-center gap-2">
                                                     <span className={`text-xs px-2 py-0.5 rounded-full border ${segment.sentiment === 'Positivo' ? 'border-green-200 text-green-700 bg-green-50' :
-                                                            segment.sentiment === 'Negativo' ? 'border-red-200 text-red-700 bg-red-50' :
-                                                                'border-slate-200 text-slate-600 bg-slate-50'
+                                                        segment.sentiment === 'Negativo' ? 'border-red-200 text-red-700 bg-red-50' :
+                                                            'border-slate-200 text-slate-600 bg-slate-50'
                                                         }`}>
                                                         {segment.sentiment} ({(segment.sentimentScore * 100).toFixed(0)}%)
                                                     </span>
@@ -481,8 +486,8 @@ export const AudioAnalysis: React.FC = () => {
                                             <td className="p-4 font-medium text-slate-800">{item.filename}</td>
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded-full text-xs font-bold ${item.global_sentiment?.label === 'Positivo' ? 'bg-green-100 text-green-700' :
-                                                        item.global_sentiment?.label === 'Negativo' ? 'bg-red-100 text-red-700' :
-                                                            'bg-slate-100 text-slate-600'
+                                                    item.global_sentiment?.label === 'Negativo' ? 'bg-red-100 text-red-700' :
+                                                        'bg-slate-100 text-slate-600'
                                                     }`}>
                                                     {item.global_sentiment?.label || 'N/A'}
                                                 </span>
