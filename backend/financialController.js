@@ -171,10 +171,10 @@ const financialController = {
 
             const totalsQuery = `
                 SELECT 
-                    SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as total_income,
-                    SUM(CASE WHEN type = 'expense' AND status = 'paid' THEN amount ELSE 0 END) as total_expense,
-                    SUM(CASE WHEN type = 'income' AND status = 'pending' THEN amount ELSE 0 END) as pending_income,
-                    SUM(CASE WHEN type = 'expense' AND status = 'pending' THEN amount ELSE 0 END) as pending_expense
+                    SUM(CASE WHEN "type" = 'income' AND "status" = 'paid' THEN amount ELSE 0 END) as total_income,
+                    SUM(CASE WHEN "type" = 'expense' AND "status" = 'paid' THEN amount ELSE 0 END) as total_expense,
+                    SUM(CASE WHEN "type" = 'income' AND "status" = 'pending' THEN amount ELSE 0 END) as pending_income,
+                    SUM(CASE WHEN "type" = 'expense' AND "status" = 'pending' THEN amount ELSE 0 END) as pending_expense
                 FROM financial_transactions
                 ${filterClause}
             `;
@@ -182,8 +182,8 @@ const financialController = {
             const cashFlowQuery = `
                 SELECT 
                     TO_CHAR(date, 'YYYY-MM-DD') as day,
-                    SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as income,
-                    SUM(CASE WHEN type = 'expense' AND status = 'paid' THEN amount ELSE 0 END) as expense
+                    SUM(CASE WHEN "type" = 'income' AND "status" = 'paid' THEN amount ELSE 0 END) as income,
+                    SUM(CASE WHEN "type" = 'expense' AND "status" = 'paid' THEN amount ELSE 0 END) as expense
                 FROM financial_transactions
                 ${filterClause}
                 GROUP BY day
@@ -192,7 +192,7 @@ const financialController = {
 
             // Para despesas por categoria, precisamos ajustar o filtro pois tem JOIN
             // Usando alias 't' para transactions
-            let categoryFilterClause = 'WHERE t.type = \'expense\' AND t.status = \'paid\'';
+            let categoryFilterClause = 'WHERE t."type" = \'expense\' AND t."status" = \'paid\'';
             const catParams = [];
             let catParamCount = 1;
 
