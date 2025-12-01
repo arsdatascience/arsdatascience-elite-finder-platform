@@ -1530,17 +1530,17 @@ export const AgentBuilder: React.FC = () => {
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">Precisão Semântica ({config.vectorConfig.hybridConfig?.semanticPrecision})</label>
                                                     <input
                                                         type="range" min="0" max="1" step="0.05"
-                                                        value={config.vectorConfig.hybridConfig?.semanticPrecision}
-                                                        onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, hybridConfig: { ...config.vectorConfig.hybridConfig!, semanticPrecision: parseFloat(e.target.value) } } })}
+                                                        value={config.vectorConfig.hybridConfig?.semanticPrecision ?? 0.85}
+                                                        onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, hybridConfig: { ...(config.vectorConfig.hybridConfig || { semanticPrecision: 0.85, contextualWeight: 0.25 }), semanticPrecision: parseFloat(e.target.value) } } })}
                                                         className="w-full accent-purple-600"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-xs font-medium text-gray-500 mb-1">Peso Contextual ({config.vectorConfig.hybridConfig?.contextualWeight})</label>
+                                                    <label className="block text-xs font-medium text-gray-500 mb-1">Peso Contextual ({config.vectorConfig.hybridConfig?.contextualWeight ?? 0.25})</label>
                                                     <input
                                                         type="range" min="0" max="1" step="0.05"
-                                                        value={config.vectorConfig.hybridConfig?.contextualWeight}
-                                                        onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, hybridConfig: { ...config.vectorConfig.hybridConfig!, contextualWeight: parseFloat(e.target.value) } } })}
+                                                        value={config.vectorConfig.hybridConfig?.contextualWeight ?? 0.25}
+                                                        onChange={(e) => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, hybridConfig: { ...(config.vectorConfig.hybridConfig || { semanticPrecision: 0.85, contextualWeight: 0.25 }), contextualWeight: parseFloat(e.target.value) } } })}
                                                         className="w-full accent-purple-600"
                                                     />
                                                 </div>
@@ -1552,11 +1552,11 @@ export const AgentBuilder: React.FC = () => {
                                             <h4 className="text-sm font-bold text-gray-700 mb-2">Validação Multi-Modelo</h4>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <div>
-                                                    <label className="block text-xs font-medium text-gray-500 mb-1">Consenso Mínimo ({config.advancedConfig?.multiModelValidation.minConsensus})</label>
+                                                    <label className="block text-xs font-medium text-gray-500 mb-1">Consenso Mínimo ({config.advancedConfig?.multiModelValidation.minConsensus ?? 0.75})</label>
                                                     <input
                                                         type="range" min="0.5" max="1" step="0.05"
-                                                        value={config.advancedConfig?.multiModelValidation.minConsensus}
-                                                        onChange={(e) => setConfig({ ...config, advancedConfig: { ...config.advancedConfig!, multiModelValidation: { ...config.advancedConfig!.multiModelValidation, minConsensus: parseFloat(e.target.value) } } })}
+                                                        value={config.advancedConfig?.multiModelValidation.minConsensus ?? 0.75}
+                                                        onChange={(e) => setConfig({ ...config, advancedConfig: { ...(config.advancedConfig || INITIAL_CONFIG.advancedConfig!), multiModelValidation: { ...(config.advancedConfig?.multiModelValidation || INITIAL_CONFIG.advancedConfig!.multiModelValidation), minConsensus: parseFloat(e.target.value) } } })}
                                                         className="w-full accent-blue-600"
                                                     />
                                                 </div>
@@ -1564,8 +1564,8 @@ export const AgentBuilder: React.FC = () => {
                                                     <label className="block text-xs font-medium text-gray-500 mb-1">Modelos Paralelos</label>
                                                     <input
                                                         type="number" min="1" max="5"
-                                                        value={config.advancedConfig?.multiModelValidation.parallelModels}
-                                                        onChange={(e) => setConfig({ ...config, advancedConfig: { ...config.advancedConfig!, multiModelValidation: { ...config.advancedConfig!.multiModelValidation, parallelModels: parseInt(e.target.value) } } })}
+                                                        value={config.advancedConfig?.multiModelValidation.parallelModels ?? 3}
+                                                        onChange={(e) => setConfig({ ...config, advancedConfig: { ...(config.advancedConfig || INITIAL_CONFIG.advancedConfig!), multiModelValidation: { ...(config.advancedConfig?.multiModelValidation || INITIAL_CONFIG.advancedConfig!.multiModelValidation), parallelModels: parseInt(e.target.value) } } })}
                                                         className="w-full px-3 py-2 border rounded-lg"
                                                     />
                                                 </div>
@@ -1584,18 +1584,18 @@ export const AgentBuilder: React.FC = () => {
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Verificação de Alucinações (Sensibilidade)</label>
                                             <input
                                                 type="range" min="0" max="1" step="0.05"
-                                                value={config.advancedConfig?.qualitySafety.hallucinationCheck.sensitivity}
-                                                onChange={(e) => setConfig({ ...config, advancedConfig: { ...config.advancedConfig!, qualitySafety: { ...config.advancedConfig!.qualitySafety, hallucinationCheck: { ...config.advancedConfig!.qualitySafety.hallucinationCheck, sensitivity: parseFloat(e.target.value) } } } })}
+                                                value={config.advancedConfig?.qualitySafety.hallucinationCheck.sensitivity ?? 0.8}
+                                                onChange={(e) => setConfig({ ...config, advancedConfig: { ...(config.advancedConfig || INITIAL_CONFIG.advancedConfig!), qualitySafety: { ...(config.advancedConfig?.qualitySafety || INITIAL_CONFIG.advancedConfig!.qualitySafety), hallucinationCheck: { ...(config.advancedConfig?.qualitySafety.hallucinationCheck || INITIAL_CONFIG.advancedConfig!.qualitySafety.hallucinationCheck), sensitivity: parseFloat(e.target.value) } } } })}
                                                 className="w-full accent-green-600"
                                             />
-                                            <p className="text-xs text-gray-500 mt-1">Valor atual: {config.advancedConfig?.qualitySafety.hallucinationCheck.sensitivity}</p>
+                                            <p className="text-xs text-gray-500 mt-1">Valor atual: {config.advancedConfig?.qualitySafety.hallucinationCheck.sensitivity ?? 0.8}</p>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Cache Semântico (Similaridade)</label>
                                             <input
                                                 type="range" min="0.5" max="1" step="0.01"
-                                                value={config.advancedConfig?.qualitySafety.semanticCache.similarityThreshold}
-                                                onChange={(e) => setConfig({ ...config, advancedConfig: { ...config.advancedConfig!, qualitySafety: { ...config.advancedConfig!.qualitySafety, semanticCache: { ...config.advancedConfig!.qualitySafety.semanticCache, similarityThreshold: parseFloat(e.target.value) } } } })}
+                                                value={config.advancedConfig?.qualitySafety.semanticCache.similarityThreshold ?? 0.9}
+                                                onChange={(e) => setConfig({ ...config, advancedConfig: { ...(config.advancedConfig || INITIAL_CONFIG.advancedConfig!), qualitySafety: { ...(config.advancedConfig?.qualitySafety || INITIAL_CONFIG.advancedConfig!.qualitySafety), semanticCache: { ...(config.advancedConfig?.qualitySafety.semanticCache || INITIAL_CONFIG.advancedConfig!.qualitySafety.semanticCache), similarityThreshold: parseFloat(e.target.value) } } } })}
                                                 className="w-full accent-green-600"
                                             />
                                             <p className="text-xs text-gray-500 mt-1">Valor atual: {config.advancedConfig?.qualitySafety.semanticCache.similarityThreshold}</p>
