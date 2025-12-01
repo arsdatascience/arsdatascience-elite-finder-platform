@@ -1,5 +1,4 @@
-// import jsPDF from 'jspdf';
-// import autoTable from 'jspdf-autotable';
+
 
 interface Transaction {
     id: number;
@@ -129,8 +128,6 @@ export const FinancialModule: React.FC = () => {
 
     const exportToPDF = () => {
         alert("Para habilitar a exportação, instale: npm install jspdf jspdf-autotable");
-        // const doc = new jsPDF();
-        // ... (código comentado)
     };
 
     return (
