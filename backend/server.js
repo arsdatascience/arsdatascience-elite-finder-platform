@@ -505,7 +505,18 @@ app.get('/api/images/analytics', authenticateToken, imageGenCtrl.getAnalytics);
 // Rotas de Templates de Prompt
 app.post('/api/templates', authenticateToken, promptTemplateController.createTemplate);
 app.get('/api/templates', authenticateToken, promptTemplateController.listTemplates);
-app.delete('/api/templates/:id', authenticateToken, promptTemplateController.deleteTemplate);
+const tenantController = require('./tenantController');
+
+// ... (outros imports)
+
+// Rotas de Tenants (Super Admin)
+app.get('/api/admin/tenants', authenticateToken, checkAdmin, tenantController.getAllTenants);
+app.post('/api/admin/tenants', authenticateToken, checkAdmin, tenantController.createTenant);
+app.put('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantController.updateTenant);
+app.delete('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantController.deleteTenant);
+
+// Rota temporária para migração de tenants
+
 
 // Iniciar servidor após migrações
 runMigrations().then(() => {
@@ -518,3 +529,4 @@ runMigrations().then(() => {
     console.log(`🔥 Server running on port ${PORT}`);
   });
 });
+

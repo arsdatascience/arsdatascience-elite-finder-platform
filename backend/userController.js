@@ -87,8 +87,13 @@ const login = async (req, res) => {
 };
 
 const getTeamMembers = async (req, res) => {
+    const userId = req.user.id;
     try {
-        const result = await db.query(`
+        // Buscar tenant_id do usuário logado
+        const userRes = await db.query('SELECT tenant_id, role FROM users WHERE id = $1', [userId]);
+        const currentUser = userRes.rows[0];
+
+        let query = `
             SELECT 
                 id, username, first_name, last_name, email, phone, cpf,
                 registration_date, role, status, avatar_url,
@@ -96,8 +101,22 @@ const getTeamMembers = async (req, res) => {
                 address_district, address_city, address_state, address_zip,
                 permissions, created_at, updated_at
             FROM users
-            ORDER BY created_at DESC
-        `);
+            WHERE status != 'deleted'
+        `;
+        const params = [];
+
+        // Se não for super_admin, filtrar pelo tenant
+        if (currentUser.role !== 'super_admin' && currentUser.role !== 'Super Admin') {
+            if (!currentUser.tenant_id) {
+                return res.json({ success: true, members: [] }); // Usuário sem tenant não vê ninguém
+            }
+            query += ` AND tenant_id = $1`;
+            params.push(currentUser.tenant_id);
+        }
+
+        query += ` ORDER BY created_at DESC`;
+
+        const result = await db.query(query, params);
         const members = result.rows.map(row => ({
             id: row.id,
             avatarUrl: row.avatar_url,
@@ -211,6 +230,7 @@ const resetPasswordConfirm = async (req, res) => {
 };
 
 const createTeamMember = async (req, res) => {
+    const creatorId = req.user.id; // ID de quem está criando
     const {
         avatarUrl, username, firstName, lastName, email, phone, cpf,
         registrationDate, role, status, address, permissions
@@ -221,6 +241,10 @@ const createTeamMember = async (req, res) => {
     }
 
     try {
+        // Buscar tenant_id do criador
+        const creatorRes = await db.query('SELECT tenant_id FROM users WHERE id = $1', [creatorId]);
+        const tenantId = creatorRes.rows[0]?.tenant_id;
+
         const defaultPassword = 'Elite@2024';
         const salt = await bcrypt.genSalt(10);
         const password_hash = await bcrypt.hash(defaultPassword, salt);
@@ -231,8 +255,8 @@ const createTeamMember = async (req, res) => {
                     registration_date, role, status, password_hash, avatar_url,
                     address_street, address_number, address_complement,
                     address_district, address_city, address_state, address_zip,
-                    permissions, name
-                ) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+                    permissions, name, tenant_id
+                ) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
             RETURNING id, username, first_name, last_name, email, phone, cpf,
                 registration_date, role, status, avatar_url, created_at
                     `, [
@@ -245,7 +269,8 @@ const createTeamMember = async (req, res) => {
             address?.street, address?.number, address?.complement,
             address?.district, address?.city, address?.state, address?.zip,
             JSON.stringify(permissions || []),
-            `${firstName} ${lastName} `
+            `${firstName} ${lastName} `,
+            tenantId // Atribuir ao mesmo tenant
         ]);
 
         res.json({ success: true, member: result.rows[0] });

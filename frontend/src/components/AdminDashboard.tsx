@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { AdminPlans } from './AdminPlans';
+import { AdminTenants } from './AdminTenants';
 import {
     LayoutDashboard,
     Users,
@@ -10,8 +12,8 @@ import {
     Edit,
     Trash2,
     CheckCircle,
-    XCircle,
-    AlertTriangle
+    AlertTriangle,
+    Building
 } from 'lucide-react';
 
 // Interfaces
@@ -40,7 +42,6 @@ const AdminDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
     const [users, setUsers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
 
     // Fetch Data
     useEffect(() => {
@@ -79,20 +80,20 @@ const AdminDashboard: React.FC = () => {
             />
             <StatCard
                 title="Jobs na Fila"
-                value={queueStats?.stats.pending.toString() || '0'}
+                value={queueStats?.stats?.pending?.toString() || '0'}
                 icon={<Server className="w-6 h-6 text-yellow-400" />}
-                subValue={`${queueStats?.stats.processing || 0} processando`}
+                subValue={`${queueStats?.stats?.processing || 0} processando`}
             />
             <StatCard
                 title="Jobs Concluídos"
-                value={queueStats?.stats.completed.toString() || '0'}
+                value={queueStats?.stats?.completed?.toString() || '0'}
                 icon={<CheckCircle className="w-6 h-6 text-green-400" />}
             />
             <StatCard
                 title="Falhas Recentes"
-                value={queueStats?.stats.failed.toString() || '0'}
+                value={queueStats?.stats?.failed?.toString() || '0'}
                 icon={<AlertTriangle className="w-6 h-6 text-red-400" />}
-                isAlert={queueStats?.stats.failed > 0}
+                isAlert={(queueStats?.stats?.failed || 0) > 0}
             />
         </div>
     );
@@ -160,11 +161,11 @@ const AdminDashboard: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-[#0f172a] p-4 rounded-lg">
                         <div className="text-slate-400 text-sm">Pending Jobs</div>
-                        <div className="text-2xl font-bold text-yellow-400">{queueStats?.stats.pending}</div>
+                        <div className="text-2xl font-bold text-yellow-400">{queueStats?.stats?.pending || 0}</div>
                     </div>
                     <div className="bg-[#0f172a] p-4 rounded-lg">
                         <div className="text-slate-400 text-sm">Processing</div>
-                        <div className="text-2xl font-bold text-blue-400">{queueStats?.stats.processing}</div>
+                        <div className="text-2xl font-bold text-blue-400">{queueStats?.stats?.processing || 0}</div>
                     </div>
                 </div>
             </div>
@@ -203,6 +204,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
                 <nav className="flex-1 p-4 space-y-2">
                     <NavItem active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<LayoutDashboard />} label="Visão Geral" />
+                    <NavItem active={activeTab === 'tenants'} onClick={() => setActiveTab('tenants')} icon={<Building />} label="Clientes (Tenants)" />
                     <NavItem active={activeTab === 'users'} onClick={() => setActiveTab('users')} icon={<Users />} label="Usuários" />
                     <NavItem active={activeTab === 'plans'} onClick={() => setActiveTab('plans')} icon={<CreditCard />} label="Planos & Limites" />
                     <NavItem active={activeTab === 'system'} onClick={() => setActiveTab('system')} icon={<Activity />} label="Sistema & Logs" />
@@ -214,6 +216,7 @@ const AdminDashboard: React.FC = () => {
                 <header className="flex justify-between items-center mb-8">
                     <h2 className="text-2xl font-bold text-white">
                         {activeTab === 'overview' && 'Dashboard Overview'}
+                        {activeTab === 'tenants' && 'Gestão de Clientes'}
                         {activeTab === 'users' && 'Gestão de Usuários'}
                         {activeTab === 'plans' && 'Planos e Assinaturas'}
                         {activeTab === 'system' && 'Monitoramento do Sistema'}
@@ -222,20 +225,15 @@ const AdminDashboard: React.FC = () => {
                         <div className="text-sm text-slate-400">
                             Logado como <span className="text-white font-medium">{user?.name}</span>
                         </div>
-                        <img src={user?.avatarUrl || "https://github.com/shadcn.png"} alt="Admin" className="w-10 h-10 rounded-full border-2 border-blue-500" />
+                        <img src={user?.avatar_url || "https://github.com/shadcn.png"} alt="Admin" className="w-10 h-10 rounded-full border-2 border-blue-500" />
                     </div>
                 </header>
 
                 {activeTab === 'overview' && renderOverview()}
+                {activeTab === 'tenants' && <div className="text-gray-900"><AdminTenants /></div>}
                 {activeTab === 'users' && renderUsers()}
                 {activeTab === 'system' && renderSystem()}
-                {activeTab === 'plans' && (
-                    <div className="text-center py-20 text-slate-500">
-                        <CreditCard className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                        <h3 className="text-xl font-medium text-white mb-2">Gestão de Planos em Breve</h3>
-                        <p>Configure limites de API, preços e funcionalidades por plano.</p>
-                    </div>
-                )}
+                {activeTab === 'plans' && <div className="text-gray-900"><AdminPlans /></div>}
             </div>
         </div>
     );
@@ -266,8 +264,8 @@ const NavItem = ({ active, onClick, icon, label }: any) => (
     <button
         onClick={onClick}
         className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${active
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
             }`}
     >
         {React.cloneElement(icon, { className: "w-5 h-5" })}
