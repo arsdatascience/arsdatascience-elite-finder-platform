@@ -1,19 +1,3 @@
--- ============================================
--- ELITE FINDER - COMPLETE DATABASE SCHEMA
--- ============================================
-
--- Enable Extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
--- CREATE EXTENSION IF NOT EXISTS vector; -- Desativado temporariamente pois a imagem do Railway não tem suporte nativo
-
--- ============================================
--- USERS
--- ============================================
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role VARCHAR(50) DEFAULT 'user',
     avatar_url TEXT,
@@ -93,21 +77,6 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_zip') THEN
         ALTER TABLE users ADD COLUMN address_zip VARCHAR(10);
     END IF;
-    
-    -- Permissões (JSON)
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='permissions') THEN
-        ALTER TABLE users ADD COLUMN permissions JSONB DEFAULT '[]'::jsonb;
-    END IF;
-    
-    -- Updated At
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='updated_at') THEN
-        ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT NOW();
-    END IF;
-END $$;
-
--- ============================================
--- CLIENTS
--- ============================================
 CREATE TABLE IF NOT EXISTS clients (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

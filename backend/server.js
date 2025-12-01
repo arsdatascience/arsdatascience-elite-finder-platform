@@ -390,7 +390,10 @@ app.get('/api/campaigns', dbController.getCampaigns); // Manter compatibilidade 
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Create new user (admin)
-app.post('/api/users', userCtrl.createUser);
+// Create new user (admin)
+app.post('/api/users', authenticateToken, checkAdmin, userCtrl.createUser);
+app.put('/api/users/:id', authenticateToken, checkAdmin, userCtrl.updateTeamMember);
+app.delete('/api/users/:id', authenticateToken, checkAdmin, userCtrl.deleteTeamMember);
 
 // Login
 app.post('/api/auth/login', userCtrl.login);

@@ -207,7 +207,7 @@ export const AdminTenants: React.FC = () => {
                                     <input
                                         value={editingTenant.name}
                                         onChange={e => setEditingTenant({ ...editingTenant, name: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
                                 <div>
@@ -215,7 +215,7 @@ export const AdminTenants: React.FC = () => {
                                     <input
                                         value={editingTenant.cnpj}
                                         onChange={e => setEditingTenant({ ...editingTenant, cnpj: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
                             </div>
@@ -226,7 +226,7 @@ export const AdminTenants: React.FC = () => {
                                     <input
                                         value={editingTenant.email}
                                         onChange={e => setEditingTenant({ ...editingTenant, email: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
                                 <div>
@@ -234,7 +234,7 @@ export const AdminTenants: React.FC = () => {
                                     <input
                                         value={editingTenant.phone}
                                         onChange={e => setEditingTenant({ ...editingTenant, phone: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
                             </div>
@@ -244,7 +244,7 @@ export const AdminTenants: React.FC = () => {
                                 <select
                                     value={editingTenant.plan_id}
                                     onChange={e => setEditingTenant({ ...editingTenant, plan_id: Number(e.target.value) })}
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                 >
                                     {plans.map(p => (
                                         <option key={p.id} value={p.id}>{p.name}</option>
@@ -256,19 +256,19 @@ export const AdminTenants: React.FC = () => {
                                 <h4 className="font-bold text-gray-800 mb-2">Endereço</h4>
                                 <div className="grid grid-cols-3 gap-3">
                                     <div className="col-span-2">
-                                        <input placeholder="Rua" value={editingTenant.address_street || ''} onChange={e => setEditingTenant({ ...editingTenant, address_street: e.target.value })} className="w-full p-2 border rounded-lg text-sm" />
+                                        <input placeholder="Rua" value={editingTenant.address_street || ''} onChange={e => setEditingTenant({ ...editingTenant, address_street: e.target.value })} className="w-full p-2 border rounded-lg text-sm text-gray-900" />
                                     </div>
                                     <div>
-                                        <input placeholder="Número" value={editingTenant.address_number || ''} onChange={e => setEditingTenant({ ...editingTenant, address_number: e.target.value })} className="w-full p-2 border rounded-lg text-sm" />
+                                        <input placeholder="Número" value={editingTenant.address_number || ''} onChange={e => setEditingTenant({ ...editingTenant, address_number: e.target.value })} className="w-full p-2 border rounded-lg text-sm text-gray-900" />
                                     </div>
                                     <div>
-                                        <input placeholder="Cidade" value={editingTenant.address_city || ''} onChange={e => setEditingTenant({ ...editingTenant, address_city: e.target.value })} className="w-full p-2 border rounded-lg text-sm" />
+                                        <input placeholder="Cidade" value={editingTenant.address_city || ''} onChange={e => setEditingTenant({ ...editingTenant, address_city: e.target.value })} className="w-full p-2 border rounded-lg text-sm text-gray-900" />
                                     </div>
                                     <div>
-                                        <input placeholder="Estado" value={editingTenant.address_state || ''} onChange={e => setEditingTenant({ ...editingTenant, address_state: e.target.value })} className="w-full p-2 border rounded-lg text-sm" />
+                                        <input placeholder="Estado" value={editingTenant.address_state || ''} onChange={e => setEditingTenant({ ...editingTenant, address_state: e.target.value })} className="w-full p-2 border rounded-lg text-sm text-gray-900" />
                                     </div>
                                     <div>
-                                        <input placeholder="CEP" value={editingTenant.address_zip || ''} onChange={e => setEditingTenant({ ...editingTenant, address_zip: e.target.value })} className="w-full p-2 border rounded-lg text-sm" />
+                                        <input placeholder="CEP" value={editingTenant.address_zip || ''} onChange={e => setEditingTenant({ ...editingTenant, address_zip: e.target.value })} className="w-full p-2 border rounded-lg text-sm text-gray-900" />
                                     </div>
                                 </div>
                             </div>
@@ -277,9 +277,9 @@ export const AdminTenants: React.FC = () => {
                                 <div className="border-t pt-4 mt-4 bg-blue-50 p-4 rounded-lg">
                                     <h4 className="font-bold text-blue-800 mb-2">Criar Administrador Inicial</h4>
                                     <div className="space-y-3">
-                                        <input placeholder="Nome do Admin" value={editingTenant.adminUser?.name || ''} onChange={e => setEditingTenant({ ...editingTenant, adminUser: { ...editingTenant.adminUser, name: e.target.value } })} className="w-full p-2 border rounded-lg text-sm" />
-                                        <input placeholder="Email do Admin" value={editingTenant.adminUser?.email || ''} onChange={e => setEditingTenant({ ...editingTenant, adminUser: { ...editingTenant.adminUser, email: e.target.value } })} className="w-full p-2 border rounded-lg text-sm" />
-                                        <input type="password" placeholder="Senha Inicial" value={editingTenant.adminUser?.password || ''} onChange={e => setEditingTenant({ ...editingTenant, adminUser: { ...editingTenant.adminUser, password: e.target.value } })} className="w-full p-2 border rounded-lg text-sm" />
+                                        <input placeholder="Nome do Admin" value={editingTenant.adminUser?.name || ''} onChange={e => setEditingTenant({ ...editingTenant, adminUser: { ...editingTenant.adminUser, name: e.target.value } })} className="w-full p-2 border rounded-lg text-sm text-gray-900" />
+                                        <input placeholder="Email do Admin" value={editingTenant.adminUser?.email || ''} onChange={e => setEditingTenant({ ...editingTenant, adminUser: { ...editingTenant.adminUser, email: e.target.value } })} className="w-full p-2 border rounded-lg text-sm text-gray-900" />
+                                        <input type="password" placeholder="Senha Inicial" value={editingTenant.adminUser?.password || ''} onChange={e => setEditingTenant({ ...editingTenant, adminUser: { ...editingTenant.adminUser, password: e.target.value } })} className="w-full p-2 border rounded-lg text-sm text-gray-900" />
                                     </div>
                                 </div>
                             )}

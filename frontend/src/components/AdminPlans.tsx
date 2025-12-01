@@ -163,7 +163,7 @@ export const AdminPlans: React.FC = () => {
                                     <input
                                         value={editingPlan.name}
                                         onChange={e => setEditingPlan({ ...editingPlan, name: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                         placeholder="Ex: Pro, Enterprise"
                                     />
                                 </div>
@@ -173,7 +173,7 @@ export const AdminPlans: React.FC = () => {
                                         type="number"
                                         value={editingPlan.price}
                                         onChange={e => setEditingPlan({ ...editingPlan, price: Number(e.target.value) })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
                             </div>
@@ -190,7 +190,7 @@ export const AdminPlans: React.FC = () => {
                                                 ...editingPlan,
                                                 limits: { ...editingPlan.limits, social_posts_per_day: Number(e.target.value) }
                                             })}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                         />
                                     </div>
                                     <div>
@@ -202,7 +202,7 @@ export const AdminPlans: React.FC = () => {
                                                 ...editingPlan,
                                                 limits: { ...editingPlan.limits, ai_generations_per_day: Number(e.target.value) }
                                             })}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                         />
                                     </div>
                                 </div>
@@ -230,7 +230,7 @@ export const AdminPlans: React.FC = () => {
                                                         }
                                                     }
                                                 })}
-                                                className="w-full p-2 border rounded-lg text-sm"
+                                                className="w-full p-2 border rounded-lg text-sm text-gray-900"
                                             />
                                         </div>
                                         <div>
@@ -249,7 +249,7 @@ export const AdminPlans: React.FC = () => {
                                                         }
                                                     }
                                                 })}
-                                                className="w-full p-2 border rounded-lg text-sm"
+                                                className="w-full p-2 border rounded-lg text-sm text-gray-900"
                                             />
                                         </div>
                                     </div>
@@ -274,7 +274,7 @@ export const AdminPlans: React.FC = () => {
                                                         }
                                                     }
                                                 })}
-                                                className="w-full p-2 border rounded-lg text-sm"
+                                                className="w-full p-2 border rounded-lg text-sm text-gray-900"
                                             />
                                         </div>
                                         <div>
@@ -293,7 +293,7 @@ export const AdminPlans: React.FC = () => {
                                                         }
                                                     }
                                                 })}
-                                                className="w-full p-2 border rounded-lg text-sm"
+                                                className="w-full p-2 border rounded-lg text-sm text-gray-900"
                                             />
                                         </div>
                                     </div>
@@ -318,7 +318,7 @@ export const AdminPlans: React.FC = () => {
                                                         }
                                                     }
                                                 })}
-                                                className="w-full p-2 border rounded-lg text-sm"
+                                                className="w-full p-2 border rounded-lg text-sm text-gray-900"
                                             />
                                         </div>
                                         <div>
@@ -337,7 +337,7 @@ export const AdminPlans: React.FC = () => {
                                                         }
                                                     }
                                                 })}
-                                                className="w-full p-2 border rounded-lg text-sm"
+                                                className="w-full p-2 border rounded-lg text-sm text-gray-900"
                                             />
                                         </div>
                                     </div>

@@ -37,7 +37,7 @@ const createTenant = async (req, res) => {
             name, cnpj, email, phone,
             address?.street, address?.number, address?.complement,
             address?.district, address?.city, address?.state, address?.zip,
-            plan_id
+            plan_id || null
         ]);
         const tenantId = tenantRes.rows[0].id;
 

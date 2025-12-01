@@ -45,7 +45,7 @@ const createPlan = async (req, res) => {
     try {
         const result = await db.query(
             'INSERT INTO plans (name, price, limits, features) VALUES ($1, $2, $3, $4) RETURNING *',
-            [name, price, limits, features]
+            [name, price, limits || {}, features || []]
         );
         res.json(result.rows[0]);
     } catch (error) {

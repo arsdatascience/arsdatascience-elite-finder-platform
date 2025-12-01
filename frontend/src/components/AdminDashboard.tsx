@@ -529,7 +529,7 @@ const AdminDashboard: React.FC = () => {
             {/* Modal de Edição de Usuário */}
             {isUserModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto text-gray-900">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
                             <h3 className="text-xl font-bold text-gray-900">
                                 {editingUser ? 'Editar Usuário' : 'Novo Usuário'}
@@ -550,7 +550,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
                                         <input
                                             {...register('firstName')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                             placeholder="Primeiro nome"
                                         />
                                         {errors.firstName && <span className="text-red-500 text-xs">{errors.firstName.message}</span>}
@@ -559,7 +559,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Sobrenome *</label>
                                         <input
                                             {...register('lastName')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                             placeholder="Sobrenome"
                                         />
                                         {errors.lastName && <span className="text-red-500 text-xs">{errors.lastName.message}</span>}
@@ -569,7 +569,7 @@ const AdminDashboard: React.FC = () => {
                                         <input
                                             {...register('email')}
                                             type="email"
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                             placeholder="email@empresa.com"
                                         />
                                         {errors.email && <span className="text-red-500 text-xs">{errors.email.message}</span>}
@@ -578,7 +578,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
                                         <input
                                             {...register('phone')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                             placeholder="(00) 00000-0000"
                                         />
                                     </div>
@@ -586,7 +586,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
                                         <input
                                             {...register('cpf')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                             placeholder="000.000.000-00"
                                         />
                                     </div>
@@ -603,7 +603,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
                                         <input
                                             {...register('address.zip')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                             placeholder="00000-000"
                                         />
                                     </div>
@@ -611,7 +611,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Rua</label>
                                         <input
                                             {...register('address.street')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                             placeholder="Nome da rua"
                                         />
                                     </div>
@@ -619,7 +619,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
                                         <input
                                             {...register('address.number')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                             placeholder="123"
                                         />
                                     </div>
@@ -627,7 +627,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
                                         <input
                                             {...register('address.complement')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                             placeholder="Apto 101"
                                         />
                                     </div>
@@ -635,7 +635,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
                                         <input
                                             {...register('address.district')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                             placeholder="Bairro"
                                         />
                                     </div>
@@ -643,7 +643,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
                                         <input
                                             {...register('address.city')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                             placeholder="Cidade"
                                         />
                                     </div>
@@ -651,7 +651,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                                         <input
                                             {...register('address.state')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
                                             placeholder="UF"
                                             maxLength={2}
                                         />
@@ -667,7 +667,7 @@ const AdminDashboard: React.FC = () => {
                                 <div>
                                     <select
                                         {...register('tenant_id')}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900"
                                     >
                                         <option value="">Sem empresa (Global)</option>
                                         {tenants.map(tenant => (
@@ -687,7 +687,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Função (Role)</label>
                                         <select
                                             {...register('role')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900"
                                         >
                                             <option value="Vendedor">Vendedor</option>
                                             <option value="Gerente">Gerente</option>
@@ -699,7 +699,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                                         <select
                                             {...register('status')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900"
                                         >
                                             <option value="active">Ativo</option>
                                             <option value="inactive">Inativo</option>
@@ -715,7 +715,7 @@ const AdminDashboard: React.FC = () => {
                                             <input
                                                 {...register('newPassword')}
                                                 type={showPassword ? 'text' : 'password'}
-                                                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                                                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none pr-10 text-gray-900"
                                                 placeholder={editingUser ? '••••••••' : 'Senha segura'}
                                             />
                                             <button
