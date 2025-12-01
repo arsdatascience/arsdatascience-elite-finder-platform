@@ -1,13 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-    DollarSign, TrendingUp, TrendingDown, Calendar, Filter, Plus,
-    ArrowUpCircle, ArrowDownCircle, MoreVertical, Trash2, Edit2,
-    PieChart as PieIcon, BarChart3, Wallet, Users, Tag
-} from 'lucide-react';
-import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    PieChart, Pie, Cell
-} from 'recharts';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Transaction {
     id: number;
@@ -133,6 +125,42 @@ export const FinancialModule: React.FC = () => {
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    };
+
+    const exportToPDF = () => {
+        const doc = new jsPDF();
+
+        doc.setFontSize(18);
+        doc.text('Relatório Financeiro', 14, 22);
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, 14, 30);
+
+        // Resumo
+        if (dashboardData) {
+            doc.text(`Receita Total: ${formatCurrency(dashboardData.summary.total_income)}`, 14, 40);
+            doc.text(`Despesa Total: ${formatCurrency(dashboardData.summary.total_expense)}`, 14, 46);
+            doc.text(`Saldo: ${formatCurrency(dashboardData.summary.total_income - dashboardData.summary.total_expense)}`, 14, 52);
+        }
+
+        // Tabela de Transações
+        const tableColumn = ["Data", "Descrição", "Categoria", "Tipo", "Valor", "Status"];
+        const tableRows = transactions.map(t => [
+            new Date(t.date).toLocaleDateString(),
+            t.description,
+            t.category_name,
+            t.type === 'income' ? 'Receita' : 'Despesa',
+            formatCurrency(Number(t.amount)),
+            t.status
+        ]);
+
+        autoTable(doc, {
+            head: [tableColumn],
+            body: tableRows,
+            startY: 60,
+        });
+
+        doc.save('relatorio_financeiro.pdf');
     };
 
     return (
@@ -265,12 +293,20 @@ export const FinancialModule: React.FC = () => {
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="p-6 border-b border-slate-100 flex justify-between items-center">
                         <h3 className="text-lg font-bold text-slate-800">Histórico de Transações</h3>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                        >
-                            <Plus size={18} /> Nova Transação
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={exportToPDF}
+                                className="bg-white text-slate-600 border border-slate-200 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2"
+                            >
+                                <FileText size={18} /> Exportar PDF
+                            </button>
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                            >
+                                <Plus size={18} /> Nova Transação
+                            </button>
+                        </div>
                     </div>
 
                     <div className="overflow-x-auto">

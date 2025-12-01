@@ -540,6 +540,7 @@ app.delete('/api/financial/transactions/:id', authenticateToken, financialCtrl.d
 
 // Auxiliares
 app.get('/api/financial/categories', authenticateToken, financialCtrl.getCategories);
+app.post('/api/financial/sync', authenticateToken, financialCtrl.runSync);
 app.post('/api/financial/categories', authenticateToken, financialCtrl.createCategory);
 app.get('/api/financial/suppliers', authenticateToken, financialCtrl.getSuppliers);
 app.post('/api/financial/suppliers', authenticateToken, financialCtrl.createSupplier);

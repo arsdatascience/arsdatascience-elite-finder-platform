@@ -1,84 +1,54 @@
+-- ============================================
+-- TENANTS (Multi-tenancy)
+-- ============================================
+CREATE TABLE IF NOT EXISTS tenants (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    plan_id INTEGER, -- FK adicionada posteriormente se necessário
+    status VARCHAR(50) DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- USERS
+-- ============================================
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE SET NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     role VARCHAR(50) DEFAULT 'user',
     avatar_url TEXT,
+    
+    -- Campos extras de perfil
+    username VARCHAR(100) UNIQUE,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    phone VARCHAR(20),
+    cpf VARCHAR(14) UNIQUE,
+    registration_date DATE DEFAULT CURRENT_DATE,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
+    
+    -- Endereço
+    address_street VARCHAR(255),
+    address_number VARCHAR(20),
+    address_complement VARCHAR(100),
+    address_district VARCHAR(100),
+    address_city VARCHAR(100),
+    address_state CHAR(2),
+    address_zip VARCHAR(10),
+    
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Garantir que a coluna 'role' exista (correção para erro de migração anterior)
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='role') THEN
-        ALTER TABLE users ADD COLUMN role VARCHAR(50) DEFAULT 'user';
-    END IF;
-END $$;
-
--- Adicionar colunas extras para membros da equipe
-DO $$
-BEGIN
-    -- Username
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='username') THEN
-        ALTER TABLE users ADD COLUMN username VARCHAR(100) UNIQUE;
-    END IF;
-    
-    -- First Name e Last Name (separados do campo name)
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='first_name') THEN
-        ALTER TABLE users ADD COLUMN first_name VARCHAR(100);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='last_name') THEN
-        ALTER TABLE users ADD COLUMN last_name VARCHAR(100);
-    END IF;
-    
-    -- Telefone
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='phone') THEN
-        ALTER TABLE users ADD COLUMN phone VARCHAR(20);
-    END IF;
-    
-    -- CPF
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='cpf') THEN
-        ALTER TABLE users ADD COLUMN cpf VARCHAR(14) UNIQUE;
-    END IF;
-    
-    -- Data de Registro
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='registration_date') THEN
-        ALTER TABLE users ADD COLUMN registration_date DATE DEFAULT CURRENT_DATE;
-    END IF;
-    
-    -- Status
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='status') THEN
-        ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive'));
-    END IF;
-    
-    -- Endereço
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_street') THEN
-        ALTER TABLE users ADD COLUMN address_street VARCHAR(255);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_number') THEN
-        ALTER TABLE users ADD COLUMN address_number VARCHAR(20);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_complement') THEN
-        ALTER TABLE users ADD COLUMN address_complement VARCHAR(100);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_district') THEN
-        ALTER TABLE users ADD COLUMN address_district VARCHAR(100);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_city') THEN
-        ALTER TABLE users ADD COLUMN address_city VARCHAR(100);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_state') THEN
-        ALTER TABLE users ADD COLUMN address_state CHAR(2);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='address_zip') THEN
-        ALTER TABLE users ADD COLUMN address_zip VARCHAR(10);
-    END IF;
+-- ============================================
+-- CLIENTS
+-- ============================================
 CREATE TABLE IF NOT EXISTS clients (
     id SERIAL PRIMARY KEY,
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     type VARCHAR(50),
     email VARCHAR(255),
@@ -93,7 +63,6 @@ CREATE TABLE IF NOT EXISTS clients (
 -- ============================================
 -- LEADS
 -- ============================================
--- Tenta criar a tabela leads se não existir
 CREATE TABLE IF NOT EXISTS leads (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
@@ -168,239 +137,11 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     role VARCHAR(50) NOT NULL,
     content TEXT NOT NULL,
     metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Correção robusta para lead_id em chat_messages
-DO $$
-BEGIN
-    -- 1. Se a coluna existe mas não é UUID, dropamos para recriar corretamente
-    IF EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name='chat_messages' AND column_name='lead_id' AND data_type != 'uuid'
-    ) THEN
-        ALTER TABLE chat_messages DROP COLUMN lead_id;
-    END IF;
-
-    -- 2. Se a coluna não existe (ou foi dropada acima), criamos como UUID
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name='chat_messages' AND column_name='lead_id'
-    ) THEN
-        ALTER TABLE chat_messages ADD COLUMN lead_id UUID;
-    END IF;
-END $$;
-
--- Tentar adicionar a FK.
-DO $$
-BEGIN
-    -- Remove constraint antiga se existir para evitar conflito
-    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'chat_messages_lead_id_fkey') THEN
-        ALTER TABLE chat_messages DROP CONSTRAINT chat_messages_lead_id_fkey;
-    END IF;
-
-    BEGIN
-        ALTER TABLE chat_messages ADD CONSTRAINT chat_messages_lead_id_fkey FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL;
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Não foi possível adicionar FK chat_messages_lead_id_fkey: %', SQLERRM;
-    END;
-END $$;
-
-CREATE INDEX IF NOT EXISTS idx_chat_messages_lead_id ON chat_messages(lead_id);
-CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id);
-
--- ============================================
--- INTEGRATIONS
--- ============================================
-CREATE TABLE IF NOT EXISTS integrations (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    platform VARCHAR(50) NOT NULL,
-    status VARCHAR(50) DEFAULT 'disconnected',
-    access_token TEXT,
-    refresh_token TEXT,
-    config JSONB DEFAULT '{}',
-    last_sync TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- ============================================
--- AUTOMATION WORKFLOWS
--- ============================================
-CREATE TABLE IF NOT EXISTS automation_workflows (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    status VARCHAR(50) DEFAULT 'active',
-    triggers TEXT,
-    steps_count INTEGER DEFAULT 0,
-    enrolled_count INTEGER DEFAULT 0,
-    conversion_rate VARCHAR(50),
-    flow_data JSONB,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS automation_workflow_steps (
-    id SERIAL PRIMARY KEY,
-    workflow_id INTEGER REFERENCES automation_workflows(id) ON DELETE CASCADE,
-    type VARCHAR(50),
-    value TEXT,
-    step_order INTEGER,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- ============================================
--- SOCIAL POSTS
--- ============================================
-CREATE TABLE IF NOT EXISTS social_posts (
-    id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
-    content TEXT,
-    media_url TEXT,
-    platform VARCHAR(50),
-    scheduled_date TIMESTAMP,
-    status VARCHAR(50),
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- ============================================
--- TRAINING
--- ============================================
-CREATE TABLE IF NOT EXISTS training_modules (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    video_url TEXT,
-    duration INTEGER,
-    order_index INTEGER,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS training_progress (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    module_id INTEGER REFERENCES training_modules(id) ON DELETE CASCADE,
-    status VARCHAR(50),
-    progress INTEGER DEFAULT 0,
-    last_accessed TIMESTAMP DEFAULT NOW()
-);
-
--- ============================================
--- KPIS & ANALYTICS
--- ============================================
-CREATE TABLE IF NOT EXISTS kpis (
-    id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
-    label VARCHAR(100),
-    value VARCHAR(100),
-    change DECIMAL(5, 2),
-    trend VARCHAR(20),
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS device_stats (
-    id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
-    device_type VARCHAR(50),
-    percentage DECIMAL(5, 2),
-    conversions INTEGER,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
-
--- ============================================
--- AGENT TEMPLATES
--- ============================================
-CREATE TABLE IF NOT EXISTS agent_templates (
-    id SERIAL PRIMARY KEY,
-    template_id VARCHAR(100) UNIQUE NOT NULL,
-    template_name VARCHAR(255) NOT NULL,
-    template_description TEXT,
-    template_version VARCHAR(50) DEFAULT '1.0.0',
-    category VARCHAR(100),
-    base_config JSONB NOT NULL,
-    default_parameters JSONB DEFAULT '[]'::jsonb,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS agent_parameter_groups (
-    id SERIAL PRIMARY KEY,
-    group_id VARCHAR(100) NOT NULL,
-    group_label VARCHAR(255) NOT NULL,
-    display_order INTEGER DEFAULT 0,
-    chatbot_id INTEGER,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS agent_custom_parameters (
-    id SERIAL PRIMARY KEY,
-    chatbot_id INTEGER,
-    parameter_key VARCHAR(100) NOT NULL,
-    parameter_value TEXT,
-    parameter_type VARCHAR(50) DEFAULT 'text',
-    category VARCHAR(100),
-    display_label VARCHAR(255),
-    display_order INTEGER DEFAULT 0,
-    helper_text TEXT,
-    is_required BOOLEAN DEFAULT false,
-    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    external_id VARCHAR(255),
-    channel VARCHAR(50) DEFAULT 'web',
-    status VARCHAR(50) DEFAULT 'active',
-    metadata JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    lead_id UUID REFERENCES leads(id) ON DELETE SET NULL
 );
 
--- ============================================
--- CHAT MESSAGES
--- ============================================
-CREATE TABLE IF NOT EXISTS chat_messages (
-    id SERIAL PRIMARY KEY,
-    session_id INTEGER REFERENCES chat_sessions(id) ON DELETE CASCADE,
-    role VARCHAR(50) NOT NULL,
-    content TEXT NOT NULL,
-    metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Correção robusta para lead_id em chat_messages
-DO $$
-BEGIN
-    -- 1. Se a coluna existe mas não é UUID, dropamos para recriar corretamente
-    IF EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name='chat_messages' AND column_name='lead_id' AND data_type != 'uuid'
-    ) THEN
-        ALTER TABLE chat_messages DROP COLUMN lead_id;
-    END IF;
-
-    -- 2. Se a coluna não existe (ou foi dropada acima), criamos como UUID
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name='chat_messages' AND column_name='lead_id'
-    ) THEN
-        ALTER TABLE chat_messages ADD COLUMN lead_id UUID;
-    END IF;
-END $$;
-
--- Tentar adicionar a FK.
-DO $$
-BEGIN
-    -- Remove constraint antiga se existir para evitar conflito
-    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'chat_messages_lead_id_fkey') THEN
-        ALTER TABLE chat_messages DROP CONSTRAINT chat_messages_lead_id_fkey;
-    END IF;
-
-    BEGIN
-        ALTER TABLE chat_messages ADD CONSTRAINT chat_messages_lead_id_fkey FOREIGN KEY (lead_id) REFERENCES leads(id) ON DELETE SET NULL;
-    EXCEPTION WHEN OTHERS THEN
-        RAISE NOTICE 'Não foi possível adicionar FK chat_messages_lead_id_fkey: %', SQLERRM;
-    END;
-END $$;
-
+-- Índices
 CREATE INDEX IF NOT EXISTS idx_chat_messages_lead_id ON chat_messages(lead_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id);
 
@@ -501,7 +242,6 @@ CREATE TABLE IF NOT EXISTS device_stats (
     conversions INTEGER,
     created_at TIMESTAMP DEFAULT NOW()
 );
-
 
 -- ============================================
 -- AGENT TEMPLATES
@@ -545,6 +285,7 @@ CREATE TABLE IF NOT EXISTS agent_custom_parameters (
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
 CREATE TABLE IF NOT EXISTS prompt_templates (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -581,7 +322,7 @@ CREATE INDEX IF NOT EXISTS idx_audio_analyses_user_id ON audio_analyses(user_id)
 -- FINANCIAL MODULE
 -- ============================================
 
--- 1. Categorias Financeiras (Plano de Contas)
+-- 1. Categorias Financeiras
 CREATE TABLE IF NOT EXISTS financial_categories (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
@@ -592,7 +333,7 @@ CREATE TABLE IF NOT EXISTS financial_categories (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 2. Fornecedores (Suppliers)
+-- 2. Fornecedores
 CREATE TABLE IF NOT EXISTS suppliers (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
@@ -600,14 +341,14 @@ CREATE TABLE IF NOT EXISTS suppliers (
     contact_name VARCHAR(100),
     email VARCHAR(255),
     phone VARCHAR(50),
-    service_type VARCHAR(100), -- ex: 'Marketing', 'Software', 'Consultoria'
-    tax_id VARCHAR(50), -- CNPJ/CPF
+    service_type VARCHAR(100),
+    tax_id VARCHAR(50),
     pix_key VARCHAR(100),
     notes TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 3. Transações Financeiras (Receitas e Despesas)
+-- 3. Transações Financeiras
 CREATE TABLE IF NOT EXISTS financial_transactions (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
@@ -616,35 +357,28 @@ CREATE TABLE IF NOT EXISTS financial_transactions (
     type VARCHAR(20) CHECK (type IN ('income', 'expense')),
     category_id INTEGER REFERENCES financial_categories(id) ON DELETE SET NULL,
     supplier_id INTEGER REFERENCES suppliers(id) ON DELETE SET NULL,
-    
-    -- Vínculos Estratégicos
-    campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL, -- Custo de Mídia
-    client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL, -- Receita de Cliente ou Custo vinculado
-    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL, -- Pagamento de Colaborador/Comissão
-    
-    -- Datas
-    date DATE NOT NULL, -- Data de competência
-    due_date DATE, -- Data de vencimento
-    payment_date DATE, -- Data de pagamento real
-    
-    -- Status e Detalhes
+    campaign_id INTEGER REFERENCES campaigns(id) ON DELETE SET NULL,
+    client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    date DATE NOT NULL,
+    due_date DATE,
+    payment_date DATE,
     status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'overdue', 'cancelled')),
-    payment_method VARCHAR(50), -- Boleto, PIX, Cartão, Transferência
-    recurrence VARCHAR(20) DEFAULT 'none', -- none, monthly, yearly
+    payment_method VARCHAR(50),
+    recurrence VARCHAR(20) DEFAULT 'none',
     notes TEXT,
-    
     created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Índices para performance
+-- Índices Financeiros
 CREATE INDEX IF NOT EXISTS idx_fin_trans_tenant ON financial_transactions(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_fin_trans_date ON financial_transactions(date);
 CREATE INDEX IF NOT EXISTS idx_fin_trans_status ON financial_transactions(status);
 CREATE INDEX IF NOT EXISTS idx_fin_trans_type ON financial_transactions(type);
 
--- Inserir Categorias Padrão (se não existirem)
+-- Inserção de Categorias Padrão (Idempotente)
 INSERT INTO financial_categories (name, type, color, is_default) 
 SELECT 'Receita de Serviços', 'income', '#22c55e', true
 WHERE NOT EXISTS (SELECT 1 FROM financial_categories WHERE name = 'Receita de Serviços');
