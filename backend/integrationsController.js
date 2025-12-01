@@ -207,8 +207,7 @@ const setupWhatsAppWebhook = async (req, res) => {
     }
 };
 
-    }
-};
+
 
 // ============================================
 // N8N - Save Configuration
