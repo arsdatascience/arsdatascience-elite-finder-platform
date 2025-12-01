@@ -8,6 +8,11 @@ interface Plan {
     limits: {
         social_posts_per_day: number;
         ai_generations_per_day: number;
+        providers?: {
+            openai: { token_limit: number; cost_limit_usd: number };
+            gemini: { token_limit: number; cost_limit_usd: number };
+            anthropic: { token_limit: number; cost_limit_usd: number };
+        };
     };
     features: string[];
 }
@@ -78,6 +83,8 @@ export const AdminPlans: React.FC = () => {
         }
     };
 
+    const defaultProviderLimits = { token_limit: 100000, cost_limit_usd: 5.0 };
+
     return (
         <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="flex justify-between items-center mb-6">
@@ -88,7 +95,15 @@ export const AdminPlans: React.FC = () => {
                             id: 0,
                             name: 'Novo Plano',
                             price: 0,
-                            limits: { social_posts_per_day: 10, ai_generations_per_day: 5 },
+                            limits: {
+                                social_posts_per_day: 10,
+                                ai_generations_per_day: 5,
+                                providers: {
+                                    openai: { ...defaultProviderLimits },
+                                    gemini: { ...defaultProviderLimits },
+                                    anthropic: { ...defaultProviderLimits }
+                                }
+                            },
                             features: []
                         });
                         setIsCreating(true);
@@ -118,7 +133,15 @@ export const AdminPlans: React.FC = () => {
 
                         <div className="space-y-2 mt-4 text-sm text-gray-600">
                             <p className="flex justify-between"><span>Posts Sociais:</span> <strong>{plan.limits.social_posts_per_day}/dia</strong></p>
-                            <p className="flex justify-between"><span>Gerações IA:</span> <strong>{plan.limits.ai_generations_per_day}/dia</strong></p>
+                            <p className="flex justify-between"><span>Gerações IA (Total):</span> <strong>{plan.limits.ai_generations_per_day}/dia</strong></p>
+                            {plan.limits.providers && (
+                                <div className="mt-2 pt-2 border-t border-gray-200">
+                                    <p className="text-xs font-bold text-gray-500 mb-1">Limites por Provedor (Tokens / USD):</p>
+                                    <p className="flex justify-between text-xs"><span>OpenAI:</span> <strong>{plan.limits.providers.openai?.token_limit ?? 0} / ${plan.limits.providers.openai?.cost_limit_usd ?? 0}</strong></p>
+                                    <p className="flex justify-between text-xs"><span>Gemini:</span> <strong>{plan.limits.providers.gemini?.token_limit ?? 0} / ${plan.limits.providers.gemini?.cost_limit_usd ?? 0}</strong></p>
+                                    <p className="flex justify-between text-xs"><span>Anthropic:</span> <strong>{plan.limits.providers.anthropic?.token_limit ?? 0} / ${plan.limits.providers.anthropic?.cost_limit_usd ?? 0}</strong></p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
@@ -127,56 +150,199 @@ export const AdminPlans: React.FC = () => {
             {/* Modal de Edição */}
             {(editingPlan || isCreating) && editingPlan && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-in fade-in">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-gray-900">{editingPlan.id === 0 ? 'Criar Plano' : 'Editar Plano'}</h3>
                             <button onClick={() => setEditingPlan(null)} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
                         </div>
 
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Plano</label>
-                                <input
-                                    value={editingPlan.name}
-                                    onChange={e => setEditingPlan({ ...editingPlan, name: e.target.value })}
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    placeholder="Ex: Pro, Enterprise"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Preço (R$)</label>
-                                <input
-                                    type="number"
-                                    value={editingPlan.price}
-                                    onChange={e => setEditingPlan({ ...editingPlan, price: Number(e.target.value) })}
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                />
-                            </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Limite Posts/Dia</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Plano</label>
                                     <input
-                                        type="number"
-                                        value={editingPlan.limits.social_posts_per_day}
-                                        onChange={e => setEditingPlan({
-                                            ...editingPlan,
-                                            limits: { ...editingPlan.limits, social_posts_per_day: Number(e.target.value) }
-                                        })}
+                                        value={editingPlan.name}
+                                        onChange={e => setEditingPlan({ ...editingPlan, name: e.target.value })}
                                         className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        placeholder="Ex: Pro, Enterprise"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Limite IA/Dia</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Preço (R$)</label>
                                     <input
                                         type="number"
-                                        value={editingPlan.limits.ai_generations_per_day}
-                                        onChange={e => setEditingPlan({
-                                            ...editingPlan,
-                                            limits: { ...editingPlan.limits, ai_generations_per_day: Number(e.target.value) }
-                                        })}
+                                        value={editingPlan.price}
+                                        onChange={e => setEditingPlan({ ...editingPlan, price: Number(e.target.value) })}
                                         className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                     />
                                 </div>
+                            </div>
+
+                            <div className="border-t pt-4 mt-4">
+                                <h4 className="font-bold text-gray-800 mb-3">Limites Gerais de Uso</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Posts/Dia</label>
+                                        <input
+                                            type="number"
+                                            value={editingPlan.limits.social_posts_per_day}
+                                            onChange={e => setEditingPlan({
+                                                ...editingPlan,
+                                                limits: { ...editingPlan.limits, social_posts_per_day: Number(e.target.value) }
+                                            })}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">IA Total/Dia (Reqs)</label>
+                                        <input
+                                            type="number"
+                                            value={editingPlan.limits.ai_generations_per_day}
+                                            onChange={e => setEditingPlan({
+                                                ...editingPlan,
+                                                limits: { ...editingPlan.limits, ai_generations_per_day: Number(e.target.value) }
+                                            })}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="border-t pt-4 mt-4">
+                                <h4 className="font-bold text-gray-800 mb-3">Limites por Provedor (Tokens e Custo)</h4>
+
+                                {/* OpenAI */}
+                                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                    <h5 className="font-bold text-sm text-gray-700 mb-2">OpenAI</h5>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">Max Tokens</label>
+                                            <input
+                                                type="number"
+                                                value={editingPlan.limits.providers?.openai?.token_limit ?? 0}
+                                                onChange={e => setEditingPlan({
+                                                    ...editingPlan,
+                                                    limits: {
+                                                        ...editingPlan.limits,
+                                                        providers: {
+                                                            ...editingPlan.limits.providers!,
+                                                            openai: { ...editingPlan.limits.providers!.openai, token_limit: Number(e.target.value) }
+                                                        }
+                                                    }
+                                                })}
+                                                className="w-full p-2 border rounded-lg text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">Max Custo (USD)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={editingPlan.limits.providers?.openai?.cost_limit_usd ?? 0}
+                                                onChange={e => setEditingPlan({
+                                                    ...editingPlan,
+                                                    limits: {
+                                                        ...editingPlan.limits,
+                                                        providers: {
+                                                            ...editingPlan.limits.providers!,
+                                                            openai: { ...editingPlan.limits.providers!.openai, cost_limit_usd: Number(e.target.value) }
+                                                        }
+                                                    }
+                                                })}
+                                                className="w-full p-2 border rounded-lg text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Gemini */}
+                                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                    <h5 className="font-bold text-sm text-gray-700 mb-2">Google Gemini</h5>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">Max Tokens</label>
+                                            <input
+                                                type="number"
+                                                value={editingPlan.limits.providers?.gemini?.token_limit ?? 0}
+                                                onChange={e => setEditingPlan({
+                                                    ...editingPlan,
+                                                    limits: {
+                                                        ...editingPlan.limits,
+                                                        providers: {
+                                                            ...editingPlan.limits.providers!,
+                                                            gemini: { ...editingPlan.limits.providers!.gemini, token_limit: Number(e.target.value) }
+                                                        }
+                                                    }
+                                                })}
+                                                className="w-full p-2 border rounded-lg text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">Max Custo (USD)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={editingPlan.limits.providers?.gemini?.cost_limit_usd ?? 0}
+                                                onChange={e => setEditingPlan({
+                                                    ...editingPlan,
+                                                    limits: {
+                                                        ...editingPlan.limits,
+                                                        providers: {
+                                                            ...editingPlan.limits.providers!,
+                                                            gemini: { ...editingPlan.limits.providers!.gemini, cost_limit_usd: Number(e.target.value) }
+                                                        }
+                                                    }
+                                                })}
+                                                className="w-full p-2 border rounded-lg text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Anthropic */}
+                                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                    <h5 className="font-bold text-sm text-gray-700 mb-2">Anthropic Claude</h5>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">Max Tokens</label>
+                                            <input
+                                                type="number"
+                                                value={editingPlan.limits.providers?.anthropic?.token_limit ?? 0}
+                                                onChange={e => setEditingPlan({
+                                                    ...editingPlan,
+                                                    limits: {
+                                                        ...editingPlan.limits,
+                                                        providers: {
+                                                            ...editingPlan.limits.providers!,
+                                                            anthropic: { ...editingPlan.limits.providers!.anthropic, token_limit: Number(e.target.value) }
+                                                        }
+                                                    }
+                                                })}
+                                                className="w-full p-2 border rounded-lg text-sm"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-600 mb-1">Max Custo (USD)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={editingPlan.limits.providers?.anthropic?.cost_limit_usd ?? 0}
+                                                onChange={e => setEditingPlan({
+                                                    ...editingPlan,
+                                                    limits: {
+                                                        ...editingPlan.limits,
+                                                        providers: {
+                                                            ...editingPlan.limits.providers!,
+                                                            anthropic: { ...editingPlan.limits.providers!.anthropic, cost_limit_usd: Number(e.target.value) }
+                                                        }
+                                                    }
+                                                })}
+                                                className="w-full p-2 border rounded-lg text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
 
                             <button
