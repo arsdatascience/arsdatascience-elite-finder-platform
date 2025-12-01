@@ -22,7 +22,7 @@ const createCheckoutSession = async (req, res) => {
             if (planRes.rows.length > 0) {
                 await db.query('UPDATE users SET plan_id = $1 WHERE id = $2', [planRes.rows[0].id, userId]);
             }
-            return res.json({ url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings?payment=success_mock` });
+            return res.json({ url: `${process.env.FRONTEND_URL || 'https://marketinghub.aiiam.com.br'}/settings?payment=success_mock` });
         } catch (e) {
             return res.status(500).json({ error: 'Erro no mock de pagamento' });
         }
@@ -66,8 +66,8 @@ const createCheckoutSession = async (req, res) => {
                 },
             ],
             mode: 'subscription',
-            success_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings?payment=success`,
-            cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/settings?payment=canceled`,
+            success_url: `${process.env.FRONTEND_URL || 'https://marketinghub.aiiam.com.br'}/settings?payment=success`,
+            cancel_url: `${process.env.FRONTEND_URL || 'https://marketinghub.aiiam.com.br'}/settings?payment=canceled`,
             customer_email: userEmail,
             metadata: {
                 userId: userId.toString(),
