@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
     DollarSign, Plus,
     ArrowUpCircle, ArrowDownCircle, Edit2,
-    BarChart3, Wallet, Tag, Loader2, Users, Calendar, Filter, Download, Info
+    BarChart3, Wallet, Tag, Loader2, Users, Calendar, Filter, Download
 } from 'lucide-react';
 
-const VERSION = "v3.1 - DEBUG";
-console.log(`FinancialModule Loaded: ${VERSION}`);
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     PieChart, Pie, Cell
@@ -417,23 +415,6 @@ export const FinancialModule: React.FC = () => {
                             <h3 className="text-2xl font-bold text-green-600">{formatCurrency(dashboardData.summary.total_income)}</h3>
                         </div>
                         <div className="p-2 bg-green-50 rounded-lg text-green-600"><ArrowUpCircle size={24} /></div>
-                    </div>
-                    <p className="text-xs text-slate-400">Pendente: {formatCurrency(dashboardData.summary.pending_income)}</p>
-                </div>
-
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <p className="text-sm font-medium text-slate-500">Despesa Total (Pago)</p>
-                            <h3 className="text-2xl font-bold text-red-600">{formatCurrency(dashboardData.summary.total_expense)}</h3>
-                        </div>
-                        <div className="p-2 bg-red-50 rounded-lg text-red-600"><ArrowDownCircle size={24} /></div>
-                    </div>
-                    <p className="text-xs text-slate-400">Pendente: {formatCurrency(dashboardData.summary.pending_expense)}</p>
-                </div>
-
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-sm font-medium text-slate-500">Saldo (Caixa)</p>
                             <h3 className={`text-2xl font-bold ${dashboardData.summary.total_income - dashboardData.summary.total_expense >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
