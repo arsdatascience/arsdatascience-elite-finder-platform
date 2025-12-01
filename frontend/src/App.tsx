@@ -66,6 +66,25 @@ const PrivateRoute: React.FC = () => {
   return isAuthenticated ? <Outlet /> : <Navigate to="/login" />;
 };
 
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  // Aceitar 'super_admin' ou 'Super Admin'
+  if (user?.role !== 'super_admin' && user?.role !== 'Super Admin') {
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
+};
+
+const SettingsRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  // Aceitar 'super_admin', 'admin', 'Super Admin', 'Admin'
+  const allowedRoles = ['super_admin', 'admin', 'Super Admin', 'Admin'];
+  if (!user?.role || !allowedRoles.includes(user.role)) {
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
+};
+
 const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const location = useLocation();
@@ -164,12 +183,12 @@ const App: React.FC = () => {
           <Route path="/reports" element={<Reports />} />
           <Route path="/ai-agent" element={<ContentGenerator isOpen={true} onClose={() => { }} mode="page" />} />
           <Route path="/elite-assistant" element={<AIChatBot mode="page" />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings" element={<SettingsRoute><Settings /></SettingsRoute>} />
           <Route path="/agent-builder" element={<AgentBuilder />} />
           <Route path="/templates" element={<TemplateManager />} />
           <Route path="/templates" element={<TemplateManager />} />
           <Route path="/whatsapp-simulator" element={<WhatsAppSimulator />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
         </Route>
       </Route>
 

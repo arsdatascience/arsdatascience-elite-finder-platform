@@ -28,6 +28,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen
       <div className="flex-1 overflow-y-auto">
         <nav className="mt-8 px-4 space-y-2 pb-24">
           {NAV_ITEMS.map((item) => {
+            // Ocultar Settings para usuários comuns (apenas admin e super_admin acessam)
+            if (item.id === ViewState.SETTINGS && user?.role !== 'super_admin' && user?.role !== 'admin') {
+              return null;
+            }
+
             const isActive = activeView === item.id;
             const Icon = item.icon;
 
@@ -45,7 +50,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen
               </button>
             );
           })}
-          {user?.role === 'admin' && (
+          {/* Apenas Super Admin acessa o painel Admin */}
+          {user?.role === 'super_admin' && (
             <button
               onClick={() => onNavigate(ViewState.ADMIN)}
               className="flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 text-purple-400 hover:bg-purple-900/20 hover:text-purple-300 mt-4 border border-purple-500/30"
