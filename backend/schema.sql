@@ -228,21 +228,6 @@ CREATE TABLE IF NOT EXISTS social_posts (
     media_url TEXT,
     platform VARCHAR(50),
     scheduled_date TIMESTAMP,
-    status VARCHAR(50),
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- ============================================
--- TRAINING
-    status VARCHAR(50),
-    progress INTEGER DEFAULT 0,
-    last_accessed TIMESTAMP DEFAULT NOW()
-);
-
--- ============================================
--- KPIS & ANALYTICS
--- ============================================
-CREATE TABLE IF NOT EXISTS kpis (
     id SERIAL PRIMARY KEY,
     client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
     label VARCHAR(100),
