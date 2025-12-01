@@ -959,7 +959,7 @@ export const Settings: React.FC = () => {
       case 'subscription':
         return (
           <div className="space-y-6 animate-fade-in">
-            <h3 className="text-lg font-bold text-gray-900">Assinatura e Limites</h3>
+            <h3 className="text-lg font-bold text-gray-900">Planos e Limites</h3>
             <p className="text-sm text-gray-500">Acompanhe o uso do seu plano atual.</p>
             <UsageStats />
           </div>
@@ -992,7 +992,7 @@ export const Settings: React.FC = () => {
             onClick={() => setActiveTab('subscription')}
             className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'subscription' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
           >
-            <CreditCard size={18} /> Assinatura
+            <CreditCard size={18} /> Planos e Limites
           </button>
 
           <button
