@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     DollarSign, Plus,
     ArrowUpCircle, ArrowDownCircle, Edit2,
-    BarChart3, Wallet, Tag, FileText, Loader2
+    BarChart3, Wallet, Tag, FileText, Loader2, Users
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -19,6 +19,7 @@ interface Transaction {
     category_name: string;
     category_color: string;
     supplier_name?: string;
+    client_name?: string;
     notes?: string;
 }
 
@@ -27,6 +28,11 @@ interface Category {
     name: string;
     type: 'income' | 'expense';
     color: string;
+}
+
+interface Client {
+    id: number;
+    name: string;
 }
 
 interface DashboardData {
@@ -45,6 +51,7 @@ interface NewTransactionState {
     amount: number;
     type: 'income' | 'expense';
     category_id: string;
+    client_id: string;
     date: string;
     status: 'pending' | 'paid';
 }
@@ -56,17 +63,28 @@ export const FinancialModule: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Filtros (Preparado para uso futuro)
+    // Filtros
+    const [selectedClient, setSelectedClient] = useState<string>('');
     // const [dateRange, setDateRange] = useState({ start: '', end: '' });
 
     const [categories, setCategories] = useState<Category[]>([]);
+    const [clients, setClients] = useState<Client[]>([]);
+
     const [newTransaction, setNewTransaction] = useState<NewTransactionState>({
         description: '',
         amount: 0,
         type: 'expense',
         category_id: '',
+        client_id: '',
         date: new Date().toISOString().split('T')[0],
         status: 'paid'
+    });
+
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+    const [newCategory, setNewCategory] = useState({
+        name: '',
+        type: 'expense' as 'income' | 'expense',
+        color: '#ef4444'
     });
 
     useEffect(() => {
@@ -75,17 +93,22 @@ export const FinancialModule: React.FC = () => {
             await Promise.all([
                 fetchDashboard(),
                 fetchCategories(),
+                fetchClients(),
                 activeTab === 'transactions' ? fetchTransactions() : Promise.resolve()
             ]);
             setLoading(false);
         };
         loadData();
-    }, [activeTab]);
+    }, [activeTab, selectedClient]); // Recarrega quando muda a aba ou o cliente selecionado
 
     const fetchDashboard = async () => {
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financial/dashboard`, {
+            let url = `${import.meta.env.VITE_API_URL}/api/financial/dashboard`;
+            if (selectedClient) {
+                url += `?client_id=${selectedClient}`;
+            }
+            const res = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -98,7 +121,11 @@ export const FinancialModule: React.FC = () => {
     const fetchTransactions = async () => {
         const token = localStorage.getItem('token');
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financial/transactions`, {
+            let url = `${import.meta.env.VITE_API_URL}/api/financial/transactions`;
+            if (selectedClient) {
+                url += `?client_id=${selectedClient}`;
+            }
+            const res = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -116,6 +143,19 @@ export const FinancialModule: React.FC = () => {
             });
             const data = await res.json();
             if (data.success) setCategories(data.data);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const fetchClients = async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financial/clients`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) setClients(data.data);
         } catch (error) {
             console.error(error);
         }
@@ -141,9 +181,31 @@ export const FinancialModule: React.FC = () => {
                     amount: 0,
                     type: 'expense',
                     category_id: '',
+                    client_id: '',
                     date: new Date().toISOString().split('T')[0],
                     status: 'paid'
                 });
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleSaveCategory = async () => {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/financial/categories`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(newCategory)
+            });
+            if (res.ok) {
+                setIsCategoryModalOpen(false);
+                fetchCategories();
+                setNewCategory({ name: '', type: 'expense', color: '#ef4444' });
             }
         } catch (error) {
             console.error(error);
@@ -169,32 +231,50 @@ export const FinancialModule: React.FC = () => {
     return (
         <div className="p-6 bg-slate-50 min-h-screen">
             {/* Header */}
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
                         <Wallet className="text-blue-600" /> Gestão Financeira
                     </h1>
                     <p className="text-slate-500">Controle completo de receitas, despesas e fluxo de caixa.</p>
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setActiveTab('dashboard')}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
-                    >
-                        <BarChart3 size={18} className="inline mr-2" /> Visão Geral
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('transactions')}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'transactions' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
-                    >
-                        <DollarSign size={18} className="inline mr-2" /> Transações
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('settings')}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${activeTab === 'settings' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
-                    >
-                        <Tag size={18} className="inline mr-2" /> Categorias
-                    </button>
+
+                <div className="flex flex-wrap gap-2 items-center">
+                    {/* Filtro de Cliente */}
+                    <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200">
+                        <Users size={16} className="text-slate-500" />
+                        <select
+                            value={selectedClient}
+                            onChange={(e) => setSelectedClient(e.target.value)}
+                            className="bg-transparent text-slate-600 text-sm focus:outline-none min-w-[150px]"
+                        >
+                            <option value="">Todos os Clientes</option>
+                            {clients.map(client => (
+                                <option key={client.id} value={client.id}>{client.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="flex gap-2 bg-white p-1 rounded-lg border border-slate-200">
+                        <button
+                            onClick={() => setActiveTab('dashboard')}
+                            className={`px-4 py-2 rounded-md font-medium text-sm transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                            <BarChart3 size={16} className="inline mr-2" /> Visão Geral
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('transactions')}
+                            className={`px-4 py-2 rounded-md font-medium text-sm transition-colors ${activeTab === 'transactions' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                            <DollarSign size={16} className="inline mr-2" /> Transações
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('settings')}
+                            className={`px-4 py-2 rounded-md font-medium text-sm transition-colors ${activeTab === 'settings' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                            <Tag size={16} className="inline mr-2" /> Categorias
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -318,6 +398,7 @@ export const FinancialModule: React.FC = () => {
                                 <tr>
                                     <th className="p-4">Data</th>
                                     <th className="p-4">Descrição</th>
+                                    <th className="p-4">Cliente</th>
                                     <th className="p-4">Categoria</th>
                                     <th className="p-4">Valor</th>
                                     <th className="p-4">Status</th>
@@ -329,6 +410,7 @@ export const FinancialModule: React.FC = () => {
                                     <tr key={t.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="p-4 text-slate-500">{new Date(t.date).toLocaleDateString()}</td>
                                         <td className="p-4 font-medium text-slate-900">{t.description}</td>
+                                        <td className="p-4 text-slate-600">{t.client_name || '-'}</td>
                                         <td className="p-4">
                                             <span
                                                 className="px-2 py-1 rounded text-xs font-bold text-white"
@@ -342,7 +424,7 @@ export const FinancialModule: React.FC = () => {
                                         </td>
                                         <td className="p-4">
                                             <span className={`px-2 py-1 rounded text-xs font-bold capitalize
-                                                ${t.status === 'paid' ? 'bg-green-100 text-green-700' :
+                                ${t.status === 'paid' ? 'bg-green-100 text-green-700' :
                                                     t.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                                                         t.status === 'overdue' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
                                                 }`}
@@ -357,7 +439,7 @@ export const FinancialModule: React.FC = () => {
                                 ))}
                                 {transactions.length === 0 && (
                                     <tr>
-                                        <td colSpan={6} className="p-8 text-center text-slate-500">
+                                        <td colSpan={7} className="p-8 text-center text-slate-500">
                                             Nenhuma transação encontrada.
                                         </td>
                                     </tr>
@@ -368,13 +450,65 @@ export const FinancialModule: React.FC = () => {
                 </div>
             )}
 
-            {/* Placeholder for Settings */}
+            {/* Settings Tab - Gerenciar Categorias */}
             {activeTab === 'settings' && (
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 text-center">
-                    <Tag size={48} className="mx-auto text-slate-300 mb-4" />
-                    <h3 className="text-lg font-bold text-slate-800">Gerenciar Categorias</h3>
-                    <p className="text-slate-500 mb-6">Configure seu plano de contas e centros de custo.</p>
-                    <button className="text-blue-600 font-medium hover:underline">Em breve...</button>
+                <div className="bg-white rounded-xl shadow-sm border border-slate-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-800">Plano de Contas</h3>
+                            <p className="text-sm text-slate-500">Gerencie as categorias de receitas e despesas.</p>
+                        </div>
+                        <button
+                            onClick={() => setIsCategoryModalOpen(true)}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                        >
+                            <Plus size={18} /> Nova Categoria
+                        </button>
+                    </div>
+
+                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Receitas */}
+                        <div>
+                            <h4 className="font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                                <ArrowUpCircle className="text-green-500" size={20} /> Categorias de Receita
+                            </h4>
+                            <div className="space-y-2">
+                                {categories.filter(c => c.type === 'income').map(c => (
+                                    <div key={c.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: c.color }}></div>
+                                            <span className="font-medium text-slate-700">{c.name}</span>
+                                        </div>
+                                        <button className="text-slate-400 hover:text-blue-600"><Edit2 size={16} /></button>
+                                    </div>
+                                ))}
+                                {categories.filter(c => c.type === 'income').length === 0 && (
+                                    <p className="text-sm text-slate-400 italic">Nenhuma categoria cadastrada.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Despesas */}
+                        <div>
+                            <h4 className="font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                                <ArrowDownCircle className="text-red-500" size={20} /> Categorias de Despesa
+                            </h4>
+                            <div className="space-y-2">
+                                {categories.filter(c => c.type === 'expense').map(c => (
+                                    <div key={c.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: c.color }}></div>
+                                            <span className="font-medium text-slate-700">{c.name}</span>
+                                        </div>
+                                        <button className="text-slate-400 hover:text-blue-600"><Edit2 size={16} /></button>
+                                    </div>
+                                ))}
+                                {categories.filter(c => c.type === 'expense').length === 0 && (
+                                    <p className="text-sm text-slate-400 italic">Nenhuma categoria cadastrada.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -441,21 +575,36 @@ export const FinancialModule: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Categoria</label>
-                                <select
-                                    value={newTransaction.category_id}
-                                    onChange={e => setNewTransaction({ ...newTransaction, category_id: e.target.value })}
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
-                                >
-                                    <option value="">Selecione...</option>
-                                    {categories
-                                        .filter(c => c.type === newTransaction.type)
-                                        .map(c => (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Categoria</label>
+                                    <select
+                                        value={newTransaction.category_id}
+                                        onChange={e => setNewTransaction({ ...newTransaction, category_id: e.target.value })}
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
+                                    >
+                                        <option value="">Selecione...</option>
+                                        {categories
+                                            .filter(c => c.type === newTransaction.type)
+                                            .map(c => (
+                                                <option key={c.id} value={c.id}>{c.name}</option>
+                                            ))
+                                        }
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Cliente (Opcional)</label>
+                                    <select
+                                        value={newTransaction.client_id}
+                                        onChange={e => setNewTransaction({ ...newTransaction, client_id: e.target.value })}
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
+                                    >
+                                        <option value="">Selecione...</option>
+                                        {clients.map(c => (
                                             <option key={c.id} value={c.id}>{c.name}</option>
-                                        ))
-                                    }
-                                </select>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             <div className="flex justify-end gap-2 mt-6">
@@ -470,6 +619,68 @@ export const FinancialModule: React.FC = () => {
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                                 >
                                     Salvar Transação
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Nova Categoria */}
+            {isCategoryModalOpen && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200">
+                        <h3 className="text-xl font-bold text-slate-900 mb-4">Nova Categoria</h3>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Nome da Categoria</label>
+                                <input
+                                    value={newCategory.name}
+                                    onChange={e => setNewCategory({ ...newCategory, name: e.target.value })}
+                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
+                                    placeholder="Ex: Consultoria, Marketing..."
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
+                                <select
+                                    value={newCategory.type}
+                                    onChange={e => setNewCategory({ ...newCategory, type: e.target.value as 'income' | 'expense' })}
+                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
+                                >
+                                    <option value="income">Receita</option>
+                                    <option value="expense">Despesa</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Cor</label>
+                                <div className="flex gap-2 flex-wrap">
+                                    {['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#64748b'].map(color => (
+                                        <button
+                                            key={color}
+                                            onClick={() => setNewCategory({ ...newCategory, color })}
+                                            className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${newCategory.color === color ? 'border-slate-900 scale-110' : 'border-transparent'}`}
+                                            style={{ backgroundColor: color }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-2 mt-6">
+                                <button
+                                    onClick={() => setIsCategoryModalOpen(false)}
+                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleSaveCategory}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                                >
+                                    Salvar
                                 </button>
                             </div>
                         </div>

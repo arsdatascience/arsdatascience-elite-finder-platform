@@ -6,7 +6,7 @@ const financialController = {
 
     getTransactions: async (req, res) => {
         const { tenant_id } = req.user;
-        const { startDate, endDate, type, status, category_id } = req.query;
+        const { startDate, endDate, type, status, category_id, client_id } = req.query;
 
         try {
             let query = `
@@ -49,6 +49,10 @@ const financialController = {
             if (category_id) {
                 query += ` AND t.category_id = $${paramCount++}`;
                 params.push(category_id);
+            }
+            if (client_id) {
+                query += ` AND t.client_id = $${paramCount++}`;
+                params.push(client_id);
             }
 
             query += ` ORDER BY t.date DESC, t.created_at DESC`;
@@ -137,9 +141,24 @@ const financialController = {
 
     getFinancialDashboard: async (req, res) => {
         const { tenant_id } = req.user;
-        const { startDate, endDate } = req.query;
+        const { startDate, endDate, client_id } = req.query;
 
         try {
+            let filterClause = 'WHERE tenant_id = $1 AND date >= $2 AND date <= $3';
+            const params = [tenant_id];
+
+            // Definir datas padrão se não vierem (mês atual)
+            const start = startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+            const end = endDate || new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
+
+            params.push(start);
+            params.push(end);
+
+            if (client_id) {
+                filterClause += ` AND client_id = $4`;
+                params.push(client_id);
+            }
+
             const totalsQuery = `
                 SELECT 
                     SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as total_income,
@@ -147,7 +166,7 @@ const financialController = {
                     SUM(CASE WHEN type = 'income' AND status = 'pending' THEN amount ELSE 0 END) as pending_income,
                     SUM(CASE WHEN type = 'expense' AND status = 'pending' THEN amount ELSE 0 END) as pending_expense
                 FROM financial_transactions
-                WHERE tenant_id = $1 AND date >= $2 AND date <= $3
+                ${filterClause}
             `;
 
             const cashFlowQuery = `
@@ -156,28 +175,30 @@ const financialController = {
                     SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as income,
                     SUM(CASE WHEN type = 'expense' AND status = 'paid' THEN amount ELSE 0 END) as expense
                 FROM financial_transactions
-                WHERE tenant_id = $1 AND date >= $2 AND date <= $3
+                ${filterClause}
                 GROUP BY day
                 ORDER BY day
             `;
+
+            // Para despesas por categoria, precisamos ajustar o filtro pois tem JOIN
+            let categoryFilterClause = 'WHERE t.tenant_id = $1 AND t.type = \'expense\' AND t.status = \'paid\' AND t.date >= $2 AND t.date <= $3';
+            if (client_id) {
+                categoryFilterClause += ` AND t.client_id = $4`;
+            }
 
             const categoryExpensesQuery = `
                 SELECT c.name, c.color, SUM(t.amount) as value
                 FROM financial_transactions t
                 JOIN financial_categories c ON t.category_id = c.id
-                WHERE t.tenant_id = $1 AND t.type = 'expense' AND t.status = 'paid' AND t.date >= $2 AND t.date <= $3
+                ${categoryFilterClause}
                 GROUP BY c.name, c.color
                 ORDER BY value DESC
             `;
 
-            // Definir datas padrão se não vierem (mês atual)
-            const start = startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-            const end = endDate || new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
-
             const [totals, cashFlow, categoryExpenses] = await Promise.all([
-                db.query(totalsQuery, [tenant_id, start, end]),
-                db.query(cashFlowQuery, [tenant_id, start, end]),
-                db.query(categoryExpensesQuery, [tenant_id, start, end])
+                db.query(totalsQuery, params),
+                db.query(cashFlowQuery, params),
+                db.query(categoryExpensesQuery, params)
             ]);
 
             res.json({
@@ -193,7 +214,18 @@ const financialController = {
         }
     },
 
-    // --- AUXILIARY (Categories, Suppliers) ---
+    // --- AUXILIARY (Categories, Suppliers, Clients) ---
+
+    getClients: async (req, res) => {
+        const { tenant_id } = req.user;
+        try {
+            const result = await db.query(`SELECT id, name FROM clients WHERE tenant_id = $1 ORDER BY name`, [tenant_id]);
+            res.json({ success: true, data: result.rows });
+        } catch (error) {
+            console.error('Error fetching clients:', error);
+            res.status(500).json({ success: false, error: 'Database error' });
+        }
+    },
 
     getCategories: async (req, res) => {
         const { tenant_id } = req.user;

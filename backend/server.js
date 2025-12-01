@@ -544,6 +544,7 @@ app.post('/api/financial/sync', authenticateToken, financialCtrl.runSync);
 app.post('/api/financial/categories', authenticateToken, financialCtrl.createCategory);
 app.get('/api/financial/suppliers', authenticateToken, financialCtrl.getSuppliers);
 app.post('/api/financial/suppliers', authenticateToken, financialCtrl.createSupplier);
+app.get('/api/financial/clients', authenticateToken, financialCtrl.getClients);
 
 // Rotas de Estatísticas do Sistema (Admin)
 app.get('/api/admin/usage-stats', authenticateToken, checkAdmin, adminCtrl.getSystemUsage);
