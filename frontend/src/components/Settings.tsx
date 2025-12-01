@@ -926,7 +926,7 @@ export const Settings: React.FC = () => {
                   <p className="text-sm text-gray-600">Renovação automática em 15 de Dezembro de 2025</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-bold text-blue-600">R$ 497</div>
+                  <div className="text-3xl font-bold text-blue-600">R$ 997</div>
                   <div className="text-sm text-gray-600">/mês</div>
                 </div>
               </div>

@@ -122,7 +122,7 @@ export const UsageStats: React.FC = () => {
                             className="w-full py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 flex items-center justify-center gap-2 transition-colors"
                         >
                             <Zap size={16} />
-                            Upgrade para Pro (R$ 97/mês)
+                            Upgrade para Pro (R$ 997/mês)
                         </button>
                     )}
                     <button
@@ -130,8 +130,34 @@ export const UsageStats: React.FC = () => {
                         className="w-full py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 flex items-center justify-center gap-2 transition-colors"
                     >
                         <Crown size={16} />
-                        Upgrade para Enterprise (R$ 297/mês)
+                        Upgrade para Enterprise (R$ 1397/mês)
                     </button>
+                </div>
+            )}
+
+            {/* Detalhes de Créditos de IA (Se houver limites avançados) */}
+            {(data.limits as any).providers && (
+                <div className="mt-6 pt-4 border-t border-gray-100">
+                    <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                        <Zap size={16} className="text-yellow-500" /> Créditos de IA por Provedor
+                    </h4>
+                    <div className="grid grid-cols-1 gap-3">
+                        {Object.entries((data.limits as any).providers).map(([provider, limit]: [string, any]) => (
+                            <div key={provider} className="bg-gray-50 p-3 rounded-lg text-sm">
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="font-medium capitalize text-gray-700">{provider}</span>
+                                    <span className="text-xs text-gray-500">
+                                        {limit.token_limit ? `${(limit.token_limit / 1000).toFixed(0)}k Tokens` : ''}
+                                        {limit.cost_limit_usd ? ` / $${limit.cost_limit_usd} USD` : ''}
+                                    </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                    <div className="bg-green-500 h-1.5 rounded-full" style={{ width: '0%' }}></div>
+                                </div>
+                                <p className="text-[10px] text-gray-400 mt-1 text-right">Uso calculado em tempo real</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
