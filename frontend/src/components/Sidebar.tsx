@@ -69,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen
         </nav>
       </div>
 
-      <div className="absolute bottom-0 w-full p-4 border-t border-slate-800 flex items-center justify-between">
+      <div className="absolute bottom-0 w-full p-4 border-t border-slate-800 bg-slate-900 flex items-center justify-between z-20">
         <div className="flex items-center gap-3 overflow-hidden">
           {user?.avatar_url ? (
             <img src={user.avatar_url} alt="User" className="w-10 h-10 rounded-full border-2 border-blue-500 object-cover flex-shrink-0" />
