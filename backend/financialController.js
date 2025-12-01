@@ -79,7 +79,7 @@ const financialController = {
                 INSERT INTO financial_transactions (
                     tenant_id, description, amount, type, category_id, supplier_id,
                     campaign_id, client_id, user_id,
-                    date, due_date, payment_date, status, payment_method, notes, created_by
+                    date, due_date, payment_date, "status", payment_method, notes, created_by
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
                 RETURNING *
             `, [
@@ -108,7 +108,7 @@ const financialController = {
                 UPDATE financial_transactions SET
                     description=$1, amount=$2, type=$3, category_id=$4, supplier_id=$5,
                     campaign_id=$6, client_id=$7, user_id=$8,
-                    date=$9, due_date=$10, payment_date=$11, status=$12, payment_method=$13, notes=$14,
+                    date=$9, due_date=$10, payment_date=$11, "status"=$12, payment_method=$13, notes=$14,
                     updated_at=NOW()
                 WHERE id=$15
                 RETURNING *
