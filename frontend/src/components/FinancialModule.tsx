@@ -461,7 +461,7 @@ export const FinancialModule: React.FC = () => {
                         {/* Fluxo de Caixa */}
                         <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Fluxo de Caixa (Diário)</h3>
-                            <div style={{ width: '100%', height: 320 }}>
+                            <div style={{ width: '100%', height: 320, minWidth: 0 }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={dashboardData.cashFlow && dashboardData.cashFlow.length > 0 ? dashboardData.cashFlow : [{ day: new Date().toISOString(), income: 0, expense: 0 }]}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
@@ -482,7 +482,7 @@ export const FinancialModule: React.FC = () => {
                         {/* Despesas por Categoria */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Categoria</h3>
-                            <div style={{ width: '100%', height: 320 }}>
+                            <div style={{ width: '100%', height: 320, minWidth: 0 }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
@@ -493,6 +493,7 @@ export const FinancialModule: React.FC = () => {
                                             outerRadius={80}
                                             paddingAngle={5}
                                             dataKey="value"
+                                            nameKey="name"
                                         >
                                             {(dashboardData.categoryExpenses && dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]).map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.color || '#cbd5e1'} />
@@ -510,7 +511,7 @@ export const FinancialModule: React.FC = () => {
                     <div className="grid grid-cols-1 gap-6">
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Cliente</h3>
-                            <div style={{ width: '100%', height: 320 }}>
+                            <div style={{ width: '100%', height: 320, minWidth: 0 }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart
                                         data={dashboardData.clientExpenses && dashboardData.clientExpenses.length > 0 ? dashboardData.clientExpenses : [{ name: 'Sem dados', value: 0 }]}
