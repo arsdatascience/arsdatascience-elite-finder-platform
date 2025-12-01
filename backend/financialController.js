@@ -206,15 +206,22 @@ const financialController = {
             categoryFilterClause += ` AND t.date <= $${catParamCount++}`;
             catParams.push(end);
 
-            if (client_id) {
+            if (client_id && client_id !== 'undefined' && client_id !== 'null') {
                 categoryFilterClause += ` AND t.client_id = $${catParamCount++}`;
                 catParams.push(client_id);
             }
 
+            console.log('DEBUG Dashboard:', {
+                filterClause,
+                categoryFilterClause,
+                params,
+                catParams
+            });
+
             const categoryExpensesQuery = `
-                SELECT c.name, c.color, SUM(t.amount)::float as value
+                SELECT COALESCE(c.name, 'Sem Categoria') as name, COALESCE(c.color, '#cbd5e1') as color, SUM(t.amount)::float as value
                 FROM financial_transactions t
-                JOIN financial_categories c ON t.category_id = c.id
+                LEFT JOIN financial_categories c ON t.category_id = c.id
                 ${categoryFilterClause}
                 GROUP BY c.name, c.color
                 ORDER BY value DESC
@@ -223,9 +230,9 @@ const financialController = {
             // Query para Despesas por Cliente
             // Reutilizando a lógica de filtro de categoria pois é similar (expense, paid, date range)
             const clientExpensesQuery = `
-                SELECT cl.name, SUM(t.amount)::float as value
+                SELECT COALESCE(cl.name, 'Sem Cliente') as name, SUM(t.amount)::float as value
                 FROM financial_transactions t
-                JOIN clients cl ON t.client_id = cl.id
+                LEFT JOIN clients cl ON t.client_id = cl.id
                 ${categoryFilterClause}
                 GROUP BY cl.name
                 ORDER BY value DESC
