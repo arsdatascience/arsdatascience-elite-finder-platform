@@ -1,4 +1,4 @@
-i# 🚀 Elite Finder Platform - Manual Completo
+# 🚀 Elite Finder Platform - Manual Completo
 
 Bem-vindo à documentação oficial da **Elite Finder Platform**. Este documento detalha todas as funcionalidades, módulos e ferramentas disponíveis no sistema.
 
@@ -9,17 +9,19 @@ Bem-vindo à documentação oficial da **Elite Finder Platform**. Este documento
 1. [Visão Geral](#-visão-geral)
 2. [Dashboard & Analytics](#-dashboard--analytics)
 3. [CRM & Gestão de Clientes](#-crm--gestão-de-clientes)
-4. [Automação de Marketing](#-automação-de-marketing)
-5. [AI Creative Studio (Geração de Imagens)](#-ai-creative-studio)
-6. [Social Media Management](#-social-media-management)
-7. [Gestão de Equipe & Configurações](#-gestão-de-equipe--configurações)
-8. [Instalação Técnica](#-instalação-técnica)
+4. [Módulo Financeiro](#-módulo-financeiro)
+5. [Automação de Marketing](#-automação-de-marketing)
+6. [AI Creative Studio (Geração de Imagens)](#-ai-creative-studio)
+7. [Social Media Management](#-social-media-management)
+8. [Academia de Treinamento](#-academia-de-treinamento)
+9. [Gestão de Equipe & Configurações](#-gestão-de-equipe--configurações)
+10. [Instalação Técnica](#-instalação-técnica)
 
 ---
 
 ## 🌟 Visão Geral
 
-O Elite Finder é uma solução "All-in-One" que centraliza operações de agências digitais. Ele elimina a necessidade de múltiplas ferramentas desconexas, integrando CRM, Automação, IA e Analytics em uma única interface coesa.
+O Elite Finder é uma solução "All-in-One" que centraliza operações de agências digitais. Ele elimina a necessidade de múltiplas ferramentas desconexas, integrando CRM, Financeiro, Automação, IA e Analytics em uma única interface coesa.
 
 ---
 
@@ -39,15 +41,37 @@ O centro de comando da sua operação. Aqui você tem uma visão panorâmica do 
 
 ## 👥 CRM & Gestão de Clientes
 
-Gerencie o relacionamento com seus clientes e leads de forma estruturada.
+Gerencie o relacionamento com seus clientes, empresas (tenants) e leads de forma estruturada e completa.
 
 ### Funcionalidades:
-- **Lista de Clientes**: Cadastro completo de empresas/clientes com dados de contato, setor e status.
+- **Gestão de Tenants (Empresas)**:
+  - Suporte a múltiplos planos e usuários por empresa.
+  - Cadastro completo com CNPJ, endereço e contato.
+- **Cadastro de Clientes 360º**:
+  - Dados corporativos completos (Documento, Fundação, Setor).
+  - Endereço detalhado e links para redes sociais (Instagram, LinkedIn, etc.).
+  - Histórico de notas e observações.
 - **Pipeline de Leads**:
-  - Visualização em Lista ou Kanban (em breve).
+  - Visualização em Lista ou Kanban.
   - Status personalizáveis (Novo, Qualificado, Proposta, Fechado).
-- **Histórico de Interações**: Registro automático de atividades e notas manuais.
-- **Integração com WhatsApp**: (Módulo Beta) Inicie conversas diretamente do CRM.
+- **Edição Inteligente**: Modais de edição que pré-carregam dados existentes para facilitar atualizações.
+
+---
+
+## 💰 Módulo Financeiro
+
+Controle total sobre as finanças da sua agência e dos seus clientes.
+
+### Funcionalidades:
+- **Dashboard Financeiro**:
+  - **Fluxo de Caixa**: Gráfico visual de receitas vs. despesas ao longo do tempo.
+  - **Resumo Executivo**: Receita Total, Despesas, Lucro Líquido e Margem.
+  - **Análise de Despesas**: Gráficos de rosca por Categoria e por Cliente.
+- **Gestão de Transações**:
+  - Registro de receitas e despesas com suporte a anexos e notas.
+  - Filtros avançados por data, tipo, categoria e status.
+- **Categorias Personalizáveis**: Crie e gerencie categorias de receitas e despesas com cores personalizadas.
+- **Sincronização de Custos**: Importação automática de custos de campanhas de mídia (Google/Meta Ads).
 
 ---
 
@@ -114,11 +138,25 @@ Planeje e distribua conteúdo em escala.
 
 ---
 
+## 🎓 Academia de Treinamento
+
+Capacite sua equipe e clientes com conteúdo educacional de alta qualidade.
+
+### Funcionalidades:
+- **Catálogo de Vídeos**: Acesso a treinamentos sobre:
+  - **Vendas**: Técnicas avançadas de negociação e fechamento.
+  - **Atendimento (SAC)**: Excelência no suporte ao cliente.
+  - **CRM & Ferramentas**: Como maximizar o uso da plataforma.
+- **Acompanhamento de Progresso**: Monitore quais módulos foram concluídos pela equipe.
+- **Gamificação**: (Em breve) Badges e certificados por conclusão.
+
+---
+
 ## 🏢 Gestão de Equipe & Configurações
 
 Controle quem acessa o quê.
 
-- **Gestão de Usuários**: Convide membros da equipe.
+- **Gestão de Usuários**: Convide membros da equipe e atribua a Tenants específicos.
 - **Papéis e Permissões**:
   - *Admin*: Acesso total.
   - *Editor*: Pode criar conteúdo, mas não altera configurações.
@@ -140,6 +178,11 @@ Controle quem acessa o quê.
 ```bash
 cd backend
 npm install
+# Atualizar banco de dados
+node scripts/update_schema_v2.js
+# Popular dados iniciais (opcional)
+node scripts/seedFinancialData.js
+node scripts/seedTraining.js
 npm start
 ```
 
