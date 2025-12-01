@@ -50,11 +50,22 @@ exports.analyzeAudio = async (req, res) => {
         return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
     }
 
-    const filePath = req.file.path;
+    let filePath = req.file.path;
+
+    // Hack para arquivos .opus (comum no WhatsApp): renomear para .ogg para a OpenAI aceitar
+    if (path.extname(req.file.originalname).toLowerCase() === '.opus') {
+        const newPathWithExt = filePath + '.ogg';
+        try {
+            fs.renameSync(filePath, newPathWithExt);
+            filePath = newPathWithExt;
+        } catch (e) {
+            console.error('Erro ao renomear .opus:', e);
+        }
+    }
 
     try {
         // 1. Transcrição com Whisper
-        console.log(`[AudioAnalysis] Iniciando transcrição do arquivo: ${req.file.originalname}`);
+        console.log(`[AudioAnalysis] Iniciando transcrição do arquivo: ${req.file.originalname} (Path: ${filePath})`);
 
         const transcription = await openai.audio.transcriptions.create({
             file: fs.createReadStream(filePath),
