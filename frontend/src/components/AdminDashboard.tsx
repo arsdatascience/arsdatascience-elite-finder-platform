@@ -13,7 +13,8 @@ import {
     Trash2,
     CheckCircle,
     AlertTriangle,
-    Building
+    Building,
+    LogOut
 } from 'lucide-react';
 
 // Interfaces
@@ -38,7 +39,7 @@ interface User {
 }
 
 const AdminDashboard: React.FC = () => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const [activeTab, setActiveTab] = useState('overview');
     const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
     const [users, setUsers] = useState<User[]>([]);
@@ -226,6 +227,13 @@ const AdminDashboard: React.FC = () => {
                             Logado como <span className="text-white font-medium">{user?.name}</span>
                         </div>
                         <img src={user?.avatar_url || "https://github.com/shadcn.png"} alt="Admin" className="w-10 h-10 rounded-full border-2 border-blue-500" />
+                        <button
+                            onClick={logout}
+                            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+                            title="Sair"
+                        >
+                            <LogOut size={20} />
+                        </button>
                     </div>
                 </header>
 
