@@ -319,6 +319,7 @@ export const FinancialModule: React.FC = () => {
             <div className="flex items-center justify-center h-screen bg-slate-50">
                 <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
             </div>
+        );
     }
 
     return (
