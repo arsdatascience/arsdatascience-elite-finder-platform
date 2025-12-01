@@ -176,6 +176,7 @@ const App: React.FC = () => {
           <Route path="/social-integrations" element={<SocialIntegrations />} />
           <Route path="/images/generate" element={<ImageGenerationPage />} />
           <Route path="/audio-analysis" element={<AudioAnalysis />} />
+          <Route path="/financial" element={<FinancialModule />} />
           <Route
             path="/automation"
             element={
