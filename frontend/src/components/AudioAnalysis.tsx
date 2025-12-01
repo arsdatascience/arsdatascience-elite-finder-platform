@@ -384,7 +384,7 @@ export const AudioAnalysis: React.FC = () => {
 
                                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center">
                                     <h3 className="text-lg font-bold text-slate-800 mb-2">Distribuição</h3>
-                                    <div className="w-full h-64">
+                                    <div className="w-full h-64 min-w-0">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <PieChart>
                                                 <Pie
@@ -443,7 +443,7 @@ export const AudioAnalysis: React.FC = () => {
 
                             <div className="text-center">
                                 <button
-                                    onClick={() => { setFile(null); setResult(null); }}
+                                    onClick={() => { setFile(null); setResult(null); setError(null); }}
                                     className="text-blue-600 hover:text-blue-800 font-medium"
                                 >
                                     Analisar outro arquivo
