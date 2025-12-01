@@ -171,10 +171,10 @@ const financialController = {
 
             const totalsQuery = `
                 SELECT 
-                    SUM(CASE WHEN "type" = 'income' AND "status" = 'paid' THEN amount ELSE 0 END)::float as total_income,
-                    SUM(CASE WHEN "type" = 'expense' AND "status" = 'paid' THEN amount ELSE 0 END)::float as total_expense,
-                    SUM(CASE WHEN "type" = 'income' AND "status" = 'pending' THEN amount ELSE 0 END)::float as pending_income,
-                    SUM(CASE WHEN "type" = 'expense' AND "status" = 'pending' THEN amount ELSE 0 END)::float as pending_expense
+                    SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as total_income,
+                    SUM(CASE WHEN type = 'expense' AND status = 'paid' THEN amount ELSE 0 END) as total_expense,
+                    SUM(CASE WHEN type = 'income' AND status = 'pending' THEN amount ELSE 0 END) as pending_income,
+                    SUM(CASE WHEN type = 'expense' AND status = 'pending' THEN amount ELSE 0 END) as pending_expense
                 FROM financial_transactions
                 ${filterClause}
             `;
@@ -182,8 +182,8 @@ const financialController = {
             const cashFlowQuery = `
                 SELECT 
                     TO_CHAR(date, 'YYYY-MM-DD') as day,
-                    SUM(CASE WHEN "type" = 'income' AND "status" = 'paid' THEN amount ELSE 0 END)::float as income,
-                    SUM(CASE WHEN "type" = 'expense' AND "status" = 'paid' THEN amount ELSE 0 END)::float as expense
+                    SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as income,
+                    SUM(CASE WHEN type = 'expense' AND status = 'paid' THEN amount ELSE 0 END) as expense
                 FROM financial_transactions
                 ${filterClause}
                 GROUP BY day
@@ -192,7 +192,7 @@ const financialController = {
 
             // Para despesas por categoria, precisamos ajustar o filtro pois tem JOIN
             // Usando alias 't' para transactions
-            let categoryFilterClause = 'WHERE t."type" = \'expense\' AND t."status" = \'paid\'';
+            let categoryFilterClause = 'WHERE t.type = \'expense\' AND t.status = \'paid\'';
             const catParams = [];
             let catParamCount = 1;
 
@@ -219,9 +219,9 @@ const financialController = {
             });
 
             const categoryExpensesQuery = `
-                SELECT COALESCE(c.name, 'Sem Categoria') as name, COALESCE(c.color, '#cbd5e1') as color, SUM(t.amount)::float as value
+                SELECT c.name, c.color, SUM(t.amount) as value
                 FROM financial_transactions t
-                LEFT JOIN financial_categories c ON t.category_id = c.id
+                JOIN financial_categories c ON t.category_id = c.id
                 ${categoryFilterClause}
                 GROUP BY c.name, c.color
                 ORDER BY value DESC
@@ -230,9 +230,9 @@ const financialController = {
             // Query para Despesas por Cliente
             // Reutilizando a lógica de filtro de categoria pois é similar (expense, paid, date range)
             const clientExpensesQuery = `
-                SELECT COALESCE(cl.name, 'Sem Cliente') as name, SUM(t.amount)::float as value
+                SELECT cl.name, SUM(t.amount) as value
                 FROM financial_transactions t
-                LEFT JOIN clients cl ON t.client_id = cl.id
+                JOIN clients cl ON t.client_id = cl.id
                 ${categoryFilterClause}
                 GROUP BY cl.name
                 ORDER BY value DESC
