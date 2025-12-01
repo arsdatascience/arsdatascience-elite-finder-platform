@@ -44,6 +44,7 @@ interface DashboardData {
     };
     cashFlow: { day: string; income: number; expense: number }[];
     categoryExpenses: { name: string; value: number; color: string }[];
+    clientExpenses: { name: string; value: number }[];
 }
 
 interface NewTransactionState {
@@ -364,6 +365,28 @@ export const FinancialModule: React.FC = () => {
                                         <Tooltip formatter={(value: number) => formatCurrency(value)} />
                                         <Legend verticalAlign="bottom" height={36} />
                                     </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Despesas por Cliente (Novo) */}
+                    <div className="grid grid-cols-1 gap-6">
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Cliente</h3>
+                            <div className="h-80">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={dashboardData.clientExpenses} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
+                                        <XAxis type="number" tickFormatter={(val) => `R$${val / 1000}k`} />
+                                        <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12 }} />
+                                        <Tooltip
+                                            formatter={(value: number) => formatCurrency(value)}
+                                            cursor={{ fill: 'transparent' }}
+                                            contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                                        />
+                                        <Bar dataKey="value" name="Despesas" fill="#f97316" radius={[0, 4, 4, 0]} barSize={30} />
+                                    </BarChart>
                                 </ResponsiveContainer>
                             </div>
                         </div>

@@ -140,7 +140,14 @@ const AdminDashboard: React.FC = () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
-            if (Array.isArray(data)) setUsers(data);
+
+            if (Array.isArray(data)) {
+                setUsers(data);
+            } else if (data.members && Array.isArray(data.members)) {
+                setUsers(data.members);
+            } else if (data.success && Array.isArray(data.data)) {
+                setUsers(data.data);
+            }
         } catch (error) {
             console.error('Erro ao buscar usuários:', error);
         }
@@ -172,12 +179,22 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
-    const handleEditUser = (user: User) => {
+    const handleEditUser = (user: any) => {
         setEditingUser(user);
+
+        // Determinar nome e sobrenome
+        let fName = user.firstName || user.first_name || '';
+        let lName = user.lastName || user.last_name || '';
+
+        if (!fName && user.name) {
+            fName = user.name.split(' ')[0];
+            lName = user.name.split(' ').slice(1).join(' ');
+        }
+
         reset({
-            username: user.username || user.name.split(' ')[0].toLowerCase(),
-            firstName: user.first_name || user.name.split(' ')[0],
-            lastName: user.last_name || user.name.split(' ').slice(1).join(' '),
+            username: user.username || fName.toLowerCase(),
+            firstName: fName,
+            lastName: lName,
             email: user.email,
             role: user.role,
             status: user.status,

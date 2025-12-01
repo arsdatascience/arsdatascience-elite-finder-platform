@@ -309,11 +309,17 @@ const updateTeamMember = async (req, res) => {
         }
 
         if (newPassword) {
-            if (!oldPassword) return res.status(400).json({ success: false, error: 'Senha antiga obrigatória.' });
-            const userResult = await db.query('SELECT password_hash FROM users WHERE id = $1', [id]);
-            if (userResult.rows.length === 0) return res.status(404).json({ success: false, error: 'Usuário não encontrado' });
-            const isOldPasswordValid = await bcrypt.compare(oldPassword, userResult.rows[0].password_hash);
-            if (!isOldPasswordValid) return res.status(400).json({ success: false, error: 'Senha antiga incorreta' });
+            // Se for admin/super_admin, permite alterar sem senha antiga
+            const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin' || req.user.role === 'Super Admin';
+
+            // Se NÃO for admin, exige senha antiga
+            if (!isAdmin) {
+                if (!oldPassword) return res.status(400).json({ success: false, error: 'Senha antiga obrigatória.' });
+                const userResult = await db.query('SELECT password_hash FROM users WHERE id = $1', [id]);
+                if (userResult.rows.length === 0) return res.status(404).json({ success: false, error: 'Usuário não encontrado' });
+                const isOldPasswordValid = await bcrypt.compare(oldPassword, userResult.rows[0].password_hash);
+                if (!isOldPasswordValid) return res.status(400).json({ success: false, error: 'Senha antiga incorreta' });
+            }
 
             const salt = await bcrypt.genSalt(10);
             const password_hash = await bcrypt.hash(newPassword, salt);

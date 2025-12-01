@@ -47,11 +47,27 @@ const getClients = async (req, res) => {
 };
 
 const createClient = async (req, res) => {
-    const { name, type, email, phone, city, company_size, industry } = req.body;
+    const {
+        name, type, email, phone, whatsapp, document, foundationDate,
+        cep, street, number, complement, neighborhood, city, state,
+        instagramUrl, facebookUrl, linkedinUrl, website,
+        notes, company_size, industry
+    } = req.body;
+
     try {
         const result = await pool.query(
-            'INSERT INTO clients (name, type, email, phone, city, company_size, industry) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [name, type, email, phone, city, company_size, industry]
+            `INSERT INTO clients (
+                name, type, email, phone, whatsapp, document, foundation_date,
+                address_zip, address_street, address_number, address_complement, address_neighborhood, address_city, address_state,
+                instagram_url, facebook_url, linkedin_url, website,
+                notes, company_size, industry
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING *`,
+            [
+                name, type, email, phone, whatsapp, document, foundationDate || null,
+                cep, street, number, complement, neighborhood, city, state,
+                instagramUrl, facebookUrl, linkedinUrl, website,
+                notes, company_size, industry
+            ]
         );
         res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -62,11 +78,29 @@ const createClient = async (req, res) => {
 
 const updateClient = async (req, res) => {
     const { id } = req.params;
-    const { name, type, email, phone, city, company_size, industry } = req.body;
+    const {
+        name, type, email, phone, whatsapp, document, foundationDate,
+        cep, street, number, complement, neighborhood, city, state,
+        instagramUrl, facebookUrl, linkedinUrl, website,
+        notes, company_size, industry
+    } = req.body;
+
     try {
         const result = await pool.query(
-            'UPDATE clients SET name = $1, type = $2, email = $3, phone = $4, city = $5, company_size = $6, industry = $7, updated_at = NOW() WHERE id = $8 RETURNING *',
-            [name, type, email, phone, city, company_size, industry, id]
+            `UPDATE clients SET 
+                name = $1, type = $2, email = $3, phone = $4, whatsapp = $5, document = $6, foundation_date = $7,
+                address_zip = $8, address_street = $9, address_number = $10, address_complement = $11, address_neighborhood = $12, address_city = $13, address_state = $14,
+                instagram_url = $15, facebook_url = $16, linkedin_url = $17, website = $18,
+                notes = $19, company_size = $20, industry = $21, 
+                updated_at = NOW() 
+            WHERE id = $22 RETURNING *`,
+            [
+                name, type, email, phone, whatsapp, document, foundationDate || null,
+                cep, street, number, complement, neighborhood, city, state,
+                instagramUrl, facebookUrl, linkedinUrl, website,
+                notes, company_size, industry,
+                id
+            ]
         );
         res.json(result.rows[0]);
     } catch (error) {

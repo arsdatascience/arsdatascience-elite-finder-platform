@@ -176,10 +176,30 @@ export const ClientRegistration: React.FC = () => {
 
     const handleEdit = (client: any) => {
         setEditingId(client.id);
-        // Preencher formulário com dados do cliente
-        Object.keys(client).forEach(key => {
-            setValue(key as any, client[key]);
-        });
+        // Mapeamento dos campos do backend (snake_case) para o formulário
+        const formData: any = {
+            type: client.type || 'PJ',
+            name: client.name,
+            document: client.document || '',
+            foundationDate: client.foundation_date ? new Date(client.foundation_date).toISOString().split('T')[0] : '',
+            email: client.email || '',
+            phone: client.phone || '',
+            whatsapp: client.whatsapp || '',
+            cep: client.address_zip || '',
+            street: client.address_street || '',
+            number: client.address_number || '',
+            complement: client.address_complement || '',
+            neighborhood: client.address_neighborhood || '',
+            city: client.address_city || '',
+            state: client.address_state || '',
+            instagramUrl: client.instagram_url || '',
+            facebookUrl: client.facebook_url || '',
+            linkedinUrl: client.linkedin_url || '',
+            website: client.website || '',
+            notes: client.notes || ''
+        };
+
+        reset(formData);
         setView('form');
     };
 

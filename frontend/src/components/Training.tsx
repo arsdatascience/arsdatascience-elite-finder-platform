@@ -43,9 +43,9 @@ export const Training: React.FC = () => {
             console.error('Error fetching modules:', error);
             // Fallback to mock data
             setModules([
-                { id: 1, title: 'Fundamentos de Google Ads', description: 'Aprenda os conceitos básicos', category: 'Fundamentos', duration_minutes: 45, difficulty: 'Iniciante', video_url: '', thumbnail_url: '', order_index: 1 },
-                { id: 2, title: 'Meta Ads Avançado', description: 'Estratégias avançadas', category: 'Avançado', duration_minutes: 60, difficulty: 'Avançado', video_url: '', thumbnail_url: '', order_index: 2 },
-                { id: 3, title: 'Automação de Marketing', description: 'Fluxos de automação', category: 'Especialização', duration_minutes: 90, difficulty: 'Intermediário', video_url: '', thumbnail_url: '', order_index: 3 },
+                { id: 1, title: 'Técnicas Avançadas de Vendas', description: 'Domine a arte de fechar negócios com técnicas comprovadas de persuasão e negociação.', category: 'Vendas', duration_minutes: 45, difficulty: 'Avançado', video_url: '', thumbnail_url: '', order_index: 1 },
+                { id: 2, title: 'Excelência no Atendimento (SAC)', description: 'Como transformar reclamações em fidelidade e encantar clientes em cada interação.', category: 'Atendimento', duration_minutes: 60, difficulty: 'Intermediário', video_url: '', thumbnail_url: '', order_index: 2 },
+                { id: 3, title: 'Gestão de CRM e Pipeline', description: 'Maximize o uso do seu CRM para organizar leads e aumentar a conversão.', category: 'Ferramentas', duration_minutes: 90, difficulty: 'Iniciante', video_url: '', thumbnail_url: '', order_index: 3 },
             ]);
         } finally {
             setLoading(false);
@@ -280,21 +280,7 @@ export const Training: React.FC = () => {
                 </div>
             )}
 
-            {/* AI Simulator Promo */}
-            <div className="bg-slate-900 rounded-xl p-6 text-white flex flex-col md:flex-row items-center justify-between gap-6">
-                <div>
-                    <h3 className="text-lg font-bold flex items-center gap-2 mb-2">
-                        <Star className="text-yellow-400 fill-yellow-400" size={20} />
-                        Simulador de Vendas IA
-                    </h3>
-                    <p className="text-slate-400 text-sm max-w-xl">
-                        Pratique seu pitch com nossos clientes virtuais. Eles reagem em tempo real à sua voz e tom. Receba feedback instantâneo e melhore sua taxa de conversão.
-                    </p>
-                </div>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold transition-colors whitespace-nowrap">
-                    Lançar Simulador
-                </button>
-            </div>
+            {/* AI Simulator Promo Removed */}
         </div>
     );
 };

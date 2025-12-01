@@ -195,17 +195,34 @@ const financialController = {
                 ORDER BY value DESC
             `;
 
-            const [totals, cashFlow, categoryExpenses] = await Promise.all([
+            // Query para Despesas por Cliente
+            let clientFilterClause = 'WHERE t.tenant_id = $1 AND t.type = \'expense\' AND t.status = \'paid\' AND t.date >= $2 AND t.date <= $3';
+            if (client_id) {
+                clientFilterClause += ` AND t.client_id = $4`;
+            }
+
+            const clientExpensesQuery = `
+                SELECT cl.name, SUM(t.amount) as value
+                FROM financial_transactions t
+                JOIN clients cl ON t.client_id = cl.id
+                ${clientFilterClause}
+                GROUP BY cl.name
+                ORDER BY value DESC
+            `;
+
+            const [totals, cashFlow, categoryExpenses, clientExpenses] = await Promise.all([
                 db.query(totalsQuery, params),
                 db.query(cashFlowQuery, params),
-                db.query(categoryExpensesQuery, params)
+                db.query(categoryExpensesQuery, params),
+                db.query(clientExpensesQuery, params)
             ]);
 
             res.json({
                 success: true,
                 summary: totals.rows[0] || { total_income: 0, total_expense: 0, pending_income: 0, pending_expense: 0 },
                 cashFlow: cashFlow.rows,
-                categoryExpenses: categoryExpenses.rows
+                categoryExpenses: categoryExpenses.rows,
+                clientExpenses: clientExpenses.rows
             });
 
         } catch (error) {
