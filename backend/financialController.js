@@ -206,7 +206,7 @@ const financialController = {
             categoryFilterClause += ` AND t.date <= $${catParamCount++}`;
             catParams.push(end);
 
-            if (client_id && client_id !== 'undefined' && client_id !== 'null') {
+            if (client_id) {
                 categoryFilterClause += ` AND t.client_id = $${catParamCount++}`;
                 catParams.push(client_id);
             }
