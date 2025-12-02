@@ -160,14 +160,9 @@ export const Reports: React.FC = () => {
         backgroundColor: '#ffffff'
       });
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
       // Calcular altura da imagem mantendo proporção
-      const imgWidth = pdfWidth;
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+      // const imgWidth = pdfWidth;
+      // const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
       // Adicionar imagem ao PDF
       // Se a imagem for maior que uma página, o jsPDF não quebra automaticamente a imagem de forma inteligente
@@ -288,7 +283,7 @@ export const Reports: React.FC = () => {
                     paddingAngle={5}
                     dataKey="value"
                     isAnimationActive={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name} ${(percent ? percent * 100 : 0).toFixed(0)}%`}
                   >
                     {reportData.distribution.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
