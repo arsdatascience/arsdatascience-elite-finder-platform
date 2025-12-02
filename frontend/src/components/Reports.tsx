@@ -211,15 +211,15 @@ export const Reports: React.FC = () => {
             <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-b border-gray-200 pb-2">
               <Activity size={20} className="text-blue-600" /> Resumo de Performance
             </h3>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               {reportData.kpis.map((kpi, i) => (
-                <div key={i} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-                  <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
-                    {i === 0 ? <DollarSign size={40} /> : i === 1 ? <TrendingUp size={40} /> : <Activity size={40} />}
+                <div key={i} className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    {i === 0 ? <DollarSign size={80} /> : i === 1 ? <TrendingUp size={80} /> : <Activity size={80} />}
                   </div>
-                  <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">{kpi.label}</p>
-                  <p className="text-xl md:text-2xl font-black text-gray-900 mb-2 truncate" title={kpi.value}>{kpi.value}</p>
-                  <div className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${kpi.trend === 'up' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                  <p className="text-sm text-gray-500 uppercase font-bold tracking-wider mb-2">{kpi.label}</p>
+                  <p className="text-4xl font-black text-gray-900 mb-4 tracking-tight">{kpi.value}</p>
+                  <div className={`inline-flex items-center gap-2 text-sm font-bold px-3 py-1.5 rounded-full ${kpi.trend === 'up' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                     {kpi.trend === 'up' ? '▲' : '▼'} {Math.abs(kpi.change)}%
                     <span className="text-gray-400 font-normal ml-1">vs mês anterior</span>
                   </div>
