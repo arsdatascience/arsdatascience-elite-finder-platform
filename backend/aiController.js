@@ -152,15 +152,7 @@ const generateDashboardInsights = async (req, res) => {
   }
 };
 
-module.exports = {
-  analyzeChatConversation,
-  generateMarketingContent,
-  askEliteAssistant,
-  analyzeConversationStrategy,
-  generateAgentConfig,
-  saveAnalysis,
-  generateDashboardInsights
-};
+
 
 
 const formatChatHistory = (messages) => {
