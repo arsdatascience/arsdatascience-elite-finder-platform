@@ -65,6 +65,7 @@ export interface Lead {
   tags?: string[];
   assignedTo: string;
   notes?: string;
+  clientId?: number;
 }
 
 export interface ChatMessage {

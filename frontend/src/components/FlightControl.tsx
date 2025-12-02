@@ -352,7 +352,8 @@ export const FlightControl: React.FC = () => {
           assignedTo: l.assigned_to || 'Não atribuído',
           lastContact: new Date(l.updated_at || l.created_at).toLocaleDateString(),
           productInterest: 'Geral',
-          tags: []
+          tags: [],
+          clientId: l.client_id
         }));
         setLocalLeads(adaptedLeads);
       }
@@ -369,9 +370,7 @@ export const FlightControl: React.FC = () => {
     return localLeads.filter(lead => {
       // Client filter
       if (selectedClient !== 'all') {
-        // Example client-specific filtering logic (adjust as needed)
-        if (selectedClient === '1' && lead.value <= 5000) return false;
-        if (selectedClient === '2' && lead.value >= 3000) return false;
+        if (lead.clientId !== Number(selectedClient)) return false;
       }
 
       // Search filter
