@@ -1,0 +1,120 @@
+{
+    "name": "Lead Scoring Automatizado (FlightControl)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "lead-scoring",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.body.event }}",
+                            "operation": "contains",
+                            "value2": "email_reply"
+                        },
+                        {
+                            "value1": "={{ $json.body.event }}",
+                            "operation": "contains",
+                            "value2": "price_page_visit"
+                        }
+                    ]
+                },
+                "combineOperation": "any"
+            },
+            "name": "Verificar Evento",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                450,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "PATCH",
+                "url": "={{ $env.BACKEND_URL }}/api/leads/{{ $json.body.lead_id }}/status",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "headerAuth",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "status",
+                            "value": "IN_PROGRESS"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Mover para Quente",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                700,
+                200
+            ],
+            "credentials": {
+                "headerAuth": {
+                    "id": "1",
+                    "name": "Header Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "content": "Evento ignorado ou inválido.",
+                "height": 100
+            },
+            "name": "Ignorar",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                700,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Verificar Evento",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Verificar Evento": {
+            "main": [
+                [
+                    {
+                        "node": "Mover para Quente",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Ignorar",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
