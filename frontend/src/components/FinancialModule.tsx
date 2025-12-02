@@ -325,14 +325,16 @@ const FinancialModule: React.FC = () => {
                                 type="date"
                                 value={dateRange.start}
                                 onChange={e => setDateRange({ ...dateRange, start: e.target.value })}
-                                className="text-xs text-slate-600 focus:outline-none"
+                                onClick={(e) => e.currentTarget.showPicker()}
+                                className="text-xs text-slate-600 focus:outline-none cursor-pointer min-w-[110px]"
                             />
                             <span className="text-slate-400">-</span>
                             <input
                                 type="date"
                                 value={dateRange.end}
                                 onChange={e => setDateRange({ ...dateRange, end: e.target.value })}
-                                className="text-xs text-slate-600 focus:outline-none"
+                                onClick={(e) => e.currentTarget.showPicker()}
+                                className="text-xs text-slate-600 focus:outline-none cursor-pointer min-w-[110px]"
                             />
                         </div>
 
@@ -510,7 +512,13 @@ const FinancialModule: React.FC = () => {
                                             cursor={{ fill: 'transparent' }}
                                             contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                                         />
-                                        <Bar dataKey="value" name="Despesas" fill="#f97316" radius={[0, 4, 4, 0]} barSize={30} />
+                                        <Bar dataKey="value" name="Despesas" radius={[0, 4, 4, 0]} barSize={30}>
+                                            {
+                                                (dashboardData.clientExpenses && dashboardData.clientExpenses.length > 0 ? dashboardData.clientExpenses : [{ name: 'Sem dados', value: 0 }]).map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={['#f97316', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#14b8a6'][index % 10]} />
+                                                ))
+                                            }
+                                        </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
