@@ -31,6 +31,7 @@ import AdminDashboard from '@/components/AdminDashboard';
 import { AudioAnalysis } from '@/components/AudioAnalysis';
 import FinancialModule from '@/components/FinancialModule';
 import CreativeStudio from '@/components/CreativeStudio';
+import { SalesCoachingChat } from '@/components/SalesCoachingChat';
 
 const PATH_MAP: Record<ViewState, string> = {
   [ViewState.HOME]: '/',
@@ -44,7 +45,7 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.SOCIAL_INTEGRATIONS]: '/social-integrations',
   [ViewState.IMAGE_GENERATION]: '/images/generate',
   [ViewState.AUDIO_ANALYSIS]: '/audio-analysis',
-  [ViewState.FINANCIAL_MODULE]: '/financial', // Adicionado
+  [ViewState.FINANCIAL_MODULE]: '/financial',
   [ViewState.AUTOMATION]: '/automation',
   [ViewState.TRAINING]: '/training',
   [ViewState.REPORTS]: '/reports',
@@ -54,9 +55,8 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.AGENT_BUILDER]: '/agent-builder',
   [ViewState.ADMIN]: '/admin',
   [ViewState.CREATIVE_STUDIO]: '/creative-studio',
+  [ViewState.SALES_COACHING]: '/sales-coaching',
 };
-
-
 
 const PrivateRoute: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -74,7 +74,6 @@ const PrivateRoute: React.FC = () => {
 
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  // Aceitar 'super_admin' ou 'Super Admin'
   if (user?.role !== 'super_admin' && user?.role !== 'Super Admin') {
     return <Navigate to="/" replace />;
   }
@@ -83,7 +82,6 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const SettingsRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  // Aceitar 'super_admin', 'admin', 'Super Admin', 'Admin'
   const allowedRoles = ['super_admin', 'admin', 'Super Admin', 'Admin'];
   if (!user?.role || !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
@@ -122,7 +120,6 @@ const Layout: React.FC = () => {
       />
 
       <div className="flex-1 flex flex-col h-full relative w-full">
-        {/* Mobile Header */}
         <div className="md:hidden bg-white border-b border-gray-200 p-4 flex items-center justify-between z-20">
           <h1 className="text-lg font-bold text-gray-800">Elite Finder</h1>
           <button onClick={() => setSidebarOpen(true)} className="p-2 text-gray-600">
@@ -194,10 +191,10 @@ const App: React.FC = () => {
           <Route path="/settings" element={<SettingsRoute><Settings /></SettingsRoute>} />
           <Route path="/agent-builder" element={<AgentBuilder />} />
           <Route path="/templates" element={<TemplateManager />} />
-          <Route path="/templates" element={<TemplateManager />} />
           <Route path="/whatsapp-simulator" element={<WhatsAppSimulator />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/creative-studio" element={<CreativeStudio />} />
+          <Route path="/sales-coaching" element={<SalesCoachingChat />} />
         </Route>
       </Route>
 

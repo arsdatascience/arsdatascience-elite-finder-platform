@@ -26,6 +26,7 @@ export const NAV_ITEMS = [
   { id: 'SOCIAL_CALENDAR', label: 'Calendário Social', icon: Calendar },
   { id: 'SOCIAL_INTEGRATIONS', label: 'Integrações Sociais', icon: Share2 },
   { id: 'CREATIVE_STUDIO', label: 'Estúdio Copywriter', icon: Sparkles },
+  { id: 'SALES_COACHING', label: 'Coaching de Vendas', icon: Mic },
 ];
 
 export const CLIENTS_LIST = [
