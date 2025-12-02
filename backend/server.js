@@ -405,6 +405,10 @@ app.post('/webhooks/whatsapp', (req, res) => {
 // --- AI SERVICES ---
 const aiController = require('./aiController');
 
+
+
+
+// Iniciar servidor após migrações
 app.post('/api/ai/analyze', authenticateToken, aiController.analyzeChatConversation);
 app.post('/api/ai/generate', authenticateToken, checkLimit('ai_generation'), aiController.generateMarketingContent);
 app.post('/api/ai/chat', authenticateToken, checkLimit('ai_generation'), aiController.askEliteAssistant);
@@ -605,9 +609,13 @@ runMigrations().then(() => {
   jobProcessor.start();
   console.log('🚀 Job Processor started');
   console.log('🔄 Force Deploy: ' + new Date().toISOString());
+  const churnController = require('./churnController');
+  app.get('/api/churn/predict', authenticateToken, churnController.predictChurn);
 
+  // Inicialização do Servidor
+  const PORT = process.env.PORT || 3001;
   server.listen(PORT, () => {
-    console.log(`🔥 Server running on port ${PORT}`);
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`📡 Socket.io pronto para conexões`);
   });
 });
-
