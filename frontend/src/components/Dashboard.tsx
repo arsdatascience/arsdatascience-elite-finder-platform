@@ -390,14 +390,14 @@ export const Dashboard: React.FC = () => {
                   outerRadius={80}
                   paddingAngle={5}
                   dataKey="val"
-                  label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, label }) => {
+                  label={({ cx, cy, midAngle = 0, outerRadius, percent = 0, name }) => {
                     const RADIAN = Math.PI / 180;
                     const radius = outerRadius + 25;
                     const x = cx + radius * Math.cos(-midAngle * RADIAN);
                     const y = cy + radius * Math.sin(-midAngle * RADIAN);
                     return (
                       <text x={x} y={y} fill="#374151" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={11} fontWeight="bold">
-                        {`${label} (${(percent * 100).toFixed(0)}%)`}
+                        {`${name} (${(percent * 100).toFixed(0)}%)`}
                       </text>
                     );
                   }}

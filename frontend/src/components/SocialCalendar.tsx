@@ -30,7 +30,6 @@ const MOCK_POSTS: Post[] = [
 
 export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     posts = MOCK_POSTS,
-    onClose,
     onPostClick = () => { },
     onPostUpdate,
     onPostDelete
@@ -52,7 +51,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         staleTime: 5 * 60 * 1000
     });
 
-    const { data: fetchedPosts, isLoading } = useQuery({
+    const { data: fetchedPosts } = useQuery({
         queryKey: ['socialPosts', selectedClient],
         queryFn: () => apiClient.social.getPosts(selectedClient),
     });
@@ -393,7 +392,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                             title="Clique para gerar sugestão com IA"
                                         >
                                             <Gift size={10} />
-                                            {holidays.find((h: any) => h.date === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0]).name}
+                                            {holidays.find((h: any) => h.date === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0])?.name}
                                         </div>
                                     )}
 
