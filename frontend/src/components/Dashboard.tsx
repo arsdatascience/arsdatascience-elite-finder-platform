@@ -79,8 +79,8 @@ export const Dashboard: React.FC = () => {
   });
 
   const formatK = (val: number) => {
-    if (val >= 1000) return `R$${(val / 1000).toFixed(1)}k`;
-    return String(val);
+    if (val >= 1000) return `R$ ${(val / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}k`;
+    return `R$ ${val.toLocaleString('pt-BR')}`;
   };
 
   const getDeviceIcon = (name: string) => {
