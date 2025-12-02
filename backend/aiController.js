@@ -622,5 +622,6 @@ module.exports = {
   askEliteAssistant,
   analyzeConversationStrategy,
   generateAgentConfig,
-  saveAnalysis
+  saveAnalysis,
+  generateDashboardInsights
 };
