@@ -77,20 +77,26 @@
         },
         {
             "parameters": {
-                "chatId": "YOUR_TELEGRAM_CHAT_ID",
+                "fromEmail": "arsdatascience@gmail.com",
+                "toEmail": "arsdatascience@gmail.com",
+                "subject": "💰 Relatório Semanal: Consultor de ROI Autônomo",
                 "text": "={{ $json.content }}",
-                "additionalFields": {
-                    "parse_mode": "Markdown"
-                }
+                "options": {}
             },
-            "id": "send-telegram",
-            "name": "Enviar Alerta (Telegram)",
-            "type": "n8n-nodes-base.telegram",
-            "typeVersion": 1,
+            "id": "send-email",
+            "name": "Enviar Alerta (Email)",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2.1,
             "position": [
                 1120,
                 300
-            ]
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "gmail-smtp-credential",
+                    "name": "Gmail SMTP"
+                }
+            }
         }
     ],
     "connections": {
@@ -120,7 +126,7 @@
             "main": [
                 [
                     {
-                        "node": "send-telegram",
+                        "node": "send-email",
                         "type": "main",
                         "index": 0
                     }
