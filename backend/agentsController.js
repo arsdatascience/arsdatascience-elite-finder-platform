@@ -114,8 +114,8 @@ router.post('/', async (req, res) => {
 
             // 5. Inserir Prompts
             await client.query(`
-                INSERT INTO agent_prompts (chatbot_id, system_prompt, response_structure_prompt, vector_search_prompt, analysis_prompt, complex_cases_prompt, validation_prompt)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO agent_prompts (chatbot_id, system_prompt, response_structure_prompt, vector_search_prompt, analysis_prompt, complex_cases_prompt, validation_prompt, script_content)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             `, [
                 agentId,
                 prompts.system,
@@ -123,7 +123,8 @@ router.post('/', async (req, res) => {
                 prompts.vectorSearch,
                 prompts.analysis,
                 prompts.complexCases,
-                prompts.validation
+                prompts.validation,
+                prompts.scriptContent || ''
             ]);
 
             // 6. Inserir WhatsApp Config
@@ -240,7 +241,8 @@ router.get('/:id', async (req, res) => {
                 vectorSearch: prompts.vector_search_prompt,
                 analysis: prompts.analysis_prompt,
                 complexCases: prompts.complex_cases_prompt,
-                validation: prompts.validation_prompt
+                validation: prompts.validation_prompt,
+                scriptContent: prompts.script_content
             },
             whatsappConfig: {
                 enabled: whatsappConfig.enabled,
@@ -292,10 +294,8 @@ router.put('/:id', async (req, res) => {
                 throw new Error('Agente não encontrado');
             }
 
-            // 2. Upsert AI Config (Deletar e inserir é mais simples para garantir consistência se não existir PK)
-            // Mas vamos tentar UPDATE primeiro, se rowCount=0, INSERT.
             // 2. Upsert AI Config
-            const updateAi = await client.query(`
+            await client.query(`
                 UPDATE agent_ai_configs SET
         provider = $1, model = $2, temperature = $3, top_p = $4, top_k = $5, max_tokens = $6, timeout = $7, retries = $8,
             frequency_penalty = $9, presence_penalty = $10, stop_sequences = $11, response_mode = $12, candidate_count = $13,
@@ -342,7 +342,7 @@ router.put('/:id', async (req, res) => {
                 vectorConfigId = updateVector.rows[0].id;
             }
 
-            // 4. Atualizar Filtros (Deletar todos e inserir novos)
+            // 4. Atualizar Filtros
             await client.query('DELETE FROM agent_vector_filters WHERE vector_config_id = $1', [vectorConfigId]);
             if (vectorConfig.filters && vectorConfig.filters.length > 0) {
                 for (const filter of vectorConfig.filters) {
@@ -356,15 +356,15 @@ router.put('/:id', async (req, res) => {
             // 5. Upsert Prompts
             const updatePrompts = await client.query(`
                 UPDATE agent_prompts SET
-        system_prompt = $1, response_structure_prompt = $2, vector_search_prompt = $3, analysis_prompt = $4, complex_cases_prompt = $5, validation_prompt = $6
-                WHERE chatbot_id = $7
-            `, [prompts.system, prompts.responseStructure, prompts.vectorSearch, prompts.analysis, prompts.complexCases, prompts.validation, id]);
+        system_prompt = $1, response_structure_prompt = $2, vector_search_prompt = $3, analysis_prompt = $4, complex_cases_prompt = $5, validation_prompt = $6, script_content = $7
+                WHERE chatbot_id = $8
+            `, [prompts.system, prompts.responseStructure, prompts.vectorSearch, prompts.analysis, prompts.complexCases, prompts.validation, prompts.scriptContent || '', id]);
 
             if (updatePrompts.rowCount === 0) {
                 await client.query(`
-                    INSERT INTO agent_prompts(chatbot_id, system_prompt, response_structure_prompt, vector_search_prompt, analysis_prompt, complex_cases_prompt, validation_prompt)
-        VALUES($1, $2, $3, $4, $5, $6, $7)
-            `, [id, prompts.system, prompts.responseStructure, prompts.vectorSearch, prompts.analysis, prompts.complexCases, prompts.validation]);
+                    INSERT INTO agent_prompts(chatbot_id, system_prompt, response_structure_prompt, vector_search_prompt, analysis_prompt, complex_cases_prompt, validation_prompt, script_content)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+            `, [id, prompts.system, prompts.responseStructure, prompts.vectorSearch, prompts.analysis, prompts.complexCases, prompts.validation, prompts.scriptContent || '']);
             }
 
             // 6. Upsert WhatsApp Config

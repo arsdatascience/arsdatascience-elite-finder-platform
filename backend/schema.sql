@@ -135,19 +135,6 @@ CREATE TABLE IF NOT EXISTS chatbots (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    category VARCHAR(100),
-    class VARCHAR(100),
-    specialization_level INTEGER DEFAULT 1,
-    status VARCHAR(50) DEFAULT 'active',
-    ai_config JSONB DEFAULT '{}',
-    vector_config JSONB DEFAULT '{}',
-    prompts JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- ============================================
--- CHAT SESSIONS
 -- ============================================
 CREATE TABLE IF NOT EXISTS chat_sessions (
     id SERIAL PRIMARY KEY,

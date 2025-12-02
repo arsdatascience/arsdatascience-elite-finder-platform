@@ -1,12 +1,35 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Lead, LeadStatus } from '@/types';
 import { COMPONENT_VERSIONS } from '@/componentVersions';
-import { CLIENTS_LIST } from '@/constants';
 import {
   CheckCircle, Plus, Download, Save,
   MoreVertical, Clock, Tag, Users, Filter, Search, X,
   Phone, Mail, MessageSquare, User, Target, TrendingUp, DollarSign, Calendar
 } from 'lucide-react';
+import { motion, Variants } from 'framer-motion';
+
+// Animation Variants matching Dashboard
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100
+    }
+  }
+};
 
 const COLUMNS: { id: LeadStatus; label: string; color: string; bgColor: string }[] = [
   { id: LeadStatus.NEW, label: 'Novos Leads', color: 'border-blue-500', bgColor: 'bg-blue-50' },
@@ -319,7 +342,6 @@ export const FlightControl: React.FC = () => {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [localLeads, setLocalLeads] = useState<Lead[]>([]);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Fetch Clients
@@ -359,8 +381,6 @@ export const FlightControl: React.FC = () => {
       }
     } catch (error) {
       console.error('Erro ao buscar leads:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -551,168 +571,171 @@ export const FlightControl: React.FC = () => {
   const assignees = Array.from(new Set(localLeads.map(l => l.assignedTo)));
 
   return (
-    <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)] flex flex-col animate-fade-in overflow-hidden">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              Controle de Voo <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.FlightControl}</span>
-              <span className="text-xs font-normal bg-slate-800 text-white px-2 py-1 rounded animate-pulse">AO VIVO</span>
-            </h2>
-            <p className="text-gray-500 text-sm">Gestão operacional de leads em tempo real</p>
-          </div>
+    <motion.div
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <motion.div variants={itemVariants}>
+          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            Controle de Voo <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.FlightControl}</span>
+            <span className="text-xs font-normal bg-slate-800 text-white px-2 py-1 rounded animate-pulse">AO VIVO</span>
+          </h2>
+          <p className="text-gray-500 text-sm">Gestão operacional de leads em tempo real</p>
+        </motion.div>
 
-          <div className="flex gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
-                <Users size={16} />
-              </div>
-              <select
-                value={selectedClient}
-                onChange={(e) => setSelectedClient(e.target.value)}
-                className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
-              >
-                <option value="all">Todos os Clientes</option>
-                {clients.map((client: any) => (
-                  <option key={client.id} value={client.id}>{client.name}</option>
-                ))}
-              </select>
+        <motion.div variants={itemVariants} className="flex gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+              <Users size={16} />
             </div>
-
-            <button
-              onClick={handleExport}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
-            >
-              <Download size={18} />
-              <span className="hidden sm:inline">Exportar</span>
-            </button>
-            <button
-              onClick={() => setShowNewLeadModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 transition-all"
-            >
-              <Plus size={18} />
-              <span>Lead Manual</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <Target size={20} className="opacity-80" />
-              <TrendingUp size={16} className="opacity-60" />
-            </div>
-            <p className="text-2xl font-bold">{metrics.totalLeads}</p>
-            <p className="text-xs text-blue-100">Total de Leads</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-xl shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <DollarSign size={20} className="opacity-80" />
-              <TrendingUp size={16} className="opacity-60" />
-            </div>
-            <p className="text-2xl font-bold">{formatCurrency(metrics.totalValue)}</p>
-            <p className="text-xs text-green-100">Pipeline Total</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-xl shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <CheckCircle size={20} className="opacity-80" />
-              <TrendingUp size={16} className="opacity-60" />
-            </div>
-            <p className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</p>
-            <p className="text-xs text-purple-100">Taxa de Conversão</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-4 rounded-xl shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <Target size={20} className="opacity-80" />
-              <TrendingUp size={16} className="opacity-60" />
-            </div>
-            <p className="text-2xl font-bold">{formatCurrency(metrics.avgDealSize)}</p>
-            <p className="text-xs text-orange-100">Ticket Médio</p>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            {/* Search */}
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar lead..."
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
-
-            {/* Source Filter */}
             <select
-              value={selectedSource}
-              onChange={(e) => setSelectedSource(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              value={selectedClient}
+              onChange={(e) => setSelectedClient(e.target.value)}
+              className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
             >
-              <option value="all">Todas as Fontes</option>
-              {sources.map(source => (
-                <option key={source} value={source}>{source}</option>
+              <option value="all">Todos os Clientes</option>
+              {clients.map((client: any) => (
+                <option key={client.id} value={client.id}>{client.name}</option>
               ))}
             </select>
-
-            {/* Value Filter */}
-            <select
-              value={selectedValue}
-              onChange={(e) => setSelectedValue(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="all">Todos os Valores</option>
-              <option value="low">Até R$ 3.000</option>
-              <option value="medium">R$ 3.000 - R$ 10.000</option>
-              <option value="high">Acima de R$ 10.000</option>
-            </select>
-
-            {/* Assignee Filter */}
-            <select
-              value={selectedAssignee}
-              onChange={(e) => setSelectedAssignee(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="all">Todos Responsáveis</option>
-              {assignees.map(assignee => (
-                <option key={assignee} value={assignee}>{assignee}</option>
-              ))}
-            </select>
-
-            {/* Clear Filters */}
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedSource('all');
-                setSelectedValue('all');
-                setSelectedAssignee('all');
-              }}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              <X size={16} />
-              Limpar
-            </button>
           </div>
-        </div>
+
+          <button
+            onClick={handleExport}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">Exportar</span>
+          </button>
+          <button
+            onClick={() => setShowNewLeadModal(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 transition-all"
+          >
+            <Plus size={18} />
+            <span>Lead Manual</span>
+          </button>
+        </motion.div>
       </div>
 
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div variants={itemVariants} className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
+          <div className="flex items-center justify-between mb-2">
+            <Target size={20} className="opacity-80" />
+            <TrendingUp size={16} className="opacity-60" />
+          </div>
+          <p className="text-2xl font-bold">{metrics.totalLeads}</p>
+          <p className="text-xs text-blue-100">Total de Leads</p>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
+          <div className="flex items-center justify-between mb-2">
+            <DollarSign size={20} className="opacity-80" />
+            <TrendingUp size={16} className="opacity-60" />
+          </div>
+          <p className="text-2xl font-bold">{formatCurrency(metrics.totalValue)}</p>
+          <p className="text-xs text-green-100">Pipeline Total</p>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
+          <div className="flex items-center justify-between mb-2">
+            <CheckCircle size={20} className="opacity-80" />
+            <TrendingUp size={16} className="opacity-60" />
+          </div>
+          <p className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</p>
+          <p className="text-xs text-purple-100">Taxa de Conversão</p>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
+          <div className="flex items-center justify-between mb-2">
+            <Target size={20} className="opacity-80" />
+            <TrendingUp size={16} className="opacity-60" />
+          </div>
+          <p className="text-2xl font-bold">{formatCurrency(metrics.avgDealSize)}</p>
+          <p className="text-xs text-orange-100">Ticket Médio</p>
+        </motion.div>
+      </div>
+
+      {/* Filters Bar */}
+      <motion.div variants={itemVariants} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+          {/* Search */}
+          <div className="relative">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar lead..."
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+
+          {/* Source Filter */}
+          <select
+            value={selectedSource}
+            onChange={(e) => setSelectedSource(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            <option value="all">Todas as Fontes</option>
+            {sources.map(source => (
+              <option key={source} value={source}>{source}</option>
+            ))}
+          </select>
+
+          {/* Value Filter */}
+          <select
+            value={selectedValue}
+            onChange={(e) => setSelectedValue(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            <option value="all">Todos os Valores</option>
+            <option value="low">Até R$ 3.000</option>
+            <option value="medium">R$ 3.000 - R$ 10.000</option>
+            <option value="high">Acima de R$ 10.000</option>
+          </select>
+
+          {/* Assignee Filter */}
+          <select
+            value={selectedAssignee}
+            onChange={(e) => setSelectedAssignee(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            <option value="all">Todos Responsáveis</option>
+            {assignees.map(assignee => (
+              <option key={assignee} value={assignee}>{assignee}</option>
+            ))}
+          </select>
+
+          {/* Clear Filters */}
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedSource('all');
+              setSelectedValue('all');
+              setSelectedAssignee('all');
+            }}
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          >
+            <X size={16} />
+            Limpar
+          </button>
+        </div>
+      </motion.div>
+
       {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        <div className="flex gap-4 h-full min-w-[1200px] pb-4">
+      <motion.div variants={itemVariants} className="w-full overflow-x-auto pb-4">
+        <div className="flex gap-4 min-w-full w-max">
           {COLUMNS.map((col) => (
             <div
               key={col.id}
               onDragOver={handleDragOver}
               onDrop={() => handleDrop(col.id)}
-              className="flex-1 flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 min-w-[280px] transition-all hover:border-gray-300"
+              className="flex-1 flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 min-w-[300px] w-[300px] flex-shrink-0 transition-all hover:border-gray-300"
             >
               <div className={`p-4 border-t-4 ${col.color} ${col.bgColor} rounded-t-xl shadow-sm`}>
                 <div className="flex justify-between items-center">
@@ -722,7 +745,7 @@ export const FlightControl: React.FC = () => {
                   </span>
                 </div>
               </div>
-              <div className="flex-1 p-3 overflow-y-auto space-y-3 flight-scroll">
+              <div className="flex-1 p-3 space-y-3">
                 {getLeadsByStatus(col.id).map((lead) => (
                   <div
                     key={lead.id}
@@ -777,7 +800,7 @@ export const FlightControl: React.FC = () => {
             </div>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Lead Detail Modal */}
       {selectedLead && (
@@ -793,6 +816,6 @@ export const FlightControl: React.FC = () => {
         onClose={() => setShowNewLeadModal(false)}
         onSave={handleAddLead}
       />
-    </div>
+    </motion.div>
   );
 };

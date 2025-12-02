@@ -257,33 +257,51 @@ const FinancialModule: React.FC = () => {
 
     const exportDashboardToPDF = async () => {
         const element = document.getElementById('financial-dashboard-content');
+        const btn = document.getElementById('btn-export-pdf');
         if (!element) return;
 
+        // Feedback visual
+        const originalText = btn ? btn.innerText : 'PDF';
+        if (btn) {
+            btn.innerText = 'Gerando...';
+            (btn as HTMLButtonElement).disabled = true;
+        }
+
         try {
+            // Aguardar renderização final dos gráficos
+            await new Promise(resolve => setTimeout(resolve, 800));
+
             const canvas = await html2canvas(element, {
-                scale: 2,
+                scale: 2, // Alta resolução
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#f8fafc' // bg-slate-50
+                backgroundColor: '#ffffff', // Fundo branco
+                windowWidth: 1200 // Forçar largura desktop para evitar layout móvel
             });
 
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
+
             const imgWidth = pdfWidth;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
             let heightLeft = imgHeight;
             let position = 0;
+            let page = 0;
 
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            // Adicionar primeira página
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
             heightLeft -= pdfHeight;
 
-            while (heightLeft >= 0) {
+            // Adicionar páginas subsequentes se necessário
+            while (heightLeft > 0) {
                 position = heightLeft - imgHeight;
                 pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                page++;
+                // Posicionar a imagem deslocada para cima (negativo) para mostrar a próxima seção
+                pdf.addImage(imgData, 'PNG', 0, -(pdfHeight * page), imgWidth, imgHeight);
                 heightLeft -= pdfHeight;
             }
 
@@ -291,6 +309,11 @@ const FinancialModule: React.FC = () => {
         } catch (error) {
             console.error("Erro ao gerar PDF:", error);
             alert("Erro ao gerar PDF. Tente novamente.");
+        } finally {
+            if (btn) {
+                btn.innerText = originalText;
+                (btn as HTMLButtonElement).disabled = false;
+            }
         }
     };
 

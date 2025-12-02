@@ -233,6 +233,18 @@ async function initializeDatabase() {
       `);
       console.log('✅ Migração de Planos e Limites verificada/aplicada.');
 
+      // Migração para Agent Builder (Script Content)
+      console.log('🔄 Verificando migrações de Agent Builder...');
+      await pool.query(`
+            DO $$ 
+            BEGIN 
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'agent_prompts' AND column_name = 'script_content') THEN 
+                    ALTER TABLE agent_prompts ADD COLUMN script_content TEXT; 
+                END IF; 
+            END $$;
+      `);
+      console.log('✅ Migração de Agent Builder verificada/aplicada.');
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
