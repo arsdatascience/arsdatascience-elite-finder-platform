@@ -302,6 +302,7 @@ const FinancialModule: React.FC = () => {
         const data = dashboardData.clientExpenses.length > 0 ? dashboardData.clientExpenses : [{ name: 'Sem dados', value: 0 }];
 
         return {
+            animation: false,
             tooltip: {
                 trigger: 'axis',
                 axisPointer: { type: 'shadow' },
@@ -354,6 +355,7 @@ const FinancialModule: React.FC = () => {
             : [{ value: 0, name: 'Sem dados', itemStyle: { color: '#e2e8f0' } }];
 
         return {
+            animation: false,
             tooltip: {
                 trigger: 'item',
                 formatter: (params: any) => `${params.name}<br/><b>${formatCurrency(params.value)}</b> (${params.percent}%)`
@@ -411,6 +413,7 @@ const FinancialModule: React.FC = () => {
         const expense = data.map(d => Number(d.expense));
 
         return {
+            animation: false,
             tooltip: {
                 trigger: 'axis',
                 axisPointer: { type: 'shadow' },

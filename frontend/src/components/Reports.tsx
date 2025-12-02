@@ -256,10 +256,10 @@ export const Reports: React.FC = () => {
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                     formatter={(value: any) => [formatCurrency(value), '']}
                   />
-                  <Area type="monotone" dataKey="revenue" name="Receita" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)">
+                  <Area type="monotone" dataKey="revenue" name="Receita" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" isAnimationActive={false}>
                     <LabelList dataKey="revenue" position="top" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#3b82f6', fontWeight: 'bold' }} />
                   </Area>
-                  <Area type="monotone" dataKey="spend" name="Investimento" stroke="#f43f5e" strokeWidth={2} fill="none" strokeDasharray="5 5" />
+                  <Area type="monotone" dataKey="spend" name="Investimento" stroke="#f43f5e" strokeWidth={2} fill="none" strokeDasharray="5 5" isAnimationActive={false} />
                   <Legend verticalAlign="top" height={36} iconType="circle" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -283,6 +283,7 @@ export const Reports: React.FC = () => {
                     outerRadius={80}
                     paddingAngle={5}
                     dataKey="value"
+                    isAnimationActive={false}
                   >
                     {reportData.distribution.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -305,10 +306,10 @@ export const Reports: React.FC = () => {
                   <XAxis type="number" hide />
                   <YAxis dataKey="stage" type="category" width={80} tick={{ fontSize: 11, fontWeight: 'bold', fill: '#475569' }} axisLine={false} tickLine={false} />
                   <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
-                  <Bar dataKey="google" name="Google Ads" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20}>
+                  <Bar dataKey="google" name="Google Ads" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} isAnimationActive={false}>
                     <LabelList dataKey="google" position="right" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#3b82f6', fontWeight: 'bold' }} />
                   </Bar>
-                  <Bar dataKey="meta" name="Meta Ads" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={20}>
+                  <Bar dataKey="meta" name="Meta Ads" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={20} isAnimationActive={false}>
                     <LabelList dataKey="meta" position="right" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#8b5cf6', fontWeight: 'bold' }} />
                   </Bar>
                   <Legend />
