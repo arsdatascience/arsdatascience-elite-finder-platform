@@ -23,13 +23,13 @@
         },
         {
             "parameters": {
-                "url": "https://elite-finder-backend-production.up.railway.app/api/financial/dashboard",
+                "url": "https://elite-finder.up.railway.app/api/financial/dashboard",
                 "sendHeaders": true,
                 "headerParameters": {
                     "parameters": [
                         {
                             "name": "x-api-key",
-                            "value": "YOUR_N8N_API_KEY_HERE"
+                            "value": "gS89Q17kr):1_8rm8sLiw"
                         }
                     ]
                 },
@@ -67,7 +67,13 @@
             "position": [
                 900,
                 300
-            ]
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "openai-credential-id",
+                    "name": "OpenAI Account"
+                }
+            }
         },
         {
             "parameters": {
