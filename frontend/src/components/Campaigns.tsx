@@ -5,8 +5,10 @@ import {
 } from 'recharts';
 import {
   Download, TrendingUp, DollarSign, MousePointer,
-  Eye, Target, Layers, ArrowUpRight, ArrowDownRight
+  Eye, Target, Layers, ArrowUpRight, ArrowDownRight, Loader2
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/services/apiClient';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
@@ -88,33 +90,6 @@ export const Campaigns: React.FC = () => {
           revenue: Number(item.revenue),
           conversions: Number(item.conversions)
         })));
-        setCampaigns(data.campaigns);
-      })
-      .catch(err => console.error('Erro ao buscar analytics:', err))
-      .finally(() => setLoading(false));
-  }, [selectedClient, selectedPlatforms, dateRange]);
-
-  const togglePlatform = (platform: string) => {
-    if (selectedPlatforms.includes(platform)) {
-      setSelectedPlatforms(selectedPlatforms.filter(p => p !== platform));
-    } else {
-      setSelectedPlatforms([...selectedPlatforms, platform]);
-    }
-  };
-
-  const formatCurrency = (value: string | number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value));
-  };
-
-  const formatNumber = (value: string | number) => {
-    return new Intl.NumberFormat('pt-BR').format(Number(value));
-  };
-
-  if (loading && !kpis) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
     );
   }
 
@@ -227,6 +202,28 @@ export const Campaigns: React.FC = () => {
           trendUp={true}
           color="indigo"
         />
+      </div>
+
+      {/* AI Insight Section */}
+      <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+          <Layers size={100} className="text-blue-600" />
+        </div>
+        <div className="relative z-10">
+          <h3 className="text-lg font-bold text-blue-900 mb-2 flex items-center gap-2">
+            <TrendingUp size={20} className="text-blue-600" /> Análise Estratégica da IA
+          </h3>
+          <div className="text-sm text-blue-800 leading-relaxed">
+            {isLoadingInsight ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Analisando performance das campanhas e gerando insights...</span>
+              </div>
+            ) : (
+              aiInsightData?.insight || "Aguardando dados suficientes para gerar insights estratégicos."
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Charts Section */}
