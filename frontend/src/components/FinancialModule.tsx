@@ -5,10 +5,7 @@ import {
     ArrowUpCircle, ArrowDownCircle, DollarSign, BarChart3, Tag, Users,
     Loader2
 } from 'lucide-react';
-import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    PieChart, Pie, Cell, LabelList
-} from 'recharts';
+import ReactECharts from 'echarts-for-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -297,6 +294,169 @@ const FinancialModule: React.FC = () => {
         }
     };
 
+    // --- ECharts Options Generators ---
+
+    const getClientExpensesOption = () => {
+        if (!dashboardData?.clientExpenses) return {};
+
+        const data = dashboardData.clientExpenses.length > 0 ? dashboardData.clientExpenses : [{ name: 'Sem dados', value: 0 }];
+
+        return {
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                formatter: (params: any) => {
+                    const val = params[0].value;
+                    return `${params[0].name}<br/><b>${formatCurrency(val)}</b>`;
+                }
+            },
+            grid: { left: '3%', right: '10%', bottom: '3%', top: '3%', containLabel: true },
+            xAxis: {
+                type: 'value',
+                axisLabel: { formatter: (val: number) => `R$${val / 1000}k` },
+                splitLine: { lineStyle: { type: 'dashed', color: '#e2e8f0' } }
+            },
+            yAxis: {
+                type: 'category',
+                data: data.map(d => d.name),
+                axisLabel: { width: 120, overflow: 'truncate' },
+                axisLine: { show: false },
+                axisTick: { show: false }
+            },
+            series: [{
+                name: 'Despesas',
+                type: 'bar',
+                data: data.map((d, i) => ({
+                    value: Number(d.value),
+                    itemStyle: {
+                        color: ['#f97316', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#14b8a6'][i % 10],
+                        borderRadius: [0, 4, 4, 0]
+                    }
+                })),
+                label: {
+                    show: true,
+                    position: 'insideRight',
+                    formatter: (params: any) => formatCurrency(params.value),
+                    color: '#fff',
+                    fontWeight: 'bold',
+                    fontSize: 11
+                },
+                barWidth: 25
+            }]
+        };
+    };
+
+    const getCategoryExpensesOption = () => {
+        if (!dashboardData?.categoryExpenses) return {};
+
+        const data = dashboardData.categoryExpenses.length > 0
+            ? dashboardData.categoryExpenses.map(d => ({ value: Number(d.value), name: d.name, itemStyle: { color: d.color } }))
+            : [{ value: 0, name: 'Sem dados', itemStyle: { color: '#e2e8f0' } }];
+
+        return {
+            tooltip: {
+                trigger: 'item',
+                formatter: (params: any) => `${params.name}<br/><b>${formatCurrency(params.value)}</b> (${params.percent}%)`
+            },
+            legend: {
+                orient: 'horizontal',
+                bottom: '0',
+                left: 'center',
+                itemWidth: 10,
+                itemHeight: 10,
+                textStyle: { fontSize: 11 }
+            },
+            series: [
+                {
+                    name: 'Despesas por Categoria',
+                    type: 'pie',
+                    radius: ['45%', '70%'],
+                    center: ['50%', '45%'],
+                    avoidLabelOverlap: true,
+                    itemStyle: {
+                        borderRadius: 5,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: true,
+                        formatter: (params: any) => `{b}\n{c}`,
+                        fontSize: 11,
+                        lineHeight: 14
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: 14,
+                            fontWeight: 'bold'
+                        },
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    },
+                    data: data
+                }
+            ]
+        };
+    };
+
+    const getCashFlowOption = () => {
+        if (!dashboardData?.cashFlow) return {};
+
+        const data = dashboardData.cashFlow.length > 0 ? dashboardData.cashFlow : [{ day: new Date().toISOString(), income: 0, expense: 0 }];
+        const days = data.map(d => new Date(d.day).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }));
+        const income = data.map(d => Number(d.income));
+        const expense = data.map(d => Number(d.expense));
+
+        return {
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                formatter: (params: any) => {
+                    let res = `${params[0].axisValue}<br/>`;
+                    params.forEach((param: any) => {
+                        res += `${param.marker} ${param.seriesName}: <b>${formatCurrency(param.value)}</b><br/>`;
+                    });
+                    return res;
+                }
+            },
+            legend: {
+                data: ['Receitas', 'Despesas'],
+                bottom: 0
+            },
+            grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: days,
+                axisLine: { lineStyle: { color: '#94a3b8' } },
+                axisTick: { show: false }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: { formatter: (val: number) => `R$${val / 1000}k` },
+                splitLine: { lineStyle: { type: 'dashed', color: '#e2e8f0' } }
+            },
+            series: [
+                {
+                    name: 'Receitas',
+                    type: 'bar',
+                    data: income,
+                    itemStyle: { color: '#22c55e', borderRadius: [4, 4, 0, 0] },
+                    barGap: '10%'
+                },
+                {
+                    name: 'Despesas',
+                    type: 'bar',
+                    data: expense,
+                    itemStyle: { color: '#ef4444', borderRadius: [4, 4, 0, 0] }
+                }
+            ]
+        };
+    };
+
+
     if (loading && !dashboardData && transactions.length === 0) {
         return (
             <div className="flex items-center justify-center h-screen bg-slate-50">
@@ -311,7 +471,7 @@ const FinancialModule: React.FC = () => {
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                        <Wallet className="text-blue-600" /> Gestão Financeira <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">v3.0</span>
+                        <Wallet className="text-blue-600" /> Gestão Financeira <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">v3.1 (ECharts)</span>
                     </h1>
                     <p className="text-slate-500">Controle completo de receitas, despesas e fluxo de caixa.</p>
                 </div>
@@ -448,81 +608,19 @@ const FinancialModule: React.FC = () => {
                         {/* 1. Despesas por Cliente */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Cliente</h3>
-                            <div style={{ width: '100%', height: 320, minWidth: 0 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart
-                                        data={dashboardData.clientExpenses && dashboardData.clientExpenses.length > 0 ? dashboardData.clientExpenses : [{ name: 'Sem dados', value: 0 }]}
-                                        layout="vertical"
-                                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                                    >
-                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                                        <XAxis type="number" tickFormatter={(val) => `R$${val / 1000}k`} />
-                                        <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12 }} />
-                                        <Tooltip
-                                            formatter={(value: number) => formatCurrency(value)}
-                                            cursor={{ fill: 'transparent' }}
-                                            contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                                        />
-                                        <Bar dataKey="value" name="Despesas" radius={[0, 4, 4, 0]} barSize={30}>
-                                            <LabelList dataKey="value" position="insideRight" fill="#fff" formatter={(val: any) => formatCurrency(val)} style={{ fontSize: '12px', fontWeight: 'bold' }} />
-                                            {
-                                                (dashboardData.clientExpenses && dashboardData.clientExpenses.length > 0 ? dashboardData.clientExpenses : [{ name: 'Sem dados', value: 0 }]).map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={['#f97316', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#14b8a6'][index % 10]} />
-                                                ))
-                                            }
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
+                            <ReactECharts option={getClientExpensesOption()} style={{ height: 400, width: '100%' }} />
                         </div>
 
                         {/* 2. Despesas por Categoria */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Categoria</h3>
-                            <div style={{ width: '100%', height: 450, minWidth: 0 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={dashboardData.categoryExpenses && dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses.map(d => ({ ...d, value: Number(d.value) })) : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]}
-                                            cx="50%"
-                                            cy="45%"
-                                            innerRadius={80}
-                                            outerRadius={120}
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                            nameKey="name"
-                                            label={({ value }) => formatCurrency(value)}
-                                        >
-                                            {(dashboardData.categoryExpenses && dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]).map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color || '#cbd5e1'} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip formatter={(value: number) => typeof value === 'number' ? formatCurrency(value) : value} />
-                                        <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
+                            <ReactECharts option={getCategoryExpensesOption()} style={{ height: 450, width: '100%' }} />
                         </div>
 
                         {/* 3. Fluxo de Caixa (Diário) */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Fluxo de Caixa (Diário)</h3>
-                            <div style={{ width: '100%', height: 320, minWidth: 0 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={dashboardData.cashFlow && dashboardData.cashFlow.length > 0 ? dashboardData.cashFlow.map(d => ({ ...d, income: Number(d.income), expense: Number(d.expense) })) : [{ day: new Date().toISOString(), income: 0, expense: 0 }]}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                        <XAxis dataKey="day" tick={{ fontSize: 12 }} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })} />
-                                        <YAxis tick={{ fontSize: 12 }} tickFormatter={(val) => `R$${val / 1000}k`} />
-                                        <Tooltip
-                                            formatter={(value: number) => formatCurrency(value)}
-                                            contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                                        />
-                                        <Legend />
-                                        <Bar dataKey="income" name="Receitas" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="expense" name="Despesas" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
+                            <ReactECharts option={getCashFlowOption()} style={{ height: 400, width: '100%' }} />
                         </div>
                     </div>
                 </div>
