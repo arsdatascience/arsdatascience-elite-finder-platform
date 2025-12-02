@@ -735,7 +735,7 @@ export const FlightControl: React.FC = () => {
               key={col.id}
               onDragOver={handleDragOver}
               onDrop={() => handleDrop(col.id)}
-              className="flex-1 flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 min-w-[300px] w-[300px] flex-shrink-0 transition-all hover:border-gray-300"
+              className="flex-1 flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 min-w-[250px] w-[250px] flex-shrink-0 transition-all hover:border-gray-300"
             >
               <div className={`p-4 border-t-4 ${col.color} ${col.bgColor} rounded-t-xl shadow-sm`}>
                 <div className="flex justify-between items-center">
