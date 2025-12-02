@@ -442,59 +442,10 @@ const FinancialModule: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Charts Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Fluxo de Caixa */}
-                        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                            <h3 className="text-lg font-bold text-slate-800 mb-6">Fluxo de Caixa (Diário)</h3>
-                            <div style={{ width: '100%', height: 320, minWidth: 0 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={dashboardData.cashFlow && dashboardData.cashFlow.length > 0 ? dashboardData.cashFlow.map(d => ({ ...d, income: Number(d.income), expense: Number(d.expense) })) : [{ day: new Date().toISOString(), income: 0, expense: 0 }]}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                        <XAxis dataKey="day" tick={{ fontSize: 12 }} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })} />
-                                        <YAxis tick={{ fontSize: 12 }} tickFormatter={(val) => `R$${val / 1000}k`} />
-                                        <Tooltip
-                                            formatter={(value: number) => formatCurrency(value)}
-                                            contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                                        />
-                                        <Legend />
-                                        <Bar dataKey="income" name="Receitas" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="expense" name="Despesas" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-
-                        {/* Despesas por Categoria */}
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                            <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Categoria</h3>
-                            <div style={{ width: '100%', height: 320, minWidth: 0 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={dashboardData.categoryExpenses && dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses.map(d => ({ ...d, value: Number(d.value) })) : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                            nameKey="name"
-                                        >
-                                            {(dashboardData.categoryExpenses && dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]).map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color || '#cbd5e1'} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip formatter={(value: number) => typeof value === 'number' ? formatCurrency(value) : value} />
-                                        <Legend verticalAlign="bottom" height={36} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Despesas por Cliente (Novo) */}
+                    {/* Charts Column - Stacked Vertical Layout */}
                     <div className="grid grid-cols-1 gap-6">
+
+                        {/* 1. Despesas por Cliente */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Cliente</h3>
                             <div style={{ width: '100%', height: 320, minWidth: 0 }}>
@@ -519,6 +470,54 @@ const FinancialModule: React.FC = () => {
                                                 ))
                                             }
                                         </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* 2. Despesas por Categoria */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Categoria</h3>
+                            <div style={{ width: '100%', height: 400, minWidth: 0 }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={dashboardData.categoryExpenses && dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses.map(d => ({ ...d, value: Number(d.value) })) : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={80}
+                                            outerRadius={120}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                            nameKey="name"
+                                        >
+                                            {(dashboardData.categoryExpenses && dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]).map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color || '#cbd5e1'} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value: number) => typeof value === 'number' ? formatCurrency(value) : value} />
+                                        <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '20px' }} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* 3. Fluxo de Caixa (Diário) */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6">Fluxo de Caixa (Diário)</h3>
+                            <div style={{ width: '100%', height: 320, minWidth: 0 }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={dashboardData.cashFlow && dashboardData.cashFlow.length > 0 ? dashboardData.cashFlow.map(d => ({ ...d, income: Number(d.income), expense: Number(d.expense) })) : [{ day: new Date().toISOString(), income: 0, expense: 0 }]}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                        <XAxis dataKey="day" tick={{ fontSize: 12 }} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })} />
+                                        <YAxis tick={{ fontSize: 12 }} tickFormatter={(val) => `R$${val / 1000}k`} />
+                                        <Tooltip
+                                            formatter={(value: number) => formatCurrency(value)}
+                                            contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                                        />
+                                        <Legend />
+                                        <Bar dataKey="income" name="Receitas" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="expense" name="Despesas" fill="#ef4444" radius={[4, 4, 0, 0]} />
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
