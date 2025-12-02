@@ -208,6 +208,12 @@ const updateLeadStatus = async (req, res) => {
         if (req.user && req.user.id) {
             triggerWebhook(req.user.id, 'lead.status_updated', updatedLead);
         }
+
+        // Socket.io Real-time Update
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('lead_updated', updatedLead);
+        }
     } catch (error) {
         console.error('Error updating lead:', error);
     }

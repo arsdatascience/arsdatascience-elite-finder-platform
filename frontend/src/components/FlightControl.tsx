@@ -7,6 +7,7 @@ import {
   Phone, Mail, MessageSquare, User, Target, TrendingUp, DollarSign, Calendar
 } from 'lucide-react';
 import { motion, Variants } from 'framer-motion';
+import { socket, connectSocket, disconnectSocket } from '@/services/socket';
 
 // Animation Variants matching Dashboard
 const containerVariants: Variants = {
@@ -343,7 +344,32 @@ export const FlightControl: React.FC = () => {
   const [localLeads, setLocalLeads] = useState<Lead[]>([]);
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
 
+
+
   useEffect(() => {
+    // Connect Socket
+    connectSocket();
+
+    // Listen for lead updates
+    socket.on('lead_updated', (updatedLead: any) => {
+      console.log('Lead updated via socket:', updatedLead);
+      setLocalLeads(prev => {
+        const exists = prev.find(l => l.id === updatedLead.id);
+        if (exists) {
+          return prev.map(l => l.id === updatedLead.id ? {
+            ...l,
+            status: (updatedLead.status || 'NEW').toUpperCase() as LeadStatus,
+            value: Number(updatedLead.value),
+            notes: updatedLead.notes,
+            lastContact: new Date(updatedLead.updated_at || updatedLead.created_at).toLocaleDateString()
+          } : l);
+        } else {
+          // New lead (optional, if we emit lead_created too)
+          return prev;
+        }
+      });
+    });
+
     // Fetch Clients
     fetch(`${import.meta.env.VITE_API_URL}/api/clients`)
       .then(res => res.json())
@@ -351,6 +377,11 @@ export const FlightControl: React.FC = () => {
       .catch(err => console.error('Erro ao buscar clientes:', err));
 
     fetchLeads();
+
+    return () => {
+      socket.off('lead_updated');
+      disconnectSocket();
+    };
   }, []);
 
   const fetchLeads = async () => {

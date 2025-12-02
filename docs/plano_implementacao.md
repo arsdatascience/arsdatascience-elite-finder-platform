@@ -22,7 +22,7 @@ Este plano prioriza ações de **alto impacto e baixo esforço inicial**, aprove
 ### 3. Lead Scoring Automatizado (Kanban)
 - [x] **Criar Workflow n8n:** Webhook para receber eventos (email, visita).
 - [x] **Lógica de Scoring:** Mover card para "Quente" (IN_PROGRESS) se houver interação.
-- [ ] **Integração Frontend:** Atualizar Kanban em tempo real (Polling ou Socket).
+- [x] **Integração Frontend:** Atualizar Kanban em tempo real (Socket.io).
 
 ### 4. Jornada Omnichannel
 *   **O que faremos:**
