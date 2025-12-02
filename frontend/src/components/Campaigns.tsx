@@ -49,21 +49,27 @@ export const Campaigns: React.FC = () => {
   const [platformData, setPlatformData] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 
+  // Helper Functions
+  const formatCurrency = (value: string | number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value));
+  };
+
+  const formatNumber = (value: string | number) => {
+    return new Intl.NumberFormat('pt-BR').format(Number(value));
+  };
+
   // Fetch Clients
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/api/clients`)
       .then(res => res.json())
       .then(data => {
         setClients(data);
-        // if (data.length > 0) setSelectedClient(data[0].id); // Removido para padrão ser Todos
       })
       .catch(err => console.error('Erro ao buscar clientes:', err));
   }, []);
 
   // Fetch Analytics
   useEffect(() => {
-    // if (!selectedClient) return; // Removido para permitir busca global
-
     setLoading(true);
     const queryParams = new URLSearchParams({
       clientId: selectedClient,
@@ -72,6 +78,7 @@ export const Campaigns: React.FC = () => {
       platforms: selectedPlatforms.join(',')
     });
 
+    // Fetch Analytics Data
     fetch(`${import.meta.env.VITE_API_URL}/api/campaigns/analytics?${queryParams}`)
       .then(res => res.json())
       .then(data => {
@@ -90,6 +97,47 @@ export const Campaigns: React.FC = () => {
           revenue: Number(item.revenue),
           conversions: Number(item.conversions)
         })));
+        setCampaigns(data.campaigns);
+      })
+      .catch(err => console.error('Erro ao buscar analytics:', err))
+      .finally(() => setLoading(false));
+  }, [selectedClient, selectedPlatforms, dateRange]);
+
+  // Prepare KPIs for AI Insight
+  const formattedKPIs = kpis ? [
+    { label: 'Investimento Total', value: formatCurrency(kpis.total_spend), trend: 'up', change: 12.5 },
+    { label: 'Impressões', value: formatNumber(kpis.total_impressions), trend: 'up', change: 5.2 },
+    { label: 'Cliques', value: formatNumber(kpis.total_clicks), trend: 'down', change: -2.1 },
+    { label: 'Conversões', value: formatNumber(kpis.total_conversions), trend: 'up', change: 8.4 },
+    { label: 'ROAS', value: `${Number(kpis.total_spend) > 0 ? (Number(kpis.total_revenue) / Number(kpis.total_spend)).toFixed(2) : '0.00'}x`, trend: 'up', change: 0.5 }
+  ] : [];
+
+  // AI Insight Query
+  const { data: aiInsightData, isLoading: isLoadingInsight } = useQuery({
+    queryKey: ['aiInsight', selectedClient, selectedPlatforms, dateRange, kpis],
+    queryFn: () => apiClient.dashboard.getDashboardInsights(
+      formattedKPIs as any,
+      selectedClient || 'all',
+      selectedPlatforms.length > 1 ? 'all' : selectedPlatforms[0] as any,
+      dateRange
+    ),
+    enabled: !!kpis,
+    staleTime: 1000 * 60 * 5 // 5 minutes
+  });
+
+  const togglePlatform = (platform: string) => {
+    if (selectedPlatforms.includes(platform)) {
+      setSelectedPlatforms(selectedPlatforms.filter(p => p !== platform));
+    } else {
+      setSelectedPlatforms([...selectedPlatforms, platform]);
+    }
+  };
+
+  if (loading && !kpis) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
     );
   }
 
