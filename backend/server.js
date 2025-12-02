@@ -563,6 +563,8 @@ app.get('/api/financial/clients', authenticateToken, financialCtrl.getClients);
 app.get('/api/admin/usage-stats', authenticateToken, checkAdmin, adminCtrl.getSystemUsage);
 
 // Rota temporária para migração de tenants
+const copiesController = require('./copiesController');
+app.use('/api/copies', copiesController);
 
 
 // Iniciar servidor após migrações
