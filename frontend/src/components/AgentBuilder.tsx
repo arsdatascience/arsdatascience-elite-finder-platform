@@ -829,7 +829,7 @@ export const AgentBuilder: React.FC = () => {
                                                 onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, temperature: parseFloat(e.target.value) } })}
                                                 className="w-full"
                                             />
-                                            <p className="text-xs text-gray-500 mt-1">0 = Determinístico, 2 = Muito Criativo</p>
+                                            <p className="text-xs text-gray-500 mt-1">0 = Determinístico, 2 = Muito Criativo</p>{/* Fixed encoding */}
                                         </div>
                                         <div className="grid grid-cols-2 gap-6">
                                             <div>
