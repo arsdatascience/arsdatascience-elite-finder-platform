@@ -403,7 +403,9 @@ const FinancialModule: React.FC = () => {
                     },
                     label: {
                         show: true,
-                        formatter: (params: any) => `${params.name}\n${formatCurrency(params.value)}`,
+                        formatter: (params: any) => {
+                            return `${params.name}\n${formatCurrency(params.value)}`;
+                        },
                         fontSize: 11,
                         lineHeight: 14
                     },
@@ -411,7 +413,10 @@ const FinancialModule: React.FC = () => {
                         label: {
                             show: true,
                             fontSize: 14,
-                            fontWeight: 'bold'
+                            fontWeight: 'bold',
+                            formatter: (params: any) => {
+                                return `${params.name}\n${formatCurrency(params.value)}`;
+                            }
                         },
                         itemStyle: {
                             shadowBlur: 10,
