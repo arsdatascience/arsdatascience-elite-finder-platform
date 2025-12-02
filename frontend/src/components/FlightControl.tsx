@@ -309,7 +309,8 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSave }) 
 };
 
 export const FlightControl: React.FC = () => {
-  const [selectedClient, setSelectedClient] = useState(CLIENTS_LIST[1].id);
+  const [clients, setClients] = useState<any[]>([]);
+  const [selectedClient, setSelectedClient] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSource, setSelectedSource] = useState<string>('all');
   const [selectedValue, setSelectedValue] = useState<string>('all');
@@ -321,6 +322,12 @@ export const FlightControl: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch Clients
+    fetch(`${import.meta.env.VITE_API_URL}/api/clients`)
+      .then(res => res.json())
+      .then(data => setClients(data))
+      .catch(err => console.error('Erro ao buscar clientes:', err));
+
     fetchLeads();
   }, []);
 
@@ -567,7 +574,8 @@ export const FlightControl: React.FC = () => {
                 onChange={(e) => setSelectedClient(e.target.value)}
                 className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
               >
-                {CLIENTS_LIST.map(client => (
+                <option value="all">Todos os Clientes</option>
+                {clients.map((client: any) => (
                   <option key={client.id} value={client.id}>{client.name}</option>
                 ))}
               </select>

@@ -16,12 +16,25 @@ interface SocialMediaProps {
 
 export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
     const [showGenerator, setShowGenerator] = useState(false);
-    const [selectedClient, setSelectedClient] = useState(CLIENTS_LIST[1].id);
+    const [clients, setClients] = useState<any[]>([]);
+    const [selectedClient, setSelectedClient] = useState('');
 
     const { data: apiPosts = [], isLoading, isError } = useQuery({
         queryKey: ['socialPosts', selectedClient],
-        queryFn: () => apiClient.social.getPosts(selectedClient)
+        queryFn: () => apiClient.social.getPosts(selectedClient),
+        enabled: !!selectedClient // Only fetch if client is selected
     });
+
+    // Fetch Clients
+    React.useEffect(() => {
+        fetch(`${import.meta.env.VITE_API_URL}/api/clients`)
+            .then(res => res.json())
+            .then(data => {
+                setClients(data);
+                if (data.length > 0) setSelectedClient(data[0].id);
+            })
+            .catch(err => console.error('Erro ao buscar clientes:', err));
+    }, []);
 
     const displayPosts = apiPosts.map((post: any) => ({
         id: post.id,
@@ -29,16 +42,16 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
         content: post.content,
         platform: post.platform,
         status: post.status === 'published' ? 'publicado' : post.status === 'scheduled' ? 'agendado' : 'rascunho',
-        likes: 0,
-        comments: 0
+        likes: post.likes || 0,
+        comments: post.comments || 0
     })).slice(0, 5); // Mostrar apenas os 5 mais recentes/próximos
 
-    // Simulate stats based on client
-    const statsMultiplier = selectedClient === '1' ? 1 : selectedClient === '2' ? 0.1 : 0.5;
+    // Simulate stats based on client (mocked logic remains for now, could be API driven later)
+    const statsMultiplier = 1;
 
     const stats = {
         reach: (124500 * statsMultiplier).toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 }),
-        engagement: (4.2 * (selectedClient === '2' ? 2 : 1)).toFixed(1) + '%', // Pequenos negocios as vezes tem engajamento maior
+        engagement: '4.2%',
         comments: Math.floor(892 * statsMultiplier)
     };
 
@@ -61,7 +74,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                             onChange={(e) => setSelectedClient(e.target.value)}
                             className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
                         >
-                            {CLIENTS_LIST.map(client => (
+                            {clients.map((client: any) => (
                                 <option key={client.id} value={client.id}>{client.name}</option>
                             ))}
                         </select>
