@@ -14,23 +14,15 @@ Este plano prioriza ações de **alto impacto e baixo esforço inicial**, aprove
 *   **Ferramentas:** n8n, FinancialModule, Assistente Elite.
 
 ### 2. Agente Copywriter "Sniper"
-*   **Por que fazer agora?** O `AgentBuilder` está funcional. É rápido de configurar.
-*   **O que faremos:**
-    *   Configurar um novo Agente no `AgentBuilder` especializado em persuasão (Copywriting).
-    *   Criar um webhook no **n8n** para receber dados básicos de um lead (Nome, Interesse).
-    *   **Saída:** O n8n devolve um texto de email/WhatsApp personalizado em segundos.
-*   **Ferramentas:** AgentBuilder, n8n.
-
----
-
-## 🔗 Fase 2: Conexão e Fluxo (Semanas 3-4)
-*Foco: Automatizar processos manuais e conectar sistemas.*
+- [x] **Criar Workflow n8n:** Recebe parâmetros (tópico, tom, plataforma) e gera copy.
+- [x] **Frontend (Creative Studio):** Interface para input de dados e exibição do resultado.
+- [x] **Integração:** Conectar frontend ao backend/n8n.
+- [x] **Histórico:** Salvar e listar copys geradas.
 
 ### 3. Lead Scoring Automatizado (Kanban)
-*   **O que faremos:**
-    *   Integrar o **FlightControl** (Kanban) com o **n8n**.
-    *   Regra: Se o lead responder um email (detectado via integração) ou visitar a página de preços, o n8n move o card para a coluna "Quente".
-*   **Ferramentas:** FlightControl, n8n, Integrações Sociais.
+- [x] **Criar Workflow n8n:** Webhook para receber eventos (email, visita).
+- [x] **Lógica de Scoring:** Mover card para "Quente" (IN_PROGRESS) se houver interação.
+- [ ] **Integração Frontend:** Atualizar Kanban em tempo real (Polling ou Socket).
 
 ### 4. Jornada Omnichannel
 *   **O que faremos:**
