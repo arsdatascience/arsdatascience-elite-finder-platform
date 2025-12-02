@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    PieChart, Pie, Cell
+    PieChart, Pie, Cell, LabelList
 } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -464,6 +464,7 @@ const FinancialModule: React.FC = () => {
                                             contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                                         />
                                         <Bar dataKey="value" name="Despesas" radius={[0, 4, 4, 0]} barSize={30}>
+                                            <LabelList dataKey="value" position="insideRight" fill="#fff" formatter={(val: any) => formatCurrency(val)} style={{ fontSize: '12px', fontWeight: 'bold' }} />
                                             {
                                                 (dashboardData.clientExpenses && dashboardData.clientExpenses.length > 0 ? dashboardData.clientExpenses : [{ name: 'Sem dados', value: 0 }]).map((entry, index) => (
                                                     <Cell key={`cell-${index}`} fill={['#f97316', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#14b8a6'][index % 10]} />
@@ -478,25 +479,26 @@ const FinancialModule: React.FC = () => {
                         {/* 2. Despesas por Categoria */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Categoria</h3>
-                            <div style={{ width: '100%', height: 400, minWidth: 0 }}>
+                            <div style={{ width: '100%', height: 450, minWidth: 0 }}>
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
                                         <Pie
                                             data={dashboardData.categoryExpenses && dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses.map(d => ({ ...d, value: Number(d.value) })) : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]}
                                             cx="50%"
-                                            cy="50%"
+                                            cy="45%"
                                             innerRadius={80}
                                             outerRadius={120}
                                             paddingAngle={5}
                                             dataKey="value"
                                             nameKey="name"
+                                            label={({ value }) => formatCurrency(value)}
                                         >
                                             {(dashboardData.categoryExpenses && dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]).map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.color || '#cbd5e1'} />
                                             ))}
                                         </Pie>
                                         <Tooltip formatter={(value: number) => typeof value === 'number' ? formatCurrency(value) : value} />
-                                        <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '20px' }} />
+                                        <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
                                     </PieChart>
                                 </ResponsiveContainer>
                             </div>
