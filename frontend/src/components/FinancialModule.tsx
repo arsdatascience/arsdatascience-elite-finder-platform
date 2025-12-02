@@ -405,7 +405,7 @@ const FinancialModule: React.FC = () => {
                     },
                     label: {
                         show: true,
-                        formatter: (_: any) => `{b}\n{c}`,
+                        formatter: (params: any) => `${params.name}\n${formatCurrency(params.value)}`,
                         fontSize: 11,
                         lineHeight: 14
                     },
