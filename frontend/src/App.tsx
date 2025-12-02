@@ -30,6 +30,7 @@ import { ImageGenerationPage } from '@/components/ImageGenerationPage';
 import AdminDashboard from '@/components/AdminDashboard';
 import { AudioAnalysis } from '@/components/AudioAnalysis';
 import FinancialModule from '@/components/FinancialModule';
+import CreativeStudio from '@/components/CreativeStudio';
 
 const PATH_MAP: Record<ViewState, string> = {
   [ViewState.HOME]: '/',
@@ -52,6 +53,7 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.SETTINGS]: '/settings',
   [ViewState.AGENT_BUILDER]: '/agent-builder',
   [ViewState.ADMIN]: '/admin',
+  [ViewState.CREATIVE_STUDIO]: '/creative-studio',
 };
 
 
@@ -195,6 +197,7 @@ const App: React.FC = () => {
           <Route path="/templates" element={<TemplateManager />} />
           <Route path="/whatsapp-simulator" element={<WhatsAppSimulator />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/creative-studio" element={<CreativeStudio />} />
         </Route>
       </Route>
 
