@@ -147,8 +147,7 @@ export const Reports: React.FC = () => {
         scale: 2, // Melhor qualidade
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff',
-        windowWidth: 1280 // Largura fixa para consistência
+        backgroundColor: '#ffffff'
       });
 
       const imgData = canvas.toDataURL('image/png');
@@ -219,7 +218,7 @@ export const Reports: React.FC = () => {
                     {i === 0 ? <DollarSign size={40} /> : i === 1 ? <TrendingUp size={40} /> : <Activity size={40} />}
                   </div>
                   <p className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">{kpi.label}</p>
-                  <p className="text-2xl font-black text-gray-900 mb-2">{kpi.value}</p>
+                  <p className="text-xl md:text-2xl font-black text-gray-900 mb-2 truncate" title={kpi.value}>{kpi.value}</p>
                   <div className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${kpi.trend === 'up' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
                     {kpi.trend === 'up' ? '▲' : '▼'} {Math.abs(kpi.change)}%
                     <span className="text-gray-400 font-normal ml-1">vs mês anterior</span>
@@ -279,6 +278,7 @@ export const Reports: React.FC = () => {
                     paddingAngle={5}
                     dataKey="value"
                     isAnimationActive={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
                     {reportData.distribution.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
