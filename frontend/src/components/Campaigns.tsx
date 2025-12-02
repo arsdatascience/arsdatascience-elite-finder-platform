@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  AreaChart, Area, PieChart, Pie, Cell
+  AreaChart, Area, PieChart, Pie, Cell, LabelList
 } from 'recharts';
 import {
   Filter, Calendar, Download, TrendingUp, DollarSign, MousePointer,
@@ -269,8 +269,12 @@ export const Campaigns: React.FC = () => {
                   formatter={(value: any) => [`R$ ${Number(value || 0).toFixed(2)}`, '']}
                 />
                 <Legend />
-                <Area type="monotone" dataKey="spend" name="Investimento" stroke="#3B82F6" strokeWidth={2} fillOpacity={1} fill="url(#colorSpend)" />
-                <Area type="monotone" dataKey="revenue" name="Receita" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)" />
+                <Area type="monotone" dataKey="spend" name="Investimento" stroke="#3B82F6" strokeWidth={2} fillOpacity={1} fill="url(#colorSpend)">
+                  <LabelList dataKey="spend" position="top" formatter={(val: any) => `R$${(val / 1000).toFixed(1)}k`} style={{ fontSize: '10px', fill: '#3B82F6', fontWeight: 'bold' }} />
+                </Area>
+                <Area type="monotone" dataKey="revenue" name="Receita" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#colorRevenue)">
+                  <LabelList dataKey="revenue" position="top" formatter={(val: any) => `R$${(val / 1000).toFixed(1)}k`} style={{ fontSize: '10px', fill: '#10B981', fontWeight: 'bold' }} />
+                </Area>
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -293,6 +297,17 @@ export const Campaigns: React.FC = () => {
                   paddingAngle={5}
                   dataKey="spend"
                   nameKey="platform"
+                  label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }) => {
+                    const RADIAN = Math.PI / 180;
+                    const radius = outerRadius + 25;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    return (
+                      <text x={x} y={y} fill="#374151" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={11} fontWeight="bold">
+                        {`${name} (${(percent * 100).toFixed(0)}%)`}
+                      </text>
+                    );
+                  }}
                 >
                   {platformData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
