@@ -442,7 +442,7 @@ const FinancialModule: React.FC = () => {
             animation: false,
             tooltip: {
                 trigger: 'axis',
-                axisPointer: { type: 'shadow' },
+                axisPointer: { type: 'cross', label: { backgroundColor: '#6a7985' } },
                 formatter: (params: any) => {
                     let res = `${params[0].axisValue}<br/>`;
                     params.forEach((param: any) => {
@@ -458,6 +458,7 @@ const FinancialModule: React.FC = () => {
             grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
             xAxis: {
                 type: 'category',
+                boundaryGap: false,
                 data: days,
                 axisLine: { lineStyle: { color: '#94a3b8' } },
                 axisTick: { show: false }
@@ -470,16 +471,41 @@ const FinancialModule: React.FC = () => {
             series: [
                 {
                     name: 'Receitas',
-                    type: 'bar',
-                    data: income,
-                    itemStyle: { color: '#22c55e', borderRadius: [4, 4, 0, 0] },
-                    barGap: '10%'
+                    type: 'line',
+                    smooth: true,
+                    showSymbol: false,
+                    lineStyle: { width: 3, color: '#22c55e' },
+                    areaStyle: {
+                        opacity: 0.8,
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(34, 197, 94, 0.5)' },
+                                { offset: 1, color: 'rgba(34, 197, 94, 0)' }
+                            ]
+                        }
+                    },
+                    data: income
                 },
                 {
                     name: 'Despesas',
-                    type: 'bar',
-                    data: expense,
-                    itemStyle: { color: '#ef4444', borderRadius: [4, 4, 0, 0] }
+                    type: 'line',
+                    smooth: true,
+                    showSymbol: false,
+                    lineStyle: { width: 3, color: '#ef4444' },
+                    areaStyle: {
+                        opacity: 0.8,
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(239, 68, 68, 0.5)' },
+                                { offset: 1, color: 'rgba(239, 68, 68, 0)' }
+                            ]
+                        }
+                    },
+                    data: expense
                 }
             ]
         };
