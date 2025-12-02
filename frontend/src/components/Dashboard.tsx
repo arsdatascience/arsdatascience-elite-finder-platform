@@ -376,26 +376,48 @@ export const Dashboard: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Conversion Source Breakdown - Takes 1 Column */}
-        <motion.div variants={itemVariants} className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-6">Origem das Conversões</h3>
-          <div className="space-y-6">
-            {conversionSources.length > 0 ? conversionSources.map((item: any) => (
-              <div key={item.label}>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">{item.label}</span>
-                  <span className="font-semibold text-gray-900">{item.val}%</span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2.5">
-                  <div className={`${item.color} h-2.5 rounded-full shadow-sm`} style={{ width: `${item.val}%` }}></div>
-                </div>
-              </div>
-            )) : (
-              <div className="text-center text-gray-500 py-4">Sem dados de conversão</div>
-            )}
+        {/* Conversion Source Breakdown (Share por Plataforma) - Takes 1 Column */}
+        <motion.div variants={itemVariants} className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Share por Plataforma</h3>
+          <div className="flex-1 min-h-[250px] relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={conversionSources}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="val"
+                  label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, label }) => {
+                    const RADIAN = Math.PI / 180;
+                    const radius = outerRadius + 25;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                    return (
+                      <text x={x} y={y} fill="#374151" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={11} fontWeight="bold">
+                        {`${label} (${(percent * 100).toFixed(0)}%)`}
+                      </text>
+                    );
+                  }}
+                >
+                  {conversionSources.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.color.replace('bg-', '').replace('-500', '') === 'blue' ? '#3b82f6' :
+                      entry.color.replace('bg-', '').replace('-500', '') === 'purple' ? '#a855f7' :
+                        entry.color.replace('bg-', '').replace('-500', '') === 'green' ? '#10b981' :
+                          entry.color.replace('bg-', '').replace('-500', '') === 'yellow' ? '#f59e0b' : '#6b7280'} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value: any) => [`${value}%`, 'Share']}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
 
-          <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
+          <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
             <p className="text-sm text-blue-800 font-medium">💡 Insight da IA</p>
             <p className="text-xs text-blue-600 mt-1">
               {isLoadingInsight ? (
