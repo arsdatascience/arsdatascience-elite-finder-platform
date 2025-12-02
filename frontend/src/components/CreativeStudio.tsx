@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { PenTool, Send, Copy, Check, Sparkles, Instagram, Linkedin, Mail, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { PenTool, Send, Copy, Check, Sparkles, Instagram, Linkedin, Mail, MessageCircle, Save, History, Trash2 } from 'lucide-react';
 
 const CreativeStudio: React.FC = () => {
     const [topic, setTopic] = useState('');
@@ -8,6 +8,27 @@ const CreativeStudio: React.FC = () => {
     const [generatedContent, setGeneratedContent] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [savedCopies, setSavedCopies] = useState<any[]>([]);
+    const [showHistory, setShowHistory] = useState(false);
+
+    // Carregar histórico ao iniciar
+    useEffect(() => {
+        fetchHistory();
+    }, []);
+
+    const fetchHistory = async () => {
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/copies`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setSavedCopies(data);
+            }
+        } catch (error) {
+            console.error('Erro ao carregar histórico:', error);
+        }
+    };
 
     const handleGenerate = async () => {
         if (!topic) return;
@@ -15,19 +36,18 @@ const CreativeStudio: React.FC = () => {
         setGeneratedContent(null);
 
         try {
-            // Chamada direta ao Backend (aiController)
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/generate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Autenticação do usuário
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
                     type: platform === 'instagram' ? 'post' : platform === 'linkedin' ? 'article' : 'email',
                     platform: platform,
                     topic: topic,
                     tone: tone,
-                    provider: 'openai', // ou 'anthropic' se preferir
+                    provider: 'openai',
                     model: 'gpt-4-turbo-preview'
                 })
             });
@@ -42,6 +62,57 @@ const CreativeStudio: React.FC = () => {
         }
     };
 
+    const handleSave = async () => {
+        if (!generatedContent) return;
+
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/copies`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    topic,
+                    platform,
+                    tone,
+                    content: generatedContent
+                })
+            });
+
+            if (response.ok) {
+                alert('Copy salva com sucesso!');
+                fetchHistory(); // Atualiza a lista
+            }
+        } catch (error) {
+            console.error('Erro ao salvar:', error);
+            alert('Erro ao salvar copy.');
+        }
+    };
+
+    const handleDelete = async (id: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!confirm('Tem certeza que deseja excluir esta copy?')) return;
+
+        try {
+            await fetch(`${import.meta.env.VITE_API_URL}/api/copies/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            fetchHistory();
+        } catch (error) {
+            console.error('Erro ao deletar:', error);
+        }
+    };
+
+    const loadCopy = (copy: any) => {
+        setTopic(copy.topic);
+        setPlatform(copy.platform);
+        setTone(copy.tone || 'persuasive');
+        setGeneratedContent(copy.content);
+        setShowHistory(false); // Fecha histórico em mobile se necessário
+    };
+
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         setCopied(true);
@@ -50,18 +121,67 @@ const CreativeStudio: React.FC = () => {
 
     return (
         <div className="flex flex-col h-full bg-slate-50 min-h-screen p-8">
-            <div className="max-w-5xl mx-auto w-full">
+            <div className="max-w-6xl mx-auto w-full">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-                        <Sparkles className="text-purple-600" /> Estúdio Copywriter (Sniper Agent)
-                    </h1>
-                    <p className="text-slate-600 mt-2">Gere conteúdos de alta conversão em segundos usando IA.</p>
+                <div className="mb-8 flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+                            <Sparkles className="text-purple-600" /> Estúdio Copywriter (Sniper Agent)
+                        </h1>
+                        <p className="text-slate-600 mt-2">Gere conteúdos de alta conversão em segundos usando IA.</p>
+                    </div>
+                    <button
+                        onClick={() => setShowHistory(!showHistory)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${showHistory ? 'bg-slate-200 text-slate-800' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
+                    >
+                        <History size={18} /> Histórico ({savedCopies.length})
+                    </button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Coluna da Esquerda: Controles */}
-                    <div className="lg:col-span-1 space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Coluna da Esquerda: Histórico (Condicional ou Fixo) */}
+                    {showHistory && (
+                        <div className="lg:col-span-3 space-y-4 animate-fade-in">
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-[calc(100vh-200px)] overflow-y-auto">
+                                <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                    <History size={16} /> Copys Salvas
+                                </h3>
+                                {savedCopies.length === 0 ? (
+                                    <p className="text-sm text-slate-400 text-center py-8">Nenhuma copy salva ainda.</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {savedCopies.map((copy) => (
+                                            <div
+                                                key={copy.id}
+                                                onClick={() => loadCopy(copy)}
+                                                className="p-3 rounded-lg border border-slate-100 hover:border-purple-200 hover:bg-purple-50 cursor-pointer transition-all group relative"
+                                            >
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${copy.platform === 'instagram' ? 'bg-pink-100 text-pink-700' :
+                                                            copy.platform === 'linkedin' ? 'bg-blue-100 text-blue-700' :
+                                                                'bg-gray-100 text-gray-700'
+                                                        }`}>
+                                                        {copy.platform}
+                                                    </span>
+                                                    <button
+                                                        onClick={(e) => handleDelete(copy.id, e)}
+                                                        className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                                <p className="text-sm font-medium text-slate-800 line-clamp-2 mb-1">{copy.topic}</p>
+                                                <p className="text-xs text-slate-400">{new Date(copy.created_at).toLocaleDateString()}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Coluna Central: Configuração */}
+                    <div className={`${showHistory ? 'lg:col-span-3' : 'lg:col-span-4'} space-y-6 transition-all`}>
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
                                 <PenTool size={18} /> Configuração
@@ -139,22 +259,32 @@ const CreativeStudio: React.FC = () => {
                     </div>
 
                     {/* Coluna da Direita: Resultado */}
-                    <div className="lg:col-span-2">
-                        <div className="bg-white h-full min-h-[500px] rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                    <div className={`${showHistory ? 'lg:col-span-6' : 'lg:col-span-8'} transition-all`}>
+                        <div className="bg-white h-full min-h-[600px] rounded-xl shadow-sm border border-slate-200 flex flex-col">
                             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
                                 <h3 className="font-bold text-slate-700">Resultado Gerado</h3>
-                                {generatedContent && (
-                                    <button
-                                        onClick={() => copyToClipboard(generatedContent.body || JSON.stringify(generatedContent))}
-                                        className="text-sm text-slate-600 hover:text-purple-600 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors"
-                                    >
-                                        {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-                                        {copied ? 'Copiado!' : 'Copiar Texto'}
-                                    </button>
-                                )}
+                                <div className="flex gap-2">
+                                    {generatedContent && (
+                                        <button
+                                            onClick={handleSave}
+                                            className="text-sm text-slate-600 hover:text-blue-600 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors border border-transparent hover:border-slate-200"
+                                        >
+                                            <Save size={16} /> Salvar
+                                        </button>
+                                    )}
+                                    {generatedContent && (
+                                        <button
+                                            onClick={() => copyToClipboard(generatedContent.body || JSON.stringify(generatedContent))}
+                                            className="text-sm text-slate-600 hover:text-purple-600 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors border border-transparent hover:border-slate-200"
+                                        >
+                                            {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                                            {copied ? 'Copiado!' : 'Copiar'}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
-                            <div className="flex-1 p-6 overflow-y-auto">
+                            <div className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-250px)]">
                                 {!generatedContent && !loading && (
                                     <div className="h-full flex flex-col items-center justify-center text-slate-400">
                                         <Sparkles size={48} className="mb-4 opacity-20" />
