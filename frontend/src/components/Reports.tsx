@@ -129,81 +129,74 @@ export const Reports: React.FC = () => {
     }
   };
 
-  const handleAction = (type: 'print' | 'pdf') => {
-    const printContent = document.getElementById('printable-report');
-    if (!printContent) return;
+  const handleAction = async (type: 'print' | 'pdf') => {
+    const element = document.getElementById('printable-report');
+    if (!element) return;
 
-    // Criar um iframe oculto ou nova janela para impressão limpa
-    const printWindow = window.open('', '_blank', 'height=600,width=800');
-    if (!printWindow) {
-      alert('Por favor, permita popups para imprimir o relatório.');
-      return;
+    // Feedback visual temporário (opcional, mas bom para UX)
+    const originalTitle = document.title;
+    document.title = "Gerando Relatório...";
+
+    try {
+      // Aguardar um momento para garantir que qualquer re-renderização terminou
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const canvas = await html2canvas(element, {
+        scale: 2, // Melhor qualidade
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: 1280 // Largura fixa para consistência
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      // Calcular altura da imagem mantendo proporção
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      // Adicionar imagem ao PDF
+      // Se a imagem for maior que uma página, o jsPDF não quebra automaticamente a imagem de forma inteligente
+      // Mas como nosso layout já é paginado visualmente (chunks), podemos tentar ajustar.
+      // A abordagem mais simples e robusta para "chunks" já paginados visualmente é capturar cada chunk separadamente.
+      // Mas para simplificar e manter o layout exato, vamos capturar tudo e cortar se necessário, 
+      // ou melhor: iterar sobre os elementos .page-break e capturar um por um.
+
+      const pages = document.querySelectorAll('.page-break');
+      const pdfMulti = new jsPDF('p', 'mm', 'a4');
+
+      for (let i = 0; i < pages.length; i++) {
+        if (i > 0) pdfMulti.addPage();
+
+        const pageCanvas = await html2canvas(pages[i] as HTMLElement, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff'
+        });
+
+        const pageImgData = pageCanvas.toDataURL('image/png');
+        const pWidth = pdfMulti.internal.pageSize.getWidth();
+        const pHeight = (pageCanvas.height * pWidth) / pageCanvas.width;
+
+        pdfMulti.addImage(pageImgData, 'PNG', 0, 0, pWidth, pHeight);
+      }
+
+      if (type === 'print') {
+        pdfMulti.autoPrint();
+        window.open(pdfMulti.output('bloburl'), '_blank');
+      } else {
+        pdfMulti.save(`${reportData.clientName} - Relatorio ${selectedYear}.pdf`);
+      }
+
+    } catch (error) {
+      console.error("Erro ao gerar relatório:", error);
+      alert("Houve um erro ao gerar o relatório. Tente novamente.");
+    } finally {
+      document.title = originalTitle;
     }
-
-    // Coletar estilos atuais
-    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-      .map(style => style.outerHTML)
-      .join('');
-
-    const prefix = type === 'pdf' ? 'Elite_Report' : 'Relatorio';
-    const title = `${reportData.clientName} - ${prefix} ${selectedYear}`;
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>${title}</title>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <script src="https://cdn.tailwindcss.com"></script>
-          ${styles}
-          <style>
-            body { 
-              background: white; 
-              -webkit-print-color-adjust: exact; 
-              print-color-adjust: exact; 
-              margin: 0;
-              padding: 0;
-            }
-            /* Resetar margens e paddings do container principal para impressão */
-            #print-root {
-              width: 100%;
-            }
-            /* Ajuste da classe de quebra de página */
-            .page-break { 
-              page-break-after: always; 
-              break-after: page;
-              display: block;
-              min-height: 297mm; /* Garantir altura A4 */
-              height: auto;
-              margin-bottom: 0;
-              padding: 15mm; /* Restaurar padding se necessário */
-            }
-            /* Garantir que gráficos apareçam */
-            .recharts-wrapper { width: 100% !important; height: 100% !important; }
-            svg { overflow: visible !important; }
-            
-            /* Ocultar elementos desnecessários se houver */
-            .print\\:hidden { display: none !important; }
-          </style>
-        </head>
-        <body>
-          <div id="print-root">
-            ${printContent.innerHTML}
-          </div>
-          <script>
-            // Aguardar carregamento de imagens/fontes antes de imprimir
-            window.onload = () => {
-              setTimeout(() => {
-                window.print();
-                // window.close();
-              }, 1500); // Um pouco mais de tempo para garantir renderização dos gráficos
-            };
-          </script>
-        </body>
-      </html>
-    `);
-
-    printWindow.document.close();
   };
 
   const formatCurrency = (val: any) => Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
