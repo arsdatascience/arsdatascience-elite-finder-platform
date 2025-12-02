@@ -1,0 +1,230 @@
+{
+    "name": "Jornada Omnichannel - Follow-up Inteligente",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "followup-start",
+                "options": {}
+            },
+            "name": "Gatilho: Proposta Enviada",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                100,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "amount": 24,
+                "unit": "hours"
+            },
+            "name": "Esperar 24h",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1,
+            "position": [
+                300,
+                300
+            ],
+            "webhookId": "wait-webhook"
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $env.BACKEND_URL }}/api/leads/{{ $json.body.lead_id }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "headerAuth",
+                "options": {}
+            },
+            "name": "Verificar Status Atual",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                500,
+                300
+            ],
+            "credentials": {
+                "headerAuth": {
+                    "id": "1",
+                    "name": "Header Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.status }}",
+                            "operation": "notEqual",
+                            "value2": "CLOSED_WON"
+                        },
+                        {
+                            "value1": "={{ $json.status }}",
+                            "operation": "notEqual",
+                            "value2": "CLOSED_LOST"
+                        }
+                    ],
+                    "boolean": [
+                        {
+                            "value1": "={{ $json.replied }}",
+                            "operation": "equal",
+                            "value2": false
+                        }
+                    ]
+                }
+            },
+            "name": "Ainda Pendente?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                700,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.BACKEND_URL }}/api/integrations/whatsapp/send",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "headerAuth",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "phone",
+                            "value": "={{ $json.phone }}"
+                        },
+                        {
+                            "name": "message",
+                            "value": "Oi {{ $json.name.split(' ')[0] }}, tudo bem? Conseguiu dar uma olhada na proposta que te enviei ontem? Se tiver alguma dúvida, estou à disposição!"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Enviar WhatsApp",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                950,
+                200
+            ],
+            "credentials": {
+                "headerAuth": {
+                    "id": "1",
+                    "name": "Header Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.BACKEND_URL }}/api/leads/{{ $json.id }}/notes",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "headerAuth",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "note",
+                            "value": "🤖 Follow-up automático enviado via WhatsApp após 24h sem resposta."
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Logar no CRM",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                1150,
+                200
+            ],
+            "credentials": {
+                "headerAuth": {
+                    "id": "1",
+                    "name": "Header Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "content": "Lead já converteu ou respondeu. Nenhuma ação necessária.",
+                "height": 100
+            },
+            "name": "Fim (Sem Ação)",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                950,
+                450
+            ]
+        }
+    ],
+    "connections": {
+        "Gatilho: Proposta Enviada": {
+            "main": [
+                [
+                    {
+                        "node": "Esperar 24h",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Esperar 24h": {
+            "main": [
+                [
+                    {
+                        "node": "Verificar Status Atual",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Verificar Status Atual": {
+            "main": [
+                [
+                    {
+                        "node": "Ainda Pendente?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Ainda Pendente?": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar WhatsApp",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Fim (Sem Ação)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Enviar WhatsApp": {
+            "main": [
+                [
+                    {
+                        "node": "Logar no CRM",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

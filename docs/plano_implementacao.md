@@ -25,9 +25,9 @@ Este plano prioriza ações de **alto impacto e baixo esforço inicial**, aprove
 - [x] **Integração Frontend:** Atualizar Kanban em tempo real (Socket.io).
 
 ### 4. Jornada Omnichannel
-*   **O que faremos:**
-    *   Configurar "fallback" no n8n: Se email não aberto em 24h -> Enviar WhatsApp.
-*   **Ferramentas:** n8n, Integrações Sociais.
+- [x] **Criar Workflow n8n:** "O Guardião da Conversão" (Follow-up automático).
+- [x] **Lógica:** Espera 24h -> Verifica Status -> Envia WhatsApp se pendente.
+- [x] **Separação:** Workflow dedicado para evitar conflitos com Scoring.
 
 ---
 
