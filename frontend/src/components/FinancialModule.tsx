@@ -288,7 +288,6 @@ const FinancialModule: React.FC = () => {
             const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
             let heightLeft = imgHeight;
-            let position = 0;
             let page = 0;
 
             // Adicionar primeira página
@@ -297,7 +296,6 @@ const FinancialModule: React.FC = () => {
 
             // Adicionar páginas subsequentes se necessário
             while (heightLeft > 0) {
-                position = heightLeft - imgHeight;
                 pdf.addPage();
                 page++;
                 // Posicionar a imagem deslocada para cima (negativo) para mostrar a próxima seção
