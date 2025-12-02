@@ -260,6 +260,22 @@ async function initializeDatabase() {
       `);
       console.log('✅ Migração de Saved Copies verificada/aplicada.');
 
+      // Migração para Audio Analysis (Call Intelligence)
+      console.log('🔄 Verificando migrações de Audio Analysis...');
+      await pool.query(`
+            CREATE TABLE IF NOT EXISTS audio_analyses (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id),
+                filename VARCHAR(255),
+                summary TEXT,
+                global_sentiment JSONB,
+                speakers JSONB,
+                segments JSONB,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+      `);
+      console.log('✅ Migração de Audio Analysis verificada/aplicada.');
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
