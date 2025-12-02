@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Wallet, TrendingUp, TrendingDown, Calendar, Download, Filter,
-    Plus, Search, Trash2, Edit2, X, Check, ChevronDown, ChevronUp,
+    Wallet, Calendar, Download, Filter,
+    Plus, Edit2, X,
     ArrowUpCircle, ArrowDownCircle, DollarSign, BarChart3, Tag, Users,
     Loader2
 } from 'lucide-react';
@@ -380,7 +380,7 @@ const FinancialModule: React.FC = () => {
                     },
                     label: {
                         show: true,
-                        formatter: (params: any) => `{b}\n{c}`,
+                        formatter: (_: any) => `{b}\n{c}`,
                         fontSize: 11,
                         lineHeight: 14
                     },
