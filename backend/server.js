@@ -245,6 +245,21 @@ async function initializeDatabase() {
       `);
       console.log('✅ Migração de Agent Builder verificada/aplicada.');
 
+      // Migração para Saved Copies (Copywriter History)
+      console.log('🔄 Verificando migrações de Saved Copies...');
+      await pool.query(`
+            CREATE TABLE IF NOT EXISTS saved_copies (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id),
+                topic TEXT NOT NULL,
+                platform VARCHAR(50) NOT NULL,
+                tone VARCHAR(50),
+                content JSONB NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+      `);
+      console.log('✅ Migração de Saved Copies verificada/aplicada.');
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
