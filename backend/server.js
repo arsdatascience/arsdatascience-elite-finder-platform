@@ -369,6 +369,7 @@ app.post('/api/ai/chat', authenticateToken, checkLimit('ai_generation'), aiContr
 app.post('/api/ai/analyze-strategy', authenticateToken, aiController.analyzeConversationStrategy);
 app.post('/api/ai/generate-config', authenticateToken, aiController.generateAgentConfig);
 app.post('/api/ai/save-analysis', authenticateToken, aiController.saveAnalysis);
+app.post('/api/ai/dashboard-insights', authenticateToken, aiController.generateDashboardInsights);
 
 
 // --- DASHBOARD ANALYTICS ---

@@ -83,6 +83,11 @@ export const apiClient = {
             ];
             const response = await axiosInstance.get(`/dashboard/conversion-sources?client=${clientId}&startDate=${startDate || ''}&endDate=${endDate || ''}`);
             return response.data;
+        },
+        getDashboardInsights: async (kpis: any[], selectedClient: string, platform: string, dateRange: any) => {
+            if (USE_MOCK) return { insight: "Insight Mock: Otimize suas campanhas focando em ROI." };
+            const response = await axiosInstance.post('/ai/dashboard-insights', { kpis, selectedClient, platform, dateRange });
+            return response.data;
         }
     },
     automation: {

@@ -70,6 +70,14 @@ export const Dashboard: React.FC = () => {
     queryFn: () => apiClient.dashboard.getConversionSources(selectedClient, dateRange.start, dateRange.end),
   });
 
+  // New AI Insight Query
+  const { data: aiInsightData, isLoading: isLoadingInsight } = useQuery({
+    queryKey: ['aiInsight', selectedClient, selectedPlatform, dateRange, currentKPIs],
+    queryFn: () => apiClient.dashboard.getDashboardInsights(currentKPIs, selectedClient, selectedPlatform, dateRange),
+    enabled: !!currentKPIs && currentKPIs.length > 0,
+    staleTime: 1000 * 60 * 5 // Cache for 5 minutes
+  });
+
   const formatK = (val: number) => {
     if (val >= 1000) return `R$${(val / 1000).toFixed(1)}k`;
     return String(val);
@@ -82,41 +90,6 @@ export const Dashboard: React.FC = () => {
       case 'Tablet': return <Tablet size={18} />;
       default: return <Smartphone size={18} />;
     }
-  };
-
-  const generateDynamicInsight = () => {
-    if (!currentKPIs || currentKPIs.length === 0) return "Analisando dados para gerar insights...";
-
-    const roiKpi = currentKPIs.find((k: any) => k.label.includes('ROI') || k.label.includes('ROAS'));
-    const ctrKpi = currentKPIs.find((k: any) => k.label.includes('CTR'));
-    const cpcKpi = currentKPIs.find((k: any) => k.label.includes('CPC'));
-    const convKpi = currentKPIs.find((k: any) => k.label.includes('Conversões'));
-
-    if (roiKpi && roiKpi.trend === 'down') {
-      return `Atenção: O ${roiKpi.label} caiu ${Math.abs(roiKpi.change)}%. Revise os termos de pesquisa e negative palavras-chave irrelevantes para otimizar o orçamento.`;
-    }
-
-    if (ctrKpi && ctrKpi.trend === 'down' && Math.abs(ctrKpi.change) > 10) {
-      return `O CTR apresentou queda de ${Math.abs(ctrKpi.change)}%. Seus criativos podem estar saturados. Considere testar novas variações de imagem e copy.`;
-    }
-
-    if (cpcKpi && cpcKpi.trend === 'up' && Math.abs(cpcKpi.change) > 20) {
-      return `O CPC subiu ${Math.abs(cpcKpi.change)}%. A concorrência pode ter aumentado. Verifique o Índice de Qualidade e a relevância da landing page.`;
-    }
-
-    if (convKpi && convKpi.trend === 'up') {
-      return `Ótimo desempenho! As conversões aumentaram ${Math.abs(convKpi.change)}%. É um bom momento para escalar o orçamento nas campanhas de melhor performance.`;
-    }
-
-    if (selectedPlatform === 'google') {
-      return "Desempenho estável no Google Ads. Considere expandir para campanhas de Discovery ou YouTube para aumentar o alcance.";
-    }
-
-    if (selectedPlatform === 'meta') {
-      return "Resultados consistentes no Meta Ads. Teste públicos Lookalike baseados nos seus melhores conversores para encontrar novos clientes.";
-    }
-
-    return "ROAS geral estável. Oportunidade de escalar campanhas de vídeo no Youtube e testar novos canais de aquisição.";
   };
 
   return (
@@ -425,7 +398,14 @@ export const Dashboard: React.FC = () => {
           <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">
             <p className="text-sm text-blue-800 font-medium">💡 Insight da IA</p>
             <p className="text-xs text-blue-600 mt-1">
-              {generateDynamicInsight()}
+              {isLoadingInsight ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Gerando insight estratégico com IA...
+                </span>
+              ) : (
+                aiInsightData?.insight || "Nenhum insight disponível no momento."
+              )}
             </p>
           </div>
         </motion.div>

@@ -2,51 +2,162 @@
 // Provider: OpenAI (Custom Endpoint /v1/responses) and Gemini (Google Generative AI)
 
 const { ClaudeService, ClaudeModel } = require('./services/anthropicService');
-const db = require('./database');
-const { decrypt } = require('./utils/crypto');
+const qdrantService = require('./services/qdrantService');
 
-const getEffectiveApiKey = async (provider = 'openai', userId = null) => {
-  // 1. Try to get from User DB (SaaS Multi-tenant)
-  if (userId) {
-    try {
-      const result = await db.query('SELECT openai_key, gemini_key, anthropic_key FROM users WHERE id = $1', [userId]);
-      if (result.rows.length > 0) {
-        const keys = result.rows[0];
-        let userKey = null;
-        if (provider === 'gemini' && keys.gemini_key) userKey = decrypt(keys.gemini_key);
-        else if (provider === 'anthropic' && keys.anthropic_key) userKey = decrypt(keys.anthropic_key);
-        else if ((provider === 'openai' || !provider) && keys.openai_key) userKey = decrypt(keys.openai_key);
+// ... (imports existentes)
 
-        if (userKey) {
-          console.log(`🔑 Using User API Key for ${provider}`);
-          return userKey;
+// Helper to generate embeddings
+const generateEmbeddings = async (text, apiKey) => {
+  const API_URL = "https://api.openai.com/v1/embeddings";
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        input: text,
+        model: "text-embedding-3-small"
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI Embedding Error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.data[0].embedding;
+  } catch (error) {
+    console.error("Embedding Generation Failed:", error);
+    return null;
+  }
+};
+
+const generateDashboardInsights = async (req, res) => {
+  const { kpis, selectedClient, platform, dateRange, provider = 'openai' } = req.body;
+  const userId = req.user ? req.user.id : null;
+  const apiKey = await getEffectiveApiKey(provider, userId);
+
+  if (!apiKey) return res.status(500).json({ error: "API Key not configured" });
+
+  try {
+    // 1. Analyze KPIs to form a search query
+    let queryText = "Estratégias gerais de marketing digital e otimização de campanhas";
+    const roiKpi = kpis.find(k => k.label.includes('ROI') || k.label.includes('ROAS'));
+    const ctrKpi = kpis.find(k => k.label.includes('CTR'));
+    const cpcKpi = kpis.find(k => k.label.includes('CPC'));
+
+    if (roiKpi && roiKpi.trend === 'down') queryText = "Como recuperar ROI e ROAS em queda em campanhas de tráfego pago";
+    else if (ctrKpi && ctrKpi.trend === 'down') queryText = "Como aumentar CTR e melhorar criativos saturados";
+    else if (cpcKpi && cpcKpi.trend === 'up') queryText = "Estratégias para reduzir CPC alto e melhorar índice de qualidade";
+
+    console.log(`🔍 Searching knowledge base for: "${queryText}"`);
+
+    // 2. Generate Embedding for the query
+    const queryVector = await generateEmbeddings(queryText, apiKey);
+
+    // 3. Search in Qdrant (Fail-safe)
+    let context = "";
+    if (queryVector) {
+      try {
+        const searchResult = await qdrantService.searchVectors('marketing_strategies', queryVector, 3);
+        if (searchResult.success && searchResult.results.length > 0) {
+          context = searchResult.results.map(r => r.payload.content || r.payload.text).join("\n\n");
+          console.log("📚 Knowledge Base Context Found:", searchResult.results.length, "items");
         }
+      } catch (err) {
+        console.warn("⚠️ Qdrant search failed (ignoring):", err.message);
       }
-    } catch (err) {
-      console.error('Error fetching user API key:', err);
     }
-  }
 
-  // 2. Fallback to System Env Vars
-  if (provider === 'gemini') {
-    let apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      const allKeys = Object.keys(process.env);
-      const geminiKey = allKeys.find(k => k.includes('GEMINI') && k.includes('KEY'));
-      if (geminiKey) apiKey = process.env[geminiKey];
-    }
-    return apiKey;
-  } else if (provider === 'anthropic') {
-    return process.env.ANTHROPIC_API_KEY;
-  } else {
-    let apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      const allKeys = Object.keys(process.env);
-      const openaiKey = allKeys.find(k => k.includes('OPENAI') && k.includes('KEY'));
-      if (openaiKey) apiKey = process.env[openaiKey];
-    }
-    return apiKey;
+    // 4. Generate Insight with LLM
+    const prompt = `
+      Atue como um Especialista Sênior em Data Analytics e Marketing Digital.
+      
+      CONTEXTO DO CLIENTE:
+      - Cliente ID: ${selectedClient}
+      - Plataforma: ${platform}
+      - Período: ${dateRange.start} a ${dateRange.end}
+      
+      DADOS ATUAIS (KPIs):
+      ${JSON.stringify(kpis)}
+
+      BASE DE CONHECIMENTO RECUPERADA (RAG):
+      ${context || "Nenhum contexto específico encontrado na base vetorial. Use seu conhecimento geral avançado."}
+
+      TAREFA:
+      Gere um insight técnico, direto e acionável sobre a situação atual.
+      - Se houver problemas (quedas), explique a causa provável e a solução.
+      - Se estiver estável/crescendo, sugira o próximo passo de escala.
+      - Use terminologia técnica correta (CPA, ROAS, LTV, Churn, etc).
+      - Máximo de 2 frases.
+      - Seja específico, evite generalidades como "melhore seus anúncios". Diga "Teste novos hooks nos primeiros 3s do vídeo".
+
+      RESPOSTA (Apenas o texto do insight):
+    `;
+
+    const insight = await callOpenAI(prompt, apiKey, "gpt-4-turbo-preview", false);
+
+    res.json({ insight: insight.trim() });
+
+  } catch (error) {
+    console.error("Dashboard Insight Generation Failed:", error);
+    res.status(500).json({ error: "Failed to generate insight" });
   }
+};
+
+module.exports = {
+  analyzeChatConversation,
+  generateMarketingContent,
+  askEliteAssistant,
+  analyzeConversationStrategy,
+  generateAgentConfig,
+  saveAnalysis,
+  generateDashboardInsights
+};
+// 1. Try to get from User DB (SaaS Multi-tenant)
+if (userId) {
+  try {
+    const result = await db.query('SELECT openai_key, gemini_key, anthropic_key FROM users WHERE id = $1', [userId]);
+    if (result.rows.length > 0) {
+      const keys = result.rows[0];
+      let userKey = null;
+      if (provider === 'gemini' && keys.gemini_key) userKey = decrypt(keys.gemini_key);
+      else if (provider === 'anthropic' && keys.anthropic_key) userKey = decrypt(keys.anthropic_key);
+      else if ((provider === 'openai' || !provider) && keys.openai_key) userKey = decrypt(keys.openai_key);
+
+      if (userKey) {
+        console.log(`🔑 Using User API Key for ${provider}`);
+        return userKey;
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching user API key:', err);
+  }
+}
+
+// 2. Fallback to System Env Vars
+if (provider === 'gemini') {
+  let apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    const allKeys = Object.keys(process.env);
+    const geminiKey = allKeys.find(k => k.includes('GEMINI') && k.includes('KEY'));
+    if (geminiKey) apiKey = process.env[geminiKey];
+  }
+  return apiKey;
+} else if (provider === 'anthropic') {
+  return process.env.ANTHROPIC_API_KEY;
+} else {
+  let apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    const allKeys = Object.keys(process.env);
+    const openaiKey = allKeys.find(k => k.includes('OPENAI') && k.includes('KEY'));
+    if (openaiKey) apiKey = process.env[openaiKey];
+  }
+  return apiKey;
+}
 };
 
 const formatChatHistory = (messages) => {
