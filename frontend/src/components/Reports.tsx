@@ -59,7 +59,17 @@ const AVAILABLE_WIDGETS: Widget[] = [
   { id: 'notes', label: 'Observações', category: 'Geral' },
 ];
 
-const ITEMS_PER_PAGE = 3; // Ajustado para layout mais espaçoso
+const PAGE_HEIGHT_LIMIT = 850; // Altura útil estimada por página em pixels
+
+const WIDGET_HEIGHTS: Record<WidgetType, number> = {
+  kpis: 600, // Aumentado devido ao novo layout 2x2 e cards maiores
+  finance_chart: 420,
+  distribution: 380,
+  funnel: 420,
+  top_campaigns: 400,
+  recent_leads: 400,
+  notes: 250
+};
 
 export const Reports: React.FC = () => {
   const [selectedWidgets, setSelectedWidgets] = useState<WidgetType[]>(['kpis', 'finance_chart', 'distribution', 'funnel', 'top_campaigns']);
@@ -385,10 +395,28 @@ export const Reports: React.FC = () => {
   };
 
   const widgetChunks = useMemo(() => {
-    const chunks = [];
-    for (let i = 0; i < selectedWidgets.length; i += ITEMS_PER_PAGE) {
-      chunks.push(selectedWidgets.slice(i, i + ITEMS_PER_PAGE));
+    const chunks: WidgetType[][] = [];
+    let currentPage: WidgetType[] = [];
+    let currentHeight = 0;
+
+    selectedWidgets.forEach(widget => {
+      const height = WIDGET_HEIGHTS[widget] || 300;
+
+      // Se o widget atual não cabe na página e a página não está vazia, cria nova página
+      if (currentHeight + height > PAGE_HEIGHT_LIMIT && currentPage.length > 0) {
+        chunks.push(currentPage);
+        currentPage = [];
+        currentHeight = 0;
+      }
+
+      currentPage.push(widget);
+      currentHeight += height;
+    });
+
+    if (currentPage.length > 0) {
+      chunks.push(currentPage);
     }
+
     return chunks;
   }, [selectedWidgets]);
 
