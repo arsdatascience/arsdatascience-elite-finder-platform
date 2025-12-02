@@ -328,12 +328,11 @@ export const Dashboard: React.FC = () => {
                     data={deviceData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={80}
-                    outerRadius={110}
+                    innerRadius={70}
+                    outerRadius={100}
                     cornerRadius={8}
                     paddingAngle={5}
                     dataKey="value"
-                    label={({ name, value }: any) => `${name}: ${value}%`}
                   >
                     {deviceData.map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
