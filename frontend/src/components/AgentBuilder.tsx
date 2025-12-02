@@ -1685,23 +1685,23 @@ export const AgentBuilder: React.FC = () => {
                                     <p className="text-gray-600 mb-6">
                                         Incorpore seu agente em qualquer site usando o código abaixo.
                                     </p>
-                                    
+
                                     <div className="bg-gray-900 rounded-lg p-4 relative group">
                                         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button 
+                                            <button
                                                 onClick={() => {
-                                                    const code = <script>
+                                                    const code = `<script>
   (function(w,d,s,o,f,js,fjs){
     w['AgentWidget']=o;w[o]=w[o]||function(){(w[o].q=w[o].q||[]).push(arguments)};
     js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];
     js.id=o;js.src=f;js.async=1;fjs.parentNode.insertBefore(js,fjs);
-  }(window,document,'script','mw',' + "" + /widget.js'));
+  }(window,document,'script','mw','${window.location.origin}/widget.js'));
   
   mw('init', { 
-    agentId: ' + "" + ',
+    agentId: '${config.identity.name || 'AGENT_ID'}',
     primaryColor: '#2563EB'
   });
-</script>;
+<\/script>`;
                                                     navigator.clipboard.writeText(code);
                                                     alert('Código copiado!');
                                                 }}
@@ -1711,18 +1711,18 @@ export const AgentBuilder: React.FC = () => {
                                             </button>
                                         </div>
                                         <code className="text-green-400 font-mono text-sm block whitespace-pre-wrap">
-{<script>
+                                            {`<script>
   (function(w,d,s,o,f,js,fjs){
     w['AgentWidget']=o;w[o]=w[o]||function(){(w[o].q=w[o].q||[]).push(arguments)};
     js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];
     js.id=o;js.src=f;js.async=1;fjs.parentNode.insertBefore(js,fjs);
-  }(window,document,'script','mw',' + "" + /widget.js'));
+  }(window,document,'script','mw','${window.location.origin}/widget.js'));
   
   mw('init', { 
-    agentId: ' + "" + ',
+    agentId: '${config.identity.name || 'AGENT_ID'}',
     primaryColor: '#2563EB'
   });
-</script>}
+<\/script>`}
                                         </code>
                                     </div>
 
@@ -1824,7 +1824,7 @@ export const AgentBuilder: React.FC = () => {
                                 <button
                                     onClick={handleMagicConfig}
                                     disabled={isGeneratingConfig || !magicDescription}
-                                    className={px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2 }
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2"
                                 >
                                     {isGeneratingConfig ? (
                                         <><Loader2 className="animate-spin" size={18} /> Gerando Mágica...</>
