@@ -46,6 +46,7 @@
         },
         {
             "parameters": {
+                "resource": "chat",
                 "model": "gpt-4-turbo",
                 "prompt": {
                     "messages": [
@@ -80,7 +81,7 @@
                 "fromEmail": "arsdatascience@gmail.com",
                 "toEmail": "arsdatascience@gmail.com",
                 "subject": "💰 Relatório Semanal: Consultor de ROI Autônomo",
-                "text": "={{ $json.choices[0].message.content }}",
+                "text": "={{ $json.message.content }}",
                 "options": {}
             },
             "id": "send-email",
