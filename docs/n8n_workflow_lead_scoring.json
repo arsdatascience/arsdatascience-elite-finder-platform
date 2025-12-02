@@ -1,17 +1,29 @@
 {
-    "name": "Lead Scoring Automatizado (FlightControl)",
+    "name": "Lead Scoring Avançado (Elite Engine)",
     "nodes": [
         {
             "parameters": {
                 "httpMethod": "POST",
-                "path": "lead-scoring",
+                "path": "lead-scoring-advanced",
                 "options": {}
             },
-            "name": "Webhook",
+            "name": "Webhook Eventos",
             "type": "n8n-nodes-base.webhook",
             "typeVersion": 1,
             "position": [
-                250,
+                100,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "// Definir pontuação baseada no evento\nconst event = items[0].json.body.event;\nlet score = 0;\nlet tag = '';\nlet action = 'score_update';\n\nif (event === 'email_open') score = 5;\nif (event === 'email_click') score = 10;\nif (event === 'page_view_pricing') score = 20;\nif (event === 'page_view_product_x') {\n  score = 15;\n  tag = 'Interesse: Produto X';\n}\nif (event === 'whatsapp_reply') score = 50;\nif (event === 'churn_risk' || event === 'subscription_cancel') {\n  action = 'churn_alert';\n}\n\nreturn [\n  {\n    json: {\n      ...items[0].json.body,\n      score_increment: score,\n      new_tag: tag,\n      action: action\n    }\n  }\n];"
+            },
+            "name": "Calcular Score e Ação",
+            "type": "n8n-nodes-base.function",
+            "typeVersion": 1,
+            "position": [
+                300,
                 300
             ]
         },
@@ -20,31 +32,102 @@
                 "conditions": {
                     "string": [
                         {
-                            "value1": "={{ $json.body.event }}",
-                            "operation": "contains",
-                            "value2": "email_reply"
-                        },
-                        {
-                            "value1": "={{ $json.body.event }}",
-                            "operation": "contains",
-                            "value2": "price_page_visit"
+                            "value1": "={{ $json.action }}",
+                            "operation": "equal",
+                            "value2": "churn_alert"
                         }
                     ]
-                },
-                "combineOperation": "any"
+                }
             },
-            "name": "Verificar Evento",
+            "name": "É Risco de Churn?",
             "type": "n8n-nodes-base.if",
             "typeVersion": 1,
             "position": [
-                450,
+                500,
                 300
             ]
         },
         {
             "parameters": {
                 "method": "PATCH",
-                "url": "={{ $env.BACKEND_URL }}/api/leads/{{ $json.body.lead_id }}/status",
+                "url": "={{ $env.BACKEND_URL }}/api/leads/{{ $json.lead_id }}/status",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "headerAuth",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "status",
+                            "value": "WAITING"
+                        },
+                        {
+                            "name": "notes",
+                            "value": "ALERTA: Risco de Churn detectado. Entrar em contato urgente."
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Mover para Risco/Aguardando",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                750,
+                100
+            ],
+            "credentials": {
+                "headerAuth": {
+                    "id": "1",
+                    "name": "Header Auth account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE leads SET value = value + $1 WHERE id = $2 RETURNING value, status, tags",
+                "additionalFields": {
+                    "queryParams": "={{ $json.score_increment }},{{ $json.lead_id }}"
+                }
+            },
+            "name": "Atualizar Score no DB",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 1,
+            "position": [
+                750,
+                450
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "2",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "number": [
+                        {
+                            "value1": "={{ $json.value }}",
+                            "operation": "larger",
+                            "value2": 80
+                        }
+                    ]
+                }
+            },
+            "name": "Score > 80?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                950,
+                450
+            ]
+        },
+        {
+            "parameters": {
+                "method": "PATCH",
+                "url": "={{ $env.BACKEND_URL }}/api/leads/{{ $json.lead_id }}/status",
                 "authentication": "genericCredentialType",
                 "genericAuthType": "headerAuth",
                 "sendBody": true,
@@ -58,12 +141,12 @@
                 },
                 "options": {}
             },
-            "name": "Mover para Quente",
+            "name": "Mover para Quente (In Progress)",
             "type": "n8n-nodes-base.httpRequest",
             "typeVersion": 3,
             "position": [
-                700,
-                200
+                1200,
+                350
             ],
             "credentials": {
                 "headerAuth": {
@@ -74,42 +157,126 @@
         },
         {
             "parameters": {
-                "content": "Evento ignorado ou inválido.",
-                "height": 100
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.new_tag }}",
+                            "operation": "isNotEmpty"
+                        }
+                    ]
+                }
             },
-            "name": "Ignorar",
-            "type": "n8n-nodes-base.noOp",
+            "name": "Tem Tag Nova?",
+            "type": "n8n-nodes-base.if",
             "typeVersion": 1,
             "position": [
-                700,
-                400
+                1200,
+                550
             ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE leads SET tags = array_append(tags, $1) WHERE id = $2",
+                "additionalFields": {
+                    "queryParams": "={{ $json.new_tag }},{{ $json.lead_id }}"
+                }
+            },
+            "name": "Adicionar Tag",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 1,
+            "position": [
+                1450,
+                550
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "2",
+                    "name": "Postgres account"
+                }
+            }
         }
     ],
     "connections": {
-        "Webhook": {
+        "Webhook Eventos": {
             "main": [
                 [
                     {
-                        "node": "Verificar Evento",
+                        "node": "Calcular Score e Ação",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Verificar Evento": {
+        "Calcular Score e Ação": {
             "main": [
                 [
                     {
-                        "node": "Mover para Quente",
+                        "node": "É Risco de Churn?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "É Risco de Churn?": {
+            "main": [
+                [
+                    {
+                        "node": "Mover para Risco/Aguardando",
                         "type": "main",
                         "index": 0
                     }
                 ],
                 [
                     {
-                        "node": "Ignorar",
+                        "node": "Atualizar Score no DB",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Atualizar Score no DB": {
+            "main": [
+                [
+                    {
+                        "node": "Score > 80?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Score > 80?": {
+            "main": [
+                [
+                    {
+                        "node": "Mover para Quente (In Progress)",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Tem Tag Nova?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Tem Tag Nova?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Tem Tag Nova?": {
+            "main": [
+                [
+                    {
+                        "node": "Adicionar Tag",
                         "type": "main",
                         "index": 0
                     }
