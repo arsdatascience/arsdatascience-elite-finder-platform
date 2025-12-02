@@ -4,6 +4,8 @@ import { Printer, Layout, TrendingUp, Users, PieChart as PieIcon, Download, BarC
 import { KPIS, COMPARATIVE_FUNNEL_DATA, CAMPAIGNS_DATA, LEADS_DATA, CLIENTS_LIST } from '../constants';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid, PieChart, Pie, Cell, LabelList, Legend } from 'recharts';
 import { COMPONENT_VERSIONS } from '../componentVersions';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // --- GERAÇÃO DE DADOS FINANCEIROS DETERMINÍSTICOS ---
 const MONTHS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -265,7 +267,7 @@ export const Reports: React.FC = () => {
             <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2 flex items-center gap-2">
               <PieIcon size={20} className="text-purple-600" /> Distribuição de Verba
             </h3>
-            <div className="h-64 border border-gray-100 rounded-xl p-4 bg-white shadow-sm flex items-center justify-center">
+            <div className="h-64 border border-gray-100 rounded-xl p-4 bg-white shadow-sm flex items-center justify-center" style={{ minHeight: '256px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -293,7 +295,7 @@ export const Reports: React.FC = () => {
         return (
           <section className="mb-8">
             <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Funil de Conversão</h3>
-            <div className="h-80 border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
+            <div className="h-80 border border-gray-100 rounded-xl p-4 bg-white shadow-sm" style={{ minHeight: '320px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart layout="vertical" data={reportData.funnel} margin={{ top: 5, right: 30, left: 20, bottom: 5 }} barGap={4}>
                   <XAxis type="number" hide />
