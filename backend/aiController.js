@@ -3,8 +3,52 @@
 
 const { ClaudeService, ClaudeModel } = require('./services/anthropicService');
 const qdrantService = require('./services/qdrantService');
+const db = require('./database');
+const { decrypt } = require('./utils/crypto');
 
-// ... (imports existentes)
+const getEffectiveApiKey = async (provider = 'openai', userId = null) => {
+  // 1. Try to get from User DB (SaaS Multi-tenant)
+  if (userId) {
+    try {
+      const result = await db.query('SELECT openai_key, gemini_key, anthropic_key FROM users WHERE id = $1', [userId]);
+      if (result.rows.length > 0) {
+        const keys = result.rows[0];
+        let userKey = null;
+        if (provider === 'gemini' && keys.gemini_key) userKey = decrypt(keys.gemini_key);
+        else if (provider === 'anthropic' && keys.anthropic_key) userKey = decrypt(keys.anthropic_key);
+        else if ((provider === 'openai' || !provider) && keys.openai_key) userKey = decrypt(keys.openai_key);
+
+        if (userKey) {
+          console.log(`🔑 Using User API Key for ${provider}`);
+          return userKey;
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching user API key:', err);
+    }
+  }
+
+  // 2. Fallback to System Env Vars
+  if (provider === 'gemini') {
+    let apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      const allKeys = Object.keys(process.env);
+      const geminiKey = allKeys.find(k => k.includes('GEMINI') && k.includes('KEY'));
+      if (geminiKey) apiKey = process.env[geminiKey];
+    }
+    return apiKey;
+  } else if (provider === 'anthropic') {
+    return process.env.ANTHROPIC_API_KEY;
+  } else {
+    let apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      const allKeys = Object.keys(process.env);
+      const openaiKey = allKeys.find(k => k.includes('OPENAI') && k.includes('KEY'));
+      if (openaiKey) apiKey = process.env[openaiKey];
+    }
+    return apiKey;
+  }
+};
 
 // Helper to generate embeddings
 const generateEmbeddings = async (text, apiKey) => {
@@ -117,48 +161,7 @@ module.exports = {
   saveAnalysis,
   generateDashboardInsights
 };
-// 1. Try to get from User DB (SaaS Multi-tenant)
-if (userId) {
-  try {
-    const result = await db.query('SELECT openai_key, gemini_key, anthropic_key FROM users WHERE id = $1', [userId]);
-    if (result.rows.length > 0) {
-      const keys = result.rows[0];
-      let userKey = null;
-      if (provider === 'gemini' && keys.gemini_key) userKey = decrypt(keys.gemini_key);
-      else if (provider === 'anthropic' && keys.anthropic_key) userKey = decrypt(keys.anthropic_key);
-      else if ((provider === 'openai' || !provider) && keys.openai_key) userKey = decrypt(keys.openai_key);
 
-      if (userKey) {
-        console.log(`🔑 Using User API Key for ${provider}`);
-        return userKey;
-      }
-    }
-  } catch (err) {
-    console.error('Error fetching user API key:', err);
-  }
-}
-
-// 2. Fallback to System Env Vars
-if (provider === 'gemini') {
-  let apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    const allKeys = Object.keys(process.env);
-    const geminiKey = allKeys.find(k => k.includes('GEMINI') && k.includes('KEY'));
-    if (geminiKey) apiKey = process.env[geminiKey];
-  }
-  return apiKey;
-} else if (provider === 'anthropic') {
-  return process.env.ANTHROPIC_API_KEY;
-} else {
-  let apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    const allKeys = Object.keys(process.env);
-    const openaiKey = allKeys.find(k => k.includes('OPENAI') && k.includes('KEY'));
-    if (openaiKey) apiKey = process.env[openaiKey];
-  }
-  return apiKey;
-}
-};
 
 const formatChatHistory = (messages) => {
   return messages.map(m => `${m.sender.toUpperCase()}: ${m.text}`).join('\n');
