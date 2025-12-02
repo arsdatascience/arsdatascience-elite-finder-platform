@@ -1,0 +1,125 @@
+{
+    "name": "Consultor de ROI Autônomo - Elite Finder",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "weeks",
+                            "triggerAtHour": 9
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "Agendamento Semanal",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://elite-finder-backend-production.up.railway.app/api/financial/dashboard",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "x-api-key",
+                            "value": "YOUR_N8N_API_KEY_HERE"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "fetch-financial-data",
+            "name": "Buscar Dados Financeiros",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "model": "gpt-4-turbo",
+                "messages": {
+                    "message": [
+                        {
+                            "role": "system",
+                            "content": "Você é o 'Consultor de ROI Autônomo' da Elite Finder. Sua função é analisar dados financeiros brutos de marketing e gerar insights estratégicos curtos e acionáveis.\n\nFoco:\n1. Identificar qual canal (Google vs Meta) está trazendo mais retorno.\n2. Alertar sobre gastos excessivos ou anomalias.\n3. Sugerir realocação de verba se houver discrepância de performance.\n\nFormato de Resposta:\n- Use emojis profissionais.\n- Seja direto (máximo 3 parágrafos).\n- Termine com uma pergunta de decisão (Sim/Não)."
+                        },
+                        {
+                            "role": "user",
+                            "content": "Analise os seguintes dados financeiros da semana e me dê um relatório de performance:\n\n{{ JSON.stringify($json) }}"
+                        }
+                    ]
+                }
+            },
+            "id": "ai-analysis",
+            "name": "Análise IA (GPT-4)",
+            "type": "@n8n/n8n-nodes-langchain.openAiChatModel",
+            "typeVersion": 1,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "chatId": "YOUR_TELEGRAM_CHAT_ID",
+                "text": "={{ $json.content }}",
+                "additionalFields": {
+                    "parse_mode": "Markdown"
+                }
+            },
+            "id": "send-telegram",
+            "name": "Enviar Alerta (Telegram)",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1,
+            "position": [
+                1120,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "schedule-trigger": {
+            "main": [
+                [
+                    {
+                        "node": "fetch-financial-data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "fetch-financial-data": {
+            "main": [
+                [
+                    {
+                        "node": "ai-analysis",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "ai-analysis": {
+            "main": [
+                [
+                    {
+                        "node": "send-telegram",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
