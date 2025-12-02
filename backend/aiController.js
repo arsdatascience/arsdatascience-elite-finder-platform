@@ -441,8 +441,12 @@ const generateMarketingContent = async (req, res) => {
   }
 };
 
+const churnController = require('./churnController');
+
+// ... (existing code)
+
 const askEliteAssistant = async (req, res) => {
-  const { history, question, provider = 'openai', model } = req.body;
+  const { history, question, provider = 'openai', model, clientId } = req.body;
   const userId = req.user ? req.user.id : null;
   const apiKey = await getEffectiveApiKey(provider, userId);
 
@@ -453,6 +457,27 @@ const askEliteAssistant = async (req, res) => {
     return res.status(400).json({ error: "Invalid history parameter" });
   }
 
+  // Fetch Churn Risk Context if Client ID is provided
+  let churnContext = "";
+  if (clientId) {
+    try {
+      const riskData = await churnController.calculateRiskForClient(clientId);
+      if (riskData) {
+        churnContext = `
+        🚨 **ALERTA DE RISCO DE CHURN DETECTADO** 🚨
+        - Nível de Risco: ${riskData.riskLevel} (Score: ${riskData.riskScore}/100)
+        - Fatores de Risco: ${riskData.factors.join(', ')}
+        
+        ⚠️ **INSTRUÇÃO CRÍTICA DE RETENÇÃO:**
+        Este cliente está em risco de cancelamento. Sua prioridade MÁXIMA é ser empático, resolver problemas imediatamente e evitar atritos.
+        Se o risco for CRITICAL ou HIGH, ofereça atendimento prioritário ou descontos se tiver autonomia (simule que tem).
+        `;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch churn risk for context:", err);
+    }
+  }
+
   const conversationContext = history.map(msg =>
     `${msg.sender === 'client' ? 'Usuário' : 'Assistente'}: ${msg.text}`
   ).join('\n');
@@ -460,6 +485,8 @@ const askEliteAssistant = async (req, res) => {
   const prompt = `
     Você é o **Elite Strategist**, um Especialista Sênior em Marketing Digital e Vendas da plataforma 'EliteFinder'.
     
+    ${churnContext}
+
     🧠 **SUAS ESPECIALIDADES:**
     1. **Tráfego Pago:** Estratégias avançadas para Google Ads, Meta Ads (Facebook/Instagram), LinkedIn Ads e TikTok Ads.
     2. **Social Media:** Criação de calendários editoriais, roteiros para Reels/TikTok, e estratégias de engajamento.
@@ -506,7 +533,7 @@ const analyzeConversationStrategy = async (req, res) => {
 
   try {
     const prompt = `
-        Atue como um Diretor de Estratégia Comercial e Marketing Sênior. Analise a seguinte conversa entre um Agente (Bot) e um Cliente.
+        Atue como um Diretor de Estratégia Comercial e Marketing Sênior. Analise a seguinte conversa entre um Agente (Bot) e um Cliente (Prospect).
         
         CONTEXTO DO AGENTE:
         ${JSON.stringify(agentContext || {})}
@@ -514,13 +541,17 @@ const analyzeConversationStrategy = async (req, res) => {
         HISTÓRICO DA CONVERSA:
         ${messages.map(m => `${m.role === 'user' ? 'CLIENTE' : 'AGENTE'}: ${m.content}`).join('\n')}
 
+        TAREFA:
+        Realize uma análise em tempo real para fornecer "Coaching de Vendas" imediato.
+        Identifique o sentimento, objeções ocultas e sugira a próxima melhor ação.
+
         Gere um relatório estratégico estruturado em JSON com os seguintes campos:
-        1. "sentiment_analysis": Análise do sentimento do cliente (0-10) e breve explicação.
-        2. "sales_opportunity": Probabilidade de venda (Baixa/Média/Alta) e justificativa.
-        3. "missed_opportunities": Oportunidades que o agente deixou passar.
-        4. "marketing_angles": 3 ângulos de marketing para explorar com esse perfil.
-        5. "remarketing_strategy": Sugestão concreta de mensagem para enviar amanhã (remarketing).
-        6. "suggested_next_steps": Próximos passos recomendados para fechar a venda.
+        1. "sentiment": Sentimento atual do cliente (Positivo, Neutro, Cético, Irritado).
+        2. "detected_objections": Lista de objeções identificadas (ex: Preço, Concorrência, Autoridade).
+        3. "buying_stage": Estágio de compra (Curiosidade, Consideração, Decisão).
+        4. "suggested_strategy": Uma estratégia tática para o vendedor usar AGORA (ex: "Use a técnica de Espelhamento e foque na dor X").
+        5. "next_best_action": A próxima pergunta ou afirmação exata que deve ser feita para avançar a venda.
+        6. "coach_whisper": Uma dica curta e direta para o vendedor (ex: "Cuidado, ele está comparando com o concorrente Y, destaque nosso suporte").
 
         Responda APENAS o JSON.
         `;

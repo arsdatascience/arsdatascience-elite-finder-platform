@@ -35,23 +35,16 @@ Este plano prioriza ações de **alto impacto e baixo esforço inicial**, aprove
 *Foco: Preditividade e Multimodalidade.*
 
 ### 5. Análise de Calls e Objeções
-*   **O que faremos:**
-    *   Upload automático de gravações para o módulo de **Análise de Áudio**.
-    *   Extração de texto e análise de sentimento.
-*   **Ferramentas:** Análise de Áudio, AgentBuilder.
+- [x] **Backend:** Integração com Whisper e GPT-4o para transcrição e análise.
+- [x] **Frontend:** Componente de Upload e Visualização de Resultados.
+- [x] **Banco de Dados:** Tabela `audio_analyses` criada.
 
 ### 6. Fidelização Preditiva (Churn)
-*   **O que faremos:**
-    *   Análise de padrão de uso para prever cancelamentos antes que aconteçam.
-
----
-
-## 🏁 Recomendação de Início Imediato
-
-Sugiro começarmos pelo **Item 1: Consultor de ROI Autônomo**.
-
-**Passos Práticos para Agora:**
-1.  Precisamos garantir que o `FinancialModule` tenha uma rota de API (endpoint) que o **n8n** possa consultar para pegar o resumo do mês (Receitas, Despesas, ROI por canal).
-2.  Criar o workflow no n8n.
+- [x] **Backend:** Lógica heurística de cálculo de risco (Inatividade, Tickets, Sentimento).
+- [x] **API:** Endpoint `/api/churn/predict`.
+- [x] **Frontend:** Widget de Risco de Churn no Dashboard.
+- [x] **Frontend:** Indicadores de Risco na Lista de Clientes.
+- [x] **IA Avançada:** Injeção de contexto de Churn no Agente de Suporte.
+- [x] **IA Avançada:** Coaching de Vendas em Tempo Real para Prospects (Análise de Sentimento/Objeções).
 
 **Podemos começar criando essa rota na API agora?**
