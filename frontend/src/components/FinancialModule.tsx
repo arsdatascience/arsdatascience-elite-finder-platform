@@ -474,6 +474,7 @@ const FinancialModule: React.FC = () => {
                     type: 'line',
                     smooth: true,
                     showSymbol: false,
+                    itemStyle: { color: '#22c55e' },
                     lineStyle: { width: 3, color: '#22c55e' },
                     areaStyle: {
                         opacity: 0.8,
@@ -493,6 +494,7 @@ const FinancialModule: React.FC = () => {
                     type: 'line',
                     smooth: true,
                     showSymbol: false,
+                    itemStyle: { color: '#ef4444' },
                     lineStyle: { width: 3, color: '#ef4444' },
                     areaStyle: {
                         opacity: 0.8,
