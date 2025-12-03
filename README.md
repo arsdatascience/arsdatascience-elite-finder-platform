@@ -8,14 +8,16 @@ Bem-vindo à documentação oficial da **Elite Finder Platform**. Este documento
 
 1. [Visão Geral](#-visão-geral)
 2. [Dashboard & Analytics](#-dashboard--analytics)
-3. [CRM & Gestão de Clientes](#-crm--gestão-de-clientes)
-4. [Módulo Financeiro](#-módulo-financeiro)
-5. [Automação de Marketing](#-automação-de-marketing)
-6. [AI Creative Studio (Geração de Imagens)](#-ai-creative-studio)
-7. [Social Media Management](#-social-media-management)
-8. [Academia de Treinamento](#-academia-de-treinamento)
-9. [Gestão de Equipe & Configurações](#-gestão-de-equipe--configurações)
-10. [Instalação Técnica](#-instalação-técnica)
+3. [Sales Coaching (WhatsApp IA)](#-sales-coaching-whatsapp-ia)
+4. [CRM & Gestão de Clientes](#-crm--gestão-de-clientes)
+5. [Módulo Financeiro](#-módulo-financeiro)
+6. [Automação de Marketing](#-automação-de-marketing)
+7. [AI Creative Studio (Geração de Imagens)](#-ai-creative-studio)
+8. [Social Media Management](#-social-media-management)
+9. [Academia de Treinamento](#-academia-de-treinamento)
+10. [Manual de Uso (Help Center)](#-manual-de-uso-help-center)
+11. [Gestão de Equipe & Configurações](#-gestão-de-equipe--configurações)
+12. [Instalação Técnica](#-instalação-técnica)
 
 ---
 
@@ -36,6 +38,24 @@ O centro de comando da sua operação. Aqui você tem uma visão panorâmica do 
   - *Evolução de Leads*: Linha do tempo mostrando a aquisição de leads.
   - *Origem de Tráfego*: Gráfico de pizza detalhando canais (Google, Meta, Orgânico).
 - **Funil de Vendas Visual**: Acompanhe a jornada do cliente desde a visita até o fechamento.
+
+---
+
+## 🎧 Sales Coaching (WhatsApp IA)
+
+Uma das ferramentas mais poderosas da plataforma, transformando cada conversa no WhatsApp em uma oportunidade de venda guiada por IA.
+
+### Funcionalidades:
+- **Integração Evolution API**: Conecte qualquer número de WhatsApp via QR Code.
+- **Chat em Tempo Real**: Interface de chat completa integrada ao sistema.
+- **Teleprompter IA (Whisper)**:
+  - Analisa o sentimento do cliente em tempo real (Positivo, Cético, Negativo).
+  - Sugere a próxima melhor ação e estratégia de venda.
+  - Detecta objeções e fornece argumentos para contorná-las.
+- **Gestão de Sessões**: Alterne entre múltiplos atendimentos simultâneos.
+- **Ferramentas de Produtividade**:
+  - **Exportar Conversa**: Baixe o histórico completo em `.txt`.
+  - **Salvar Cliente**: Cadastre o contato como Lead/Cliente no CRM com um clique.
 
 ---
 
@@ -149,6 +169,17 @@ Capacite sua equipe e clientes com conteúdo educacional de alta qualidade.
   - **CRM & Ferramentas**: Como maximizar o uso da plataforma.
 - **Acompanhamento de Progresso**: Monitore quais módulos foram concluídos pela equipe.
 - **Gamificação**: (Em breve) Badges e certificados por conclusão.
+
+---
+
+## 📚 Manual de Uso (Help Center)
+
+Uma base de conhecimento integrada diretamente na plataforma.
+
+### Funcionalidades:
+- **Guias Passo a Passo**: Instruções claras para cada módulo do sistema.
+- **Busca Integrada**: Encontre rapidamente respostas para suas dúvidas.
+- **Navegação Intuitiva**: Seções organizadas por funcionalidade (Dashboard, Campanhas, etc.).
 
 ---
 
