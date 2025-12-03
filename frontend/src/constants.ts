@@ -12,7 +12,7 @@ export const NAV_ITEMS = [
   { id: 'CLIENTS', label: 'Clientes e Cadastro', icon: Users },
   { id: 'CHAT_AI', label: 'Análise de Chat IA', icon: MessageSquare },
   { id: 'SOCIAL', label: 'Redes Sociais', icon: Share2 },
-  { id: 'AUTOMATION', label: 'Automação', icon: GitBranch },
+  { id: 'AUTOMATION', label: 'Automação N8N', icon: GitBranch },
   { id: 'REPORTS', label: 'Relatórios', icon: FileText },
   { id: 'TRAINING', label: 'Academia de Treino', icon: BookOpen },
   { id: 'AI_AGENT', label: 'Estúdio Criativo IA', icon: Sparkles },
