@@ -187,6 +187,23 @@ const createLead = async (req, res) => {
         if (req.user && req.user.id) {
             triggerWebhook(req.user.id, 'lead.created', newLead);
         }
+
+        // --- SISTÊMICO: LEAD SCORING & OMNICHANNEL ---
+        try {
+            const { calculateLeadScore } = require('./services/scoringService');
+            // 1. Calcular Score Inicial
+            await calculateLeadScore(newLead.id);
+
+            // 2. Agendar Follow-up Omnichannel (24h)
+            await pool.query(`
+                INSERT INTO jobs (type, payload, scheduled_for, status)
+                VALUES ($1, $2, NOW() + INTERVAL '24 hours', 'pending')
+            `, ['check_follow_up', { leadId: newLead.id }]);
+
+            console.log(`🤖 Lead ${newLead.id}: Score calculado e Follow-up agendado.`);
+        } catch (sysErr) {
+            console.error('Erro nos processos sistêmicos de Lead:', sysErr);
+        }
     } catch (error) {
         console.error('Error creating lead:', error);
         res.status(500).json({ error: 'Failed to create lead' });

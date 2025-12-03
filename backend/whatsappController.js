@@ -139,6 +139,18 @@ const handleWebhook = async (req, res) => {
             });
         }
 
+        // --- SISTÊMICO: UPDATE LEAD SCORE ---
+        try {
+            // Tentar encontrar o Lead associado a este telefone
+            const leadRes = await db.query("SELECT id FROM leads WHERE phone LIKE $1 OR phone LIKE $2 LIMIT 1", [`%${phone}%`, phone]);
+            if (leadRes.rows.length > 0) {
+                const { calculateLeadScore } = require('./services/scoringService');
+                await calculateLeadScore(leadRes.rows[0].id);
+            }
+        } catch (scoreErr) {
+            console.error('Erro ao atualizar Score por mensagem:', scoreErr);
+        }
+
         // 5. COACHING EM TEMPO REAL (Teleprompter)
         // Recuperar histórico recente (últimas 10 msgs)
         const historyResult = await db.query(
