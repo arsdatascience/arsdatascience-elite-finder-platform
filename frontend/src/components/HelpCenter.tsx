@@ -95,17 +95,21 @@ const HELP_SECTIONS: HelpSection[] = [
     },
     {
         id: 'flight_control',
-        title: 'Flight Control',
+        title: 'Flight Control (CRM)',
         icon: Plane,
         description: 'Controle granular de tráfego e distribuição de leads.',
         steps: [
             {
-                title: 'Regras de Distribuição',
-                content: 'Defina como os leads são distribuídos entre sua equipe de vendas (Round Robin, Performance, etc).'
+                title: 'Smart Lead Mover (Novo)',
+                content: 'A IA monitora o WhatsApp. Se o cliente disser "Quero fechar", o card move automaticamente para "Negociação" no Kanban.'
             },
             {
-                title: 'Monitoramento de Status',
-                content: 'Veja em tempo real quais campanhas estão ativas, pausadas ou em aprendizado.'
+                title: 'Lead Scoring Automático',
+                content: 'Cada lead ganha pontos (0-100) baseado em dados (email, empresa) e interações. Leads quentes sobem no ranking.'
+            },
+            {
+                title: 'Follow-up Omnichannel',
+                content: 'Se um lead novo não for atendido em 24h, o sistema envia um "Oi" automático no WhatsApp para reativá-lo.'
             }
         ]
     },
@@ -164,6 +168,10 @@ const HELP_SECTIONS: HelpSection[] = [
         description: 'Crie assets visuais e textos persuasivos.',
         steps: [
             {
+                title: 'Content Loop (Novo)',
+                content: 'A IA lê as dúvidas do suporte e gera ideias de posts que resolvem dores reais dos clientes.'
+            },
+            {
                 title: 'Geração de Copy',
                 content: 'Use a IA para escrever legendas, e-mails e roteiros de vídeo.'
             },
@@ -196,12 +204,16 @@ const HELP_SECTIONS: HelpSection[] = [
         description: 'Seu consultor de negócios 24/7.',
         steps: [
             {
-                title: 'Tire Dúvidas',
-                content: 'Pergunte qualquer coisa sobre marketing digital, estratégias de vendas ou uso da plataforma.'
+                title: 'Financial Advisor (Novo)',
+                content: 'Pergunte "Qual meu saldo?" ou "Como está o ROI?" e ele responderá com dados reais do financeiro.'
             },
             {
-                title: 'Brainstorming',
-                content: 'Peça ideias de campanhas, nomes de produtos ou estratégias de crescimento.'
+                title: 'Acesso à Internet (Novo)',
+                content: 'Ative o botão "Acesso à Internet" para que a IA pesquise tendências e notícias atuais na web.'
+            },
+            {
+                title: 'Memória RAG',
+                content: 'O assistente lê seus manuais e documentos internos para dar respostas técnicas precisas.'
             }
         ]
     }
