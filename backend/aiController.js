@@ -599,6 +599,157 @@ const askEliteAssistant = async (req, res) => {
   }
 };
 
+/**
+ * Internal function to analyze conversation strategy
+ */
+const analyzeStrategyInternal = async (messages, agentContext, apiKey) => {
+  const prompt = `
+        Atue como um Diretor de Estratégia Comercial e Marketing Sênior. Analise a seguinte conversa entre um Agente (Bot) e um Cliente (Prospect).
+        
+        CONTEXTO DO AGENTE:
+        ${JSON.stringify(agentContext || {})}
+
+        HISTÓRICO DA CONVERSA:
+        ${messages.map(m => `${m.role === 'user' ? 'CLIENTE' : 'AGENTE'}: ${m.content}`).join('\n')}
+
+        TAREFA:
+        Realize uma análise em tempo real para fornecer "Coaching de Vendas" imediato.
+        Identifique o sentimento, objeções ocultas e sugira a próxima melhor ação.
+
+        Gere um relatório estratégico estruturado em JSON com os seguintes campos:
+        1. "sentiment": Sentimento atual do cliente (Positivo, Neutro, Cético, Irritado).
+        2. "detected_objections": Lista de objeções identificadas (ex: Preço, Concorrência, Autoridade).
+        3. "buying_stage": Estágio de compra (Curiosidade, Consideração, Decisão).
+        4. "suggested_strategy": Uma estratégia tática para o vendedor usar AGORA (ex: "Use a técnica de Espelhamento e foque na dor X").
+        5. "next_best_action": A próxima pergunta ou afirmação exata que deve ser feita para avançar a venda.
+        6. "coach_whisper": Uma dica curta e direta para o vendedor (ex: "Cuidado, ele está comparando com o concorrente Y, destaque nosso suporte").
+
+        Responda APENAS o JSON.
+        `;
+
+  const text = await callOpenAI(prompt, apiKey, "gpt-4-turbo-preview", true);
+  const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+  return JSON.parse(cleanText);
+};
+
+/**
+ * Analisa uma conversa e gera insights estratégicos de Vendas e Marketing
+ */
+const analyzeConversationStrategy = async (req, res) => {
+  const { messages, agentContext } = req.body;
+  const provider = 'openai';
+  const userId = req.user ? req.user.id : null;
+  const apiKey = await getEffectiveApiKey(provider, userId);
+
+  try {
+    const analysis = await analyzeStrategyInternal(messages, agentContext, apiKey);
+    res.json(analysis);
+  } catch (error) {
+    console.error('Error analyzing strategy:', error);
+    res.status(500).json({ error: 'Failed to analyze conversation' });
+  }
+};
+
+/**
+ * Gera uma configuração completa de agente baseada em uma descrição simples
+ */
+const generateAgentConfig = async (req, res) => {
+  const { description, provider = 'openai' } = req.body;
+  const userId = req.user ? req.user.id : null;
+  const apiKey = await getEffectiveApiKey(provider, userId);
+
+  if (!description) {
+    return res.status(400).json({ error: 'Description is required' });
+  }
+
+  // --- RAG: KNOWLEDGE BASE SEARCH FOR AGENT CONTEXT ---
+  let knowledgeContext = "";
+  try {
+    const queryVector = await generateEmbeddings(description, apiKey);
+    if (queryVector) {
+      const searchResult = await qdrantService.searchVectors('marketing_strategies', queryVector, 3);
+      if (searchResult.success && searchResult.results.length > 0) {
+        const docs = searchResult.results.map(r => r.payload.content || r.payload.text).join("\n\n");
+        knowledgeContext = `
+        📚 **CONHECIMENTO INTERNO RELEVANTE ENCONTRADO:**
+        O usuário possui os seguintes documentos na base de conhecimento que parecem relevantes para este agente.
+        Tente incorporar as regras ou informações chave destes textos no "system prompt" do agente gerado:
+        ${docs.substring(0, 2000)}... (truncado)
+        `;
+        console.log("📚 RAG Context injected into Agent Builder");
+      }
+    }
+  } catch (ragErr) {
+    console.warn("Agent Builder RAG Search failed:", ragErr.message);
+  }
+
+  const prompt = `
+    Você é um Arquiteto de Agentes de IA Especialista.
+    Sua tarefa é criar uma configuração técnica completa para um Agente de IA com base na seguinte descrição do usuário:
+    
+    DESCRIÇÃO DO USUÁRIO: "${description}"
+
+    ${knowledgeContext}
+
+    Gere um JSON estrito com a seguinte estrutura exata, preenchendo os campos de forma criativa e profissional:
+
+    {
+      "identity": {
+        "name": "Nome criativo do agente",
+        "category": "sales",
+        "description": "Descrição curta da função do agente",
+        "class": "SalesAgent",
+        "specializationLevel": 5,
+        "status": "active"
+      },
+      "aiConfig": {
+        "provider": "openai",
+        "model": "gpt-4-turbo-preview",
+        "temperature": 0.7,
+        "topP": 0.9,
+        "maxTokens": 1000,
+        "responseMode": "balanced"
+      },
+      "prompts": {
+        "system": "Um prompt de sistema detalhado e robusto (min 3 parágrafos) que defina a persona, regras de negócio, o que fazer e o que NÃO fazer. Use markdown.",
+        "responseStructure": "Instruções sobre como estruturar a resposta (ex: usar tópicos, ser conciso).",
+        "analysis": "Instruções para análise de input do usuário."
+      }
+    }
+
+    Responda APENAS o JSON. Sem blocos de código markdown.
+    `;
+
+  try {
+    // Usar callOpenAI com jsonMode=true para garantir JSON válido
+    const text = await callOpenAI(prompt, apiKey, "gpt-4-turbo-preview", true);
+
+    const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+    const config = JSON.parse(cleanText);
+
+    res.json(config);
+
+  } catch (error) {
+    console.error('Error generating agent config:', error);
+    res.status(500).json({ error: 'Failed to generate configuration' });
+  }
+};
+
+const saveAnalysis = async (req, res) => {
+  const { messages, analysis, provider, model } = req.body;
+
+  try {
+    const result = await db.query(
+      'INSERT INTO chat_analyses (messages, analysis, provider, model) VALUES ($1, $2, $3, $4) RETURNING *',
+      [JSON.stringify(messages), JSON.stringify(analysis), provider, model]
+    );
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error saving analysis:', error);
+    res.status(500).json({ error: 'Failed to save analysis' });
+  }
+};
+
 const generateContentIdeasFromChat = async (req, res) => {
   const { provider = 'openai', limit = 50 } = req.body;
   const userId = req.user ? req.user.id : null;
