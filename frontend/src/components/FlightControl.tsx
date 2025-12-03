@@ -35,481 +35,6 @@ const itemVariants: Variants = {
 
 const COLUMNS: { id: LeadStatus; label: string; color: string; bgColor: string }[] = [
   { id: LeadStatus.NEW, label: 'Novos Leads', color: 'border-blue-500', bgColor: 'bg-blue-50' },
-  { id: LeadStatus.IN_PROGRESS, label: 'Em Atendimento', color: 'border-yellow-500', bgColor: 'bg-yellow-50' },
-  { id: LeadStatus.WAITING, label: 'Aguardando', color: 'border-orange-500', bgColor: 'bg-orange-50' },
-  { id: LeadStatus.CLOSED_WON, label: 'Venda Realizada', color: 'border-green-500', bgColor: 'bg-green-50' },
-  { id: LeadStatus.CLOSED_LOST, label: 'Perdido', color: 'border-gray-500', bgColor: 'bg-gray-50' },
-];
-
-interface LeadDetailModalProps {
-  lead: Lead;
-  onClose: () => void;
-  onUpdate: (leadId: string, updates: Partial<Lead>) => void;
-}
-
-const SUGGESTED_TAGS = ["Quente", "Interessado", "Reunião Agendada", "Sem Resposta"];
-
-const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpdate }) => {
-  const navigate = useNavigate();
-  const [notes, setNotes] = useState(lead.notes || '');
-  const [isAddingTag, setIsAddingTag] = useState(false);
-  const [newTag, setNewTag] = useState('');
-
-  const handleSaveNotes = () => {
-    console.log('Saving notes for lead:', lead.id, notes);
-    onUpdate(lead.id, { notes });
-    alert('Nota salva!');
-  };
-
-  const handleAddTag = (tagToAdd?: string) => {
-    const tag = tagToAdd || newTag;
-    if (!tag.trim()) return;
-    const currentTags = lead.tags || [];
-    if (!currentTags.includes(tag)) {
-      onUpdate(lead.id, { tags: [...currentTags, tag] });
-    }
-    setNewTag('');
-    setIsAddingTag(false);
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    const currentTags = lead.tags || [];
-    onUpdate(lead.id, { tags: currentTags.filter(t => t !== tagToRemove) });
-  };
-
-  const handleQuickAction = (action: 'call' | 'email' | 'whatsapp' | 'schedule') => {
-    console.log('Quick action triggered:', action);
-    switch (action) {
-      case 'call':
-        if (!lead.phone) {
-          alert('Telefone não cadastrado');
-          return;
-        }
-        window.location.href = `tel:${lead.phone}`;
-        break;
-      case 'email':
-        if (!lead.email) {
-          alert('Email não cadastrado');
-          return;
-        }
-        window.location.href = `mailto:${lead.email}`;
-        break;
-      case 'whatsapp':
-        if (!lead.phone) {
-          alert('Telefone não cadastrado');
-          return;
-        }
-        const cleanPhone = lead.phone.replace(/\D/g, '');
-        if (cleanPhone) {
-          window.open(`https://wa.me/55${cleanPhone}`, '_blank');
-        } else {
-          alert('Telefone inválido para WhatsApp');
-        }
-        break;
-      case 'schedule':
-        console.log('Navigating to calendar');
-        navigate('/social-calendar');
-        break;
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
-          <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-2xl font-bold mb-1">{lead.name}</h2>
-              <p className="text-blue-100 text-sm">{lead.productInterest}</p>
-            </div>
-            <button onClick={onClose} className="text-white/80 hover:text-white">
-              <X size={24} />
-            </button>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">
-              {lead.source}
-            </span>
-            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">
-              R$ {lead.value.toLocaleString('pt-BR')}
-            </span>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Quick Actions */}
-            <div className="md:col-span-2">
-              <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Ações Rápidas</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <button
-                  onClick={() => handleQuickAction('call')}
-                  className="flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 px-4 py-3 rounded-lg transition-colors"
-                >
-                  <Phone size={16} />
-                  <span className="text-sm font-medium">Ligar</span>
-                </button>
-                <button
-                  onClick={() => handleQuickAction('email')}
-                  className="flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-3 rounded-lg transition-colors"
-                >
-                  <Mail size={16} />
-                  <span className="text-sm font-medium">Email</span>
-                </button>
-                <button
-                  onClick={() => handleQuickAction('whatsapp')}
-                  className="flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 px-4 py-3 rounded-lg transition-colors"
-                >
-                  <MessageSquare size={16} />
-                  <span className="text-sm font-medium">WhatsApp</span>
-                </button>
-                <button
-                  onClick={() => handleQuickAction('schedule')}
-                  className="flex items-center justify-center gap-2 bg-orange-50 hover:bg-orange-100 text-orange-700 px-4 py-3 rounded-lg transition-colors"
-                >
-                  <Calendar size={16} />
-                  <span className="text-sm font-medium">Agendar</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Lead Info */}
-            <div>
-              <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Informações</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm">
-                  <User size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Responsável:</span>
-                  <span className="font-medium">{lead.assignedTo}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Clock size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Último contato:</span>
-                  <span className="font-medium">{lead.lastContact}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Target size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Status:</span>
-                  <span className="font-medium capitalize">{lead.status.replace('_', ' ')}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div>
-              <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Tags</h3>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {lead.tags?.map(tag => (
-                  <span key={tag} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 group">
-                    <Tag size={12} />
-                    {tag}
-                    <button onClick={() => handleRemoveTag(tag)} className="ml-1 text-gray-400 hover:text-red-500">
-                      <X size={10} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-
-              {isAddingTag ? (
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                  <div className="flex items-center gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-                      className="flex-1 px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      placeholder="Digite uma nova tag..."
-                      autoFocus
-                    />
-                    <button onClick={() => handleAddTag()} className="text-blue-600 hover:text-blue-800"><CheckCircle size={16} /></button>
-                    <button onClick={() => setIsAddingTag(false)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
-                  </div>
-
-                  <div className="space-y-1">
-                    <p className="text-[10px] text-gray-500 font-semibold uppercase">Sugestões:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {SUGGESTED_TAGS.filter(t => !lead.tags?.includes(t)).map(tag => (
-                        <button
-                          key={tag}
-                          onClick={() => handleAddTag(tag)}
-                          className="text-xs bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600 px-2 py-1 rounded-md transition-all shadow-sm"
-                        >
-                          + {tag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setIsAddingTag(true)}
-                  className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors"
-                >
-                  + Adicionar Tag
-                </button>
-              )}
-            </div>
-
-            {/* Timeline */}
-            <div className="md:col-span-2">
-              <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Timeline de Atividades</h3>
-              <div className="space-y-3">
-                <div className="flex gap-3 items-start">
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                    <CheckCircle size={16} className="text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">Lead criado</p>
-                    <p className="text-xs text-gray-500">Há 2 horas via {lead.source}</p>
-                  </div>
-                </div>
-                <div className="flex gap-3 items-start">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                    <Phone size={16} className="text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">Primeira ligação realizada</p>
-                    <p className="text-xs text-gray-500">Há 1 hora por {lead.assignedTo}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div className="md:col-span-2">
-              <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Adicionar Nota</h3>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Digite suas observações sobre este lead..."
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                rows={4}
-              />
-              <button
-                onClick={handleSaveNotes}
-                className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
-              >
-                Salvar Nota
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-interface NewLeadModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (lead: any) => void;
-}
-
-const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSave }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    company: '',
-    source: 'manual',
-    status: 'new',
-    value: '',
-    notes: ''
-  });
-
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave({
-      ...formData,
-      value: Number(formData.value) || 0,
-      id: Math.random().toString(36).substr(2, 9), // Temp ID
-      lastContact: new Date().toLocaleDateString(),
-      assignedTo: 'Você'
-    });
-    onClose();
-  };
-
-  const handleQuickAction = (action: 'call' | 'email' | 'whatsapp') => {
-    switch (action) {
-      case 'call':
-        if (!formData.phone) {
-          alert('Telefone não preenchido');
-          return;
-        }
-        window.location.href = `tel:${formData.phone}`;
-        break;
-      case 'email':
-        if (!formData.email) {
-          alert('Email não preenchido');
-          return;
-        }
-        window.location.href = `mailto:${formData.email}`;
-        break;
-      case 'whatsapp':
-        if (!formData.phone) {
-          alert('Telefone não preenchido');
-          return;
-        }
-        const cleanPhone = formData.phone.replace(/\D/g, '');
-        if (cleanPhone) {
-          window.open(`https://wa.me/55${cleanPhone}`, '_blank');
-        } else {
-          alert('Telefone inválido para WhatsApp');
-        }
-        break;
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white flex justify-between items-center">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <Plus size={24} /> Novo Lead Manual
-          </h2>
-          <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
-            <X size={24} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[80vh]">
-          {/* Quick Actions for New Lead (Preview) */}
-          <div className="flex gap-3 justify-end mb-2">
-            <button
-              type="button"
-              onClick={() => handleQuickAction('call')}
-              className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
-              title="Ligar Agora"
-            >
-              <Phone size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickAction('email')}
-              className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-              title="Enviar Email"
-            >
-              <Mail size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickAction('whatsapp')}
-              className="p-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
-              title="WhatsApp"
-            >
-              <MessageSquare size={18} />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Nome Completo *</label>
-              <input
-                required
-                type="text"
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.name}
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: João Silva"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Empresa</label>
-              <input
-                type="text"
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.company}
-                onChange={e => setFormData({ ...formData, company: e.target.value })}
-                placeholder="Ex: Acme Corp"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Email *</label>
-              <input
-                required
-                type="email"
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.email}
-                onChange={e => setFormData({ ...formData, email: e.target.value })}
-                placeholder="joao@exemplo.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Telefone / WhatsApp</label>
-              <input
-                type="text"
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.phone}
-                onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Origem</label>
-              <select
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.source}
-                onChange={e => setFormData({ ...formData, source: e.target.value })}
-              >
-                <option value="manual">Manual / Prospecção</option>
-                <option value="indication">Indicação</option>
-                <option value="event">Evento</option>
-                <option value="social">Redes Sociais</option>
-                <option value="website">Site / Blog</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Status Inicial</label>
-              <select
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.status}
-                onChange={e => setFormData({ ...formData, status: e.target.value })}
-              >
-                <option value="new">Novo Lead</option>
-                <option value="in_progress">Em Atendimento</option>
-                <option value="waiting">Aguardando</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Valor Potencial (R$)</label>
-              <input
-                type="number"
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.value}
-                onChange={e => setFormData({ ...formData, value: e.target.value })}
-                placeholder="0.00"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700">Observações</label>
-            <textarea
-              className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"
-              value={formData.notes}
-              onChange={e => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Detalhes importantes sobre este lead..."
-            ></textarea>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors">
-              Cancelar
-            </button>
-            <button type="submit" className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-blue-200">
-              <Save size={18} /> Salvar Lead
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
 export const FlightControl: React.FC = () => {
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClient, setSelectedClient] = useState('all');
@@ -857,159 +382,356 @@ export const FlightControl: React.FC = () => {
               <TrendingUp size={16} className="opacity-60" />
             </div>
             <p className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</p>
-            <p className="text-xs text-purple-100">Taxa de Conversão</p>
-          </motion.div>
+            alert('Erro ao criar lead');
+      }
+    } catch (error) {
+              console.error(error);
+            alert('Erro de conexão');
+    }
+  };
 
-          <motion.div variants={itemVariants} className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
-            <div className="flex items-center justify-between mb-2">
-              <Target size={20} className="opacity-80" />
-              <TrendingUp size={16} className="opacity-60" />
-            </div>
-            <p className="text-2xl font-bold">{formatCurrency(metrics.avgDealSize)}</p>
-            <p className="text-xs text-orange-100">Ticket Médio</p>
-          </motion.div>
-        </div>
+  const handleExport = () => {
+    const headers = ['Nome', 'Email', 'Telefone', 'Empresa', 'Origem', 'Status', 'Valor', 'Data Contato', 'Responsável', 'Interesse Produto', 'Tags'];
+            const csvContent = [
+            headers.join(','),
+      ...filteredLeads.map(lead => [
+            `"${lead.name}"`,
+            `"${lead.email}"`,
+            `"${lead.phone}"`,
+            `"${lead.company || ''}"`,
+            `"${lead.source}"`,
+            `"${lead.status}"`,
+            `"${lead.value}"`,
+            `"${lead.lastContact}"`,
+            `"${lead.assignedTo}"`,
+            `"${lead.productInterest || ''}"`,
+            `"${lead.tags ? lead.tags.join(';') : ''}"`
+      ].map(field => field.replace(/"/g, '""')).join(',')) // Escape double quotes within fields
+            ].join('\n');
 
-        {/* Filters Bar */}
-        <motion.div variants={itemVariants} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            {/* Search */}
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar lead..."
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
+            const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `leads_export_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+  };
 
-            {/* Source Filter */}
-            <select
-              value={selectedSource}
-              onChange={(e) => setSelectedSource(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="all">Todas as Fontes</option>
-              {sources.map(source => (
-                <option key={source} value={source}>{source}</option>
-              ))}
-            </select>
+  const getLeadsByStatus = (status: LeadStatus) => filteredLeads.filter(l => l.status === status);
 
-            {/* Value Filter */}
-            <select
-              value={selectedValue}
-              onChange={(e) => setSelectedValue(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="all">Todos os Valores</option>
-              <option value="low">Até R$ 3.000</option>
-              <option value="medium">R$ 3.000 - R$ 10.000</option>
-              <option value="high">Acima de R$ 10.000</option>
-            </select>
+  // Metrics calculation
+  const metrics = useMemo(() => {
+    const totalLeads = filteredLeads.length;
+    const totalValue = filteredLeads.reduce((sum, lead) => sum + lead.value, 0);
+    const wonLeads = filteredLeads.filter(l => l.status === LeadStatus.CLOSED_WON).length;
+    const conversionRate = totalLeads > 0 ? (wonLeads / totalLeads) * 100 : 0;
 
-            {/* Assignee Filter */}
-            <select
-              value={selectedAssignee}
-              onChange={(e) => setSelectedAssignee(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="all">Todos Responsáveis</option>
-              {assignees.map(assignee => (
-                <option key={assignee} value={assignee}>{assignee}</option>
-              ))}
-            </select>
+            return {
+              totalLeads,
+              totalValue,
+              conversionRate,
+              avgDealSize: totalLeads > 0 ? totalValue / totalLeads : 0
+    };
+  }, [filteredLeads]);
 
-            {/* Clear Filters */}
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedSource('all');
-                setSelectedValue('all');
-                setSelectedAssignee('all');
-              }}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              <X size={16} />
-              Limpar
-            </button>
-          </div>
-        </motion.div>
+  // Drag & Drop handlers
+  const handleDragStart = (lead: Lead) => {
+              setDraggedLead(lead);
+  };
 
-        {/* Kanban Board */}
-        <motion.div variants={itemVariants} className="w-full overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-full w-max">
-            {COLUMNS.map((col) => (
-              <div
-                key={col.id}
-                onDragOver={handleDragOver}
-                onDrop={() => handleDrop(col.id)}
-                className="flex-1 flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 min-w-[250px] w-[250px] flex-shrink-0 transition-all hover:border-gray-300"
-              >
-                <div className={`p-4 border-t-4 ${col.color} ${col.bgColor} rounded-t-xl shadow-sm`}>
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-semibold text-gray-700">{col.label}</h3>
-                    <span className="bg-white text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
-                      {getLeadsByStatus(col.id).length}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex-1 p-3 space-y-3">
-                  {getLeadsByStatus(col.id).map((lead) => (
-                    <div
-                      key={lead.id}
-                      draggable
-                      onDragStart={() => handleDragStart(lead)}
-                      onClick={() => setSelectedLead(lead)}
-                      className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-move group hover:scale-[1.02]"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${lead.source === 'Google Ads' ? 'bg-blue-50 text-blue-600' :
-                          lead.source === 'Instagram' ? 'bg-pink-50 text-pink-600' :
-                            'bg-green-50 text-green-600'
-                          }`}>
-                          {lead.source}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedLead(lead);
-                          }}
-                          className="text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
+  const handleDragOver = (e: React.DragEvent) => {
+              e.preventDefault();
+  };
+
+  const handleDrop = async (newStatus: LeadStatus) => {
+    if (!draggedLead) return;
+
+            // Otimistic Update
+            const oldLeads = [...localLeads];
+    setLocalLeads(prev => prev.map(lead =>
+            lead.id === draggedLead.id ? {...lead, status: newStatus } : lead
+            ));
+            setDraggedLead(null);
+
+            try {
+      const token = localStorage.getItem('token');
+            await fetch(`${import.meta.env.VITE_API_URL}/api/leads/${draggedLead.id}/status`, {
+              method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+            body: JSON.stringify({status: newStatus.toLowerCase() })
+      });
+    } catch (error) {
+              console.error('Erro ao atualizar status:', error);
+            setLocalLeads(oldLeads); // Revert
+            alert('Erro ao atualizar status');
+    }
+  };
+
+            const handleUpdateLead = async (leadId: string, updates: Partial<Lead>) => {
+              // Otimistic Update
+              setLocalLeads(prev => prev.map(lead =>
+                lead.id === leadId ? { ...lead, ...updates } : lead
+              ));
+
+              try {
+      const token = localStorage.getItem('token');
+              await fetch(`${import.meta.env.VITE_API_URL}/api/leads/${leadId}`, {
+                method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+        },
+              body: JSON.stringify(updates)
+      });
+    } catch (error) {
+                console.error('Erro ao atualizar lead:', error);
+              alert('Erro ao salvar alterações');
+    }
+  };
+
+  const formatCurrency = (val: number) => val.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL' });
+
+  const sources = Array.from(new Set(localLeads.map(l => l.source)));
+  const assignees = Array.from(new Set(localLeads.map(l => l.assignedTo)));
+
+              return (
+              <>
+                <motion.div
+                  className="space-y-6"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {/* Header Section */}
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <motion.div variants={itemVariants}>
+                      <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        Controle de Voo <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.FlightControl}</span>
+                        <span className="text-xs font-normal bg-slate-800 text-white px-2 py-1 rounded animate-pulse">AO VIVO</span>
+                      </h2>
+                      <p className="text-gray-500 text-sm">Gestão operacional de leads em tempo real</p>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants} className="flex gap-3 w-full md:w-auto">
+                      <div className="relative flex-1 md:w-64">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+                          <Users size={16} />
+                        </div>
+                        <select
+                          value={selectedClient}
+                          onChange={(e) => setSelectedClient(e.target.value)}
+                          className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
                         >
-                          <MoreVertical size={14} />
-                        </button>
+                          <option value="all">Todos os Clientes</option>
+                          {clients.map((client: any) => (
+                            <option key={client.id} value={client.id}>{client.name}</option>
+                          ))}
+                        </select>
                       </div>
-                      <h4 className="font-bold text-gray-900 mb-1">{lead.name}</h4>
-                      <p className="text-sm text-gray-500 mb-3">{lead.productInterest}</p>
-                      <div className="flex justify-between items-center text-xs text-gray-400">
-                        <span>{formatCurrency(lead.value)}</span>
-                        <span>{lead.assignedTo}</span>
+
+                      <button
+                        onClick={handleExport}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+                      >
+                        <Download size={18} />
+                        <span className="hidden sm:inline">Exportar</span>
+                      </button>
+                      <button
+                        onClick={() => setShowNewLeadModal(true)}
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 transition-all"
+                      >
+                        <Plus size={18} />
+                        <span>Lead Manual</span>
+                      </button>
+                    </motion.div>
+                  </div>
+
+                  {/* Metrics Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <motion.div variants={itemVariants} className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
+                      <div className="flex items-center justify-between mb-2">
+                        <Target size={20} className="opacity-80" />
+                        <TrendingUp size={16} className="opacity-60" />
                       </div>
+                      <p className="text-2xl font-bold">{metrics.totalLeads}</p>
+                      <p className="text-xs text-blue-100">Total de Leads</p>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants} className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
+                      <div className="flex items-center justify-between mb-2">
+                        <DollarSign size={20} className="opacity-80" />
+                        <TrendingUp size={16} className="opacity-60" />
+                      </div>
+                      <p className="text-2xl font-bold">{formatCurrency(metrics.totalValue)}</p>
+                      <p className="text-xs text-green-100">Pipeline Total</p>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants} className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
+                      <div className="flex items-center justify-between mb-2">
+                        <CheckCircle size={20} className="opacity-80" />
+                        <TrendingUp size={16} className="opacity-60" />
+                      </div>
+                      <p className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</p>
+                      <p className="text-xs text-purple-100">Taxa de Conversão</p>
+                    </motion.div>
+
+                    <motion.div variants={itemVariants} className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
+                      <div className="flex items-center justify-between mb-2">
+                        <DollarSign size={20} className="opacity-80" />
+                        <TrendingUp size={16} className="opacity-60" />
+                      </div>
+                      <p className="text-2xl font-bold">{formatCurrency(metrics.avgDealSize)}</p>
+                      <p className="text-xs text-orange-100">Ticket Médio</p>
+                    </motion.div>
+                  </div>
+
+                  {/* Filters */}
+                  <motion.div variants={itemVariants} className="flex flex-wrap gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div className="flex-1 min-w-[200px] relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                      <input
+                        type="text"
+                        placeholder="Buscar por nome ou email..."
+                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </motion.div>
+                    <select
+                      className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={selectedSource}
+                      onChange={(e) => setSelectedSource(e.target.value)}
+                    >
+                      <option value="all">Todas as Origens</option>
+                      {sources.map(source => (
+                        <option key={source} value={source}>{source}</option>
+                      ))}
+                    </select>
+                    <select
+                      className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={selectedValue}
+                      onChange={(e) => setSelectedValue(e.target.value)}
+                    >
+                      <option value="all">Qualquer Valor</option>
+                      <option value="high">Alto Ticket ({'>'} 10k)</option>
+                      <option value="medium">Médio (3k - 10k)</option>
+                      <option value="low">Baixo ({'<'} 3k)</option>
+                    </select>
+                    <select
+                      className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={selectedAssignee}
+                      onChange={(e) => setSelectedAssignee(e.target.value)}
+                    >
+                      <option value="all">Todos Responsáveis</option>
+                      {assignees.map(assignee => (
+                        <option key={assignee} value={assignee}>{assignee}</option>
+                      ))}
+                    </select>
+                  </motion.div>
 
-      {/* Modals */}
-      {selectedLead && (
-        <LeadDetailModal
-          lead={selectedLead}
-          onClose={() => setSelectedLead(null)}
-          onUpdate={handleUpdateLead}
-        />
-      )}
+                  {/* Kanban Board */}
+                  <div className="flex gap-4 overflow-x-auto pb-6 min-h-[600px]">
+                    {COLUMNS.map(column => (
+                      <div
+                        key={column.id}
+                        className={`flex-1 min-w-[300px] rounded-xl ${column.bgColor} p-4 flex flex-col gap-3`}
+                        onDragOver={handleDragOver}
+                        onDrop={() => handleDrop(column.id)}
+                      >
+                        <div className={`flex items-center justify-between pb-3 border-b-2 ${column.color} mb-2`}>
+                          <h3 className="font-bold text-gray-700">{column.label}</h3>
+                          <span className="bg-white px-2 py-1 rounded-full text-xs font-bold text-gray-500 shadow-sm">
+                            {getLeadsByStatus(column.id).length}
+                          </span>
+                        </div>
 
-      <NewLeadModal
-        isOpen={showNewLeadModal}
-        onClose={() => setShowNewLeadModal(false)}
-        onSave={handleAddLead}
-      />
-    </>
-  );
+                        <div className="flex-1 flex flex-col gap-3">
+                          {getLeadsByStatus(column.id).map(lead => (
+                            <motion.div
+                              key={lead.id}
+                              layoutId={lead.id}
+                              draggable
+                              onDragStart={() => handleDragStart(lead)}
+                              onClick={() => setSelectedLead(lead)}
+                              className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-move hover:shadow-md transition-all group relative"
+                            >
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-bold text-gray-800 line-clamp-1">{lead.name}</h4>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedLead(lead);
+                                  }}
+                                  className="text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <MoreVertical size={14} />
+                                </button>
+                              </div>
+
+                              <div className="space-y-2 mb-3">
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <Mail size={12} />
+                                  <span className="truncate">{lead.email}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <Phone size={12} />
+                                  <span>{lead.phone}</span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+                                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                  {lead.source}
+                                </span>
+                                <span className="text-sm font-bold text-green-600">
+                                  {formatCurrency(lead.value)}
+                                </span>
+                              </div>
+
+                              {lead.tags && lead.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {lead.tags.slice(0, 3).map(tag => (
+                                    <span key={tag} className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">
+                                      {tag}
+                                    </span>
+                                  ))}
+                                  {lead.tags.length > 3 && (
+                                    <span className="text-[10px] text-gray-400 px-1">+{lead.tags.length - 3}</span>
+                                  )}
+                                </div>
+                              )}
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* Modals */}
+                {selectedLead && (
+                  <LeadModal
+                    lead={selectedLead}
+                    isOpen={!!selectedLead}
+                    onClose={() => setSelectedLead(null)}
+                    onSave={(updates) => handleUpdateLead(selectedLead.id, updates)}
+                    mode="edit"
+                  />
+                )}
+
+                {showNewLeadModal && (
+                  <LeadModal
+                    isOpen={showNewLeadModal}
+                    onClose={() => setShowNewLeadModal(false)}
+                    onSave={handleAddLead}
+                    mode="create"
+                  />
+                )}
+              </>
+              );
 };
