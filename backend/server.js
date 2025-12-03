@@ -392,12 +392,16 @@ app.get('/auth/google-ads/callback', integrationsController.handleGoogleAdsCallb
 app.get('/auth/meta-ads/callback', integrationsController.handleMetaAdsCallback);
 
 app.post('/api/integrations/whatsapp/setup', integrationsController.setupWhatsAppWebhook);
+app.get('/api/integrations/whatsapp', authenticateToken, integrationsController.getWhatsAppConfig);
+app.post('/api/integrations/whatsapp', authenticateToken, integrationsController.saveWhatsAppConfig);
 app.post('/api/integrations/n8n', authenticateToken, integrationsController.saveN8nConfig);
 
 // --- WEBHOOKS ---
 const whatsappController = require('./whatsappController');
 app.post('/webhooks/whatsapp', whatsappController.handleWebhook);
 app.post('/api/whatsapp/send', authenticateToken, whatsappController.sendOutboundMessage);
+app.get('/api/whatsapp/sessions', authenticateToken, whatsappController.getSessions);
+app.get('/api/whatsapp/sessions/:sessionId/messages', authenticateToken, whatsappController.getSessionMessages);
 
 // --- AI SERVICES ---
 const aiController = require('./aiController');
