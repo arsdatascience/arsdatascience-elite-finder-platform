@@ -1,5 +1,8 @@
 const db = require('./database');
-const aiController = require('./aiController');
+// Lazy load aiController to avoid potential circular dependency issues if any arise later, though currently none visible.
+// const aiController = require('./aiController'); 
+let aiController;
+try { aiController = require('./aiController'); } catch (e) { console.error('Failed to load aiController', e); }
 const whatsappService = require('./services/whatsappService');
 
 // Helper para normalizar telefone (remove +55, espaços, traços)
@@ -186,4 +189,62 @@ const handleWebhook = async (req, res) => {
     }
 };
 
-module.exports = { handleWebhook, sendOutboundMessage };
+const getSessions = async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT 
+                cs.id, 
+                cs.status, 
+                cs.created_at, 
+                cs.updated_at,
+                cs.metadata,
+                c.name as client_name,
+                c.phone as client_phone
+            FROM chat_sessions cs
+            LEFT JOIN clients c ON cs.client_id = c.id
+            WHERE cs.channel = 'whatsapp' AND cs.status = 'active'
+            ORDER BY cs.updated_at DESC
+            LIMIT 50
+        `);
+
+        const sessions = result.rows.map(row => ({
+            id: row.id,
+            status: row.status,
+            name: row.client_name || row.metadata?.pushName || 'Desconhecido',
+            phone: row.client_phone || row.metadata?.phone || 'Sem número',
+            lastUpdate: row.updated_at
+        }));
+
+        res.json(sessions);
+    } catch (error) {
+        console.error('Error fetching sessions:', error);
+        res.status(500).json({ error: 'Failed to fetch sessions' });
+    }
+};
+
+const getSessionMessages = async (req, res) => {
+    const { sessionId } = req.params;
+    try {
+        const result = await db.query(`
+            SELECT id, sender_type, content, created_at 
+            FROM chat_messages 
+            WHERE session_id = $1 
+            ORDER BY created_at ASC
+        `, [sessionId]);
+
+        const messages = result.rows.map(row => ({
+            id: row.id,
+            role: row.sender_type === 'agent' ? 'agent' : 'user',
+            content: row.content,
+            timestamp: row.created_at,
+            source: row.sender_type === 'agent' ? 'web' : 'whatsapp'
+        }));
+
+        res.json(messages);
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+        res.status(500).json({ error: 'Failed to fetch messages' });
+    }
+};
+
+module.exports = { handleWebhook, sendOutboundMessage, getSessions, getSessionMessages };
