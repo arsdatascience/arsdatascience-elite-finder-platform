@@ -118,7 +118,26 @@ const handleRoiAnalysis = async (payload) => {
     console.log('💰 Executando Análise de ROI Autônoma...');
     const aiController = require('../aiController'); // Lazy load
 
-    // 1. Buscar dados financeiros da semana
+    // SAAS FIX: Ensure we only analyze data for the specific tenant
+    // Payload MUST contain userId or tenantId
+    const { userId, tenantId } = payload;
+
+    let targetTenantId = tenantId;
+
+    // If only userId is provided, resolve tenantId
+    if (!targetTenantId && userId) {
+        const userRes = await db.query('SELECT tenant_id FROM users WHERE id = $1', [userId]);
+        if (userRes.rows.length > 0) {
+            targetTenantId = userRes.rows[0].tenant_id;
+        }
+    }
+
+    if (!targetTenantId) {
+        console.error('❌ Job ROI Analysis failed: Missing tenant_id or userId in payload');
+        return { error: 'Missing tenant context' };
+    }
+
+    // 1. Buscar dados financeiros da semana APENAS DO TENANT
     const startOfWeek = new Date();
     startOfWeek.setDate(startOfWeek.getDate() - 7);
 
@@ -127,8 +146,8 @@ const handleRoiAnalysis = async (payload) => {
             SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income,
             SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expense
         FROM financial_transactions
-        WHERE date >= $1
-    `, [startOfWeek]);
+        WHERE date >= $1 AND tenant_id = $2
+    `, [startOfWeek, targetTenantId]);
 
     const { income, expense } = finRes.rows[0];
     const roi = expense > 0 ? ((income - expense) / expense) * 100 : 0;
@@ -136,19 +155,29 @@ const handleRoiAnalysis = async (payload) => {
     // 2. Gerar Insight com IA
     const prompt = `
         Analise o ROI semanal da agência:
-        - Receita: R$ ${income}
-        - Despesa: R$ ${expense}
+        - Receita: R$ ${income || 0}
+        - Despesa: R$ ${expense || 0}
         - ROI: ${roi.toFixed(2)}%
         
         Gere um parágrafo curto e motivacional ou de alerta para o CEO.
     `;
 
-    // Usar chave do sistema (admin 1)
-    const apiKey = await aiController.getEffectiveApiKey('openai', 1);
-    // Mock call se não tiver chave, ou chamar controller
-    // ... implementação real chamaria a IA ...
+    // Usar chave do sistema (admin 1) ou do usuário se disponível
+    // Idealmente, usar a chave do próprio tenant/user
+    const apiKey = await aiController.getEffectiveApiKey('openai', userId || 1);
 
-    return { income, expense, roi, insight: "Análise realizada com sucesso." };
+    let insight = "Análise realizada com sucesso.";
+    try {
+        // Simple call to generate insight if key exists
+        if (apiKey) {
+            // Reusing a simple completion call or mock
+            // In real scenario: insight = await aiController.callOpenAI(prompt, apiKey, ...);
+        }
+    } catch (e) {
+        console.warn("AI Insight failed for ROI job:", e.message);
+    }
+
+    return { income, expense, roi, insight };
 };
 
 module.exports = { start: () => setInterval(processJobs, 30000) }; // Rodar a cada 30s

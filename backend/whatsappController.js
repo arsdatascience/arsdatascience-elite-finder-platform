@@ -87,13 +87,33 @@ const handleWebhook = async (req, res) => {
         console.log(`📩 WhatsApp Message from ${pushName} (${phone}): ${messageContent}`);
 
         // 1. Identificar ou Criar Cliente/Lead
-        let clientResult = await db.query('SELECT id, name FROM clients WHERE whatsapp LIKE $1 OR phone LIKE $1', [`%${phone}%`]);
+        // SAAS FIX: In a real multi-tenant scenario, we MUST know which tenant owns this WhatsApp instance.
+        // Assuming 'instance' field from EvolutionAPI maps to a tenant or we have a mapping table.
+        // For now, we will try to find the client. If duplicates exist across tenants, this is risky without instance mapping.
+
+        let tenantId = null;
+        // TODO: Resolve tenantId from req.body.instance (e.g., SELECT tenant_id FROM instances WHERE name = $1)
+
+        let query = 'SELECT id, name, tenant_id FROM clients WHERE (whatsapp LIKE $1 OR phone LIKE $1)';
+        let params = [`%${phone}%`];
+
+        if (tenantId) {
+            query += ' AND tenant_id = $2';
+            params.push(tenantId);
+        }
+
+        // Order by created_at to get the most recent match if duplicates exist (temporary mitigation)
+        query += ' ORDER BY created_at DESC LIMIT 1';
+
+        let clientResult = await db.query(query, params);
         let clientId = null;
         let clientName = pushName;
 
         if (clientResult.rows.length > 0) {
             clientId = clientResult.rows[0].id;
             clientName = clientResult.rows[0].name;
+            // If we found a client, we can assume the interaction belongs to their tenant
+            tenantId = clientResult.rows[0].tenant_id;
         } else {
             // Opcional: Criar Lead automaticamente
             // await db.query('INSERT INTO leads ...');
