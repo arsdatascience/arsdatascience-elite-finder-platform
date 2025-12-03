@@ -17,15 +17,21 @@ const pool = new Pool({
 // ============================================
 // USERS
 // ============================================
+// ============================================
+// USERS
+// ============================================
 const getUsers = async (req, res) => {
+    const tenantId = req.user.tenant_id;
     try {
+        // SAAS FIX: Filter users by tenant
         const result = await pool.query(`
             SELECT u.id, u.name, u.first_name, u.last_name, u.email, u.role, u.avatar_url, u.created_at, u.status,
                    t.name as tenant_name
             FROM users u
             LEFT JOIN tenants t ON u.tenant_id = t.id
+            WHERE u.tenant_id = $1
             ORDER BY u.created_at DESC
-        `);
+        `, [tenantId]);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -37,8 +43,10 @@ const getUsers = async (req, res) => {
 // CLIENTS
 // ============================================
 const getClients = async (req, res) => {
+    const tenantId = req.user.tenant_id;
     try {
-        const result = await pool.query('SELECT * FROM clients ORDER BY name');
+        // SAAS FIX: Filter clients by tenant
+        const result = await pool.query('SELECT * FROM clients WHERE tenant_id = $1 ORDER BY name', [tenantId]);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching clients:', error);
@@ -47,6 +55,7 @@ const getClients = async (req, res) => {
 };
 
 const createClient = async (req, res) => {
+    const tenantId = req.user.tenant_id;
     const {
         name, type, email, phone, whatsapp, document, foundationDate,
         cep, street, number, complement, neighborhood, city, state,
@@ -55,14 +64,16 @@ const createClient = async (req, res) => {
     } = req.body;
 
     try {
+        // SAAS FIX: Insert with tenant_id
         const result = await pool.query(
             `INSERT INTO clients (
-                name, type, email, phone, whatsapp, document, foundation_date,
+                tenant_id, name, type, email, phone, whatsapp, document, foundation_date,
                 address_zip, address_street, address_number, address_complement, address_neighborhood, address_city, address_state,
                 instagram_url, facebook_url, linkedin_url, website,
                 notes, company_size, industry
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING *`,
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) RETURNING *`,
             [
+                tenantId,
                 name, type, email, phone, whatsapp, document, foundationDate || null,
                 cep, street, number, complement, neighborhood, city, state,
                 instagramUrl, facebookUrl, linkedinUrl, website,
@@ -78,6 +89,7 @@ const createClient = async (req, res) => {
 
 const updateClient = async (req, res) => {
     const { id } = req.params;
+    const tenantId = req.user.tenant_id;
     const {
         name, type, email, phone, whatsapp, document, foundationDate,
         cep, street, number, complement, neighborhood, city, state,
@@ -86,6 +98,7 @@ const updateClient = async (req, res) => {
     } = req.body;
 
     try {
+        // SAAS FIX: Ensure tenant_id matches
         const result = await pool.query(
             `UPDATE clients SET 
                 name = $1, type = $2, email = $3, phone = $4, whatsapp = $5, document = $6, foundation_date = $7,
@@ -93,15 +106,21 @@ const updateClient = async (req, res) => {
                 instagram_url = $15, facebook_url = $16, linkedin_url = $17, website = $18,
                 notes = $19, company_size = $20, industry = $21, 
                 updated_at = NOW() 
-            WHERE id = $22 RETURNING *`,
+            WHERE id = $22 AND tenant_id = $23 RETURNING *`,
             [
                 name, type, email, phone, whatsapp, document, foundationDate || null,
                 cep, street, number, complement, neighborhood, city, state,
                 instagramUrl, facebookUrl, linkedinUrl, website,
                 notes, company_size, industry,
-                id
+                id,
+                tenantId
             ]
         );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Client not found or access denied' });
+        }
+
         res.json(result.rows[0]);
     } catch (error) {
         console.error('Error updating client:', error);
@@ -115,12 +134,27 @@ const updateClient = async (req, res) => {
 const getCampaigns = async (req, res) => {
     try {
         const { client_id } = req.query;
-        let query = 'SELECT * FROM campaigns ORDER BY created_at DESC';
-        let params = [];
+        const tenantId = req.user.tenant_id;
+
+        // SAAS FIX: Filter by tenant via JOIN
+        let query = `
+            SELECT cmp.* 
+            FROM campaigns cmp
+            JOIN clients c ON cmp.client_id = c.id
+            WHERE c.tenant_id = $1
+            ORDER BY cmp.created_at DESC
+        `;
+        let params = [tenantId];
 
         if (client_id && client_id !== 'all') {
-            query = 'SELECT * FROM campaigns WHERE client_id = $1 ORDER BY created_at DESC';
-            params = [client_id];
+            query = `
+                SELECT cmp.* 
+                FROM campaigns cmp
+                JOIN clients c ON cmp.client_id = c.id
+                WHERE c.tenant_id = $1 AND cmp.client_id = $2
+                ORDER BY cmp.created_at DESC
+            `;
+            params = [tenantId, client_id];
         }
 
         const result = await pool.query(query, params);
@@ -149,21 +183,34 @@ const getCampaigns = async (req, res) => {
 // ============================================
 // LEADS
 // ============================================
+// ============================================
+// LEADS
+// ============================================
 const getLeads = async (req, res) => {
     try {
         const { client_id, status } = req.query;
-        let query = 'SELECT * FROM leads ORDER BY created_at DESC';
-        let params = [];
+        const tenantId = req.user.tenant_id;
+
+        // SAAS FIX: Filter leads by tenant via JOIN
+        let query = `
+            SELECT l.* 
+            FROM leads l
+            JOIN clients c ON l.client_id = c.id
+            WHERE c.tenant_id = $1
+        `;
+        let params = [tenantId];
 
         if (client_id && client_id !== 'all') {
-            query = 'SELECT * FROM leads WHERE client_id = $1 ORDER BY created_at DESC';
-            params = [client_id];
+            query += ` AND l.client_id = $${params.length + 1}`;
+            params.push(client_id);
         }
 
         if (status) {
-            query += params.length > 0 ? ' AND status = $2' : ' WHERE status = $1';
+            query += ` AND l.status = $${params.length + 1}`;
             params.push(status);
         }
+
+        query += ' ORDER BY l.created_at DESC';
 
         const result = await pool.query(query, params);
         res.json(result.rows);
@@ -175,7 +222,15 @@ const getLeads = async (req, res) => {
 
 const createLead = async (req, res) => {
     const { client_id, name, email, phone, company, source, status, value, notes, tags } = req.body;
+    const tenantId = req.user.tenant_id;
+
     try {
+        // SAAS FIX: Verify if client belongs to tenant
+        const clientCheck = await pool.query('SELECT id FROM clients WHERE id = $1 AND tenant_id = $2', [client_id, tenantId]);
+        if (clientCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'Access denied: Client does not belong to your tenant' });
+        }
+
         const result = await pool.query(
             'INSERT INTO leads (client_id, name, email, phone, company, source, status, value, notes, tags) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
             [client_id, name, email, phone, company, source, status || 'new', value || 0, notes, tags || []]
@@ -213,11 +268,23 @@ const createLead = async (req, res) => {
 const updateLeadStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
+    const tenantId = req.user.tenant_id;
+
     try {
+        // SAAS FIX: Verify ownership
         const result = await pool.query(
-            'UPDATE leads SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
-            [status, id]
+            `UPDATE leads l
+             SET status = $1, updated_at = NOW() 
+             FROM clients c
+             WHERE l.client_id = c.id AND l.id = $2 AND c.tenant_id = $3
+             RETURNING l.*`,
+            [status, id, tenantId]
         );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Lead not found or access denied' });
+        }
+
         const updatedLead = result.rows[0];
         res.json(updatedLead);
 
@@ -233,19 +300,27 @@ const updateLeadStatus = async (req, res) => {
         }
     } catch (error) {
         console.error('Error updating lead:', error);
+        res.status(500).json({ error: 'Failed to update lead status' });
     }
 };
 
 const updateLead = async (req, res) => {
     const { id } = req.params;
     const { name, email, phone, company, source, status, value, notes, tags } = req.body;
+    const tenantId = req.user.tenant_id;
+
     try {
+        // SAAS FIX: Verify ownership
         const result = await pool.query(
-            'UPDATE leads SET name = COALESCE($1, name), email = COALESCE($2, email), phone = COALESCE($3, phone), company = COALESCE($4, company), source = COALESCE($5, source), status = COALESCE($6, status), value = COALESCE($7, value), notes = COALESCE($8, notes), tags = COALESCE($9, tags), updated_at = NOW() WHERE id = $10 RETURNING *',
-            [name, email, phone, company, source, status, value, notes, tags, id]
+            `UPDATE leads l
+             SET name = COALESCE($1, name), email = COALESCE($2, email), phone = COALESCE($3, phone), company = COALESCE($4, company), source = COALESCE($5, source), status = COALESCE($6, status), value = COALESCE($7, value), notes = COALESCE($8, notes), tags = COALESCE($9, tags), updated_at = NOW() 
+             FROM clients c
+             WHERE l.client_id = c.id AND l.id = $10 AND c.tenant_id = $11
+             RETURNING l.*`,
+            [name, email, phone, company, source, status, value, notes, tags, id, tenantId]
         );
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Lead not found' });
+            return res.status(404).json({ error: 'Lead not found or access denied' });
         }
         res.json(result.rows[0]);
     } catch (error) {
@@ -259,10 +334,17 @@ const updateLead = async (req, res) => {
 // ============================================
 const getChatMessages = async (req, res) => {
     const { lead_id } = req.query;
+    const tenantId = req.user.tenant_id;
     try {
+        // SAAS FIX: Filter by tenant
         const result = await pool.query(
-            'SELECT * FROM chat_messages WHERE lead_id = $1 ORDER BY timestamp ASC',
-            [lead_id]
+            `SELECT cm.* 
+             FROM chat_messages cm
+             JOIN leads l ON cm.lead_id = l.id
+             JOIN clients c ON l.client_id = c.id
+             WHERE cm.lead_id = $1 AND c.tenant_id = $2
+             ORDER BY cm.timestamp ASC`,
+            [lead_id, tenantId]
         );
         res.json(result.rows);
     } catch (error) {
@@ -277,12 +359,27 @@ const getChatMessages = async (req, res) => {
 const getSocialPosts = async (req, res) => {
     try {
         const { client_id } = req.query;
-        let query = 'SELECT * FROM social_posts ORDER BY created_at DESC';
-        let params = [];
+        const tenantId = req.user.tenant_id;
+
+        // SAAS FIX: Filter by tenant
+        let query = `
+            SELECT sp.* 
+            FROM social_posts sp
+            JOIN clients c ON sp.client_id = c.id
+            WHERE c.tenant_id = $1
+            ORDER BY sp.created_at DESC
+        `;
+        let params = [tenantId];
 
         if (client_id && client_id !== 'all') {
-            query = 'SELECT * FROM social_posts WHERE client_id = $1 ORDER BY created_at DESC';
-            params = [client_id];
+            query = `
+                SELECT sp.* 
+                FROM social_posts sp
+                JOIN clients c ON sp.client_id = c.id
+                WHERE c.tenant_id = $1 AND sp.client_id = $2
+                ORDER BY sp.created_at DESC
+            `;
+            params = [tenantId, client_id];
         }
 
         const result = await pool.query(query, params);
@@ -297,8 +394,13 @@ const getSocialPosts = async (req, res) => {
 // AUTOMATION WORKFLOWS
 // ============================================
 const getWorkflows = async (req, res) => {
+    const tenantId = req.user.tenant_id;
     try {
-        const result = await pool.query('SELECT * FROM automation_workflows ORDER BY created_at DESC');
+        // SAAS FIX: Filter by tenant (assuming workflows have tenant_id or user_id)
+        // If workflows are global templates, this might need adjustment. Assuming user-specific for now.
+        // If workflows table doesn't have tenant_id, we might need to add it.
+        // For now, assuming they are linked to user_id which links to tenant.
+        const result = await pool.query('SELECT * FROM automation_workflows WHERE user_id IN (SELECT id FROM users WHERE tenant_id = $1) ORDER BY created_at DESC', [tenantId]);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching workflows:', error);
@@ -308,10 +410,17 @@ const getWorkflows = async (req, res) => {
 
 const getWorkflowSteps = async (req, res) => {
     const { workflow_id } = req.params;
+    const tenantId = req.user.tenant_id;
     try {
+        // SAAS FIX: Verify ownership via workflow
         const result = await pool.query(
-            'SELECT * FROM automation_workflow_steps WHERE workflow_id = $1 ORDER BY step_order',
-            [workflow_id]
+            `SELECT s.* 
+             FROM automation_workflow_steps s
+             JOIN automation_workflows w ON s.workflow_id = w.id
+             JOIN users u ON w.user_id = u.id
+             WHERE s.workflow_id = $1 AND u.tenant_id = $2
+             ORDER BY s.step_order`,
+            [workflow_id, tenantId]
         );
         res.json(result.rows);
     } catch (error) {
@@ -325,6 +434,8 @@ const getWorkflowSteps = async (req, res) => {
 // ============================================
 const getTrainingModules = async (req, res) => {
     try {
+        // Public/Global modules are fine, but if tenant-specific, filter here.
+        // Assuming global for now.
         const result = await pool.query('SELECT * FROM training_modules ORDER BY order_index');
         res.json(result.rows);
     } catch (error) {
@@ -335,10 +446,17 @@ const getTrainingModules = async (req, res) => {
 
 const getTrainingProgress = async (req, res) => {
     const { user_id } = req.query;
+    const tenantId = req.user.tenant_id;
+
+    // Only allow viewing own progress or if admin of same tenant
+    // Simplified: Allow if user belongs to same tenant
     try {
         const result = await pool.query(
-            'SELECT * FROM training_progress WHERE user_id = $1',
-            [user_id]
+            `SELECT tp.* 
+             FROM training_progress tp
+             JOIN users u ON tp.user_id = u.id
+             WHERE tp.user_id = $1 AND u.tenant_id = $2`,
+            [user_id, tenantId]
         );
         res.json(result.rows);
     } catch (error) {
@@ -353,12 +471,27 @@ const getTrainingProgress = async (req, res) => {
 const getKPIs = async (req, res) => {
     try {
         const { client_id } = req.query;
-        let query = 'SELECT * FROM kpis ORDER BY created_at DESC LIMIT 10';
-        let params = [];
+        const tenantId = req.user.tenant_id;
+
+        // SAAS FIX: Filter by tenant
+        let query = `
+            SELECT k.* 
+            FROM kpis k
+            JOIN clients c ON k.client_id = c.id
+            WHERE c.tenant_id = $1
+            ORDER BY k.created_at DESC LIMIT 10
+        `;
+        let params = [tenantId];
 
         if (client_id && client_id !== 'all') {
-            query = 'SELECT * FROM kpis WHERE client_id = $1 ORDER BY created_at DESC LIMIT 10';
-            params = [client_id];
+            query = `
+                SELECT k.* 
+                FROM kpis k
+                JOIN clients c ON k.client_id = c.id
+                WHERE c.tenant_id = $1 AND k.client_id = $2
+                ORDER BY k.created_at DESC LIMIT 10
+            `;
+            params = [tenantId, client_id];
         }
 
         const result = await pool.query(query, params);
@@ -375,25 +508,28 @@ const getKPIs = async (req, res) => {
 const getDeviceStats = async (req, res) => {
     try {
         const { client_id, campaign_id } = req.query;
-        let query = 'SELECT device_type, SUM(percentage) as percentage, SUM(conversions) as conversions FROM device_stats';
-        let params = [];
-        let conditions = [];
+        const tenantId = req.user.tenant_id;
+
+        // SAAS FIX: Filter by tenant
+        let query = `
+            SELECT ds.device_type, SUM(ds.percentage) as percentage, SUM(ds.conversions) as conversions 
+            FROM device_stats ds
+            JOIN clients c ON ds.client_id = c.id
+            WHERE c.tenant_id = $1
+        `;
+        let params = [tenantId];
 
         if (client_id && client_id !== 'all') {
-            conditions.push(`client_id = $${params.length + 1}`);
+            query += ` AND ds.client_id = $${params.length + 1}`;
             params.push(client_id);
         }
 
         if (campaign_id) {
-            conditions.push(`campaign_id = $${params.length + 1}`);
+            query += ` AND ds.campaign_id = $${params.length + 1}`;
             params.push(campaign_id);
         }
 
-        if (conditions.length > 0) {
-            query += ' WHERE ' + conditions.join(' AND ');
-        }
-
-        query += ' GROUP BY device_type';
+        query += ' GROUP BY ds.device_type';
 
         const result = await pool.query(query, params);
         res.json(result.rows);
