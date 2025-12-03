@@ -398,6 +398,9 @@ app.post('/api/integrations/n8n', authenticateToken, integrationsController.save
 
 // --- WEBHOOKS ---
 const whatsappController = require('./whatsappController');
+// Debug logging to identify which controller function is missing
+console.log('WhatsApp Controller Exports:', Object.keys(whatsappController));
+
 app.post('/webhooks/whatsapp', whatsappController.handleWebhook);
 app.post('/api/whatsapp/send', authenticateToken, whatsappController.sendOutboundMessage);
 app.get('/api/whatsapp/sessions', authenticateToken, whatsappController.getSessions);
@@ -418,6 +421,7 @@ app.post('/api/ai/analyze-strategy', authenticateToken, aiController.analyzeConv
 app.post('/api/ai/generate-config', authenticateToken, aiController.generateAgentConfig);
 app.post('/api/ai/save-analysis', authenticateToken, aiController.saveAnalysis);
 app.post('/api/ai/dashboard-insights', authenticateToken, aiController.generateDashboardInsights);
+app.post('/api/ai/generate-from-chat', authenticateToken, aiController.generateContentIdeasFromChat);
 
 
 // --- DASHBOARD ANALYTICS ---

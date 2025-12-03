@@ -478,6 +478,38 @@ const askEliteAssistant = async (req, res) => {
     }
   }
 
+  // --- SYMBIOSIS: FINANCIAL ADVISOR ---
+  // Buscar snapshot financeiro do mês atual para dar contexto ao Agente
+  let financialContext = "";
+  try {
+    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+    const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
+
+    // Query simplificada baseada no financialController
+    const finRes = await db.query(`
+        SELECT 
+            SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as total_income,
+            SUM(CASE WHEN type = 'expense' AND status = 'paid' THEN amount ELSE 0 END) as total_expense
+        FROM financial_transactions
+        WHERE user_id = $1 AND date >= $2 AND date <= $3
+      `, [userId, startOfMonth, endOfMonth]);
+
+    if (finRes.rows.length > 0) {
+      const f = finRes.rows[0];
+      const balance = f.total_income - f.total_expense;
+      financialContext = `
+          💰 **CONTEXTO FINANCEIRO (Mês Atual):**
+          - Receita Confirmada: R$ ${parseFloat(f.total_income).toFixed(2)}
+          - Despesas Pagas: R$ ${parseFloat(f.total_expense).toFixed(2)}
+          - Saldo do Mês: R$ ${balance.toFixed(2)}
+          
+          Se o usuário perguntar sobre finanças, use estes dados exatos.
+          `;
+    }
+  } catch (err) {
+    console.warn("Failed to fetch financial context:", err);
+  }
+
   const conversationContext = history.map(msg =>
     `${msg.sender === 'client' ? 'Usuário' : 'Assistente'}: ${msg.text}`
   ).join('\n');
@@ -486,6 +518,7 @@ const askEliteAssistant = async (req, res) => {
     Você é o **Elite Strategist**, um Especialista Sênior em Marketing Digital e Vendas da plataforma 'EliteFinder'.
     
     ${churnContext}
+    ${financialContext}
 
     🧠 **SUAS ESPECIALIDADES:**
     1. **Tráfego Pago:** Estratégias avançadas para Google Ads, Meta Ads (Facebook/Instagram), LinkedIn Ads e TikTok Ads.
@@ -653,6 +686,63 @@ const saveAnalysis = async (req, res) => {
   }
 };
 
+const generateContentIdeasFromChat = async (req, res) => {
+  const { provider = 'openai', limit = 50 } = req.body;
+  const userId = req.user ? req.user.id : null;
+  const apiKey = await getEffectiveApiKey(provider, userId);
+
+  if (!apiKey) return res.status(500).json({ error: "API Key not configured" });
+
+  try {
+    // 1. Fetch recent user messages
+    const result = await db.query(`
+      SELECT content FROM chat_messages 
+      WHERE role = 'user' 
+      ORDER BY created_at DESC LIMIT $1
+    `, [limit]);
+
+    if (result.rows.length === 0) {
+      return res.json({ ideas: [] });
+    }
+
+    const messagesText = result.rows.map(r => r.content).join("\n");
+
+    // 2. Analyze and Generate Ideas
+    const prompt = `
+      Atue como um Estrategista de Conteúdo.
+      Analise as seguintes mensagens recentes de clientes/leads:
+      
+      "${messagesText}"
+
+      TAREFA:
+      1. Identifique as 3 principais dores, dúvidas ou desejos recorrentes.
+      2. Para cada uma, gere uma ideia de Post para Instagram/LinkedIn que resolva essa dúvida.
+
+      Retorne um JSON estrito:
+      {
+        "analysis": "Resumo das tendências identificadas...",
+        "ideas": [
+          {
+            "title": "Título do Post",
+            "format": "Reels/Carrossel/Static",
+            "hook": "A frase inicial para prender a atenção",
+            "description": "Breve descrição do conteúdo"
+          }
+        ]
+      }
+    `;
+
+    const text = await callOpenAI(prompt, apiKey, "gpt-4-turbo-preview", true);
+    const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+
+    res.json(JSON.parse(cleanText));
+
+  } catch (error) {
+    console.error("Content Ideas Generation Failed:", error);
+    res.status(500).json({ error: "Failed to generate ideas" });
+  }
+};
+
 module.exports = {
   analyzeChatConversation,
   generateMarketingContent,
@@ -662,5 +752,6 @@ module.exports = {
   saveAnalysis,
   generateDashboardInsights,
   analyzeStrategyInternal,
-  getEffectiveApiKey
+  getEffectiveApiKey,
+  generateContentIdeasFromChat
 };

@@ -179,6 +179,49 @@ const handleWebhook = async (req, res) => {
                     analysis
                 });
             }
+
+            // --- SYMBIOSIS: SMART LEAD MOVER ---
+            // Atualizar status do Lead no CRM baseado no estágio de compra detectado pela IA
+            if (analysis.buying_stage) {
+                try {
+                    // Mapeamento de Estágios da IA para Status do CRM
+                    const stageMap = {
+                        'Curiosidade': 'contacted',
+                        'Consideração': 'qualified',
+                        'Decisão': 'negotiation',
+                        'Compra': 'closed' // Se houver
+                    };
+
+                    const newStatus = stageMap[analysis.buying_stage];
+
+                    if (newStatus) {
+                        // Buscar lead pelo telefone (normalizado)
+                        // Nota: O telefone no banco pode ter formatação, então usamos LIKE ou normalização
+                        const leadRes = await db.query(
+                            "SELECT id, status FROM leads WHERE phone LIKE $1 OR phone LIKE $2 LIMIT 1",
+                            [`%${phone}%`, phone]
+                        );
+
+                        if (leadRes.rows.length > 0) {
+                            const lead = leadRes.rows[0];
+                            // Só atualizar se o status for "superior" ou diferente (lógica simplificada: se diferente)
+                            if (lead.status !== newStatus && lead.status !== 'closed' && lead.status !== 'won') {
+                                await db.query(
+                                    "UPDATE leads SET status = $1, updated_at = NOW() WHERE id = $2",
+                                    [newStatus, lead.id]
+                                );
+                                console.log(`🔄 [Symbiosis] Lead ${lead.id} moved to ${newStatus} based on AI Analysis`);
+
+                                if (io) {
+                                    io.emit('lead_updated', { id: lead.id, status: newStatus });
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error('⚠️ Error in Smart Lead Mover:', err);
+                }
+            }
         }
 
         res.status(200).send('PROCESSED');
