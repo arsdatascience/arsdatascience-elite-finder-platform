@@ -3,7 +3,7 @@ const n8nLogger = require('../utils/n8nLogger');
 
 const n8nRateLimiter = rateLimit({
     windowMs: 60 * 1000, // 1 minuto
-    max: 100, // limite de 100 requisições por IP
+    max: 1000, // limite de 1000 requisições por IP
     standardHeaders: true,
     legacyHeaders: false,
     message: {
