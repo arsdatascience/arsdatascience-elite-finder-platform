@@ -146,14 +146,21 @@ Não comece do zero. Use nossos templates otimizados.
 
 ---
 
-## 📱 Social Media Management
+## 📱 Social Media Management & Calendário
 
-Planeje e distribua conteúdo em escala.
+Planeje, agende e visualize toda a sua operação em um único lugar.
 
 ### Funcionalidades:
-- **Calendário Editorial**: Visão mensal e semanal das publicações.
-- **Agendamento Multi-plataforma**: (Em desenvolvimento) Instagram, Facebook, LinkedIn.
-- **Biblioteca de Mídia**: Armazenamento centralizado de imagens e vídeos.
+- **Calendário Interativo**:
+  - Visões **Mensal**, **Semanal** e **Diária**.
+  - **Drag-and-Drop**: Arraste posts para reagendar facilmente.
+  - Filtros por **Cliente** e por **Plataforma**.
+- **Agendamento Unificado**:
+  - **Postagens Sociais**: Crie posts para Instagram, Facebook, LinkedIn, Twitter, YouTube, Google Ads e Meta Ads.
+  - **Compromissos**: Agende Reuniões, Ligações, Tarefas e Prazos.
+- **Gestão de Eventos Detalhada**:
+  - *Posts*: Editor de conteúdo, seleção de plataforma e upload de mídia.
+  - *Reuniões*: Integração visual com links de videoconferência (Google Meet, Zoom, Teams).
 - **Status de Aprovação**: Fluxo de revisão entre agência e cliente.
 
 ---
