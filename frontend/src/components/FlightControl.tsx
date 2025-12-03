@@ -4,8 +4,8 @@ import { Lead, LeadStatus } from '@/types';
 import { COMPONENT_VERSIONS } from '@/componentVersions';
 import {
   CheckCircle, Plus, Download, Save,
-  MoreVertical, Clock, Tag, Users, Search, X,
-  Phone, Mail, MessageSquare, User, Target, TrendingUp, DollarSign, Calendar
+  MoreVertical, Tag, Users, Search, X,
+  Phone, Mail, MessageSquare, Target, TrendingUp, DollarSign, Calendar
 } from 'lucide-react';
 import { motion, Variants } from 'framer-motion';
 import socketService from '@/services/socket';
