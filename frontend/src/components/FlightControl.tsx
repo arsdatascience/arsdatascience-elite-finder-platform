@@ -138,7 +138,7 @@ const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onSave, mo
         else alert('Telefone inválido');
         break;
       case 'schedule':
-        navigate('/social-calendar');
+        navigate('/social-calendar', { state: { leadToSchedule: formData } });
         break;
     }
   };

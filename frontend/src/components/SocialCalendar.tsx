@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Grid3x3, List, Instagram, Facebook, Linkedin, Twitter, Edit2, Trash2, Clock, Users, Gift, Sparkles, X, Save } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/apiClient';
@@ -45,6 +46,23 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     const [isGenerating, setIsGenerating] = useState(false);
     const [schedulingModal, setSchedulingModal] = useState<{ isOpen: boolean, date: Date | null }>({ isOpen: false, date: null });
     const [newEvent, setNewEvent] = useState({ title: '', type: 'meeting', time: '09:00', description: '' });
+
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.leadToSchedule) {
+            const lead = location.state.leadToSchedule;
+            setNewEvent({
+                title: `Reunião com ${lead.name}`,
+                type: 'meeting',
+                time: '09:00',
+                description: `Lead: ${lead.name}\nEmpresa: ${lead.company || 'N/A'}\nTelefone: ${lead.phone}\nEmail: ${lead.email}\nNotas: ${lead.notes || ''}`
+            });
+            setSchedulingModal({ isOpen: true, date: new Date() });
+            // Clear state to prevent reopening on refresh (optional, but good practice)
+            window.history.replaceState({}, document.title);
+        }
+    }, [location]);
 
     const queryClient = useQueryClient();
 
