@@ -12,6 +12,11 @@ interface Post {
     scheduled_date: string;
     published_date?: string;
     clientId?: string;
+    title?: string;
+    type?: string;
+    endTime?: string;
+    description?: string;
+    videoConference?: { type: 'meet' | 'zoom' | 'teams' | null, link: string };
 }
 
 interface SocialCalendarProps {
@@ -54,6 +59,8 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         videoConference: { type: null as 'meet' | 'zoom' | 'teams' | null, link: '' }
     });
 
+    const [editingEventId, setEditingEventId] = useState<string | null>(null);
+
     const location = useLocation();
 
     useEffect(() => {
@@ -68,10 +75,36 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                 videoConference: { type: null, link: '' }
             });
             setSchedulingModal({ isOpen: true, date: new Date() });
-            // Clear state to prevent reopening on refresh (optional, but good practice)
             window.history.replaceState({}, document.title);
         }
     }, [location]);
+
+    // ... (existing code)
+
+    const handleEditPost = (post: Post) => {
+        const date = new Date(post.scheduled_date);
+        setNewEvent({
+            title: post.title || post.content,
+            type: post.type || 'meeting',
+            startTime: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            endTime: post.endTime || new Date(date.getTime() + 60 * 60 * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            description: post.description || '',
+            videoConference: post.videoConference || { type: null, link: '' }
+        });
+        setEditingEventId(post.id);
+        setSchedulingModal({ isOpen: true, date });
+    };
+
+    const handleScheduleEvent = () => {
+        console.log(editingEventId ? 'Updating event:' : 'Scheduling event:', newEvent, 'on', schedulingModal.date);
+        const conferenceInfo = newEvent.videoConference.type ? `\nLink: ${newEvent.videoConference.link}` : '';
+        const action = editingEventId ? 'atualizado' : 'agendado';
+        alert(`Evento ${action}: ${newEvent.title}\nData: ${schedulingModal.date?.toLocaleDateString()}\nHorário: ${newEvent.startTime} - ${newEvent.endTime}${conferenceInfo}`);
+
+        setSchedulingModal({ isOpen: false, date: null });
+        setNewEvent({ title: '', type: 'meeting', startTime: '09:00', endTime: '10:00', description: '', videoConference: { type: null, link: '' } });
+        setEditingEventId(null);
+    };
 
     const queryClient = useQueryClient();
 
@@ -280,14 +313,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         setSchedulingModal({ isOpen: true, date });
     };
 
-    const handleScheduleEvent = () => {
-        // Here you would typically save the event to the backend
-        console.log('Scheduling event:', newEvent, 'on', schedulingModal.date);
-        const conferenceInfo = newEvent.videoConference.type ? `\nLink: ${newEvent.videoConference.link}` : '';
-        alert(`Evento agendado: ${newEvent.title}\nData: ${schedulingModal.date?.toLocaleDateString()}\nHorário: ${newEvent.startTime} - ${newEvent.endTime}${conferenceInfo}`);
-        setSchedulingModal({ isOpen: false, date: null });
-        setNewEvent({ title: '', type: 'meeting', startTime: '09:00', endTime: '10:00', description: '', videoConference: { type: null, link: '' } });
-    };
+
 
     return (
         <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in relative">
@@ -464,7 +490,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                     key={post.id}
                                                     draggable
                                                     onDragStart={() => handleDragStart(post)}
-                                                    onClick={(e) => { e.stopPropagation(); }}
+                                                    onClick={(e) => { e.stopPropagation(); handleEditPost(post); }}
                                                     className={`w-full text-left p-1.5 rounded border text-xs transition-all ${getPlatformColor(post.platform)} cursor-move`}
                                                 >
                                                     {isEditing ? (
@@ -571,7 +597,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                     key={post.id}
                                                     draggable
                                                     onDragStart={() => handleDragStart(post)}
-                                                    onClick={(e) => { e.stopPropagation(); onPostClick(post); }}
+                                                    onClick={(e) => { e.stopPropagation(); handleEditPost(post); }}
                                                     className={`p-3 rounded-lg border cursor-pointer transition-all ${getPlatformColor(post.platform)}`}
                                                 >
                                                     <div className="flex items-start gap-2">
@@ -635,7 +661,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                         key={post.id}
                                                         draggable
                                                         onDragStart={() => handleDragStart(post)}
-                                                        onClick={(e) => { e.stopPropagation(); onPostClick(post); }}
+                                                        onClick={(e) => { e.stopPropagation(); handleEditPost(post); }}
                                                         className={`px-3 py-1.5 rounded border text-xs transition-all ${getPlatformColor(post.platform)} cursor-move flex items-center gap-2 shadow-sm`}
                                                         style={{ marginTop: `${topOffset}%` }} // Approximate positioning
                                                     >
