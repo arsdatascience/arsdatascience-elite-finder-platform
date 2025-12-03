@@ -333,6 +333,16 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                         <List size={16} />
                         Semana
                     </button>
+                    <button
+                        onClick={() => setViewMode('day')}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'day'
+                            ? 'bg-blue-600 text-white'
+                            : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                    >
+                        <Clock size={16} />
+                        Dia
+                    </button>
                 </div>
 
                 {/* Platform Filters */}
@@ -359,8 +369,11 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                 </div>
 
                 {/* Post Count */}
-                <div className="text-sm text-gray-600">
-                    <span className="font-bold">{filteredPosts.length}</span> posts
+                <div className="flex items-center gap-3">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">v1.0</span>
+                    <div className="text-sm text-gray-600">
+                        <span className="font-bold">{filteredPosts.length}</span> posts
+                    </div>
                 </div>
             </div>
 
@@ -518,8 +531,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                             );
                         })}
                     </div>
-                ) : (
-                    /* Week View */
+                ) : viewMode === 'week' ? (
                     <div className="space-y-2">
                         {weekDays.map((date, idx) => {
                             const dayPosts = getPostsForDate(date);
@@ -578,6 +590,62 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                 </div>
                                             );
                                         })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    /* Day View Implementation */
+                    <div className="flex flex-col gap-0 border border-gray-200 rounded-lg overflow-hidden">
+                        {Array.from({ length: 24 }).map((_, hour) => {
+                            const timeString = `${hour.toString().padStart(2, '0')}:00`;
+                            const dayPosts = getPostsForDate(currentDate).filter(post => {
+                                const postHour = new Date(post.scheduled_date).getHours();
+                                return postHour === hour;
+                            });
+
+                            return (
+                                <div
+                                    key={hour}
+                                    className="flex border-b border-gray-100 min-h-[60px] group hover:bg-gray-50 transition-colors"
+                                    onClick={() => {
+                                        setNewEvent(prev => ({ ...prev, startTime: timeString, endTime: `${(hour + 1).toString().padStart(2, '0')}:00` }));
+                                        setSchedulingModal({ isOpen: true, date: currentDate });
+                                    }}
+                                >
+                                    <div className="w-20 border-r border-gray-100 p-3 text-xs font-medium text-gray-500 flex items-start justify-center">
+                                        {timeString}
+                                    </div>
+                                    <div className="flex-1 p-2 relative">
+                                        {/* Horizontal Lines for 15, 30, 45 mins (visual guide) */}
+                                        <div className="absolute top-1/4 left-0 right-0 border-t border-gray-50 pointer-events-none"></div>
+                                        <div className="absolute top-2/4 left-0 right-0 border-t border-gray-50 pointer-events-none"></div>
+                                        <div className="absolute top-3/4 left-0 right-0 border-t border-gray-50 pointer-events-none"></div>
+
+                                        <div className="flex flex-wrap gap-2 relative z-10">
+                                            {dayPosts.map(post => {
+                                                const Icon = getPlatformIcon(post.platform);
+                                                const postDate = new Date(post.scheduled_date);
+                                                const minutes = postDate.getMinutes();
+                                                const topOffset = (minutes / 60) * 100; // Position based on minutes
+
+                                                return (
+                                                    <div
+                                                        key={post.id}
+                                                        draggable
+                                                        onDragStart={() => handleDragStart(post)}
+                                                        onClick={(e) => { e.stopPropagation(); onPostClick(post); }}
+                                                        className={`px-3 py-1.5 rounded border text-xs transition-all ${getPlatformColor(post.platform)} cursor-move flex items-center gap-2 shadow-sm`}
+                                                        style={{ marginTop: `${topOffset}%` }} // Approximate positioning
+                                                    >
+                                                        <Icon size={12} />
+                                                        <span className="font-medium">{postDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        <span className="truncate max-w-[200px]">{post.content}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -659,8 +727,8 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
             {/* Scheduling Modal */}
             {schedulingModal.isOpen && (
                 <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
-                        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white flex justify-between items-center">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white flex justify-between items-center shrink-0">
                             <div>
                                 <h2 className="text-xl font-bold flex items-center gap-2">
                                     <CalendarIcon size={24} /> Novo Agendamento
@@ -674,20 +742,20 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                             </button>
                         </div>
 
-                        <div className="p-6 space-y-4">
+                        <div className="p-6 space-y-6 overflow-y-auto">
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-700">Título do Evento</label>
                                 <input
                                     type="text"
-                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-lg"
                                     value={newEvent.title}
                                     onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                                    placeholder="Ex: Reunião de Alinhamento"
+                                    placeholder="Adicionar título"
                                     autoFocus
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700">Tipo</label>
                                     <select
@@ -703,41 +771,109 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700">Horário</label>
+                                    <label className="text-sm font-bold text-gray-700">Início</label>
                                     <input
                                         type="time"
                                         className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                        value={newEvent.time}
-                                        onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
+                                        value={newEvent.startTime}
+                                        onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
                                     />
                                 </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-700">Fim</label>
+                                    <input
+                                        type="time"
+                                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        value={newEvent.endTime}
+                                        onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Video Conference Section */}
+                            <div className="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                                    <Users size={16} /> Adicionar Videoconferência
+                                </label>
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewEvent(prev => ({ ...prev, videoConference: { ...prev.videoConference, type: 'meet' } }))}
+                                        className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2 ${newEvent.videoConference.type === 'meet' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                                    >
+                                        Google Meet
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewEvent(prev => ({ ...prev, videoConference: { ...prev.videoConference, type: 'zoom' } }))}
+                                        className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2 ${newEvent.videoConference.type === 'zoom' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                                    >
+                                        Zoom
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewEvent(prev => ({ ...prev, videoConference: { ...prev.videoConference, type: 'teams' } }))}
+                                        className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2 ${newEvent.videoConference.type === 'teams' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                                    >
+                                        Teams
+                                    </button>
+                                </div>
+                                {newEvent.videoConference.type && (
+                                    <div className="flex gap-2 animate-in fade-in slide-in-from-top-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Link da reunião..."
+                                            value={newEvent.videoConference.link}
+                                            onChange={(e) => setNewEvent(prev => ({ ...prev, videoConference: { ...prev.videoConference, link: e.target.value } }))}
+                                            className="flex-1 p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const links = {
+                                                    meet: 'https://meet.google.com/abc-defg-hij',
+                                                    zoom: 'https://zoom.us/j/123456789',
+                                                    teams: 'https://teams.microsoft.com/l/meetup-join/...'
+                                                };
+                                                if (newEvent.videoConference.type) {
+                                                    setNewEvent(prev => ({
+                                                        ...prev,
+                                                        videoConference: { ...prev.videoConference, link: links[newEvent.videoConference.type!] }
+                                                    }));
+                                                }
+                                            }}
+                                            className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                                        >
+                                            Gerar Link
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-700">Descrição</label>
                                 <textarea
-                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-32 resize-none"
                                     value={newEvent.description}
                                     onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                                    placeholder="Detalhes adicionais..."
+                                    placeholder="Detalhes adicionais, pauta da reunião, etc..."
                                 ></textarea>
                             </div>
+                        </div>
 
-                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                                <button
-                                    onClick={() => setSchedulingModal({ isOpen: false, date: null })}
-                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={handleScheduleEvent}
-                                    disabled={!newEvent.title}
-                                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    <Save size={18} /> Agendar
-                                </button>
-                            </div>
+                        <div className="flex justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50 shrink-0">
+                            <button
+                                onClick={() => setSchedulingModal({ isOpen: false, date: null })}
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleScheduleEvent}
+                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center gap-2 shadow-lg shadow-blue-200 transition-all"
+                            >
+                                <Save size={18} /> Salvar Agendamento
+                            </button>
                         </div>
                     </div>
                 </div>
