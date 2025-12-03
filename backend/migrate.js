@@ -12,7 +12,9 @@ const runMigrations = async () => {
             '009_add_vector_meta_params.sql',
             '010_add_advanced_settings.sql',
             '011_create_campaign_metrics.sql',
-            '016_create_integrations_table.sql'
+            '016_create_integrations_table.sql',
+            '017_create_sales_coaching_template.sql',
+            '018_add_whatsapp_column_to_clients.sql'
         ];
 
         for (const migrationFile of migrations) {
