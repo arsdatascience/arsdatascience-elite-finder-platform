@@ -660,11 +660,34 @@ const generateAgentConfig = async (req, res) => {
     return res.status(400).json({ error: 'Description is required' });
   }
 
+  // --- RAG: KNOWLEDGE BASE SEARCH FOR AGENT CONTEXT ---
+  let knowledgeContext = "";
+  try {
+    const queryVector = await generateEmbeddings(description, apiKey);
+    if (queryVector) {
+      const searchResult = await qdrantService.searchVectors('marketing_strategies', queryVector, 3);
+      if (searchResult.success && searchResult.results.length > 0) {
+        const docs = searchResult.results.map(r => r.payload.content || r.payload.text).join("\n\n");
+        knowledgeContext = `
+        📚 **CONHECIMENTO INTERNO RELEVANTE ENCONTRADO:**
+        O usuário possui os seguintes documentos na base de conhecimento que parecem relevantes para este agente.
+        Tente incorporar as regras ou informações chave destes textos no "system prompt" do agente gerado:
+        ${docs.substring(0, 2000)}... (truncado)
+        `;
+        console.log("📚 RAG Context injected into Agent Builder");
+      }
+    }
+  } catch (ragErr) {
+    console.warn("Agent Builder RAG Search failed:", ragErr.message);
+  }
+
   const prompt = `
     Você é um Arquiteto de Agentes de IA Especialista.
     Sua tarefa é criar uma configuração técnica completa para um Agente de IA com base na seguinte descrição do usuário:
     
     DESCRIÇÃO DO USUÁRIO: "${description}"
+
+    ${knowledgeContext}
 
     Gere um JSON estrito com a seguinte estrutura exata, preenchendo os campos de forma criativa e profissional:
 
