@@ -63,21 +63,32 @@ const sendEvolutionApi = async (config, accessToken, to, content) => {
     // Clean URL
     const cleanBaseUrl = baseUrl.replace(/\/$/, '');
 
+    // Ensure number has DDI (55 for Brazil) if it seems to be a BR number (10 or 11 digits)
+    // This is a heuristic; ideally we should store numbers in E.164
+    let formattedTo = to.replace(/\D/g, ''); // Remove non-digits
+    if (formattedTo.length === 10 || formattedTo.length === 11) {
+        formattedTo = '55' + formattedTo;
+    }
+
+    const payload = {
+        number: formattedTo,
+        options: {
+            delay: 1200,
+            presence: "composing",
+            linkPreview: false
+        },
+        textMessage: {
+            text: content
+        }
+    };
+
+    console.log('📤 Sending to EvolutionAPI:', JSON.stringify(payload));
+
     try {
         // EvolutionAPI v2 Endpoint: /message/sendText/{instance}
         const response = await axios.post(
             `${cleanBaseUrl}/message/sendText/${instanceName}`,
-            {
-                number: to,
-                options: {
-                    delay: 1200,
-                    presence: "composing",
-                    linkPreview: false
-                },
-                textMessage: {
-                    text: content
-                }
-            },
+            payload,
             {
                 headers: {
                     'apikey': apiKey,
@@ -88,6 +99,11 @@ const sendEvolutionApi = async (config, accessToken, to, content) => {
         return response.data;
     } catch (error) {
         console.error('EvolutionAPI Error:', error.response?.data || error.message);
+        // Log full error for debugging
+        if (error.response) {
+            console.error('EvolutionAPI Response Status:', error.response.status);
+            console.error('EvolutionAPI Response Data:', JSON.stringify(error.response.data));
+        }
         throw new Error(`EvolutionAPI Failed: ${error.response?.data?.message || error.message}`);
     }
 };
