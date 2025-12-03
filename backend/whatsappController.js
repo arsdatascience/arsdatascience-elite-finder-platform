@@ -1,0 +1,189 @@
+const db = require('./database');
+const aiController = require('./aiController');
+const whatsappService = require('./services/whatsappService');
+
+// Helper para normalizar telefone (remove +55, espaços, traços)
+const normalizePhone = (phone) => {
+    return phone.replace(/\D/g, '');
+};
+
+const sendOutboundMessage = async (req, res) => {
+    const { to, content, sessionId } = req.body;
+    const userId = req.user ? req.user.id : 1; // Default to admin if not auth (should be auth)
+
+    if (!to || !content) {
+        return res.status(400).json({ error: 'Missing "to" or "content"' });
+    }
+
+    try {
+        // 1. Send via WhatsApp Service
+        // Note: 'to' should be the clean phone number
+        const cleanTo = normalizePhone(to);
+        const result = await whatsappService.sendMessage(userId, cleanTo, content);
+
+        // 2. Store in Database
+        if (sessionId) {
+            await db.query(
+                `INSERT INTO chat_messages (session_id, sender_type, sender_id, content) 
+                 VALUES ($1, 'agent', $2, $3)`,
+                [sessionId, userId, content]
+            );
+        }
+
+        res.json({ success: true, result });
+
+    } catch (error) {
+        console.error('Error sending outbound message:', error);
+        res.status(500).json({ error: 'Failed to send message', details: error.message });
+    }
+};
+
+const handleWebhook = async (req, res) => {
+    try {
+        const io = req.app.get('io');
+        const { instance, data, sender } = req.body; // Formato genérico EvolutionAPI v2
+
+        // Adaptação para diferentes formatos de payload
+        let phone = '';
+        let messageContent = '';
+        let pushName = '';
+        let messageType = 'text';
+
+        // EvolutionAPI v2 structure check
+        if (data && data.key && data.key.remoteJid) {
+            phone = normalizePhone(data.key.remoteJid.split('@')[0]);
+            pushName = data.pushName || 'Desconhecido';
+
+            if (data.message) {
+                if (data.message.conversation) {
+                    messageContent = data.message.conversation;
+                } else if (data.message.extendedTextMessage) {
+                    messageContent = data.message.extendedTextMessage.text;
+                } else {
+                    messageType = 'media'; // Imagem, áudio, etc.
+                    messageContent = '[Mídia Recebida]';
+                }
+            }
+        }
+        // Fallback para formato simples (teste ou outra API)
+        else if (req.body.from && req.body.message) {
+            phone = normalizePhone(req.body.from);
+            messageContent = req.body.message;
+            pushName = req.body.name || 'Cliente';
+        }
+
+        if (!phone || !messageContent) {
+            return res.status(400).send('Invalid payload');
+        }
+
+        // Ignorar mensagens enviadas pelo próprio bot (fromMe)
+        if (data && data.key && data.key.fromMe) {
+            return res.status(200).send('Ignored fromMe');
+        }
+
+        console.log(`📩 WhatsApp Message from ${pushName} (${phone}): ${messageContent}`);
+
+        // 1. Identificar ou Criar Cliente/Lead
+        let clientResult = await db.query('SELECT id, name FROM clients WHERE whatsapp LIKE $1 OR phone LIKE $1', [`%${phone}%`]);
+        let clientId = null;
+        let clientName = pushName;
+
+        if (clientResult.rows.length > 0) {
+            clientId = clientResult.rows[0].id;
+            clientName = clientResult.rows[0].name;
+        } else {
+            // Opcional: Criar Lead automaticamente
+            // await db.query('INSERT INTO leads ...');
+        }
+
+        // 2. Gerenciar Sessão de Chat
+        let sessionResult = await db.query(
+            `SELECT id FROM chat_sessions 
+             WHERE (client_id = $1 OR metadata->>'phone' = $2) 
+             AND status = 'active' 
+             ORDER BY created_at DESC LIMIT 1`,
+            [clientId, phone]
+        );
+
+        let sessionId;
+        if (sessionResult.rows.length > 0) {
+            sessionId = sessionResult.rows[0].id;
+        } else {
+            // Criar nova sessão
+            const newSession = await db.query(
+                `INSERT INTO chat_sessions (client_id, channel, status, metadata) 
+                 VALUES ($1, 'whatsapp', 'active', $2) RETURNING id`,
+                [clientId, JSON.stringify({ phone, pushName })]
+            );
+            sessionId = newSession.rows[0].id;
+        }
+
+        // 3. Salvar Mensagem
+        await db.query(
+            `INSERT INTO chat_messages (session_id, sender_type, sender_id, content) 
+             VALUES ($1, 'client', $2, $3)`,
+            [sessionId, phone, messageContent]
+        );
+
+        // 4. Emitir evento Socket.io (Mensagem Recebida)
+        if (io) {
+            io.emit('whatsapp_message', {
+                sessionId,
+                phone,
+                name: clientName,
+                content: messageContent,
+                timestamp: new Date()
+            });
+        }
+
+        // 5. COACHING EM TEMPO REAL (Teleprompter)
+        // Recuperar histórico recente (últimas 10 msgs)
+        const historyResult = await db.query(
+            `SELECT sender_type as role, content FROM chat_messages 
+             WHERE session_id = $1 
+             ORDER BY created_at ASC LIMIT 10`,
+            [sessionId]
+        );
+
+        const messages = historyResult.rows.map(row => ({
+            role: row.role === 'client' ? 'user' : 'agent',
+            content: row.content
+        }));
+
+        // Obter API Key do sistema (admin user id 1 ou env var)
+        const apiKey = await aiController.getEffectiveApiKey('openai', null);
+
+        if (apiKey) {
+            const analysis = await aiController.analyzeStrategyInternal(
+                messages,
+                { product: "Elite Finder Services", goal: "Qualification & Sales" },
+                apiKey
+            );
+
+            // Salvar análise no banco
+            await db.query(
+                `INSERT INTO chat_analyses (session_id, analysis_type, full_report, sentiment_label, buying_stage) 
+                 VALUES ($1, 'sales_coaching', $2, $3, $4)`,
+                [sessionId, JSON.stringify(analysis), analysis.sentiment, analysis.buying_stage]
+            );
+
+            // Emitir evento Socket.io (Coaching Update)
+            if (io) {
+                console.log(`🧠 Coaching Insight Generated for ${phone}`);
+                io.emit('sales_coaching_update', {
+                    sessionId,
+                    phone,
+                    analysis
+                });
+            }
+        }
+
+        res.status(200).send('PROCESSED');
+
+    } catch (error) {
+        console.error('Error processing WhatsApp webhook:', error);
+        res.status(500).send('Internal Server Error');
+    }
+};
+
+module.exports = { handleWebhook, sendOutboundMessage };

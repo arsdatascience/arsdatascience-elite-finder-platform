@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Mic, User, Bot, Sparkles, AlertTriangle, CheckCircle, TrendingUp, BrainCircuit, MessageSquare } from 'lucide-react';
+import { Send, Mic, User, Bot, Sparkles, AlertTriangle, CheckCircle, TrendingUp, BrainCircuit, MessageSquare, Smartphone, Settings } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
+import socketService from '../services/socket';
+import { WhatsAppConfigModal } from './WhatsAppConfigModal';
 
 interface Message {
     id: string;
     role: 'user' | 'agent';
     content: string;
     timestamp: Date;
+    source?: 'whatsapp' | 'web';
 }
 
 interface AnalysisResult {
@@ -20,11 +23,14 @@ interface AnalysisResult {
 
 export const SalesCoachingChat: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([
-        { id: '1', role: 'agent', content: 'Olá! Como posso ajudar você hoje com nossos planos premium?', timestamp: new Date() }
+        { id: '1', role: 'agent', content: 'Olá! Como posso ajudar você hoje com nossos planos premium?', timestamp: new Date(), source: 'web' }
     ]);
     const [input, setInput] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+    const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+    const [activePhone, setActivePhone] = useState<string | null>(null);
+    const [showSettings, setShowSettings] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -35,45 +41,74 @@ export const SalesCoachingChat: React.FC = () => {
         scrollToBottom();
     }, [messages]);
 
+    // Socket.io Integration
+    useEffect(() => {
+        const socket = socketService.connect();
+
+        socket.on('whatsapp_message', (data: any) => {
+            console.log('📩 New WhatsApp Message:', data);
+            setActiveSessionId(data.sessionId);
+            setActivePhone(data.phone);
+
+            const newMsg: Message = {
+                id: Date.now().toString(),
+                role: 'user', // WhatsApp messages are usually from the client (user)
+                content: data.content,
+                timestamp: new Date(data.timestamp),
+                source: 'whatsapp'
+            };
+            setMessages(prev => [...prev, newMsg]);
+            setIsAnalyzing(true); // Show analyzing state while waiting for coaching update
+        });
+
+        socket.on('sales_coaching_update', (data: any) => {
+            console.log('🧠 Coaching Update:', data);
+            setAnalysis(data.analysis);
+            setIsAnalyzing(false);
+        });
+
+        return () => {
+            socket.off('whatsapp_message');
+            socket.off('sales_coaching_update');
+        };
+    }, []);
+
     const handleSendMessage = async () => {
         if (!input.trim()) return;
 
         const newUserMsg: Message = {
             id: Date.now().toString(),
-            role: 'user',
+            role: 'agent', // Human agent sending message via web
             content: input,
-            timestamp: new Date()
+            timestamp: new Date(),
+            source: 'web'
         };
 
         setMessages(prev => [...prev, newUserMsg]);
         setInput('');
-        setIsAnalyzing(true);
 
-        // Simulate Agent Response (Mock for now, or could use the AI Chat endpoint)
-        // For the purpose of the "Teleprompter", we want to analyze AFTER the user speaks to guide the agent's NEXT move.
-
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/analyze-strategy`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    messages: [...messages, newUserMsg].map(m => ({ role: m.role, content: m.content })),
-                    agentContext: { product: "Elite Finder SaaS", goal: "Sell Premium Plan" }
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                setAnalysis(data);
+        // Send to WhatsApp API if we have an active phone number
+        if (activePhone) {
+            try {
+                const token = localStorage.getItem('token');
+                await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        to: activePhone,
+                        content: newUserMsg.content,
+                        sessionId: activeSessionId
+                    })
+                });
+            } catch (error) {
+                console.error("Error sending WhatsApp message:", error);
+                // Optionally show an error toast here
             }
-        } catch (error) {
-            console.error("Error analyzing conversation:", error);
-        } finally {
-            setIsAnalyzing(false);
+        } else {
+            console.warn("No active phone number to send WhatsApp message to.");
         }
     };
 
@@ -87,33 +122,48 @@ export const SalesCoachingChat: React.FC = () => {
     };
 
     return (
-        <div className="flex h-[calc(100vh-100px)] gap-6 animate-fade-in">
+        <div className="flex h-[calc(100vh-100px)] gap-6 animate-fade-in relative">
             {/* LEFT: Main Chat Interface */}
             <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 {/* Chat Header */}
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                            <User size={20} />
+                        <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center text-white relative">
+                            <Smartphone size={20} />
+                            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
                         </div>
                         <div>
-                            <h3 className="font-bold text-gray-800">Prospect: João Silva</h3>
+                            <h3 className="font-bold text-gray-800">WhatsApp Live: {activePhone ? `(${activePhone})` : 'Aguardando...'}</h3>
                             <p className="text-xs text-gray-500 flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-green-500"></span> Online agora
+                                <span className="w-2 h-2 rounded-full bg-green-500"></span> Conectado via EvolutionAPI
                             </p>
                         </div>
                     </div>
-                    <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">{COMPONENT_VERSIONS.SalesCoachingChat || 'v1.0'}</span>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">{COMPONENT_VERSIONS.SalesCoachingChat || 'v1.1'}</span>
+                        <button
+                            onClick={() => setShowSettings(true)}
+                            className="p-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors shadow-sm"
+                            title="Configurações do WhatsApp"
+                        >
+                            <Settings size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Messages Area */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
                     {messages.map((msg) => (
                         <div key={msg.id} className={`flex ${msg.role === 'agent' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[70%] rounded-2xl p-4 shadow-sm ${msg.role === 'agent'
-                                    ? 'bg-blue-600 text-white rounded-tr-none'
-                                    : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
+                            <div className={`max-w-[70%] rounded-2xl p-4 shadow-sm relative ${msg.role === 'agent'
+                                ? 'bg-blue-600 text-white rounded-tr-none'
+                                : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
                                 }`}>
+                                {msg.source === 'whatsapp' && (
+                                    <span className="absolute -top-2 -left-2 bg-green-500 text-white text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-sm">
+                                        <Smartphone size={8} /> WA
+                                    </span>
+                                )}
                                 <p className="text-sm leading-relaxed">{msg.content}</p>
                                 <span className={`text-[10px] block mt-2 ${msg.role === 'agent' ? 'text-blue-100' : 'text-gray-400'}`}>
                                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -135,7 +185,7 @@ export const SalesCoachingChat: React.FC = () => {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                            placeholder="Digite sua resposta..."
+                            placeholder="Digite sua resposta para enviar no WhatsApp..."
                             className="flex-1 bg-transparent border-none focus:ring-0 text-gray-700 placeholder-gray-400"
                         />
                         <button
@@ -245,6 +295,11 @@ export const SalesCoachingChat: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            <WhatsAppConfigModal
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
+            />
         </div>
     );
 };

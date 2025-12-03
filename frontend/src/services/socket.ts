@@ -2,19 +2,32 @@ import { io, Socket } from 'socket.io-client';
 
 const URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-export const socket: Socket = io(URL, {
+const socket: Socket = io(URL, {
     autoConnect: false,
-    transports: ['websocket', 'polling'], // Tenta websocket primeiro, fallback para polling
+    transports: ['websocket', 'polling'],
 });
 
-export const connectSocket = () => {
-    if (!socket.connected) {
-        socket.connect();
+const socketService = {
+    connect: () => {
+        if (!socket.connected) {
+            socket.connect();
+        }
+        return socket;
+    },
+    disconnect: () => {
+        if (socket.connected) {
+            socket.disconnect();
+        }
+    },
+    on: (event: string, callback: any) => {
+        socket.on(event, callback);
+    },
+    off: (event: string) => {
+        socket.off(event);
+    },
+    emit: (event: string, data: any) => {
+        socket.emit(event, data);
     }
 };
 
-export const disconnectSocket = () => {
-    if (socket.connected) {
-        socket.disconnect();
-    }
-};
+export default socketService;

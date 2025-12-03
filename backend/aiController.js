@@ -525,14 +525,11 @@ const askEliteAssistant = async (req, res) => {
 /**
  * Analisa uma conversa e gera insights estratégicos de Vendas e Marketing
  */
-const analyzeConversationStrategy = async (req, res) => {
-  const { messages, agentContext } = req.body;
-  const provider = 'openai'; // Default provider for this specific task
-  const userId = req.user ? req.user.id : null;
-  const apiKey = await getEffectiveApiKey(provider, userId);
-
-  try {
-    const prompt = `
+/**
+ * Internal function to analyze conversation strategy
+ */
+const analyzeStrategyInternal = async (messages, agentContext, apiKey) => {
+  const prompt = `
         Atue como um Diretor de Estratégia Comercial e Marketing Sênior. Analise a seguinte conversa entre um Agente (Bot) e um Cliente (Prospect).
         
         CONTEXTO DO AGENTE:
@@ -556,14 +553,23 @@ const analyzeConversationStrategy = async (req, res) => {
         Responda APENAS o JSON.
         `;
 
-    // Using callOpenAI helper instead of direct client usage to maintain consistency
-    const text = await callOpenAI(prompt, apiKey, "gpt-4-turbo-preview", true);
+  const text = await callOpenAI(prompt, apiKey, "gpt-4-turbo-preview", true);
+  const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
+  return JSON.parse(cleanText);
+};
 
-    const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
-    const analysis = JSON.parse(cleanText);
+/**
+ * Analisa uma conversa e gera insights estratégicos de Vendas e Marketing
+ */
+const analyzeConversationStrategy = async (req, res) => {
+  const { messages, agentContext } = req.body;
+  const provider = 'openai';
+  const userId = req.user ? req.user.id : null;
+  const apiKey = await getEffectiveApiKey(provider, userId);
 
+  try {
+    const analysis = await analyzeStrategyInternal(messages, agentContext, apiKey);
     res.json(analysis);
-
   } catch (error) {
     console.error('Error analyzing strategy:', error);
     res.status(500).json({ error: 'Failed to analyze conversation' });
@@ -654,5 +660,7 @@ module.exports = {
   analyzeConversationStrategy,
   generateAgentConfig,
   saveAnalysis,
-  generateDashboardInsights
+  generateDashboardInsights,
+  analyzeStrategyInternal,
+  getEffectiveApiKey
 };

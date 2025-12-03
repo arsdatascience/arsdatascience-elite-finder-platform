@@ -7,7 +7,7 @@ import {
   Phone, Mail, MessageSquare, User, Target, TrendingUp, DollarSign, Calendar
 } from 'lucide-react';
 import { motion, Variants } from 'framer-motion';
-import { socket, connectSocket, disconnectSocket } from '@/services/socket';
+import socketService from '@/services/socket';
 
 // Animation Variants matching Dashboard
 const containerVariants: Variants = {
@@ -348,10 +348,10 @@ export const FlightControl: React.FC = () => {
 
   useEffect(() => {
     // Connect Socket
-    connectSocket();
+    socketService.connect();
 
     // Listen for lead updates
-    socket.on('lead_updated', (updatedLead: any) => {
+    socketService.on('lead_updated', (updatedLead: any) => {
       console.log('Lead updated via socket:', updatedLead);
       setLocalLeads(prev => {
         const exists = prev.find(l => l.id === updatedLead.id);
@@ -379,8 +379,8 @@ export const FlightControl: React.FC = () => {
     fetchLeads();
 
     return () => {
-      socket.off('lead_updated');
-      disconnectSocket();
+      socketService.off('lead_updated');
+      socketService.disconnect();
     };
   }, []);
 
@@ -798,42 +798,19 @@ export const FlightControl: React.FC = () => {
                     </div>
                     <h4 className="font-bold text-gray-900 mb-1">{lead.name}</h4>
                     <p className="text-sm text-gray-500 mb-3">{lead.productInterest}</p>
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                      <div className="flex items-center text-xs text-gray-400" title="Last Contact">
-                        <Clock size={12} className="mr-1" />
-                        {lead.lastContact}
-                      </div>
-                      <div className="font-semibold text-gray-700 text-sm">
-                        {formatCurrency(lead.value)}
-                      </div>
+                    <div className="flex justify-between items-center text-xs text-gray-400">
+                      <span>{formatCurrency(lead.value)}</span>
+                      <span>{lead.assignedTo}</span>
                     </div>
-                    {lead.tags && lead.tags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {lead.tags.slice(0, 2).map(tag => (
-                          <span key={tag} className="flex items-center text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
-                            <Tag size={8} className="mr-1" /> {tag}
-                          </span>
-                        ))}
-                        {lead.tags.length > 2 && (
-                          <span className="text-[10px] text-gray-400">+{lead.tags.length - 2}</span>
-                        )}
-                      </div>
-                    )}
                   </div>
                 ))}
-                {getLeadsByStatus(col.id).length === 0 && (
-                  <div className="h-24 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-sm flex-col gap-2 opacity-70">
-                    <Filter size={20} />
-                    <span>Nenhum lead</span>
-                  </div>
-                )}
               </div>
             </div>
           ))}
         </div>
       </motion.div>
 
-      {/* Lead Detail Modal */}
+      {/* Modals */}
       {selectedLead && (
         <LeadDetailModal
           lead={selectedLead}

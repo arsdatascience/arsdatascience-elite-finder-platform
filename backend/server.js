@@ -395,12 +395,9 @@ app.post('/api/integrations/whatsapp/setup', integrationsController.setupWhatsAp
 app.post('/api/integrations/n8n', authenticateToken, integrationsController.saveN8nConfig);
 
 // --- WEBHOOKS ---
-app.post('/webhooks/whatsapp', (req, res) => {
-  const { from, message } = req.body;
-  console.log(`Nova mensagem de ${from}: ${message}`);
-  // Lógica futura: Integrar com tabela chat_logs e chamar Gemini API
-  res.status(200).send('EVENT_RECEIVED');
-});
+const whatsappController = require('./whatsappController');
+app.post('/webhooks/whatsapp', whatsappController.handleWebhook);
+app.post('/api/whatsapp/send', authenticateToken, whatsappController.sendOutboundMessage);
 
 // --- AI SERVICES ---
 const aiController = require('./aiController');
@@ -473,6 +470,12 @@ app.use('/api/qdrant', qdrantController);
 
 // --- SOCIAL MEDIA INTEGRATIONS ---
 const socialIntegration = require('./socialIntegrationController');
+const integrationsCtrl = require('./integrationsController'); // Ensure this is required
+
+// WhatsApp Config Routes
+app.get('/api/integrations/whatsapp', authenticateToken, integrationsCtrl.getWhatsAppConfig);
+app.post('/api/integrations/whatsapp', authenticateToken, integrationsCtrl.saveWhatsAppConfig);
+
 app.get('/api/auth/meta', socialIntegration.initiateMetaAuth);
 app.get('/api/auth/meta/callback', socialIntegration.handleMetaCallback);
 app.get('/api/auth/linkedin', socialIntegration.initiateLinkedInAuth);
