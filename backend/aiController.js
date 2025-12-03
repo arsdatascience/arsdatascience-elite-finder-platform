@@ -514,11 +514,32 @@ const askEliteAssistant = async (req, res) => {
     `${msg.sender === 'client' ? 'Usuário' : 'Assistente'}: ${msg.text}`
   ).join('\n');
 
+  // --- RAG: KNOWLEDGE BASE SEARCH ---
+  let ragContext = "";
+  try {
+    const queryVector = await generateEmbeddings(question, apiKey);
+    if (queryVector) {
+      const searchResult = await qdrantService.searchVectors('marketing_strategies', queryVector, 3);
+      if (searchResult.success && searchResult.results.length > 0) {
+        const docs = searchResult.results.map(r => r.payload.content || r.payload.text).join("\n\n");
+        ragContext = `
+        📚 **BASE DE CONHECIMENTO (RAG):**
+        Use estas informações internas para enriquecer sua resposta:
+        ${docs}
+        `;
+        console.log("📚 RAG Context injected into Chat Assistant");
+      }
+    }
+  } catch (ragErr) {
+    console.warn("RAG Search failed:", ragErr.message);
+  }
+
   const prompt = `
     Você é o **Elite Strategist**, um Especialista Sênior em Marketing Digital e Vendas da plataforma 'EliteFinder'.
     
     ${churnContext}
     ${financialContext}
+    ${ragContext}
 
     🧠 **SUAS ESPECIALIDADES:**
     1. **Tráfego Pago:** Estratégias avançadas para Google Ads, Meta Ads (Facebook/Instagram), LinkedIn Ads e TikTok Ads.
