@@ -27,8 +27,8 @@ const sendOutboundMessage = async (req, res) => {
         // 2. Store in Database
         if (sessionId) {
             await db.query(
-                `INSERT INTO chat_messages (session_id, sender_type, sender_id, content) 
-                 VALUES ($1, 'agent', $2, $3)`,
+                `INSERT INTO chat_messages (session_id, role, sender_type, sender_id, content) 
+                 VALUES ($1, 'assistant', 'agent', $2, $3)`,
                 [sessionId, userId, content]
             );
         }
@@ -123,8 +123,8 @@ const handleWebhook = async (req, res) => {
 
         // 3. Salvar Mensagem
         await db.query(
-            `INSERT INTO chat_messages (session_id, sender_type, sender_id, content) 
-             VALUES ($1, 'client', $2, $3)`,
+            `INSERT INTO chat_messages (session_id, role, sender_type, sender_id, content) 
+             VALUES ($1, 'user', 'client', $2, $3)`,
             [sessionId, phone, messageContent]
         );
 
