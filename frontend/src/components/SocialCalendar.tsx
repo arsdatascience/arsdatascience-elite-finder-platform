@@ -51,13 +51,237 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     const [isGenerating, setIsGenerating] = useState(false);
     const [schedulingModal, setSchedulingModal] = useState<{ isOpen: boolean, date: Date | null }>({ isOpen: false, date: null });
     const [newEvent, setNewEvent] = useState({
+        id: null as string | null,
+        category: 'meeting' as 'meeting' | 'social_post',
         title: '',
+        content: '',
+        platform: 'instagram',
         type: 'meeting',
         startTime: '09:00',
         endTime: '10:00',
         description: '',
         videoConference: { type: null as 'meet' | 'zoom' | 'teams' | null, link: '' }
     });
+
+    // ... (existing code)
+
+    const handleEditPost = (post: Post) => {
+        const date = new Date(post.scheduled_date);
+        const isSocialPost = ['instagram', 'facebook', 'linkedin', 'twitter', 'youtube'].includes(post.platform);
+
+        setNewEvent({
+            id: post.id,
+            category: isSocialPost ? 'social_post' : 'meeting',
+            title: post.title || '',
+            content: post.content || '',
+            platform: post.platform || 'instagram',
+            type: post.type || 'meeting',
+            startTime: date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            endTime: post.endTime || new Date(date.getTime() + 60 * 60 * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+            description: post.description || '',
+            videoConference: post.videoConference || { type: null, link: '' }
+        });
+        setEditingEventId(post.id);
+        setSchedulingModal({ isOpen: true, date });
+    };
+
+    // ... (existing code)
+
+    <div className="p-6 space-y-6 overflow-y-auto">
+        {/* Category Toggle */}
+        <div className="flex p-1 bg-gray-100 rounded-lg mb-6">
+            <button
+                onClick={() => setNewEvent({ ...newEvent, category: 'meeting' })}
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${newEvent.category === 'meeting' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+                Compromisso / Reunião
+            </button>
+            <button
+                onClick={() => setNewEvent({ ...newEvent, category: 'social_post' })}
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${newEvent.category === 'social_post' ? 'bg-white shadow text-pink-600' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+                Postagem Social
+            </button>
+        </div>
+
+        {newEvent.category === 'meeting' ? (
+            <>
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Título do Evento</label>
+                    <input
+                        type="text"
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-lg"
+                        value={newEvent.title}
+                        onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                        placeholder="Adicionar título"
+                        autoFocus
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-700">Tipo</label>
+                        <select
+                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            value={newEvent.type}
+                            onChange={(e) => setNewEvent({ ...newEvent, type: e.target.value })}
+                        >
+                            <option value="meeting">Reunião</option>
+                            <option value="call">Ligação</option>
+                            <option value="task">Tarefa</option>
+                            <option value="reminder">Lembrete</option>
+                            <option value="deadline">Prazo Final</option>
+                        </select>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-700">Início</label>
+                        <input
+                            type="time"
+                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            value={newEvent.startTime}
+                            onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-gray-700">Fim</label>
+                        <input
+                            type="time"
+                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            value={newEvent.endTime}
+                            onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                        />
+                    </div>
+                </div>
+
+                {/* Video Conference Section */}
+                <div className="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                        <Users size={16} /> Adicionar Videoconferência
+                    </label>
+                    <div className="flex gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setNewEvent(prev => ({ ...prev, videoConference: { ...prev.videoConference, type: 'meet' } }))}
+                            className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2 ${newEvent.videoConference.type === 'meet' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                        >
+                            Google Meet
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setNewEvent(prev => ({ ...prev, videoConference: { ...prev.videoConference, type: 'zoom' } }))}
+                            className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2 ${newEvent.videoConference.type === 'zoom' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                        >
+                            Zoom
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setNewEvent(prev => ({ ...prev, videoConference: { ...prev.videoConference, type: 'teams' } }))}
+                            className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2 ${newEvent.videoConference.type === 'teams' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                        >
+                            Teams
+                        </button>
+                    </div>
+                    {newEvent.videoConference.type && (
+                        <div className="flex gap-2 animate-in fade-in slide-in-from-top-2">
+                            <input
+                                type="text"
+                                placeholder="Link da reunião..."
+                                value={newEvent.videoConference.link}
+                                onChange={(e) => setNewEvent(prev => ({ ...prev, videoConference: { ...prev.videoConference, link: e.target.value } }))}
+                                className="flex-1 p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const links = {
+                                        meet: 'https://meet.google.com/abc-defg-hij',
+                                        zoom: 'https://zoom.us/j/123456789',
+                                        teams: 'https://teams.microsoft.com/l/meetup-join/...'
+                                    };
+                                    if (newEvent.videoConference.type) {
+                                        setNewEvent(prev => ({
+                                            ...prev,
+                                            videoConference: { ...prev.videoConference, link: links[newEvent.videoConference.type!] }
+                                        }));
+                                    }
+                                }}
+                                className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                            >
+                                Gerar Link
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Descrição</label>
+                    <textarea
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-32 resize-none"
+                        value={newEvent.description}
+                        onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                        placeholder="Detalhes adicionais, pauta da reunião, etc..."
+                    ></textarea>
+                </div>
+            </>
+        ) : (
+            /* Social Post Form */
+            <>
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Plataforma</label>
+                    <div className="flex gap-2 overflow-x-auto pb-2">
+                        {platforms.filter(p => ['instagram', 'facebook', 'linkedin', 'twitter', 'youtube'].includes(p.id)).map(platform => {
+                            const Icon = getPlatformIcon(platform.id);
+                            const isSelected = newEvent.platform === platform.id;
+                            return (
+                                <button
+                                    key={platform.id}
+                                    onClick={() => setNewEvent({ ...newEvent, platform: platform.id })}
+                                    className={`px-3 py-2 rounded-lg border flex items-center gap-2 transition-all whitespace-nowrap ${isSelected ? getPlatformColor(platform.id) + ' ring-2 ring-offset-1' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    <Icon size={16} />
+                                    {platform.name}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Conteúdo do Post</label>
+                    <textarea
+                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none h-40 resize-none"
+                        value={newEvent.content}
+                        onChange={(e) => setNewEvent({ ...newEvent, content: e.target.value })}
+                        placeholder={`Escreva seu post para o ${platforms.find(p => p.id === newEvent.platform)?.name}...`}
+                        autoFocus
+                    ></textarea>
+                    <div className="flex justify-between text-xs text-gray-500">
+                        <span>{newEvent.content.length} caracteres</span>
+                        <button className="text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1">
+                            <Sparkles size={12} /> Melhorar com IA
+                        </button>
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-sm font-bold text-gray-700">Horário da Publicação</label>
+                    <input
+                        type="time"
+                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none"
+                        value={newEvent.startTime}
+                        onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
+                    />
+                </div>
+
+                <div className="p-4 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-gray-400 hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer h-32">
+                    <div className="p-2 bg-gray-100 rounded-full mb-2">
+                        <Users size={20} />
+                    </div>
+                    <span className="text-sm font-medium">Adicionar Mídia (Foto/Vídeo)</span>
+                </div>
+            </>
+        )}
+    </div>
 
     const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
