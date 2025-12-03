@@ -42,12 +42,31 @@ const getUsers = async (req, res) => {
 // ============================================
 // CLIENTS
 // ============================================
+const { encrypt, decrypt } = require('./utils/crypto');
+
+// ... (existing imports)
+
+// ============================================
+// CLIENTS
+// ============================================
 const getClients = async (req, res) => {
     const tenantId = req.user.tenant_id;
     try {
         // SAAS FIX: Filter clients by tenant
         const result = await pool.query('SELECT * FROM clients WHERE tenant_id = $1 ORDER BY name', [tenantId]);
-        res.json(result.rows);
+
+        // DECRYPT SENSITIVE DATA FOR DISPLAY
+        const clients = result.rows.map(client => ({
+            ...client,
+            document: decrypt(client.document),
+            phone: decrypt(client.phone),
+            whatsapp: decrypt(client.whatsapp),
+            address_street: decrypt(client.address_street),
+            address_number: decrypt(client.address_number),
+            address_complement: decrypt(client.address_complement)
+        }));
+
+        res.json(clients);
     } catch (error) {
         console.error('Error fetching clients:', error);
         res.status(500).json({ error: 'Failed to fetch clients' });
@@ -64,6 +83,14 @@ const createClient = async (req, res) => {
     } = req.body;
 
     try {
+        // ENCRYPT SENSITIVE DATA
+        const encryptedPhone = encrypt(phone);
+        const encryptedWhatsapp = encrypt(whatsapp);
+        const encryptedDocument = encrypt(document);
+        const encryptedStreet = encrypt(street);
+        const encryptedNumber = encrypt(number);
+        const encryptedComplement = encrypt(complement);
+
         // SAAS FIX: Insert with tenant_id
         const result = await pool.query(
             `INSERT INTO clients (
@@ -74,13 +101,23 @@ const createClient = async (req, res) => {
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) RETURNING *`,
             [
                 tenantId,
-                name, type, email, phone, whatsapp, document, foundationDate || null,
-                cep, street, number, complement, neighborhood, city, state,
+                name, type, email, encryptedPhone, encryptedWhatsapp, encryptedDocument, foundationDate || null,
+                cep, encryptedStreet, encryptedNumber, encryptedComplement, neighborhood, city, state,
                 instagramUrl, facebookUrl, linkedinUrl, website,
                 notes, company_size, industry
             ]
         );
-        res.status(201).json(result.rows[0]);
+
+        // Return decrypted data to the creator
+        const newClient = result.rows[0];
+        newClient.phone = phone;
+        newClient.whatsapp = whatsapp;
+        newClient.document = document;
+        newClient.address_street = street;
+        newClient.address_number = number;
+        newClient.address_complement = complement;
+
+        res.status(201).json(newClient);
     } catch (error) {
         console.error('Error creating client:', error);
         res.status(500).json({ error: 'Failed to create client' });
@@ -98,7 +135,24 @@ const updateClient = async (req, res) => {
     } = req.body;
 
     try {
+        // ENCRYPT SENSITIVE DATA (If provided)
+        // Note: In a real partial update, we'd need to check what changed. 
+        // Assuming full payload or handling logic. For simplicity, we encrypt what's passed.
+        // If frontend sends plaintext, we encrypt. If it sends null, we might overwrite.
+        // Ideally, fetch existing, merge, then encrypt. But assuming standard PUT behavior here.
+
+        const encryptedPhone = phone ? encrypt(phone) : null;
+        const encryptedWhatsapp = whatsapp ? encrypt(whatsapp) : null;
+        const encryptedDocument = document ? encrypt(document) : null;
+        const encryptedStreet = street ? encrypt(street) : null;
+        const encryptedNumber = number ? encrypt(number) : null;
+        const encryptedComplement = complement ? encrypt(complement) : null;
+
         // SAAS FIX: Ensure tenant_id matches
+        // We use COALESCE in SQL usually for PATCH, but here we are doing a full update set.
+        // To be safe with potentially missing fields in req.body, we should be careful.
+        // However, the original code was a direct UPDATE. We will maintain that but with encryption.
+
         const result = await pool.query(
             `UPDATE clients SET 
                 name = $1, type = $2, email = $3, phone = $4, whatsapp = $5, document = $6, foundation_date = $7,
@@ -108,8 +162,8 @@ const updateClient = async (req, res) => {
                 updated_at = NOW() 
             WHERE id = $22 AND tenant_id = $23 RETURNING *`,
             [
-                name, type, email, phone, whatsapp, document, foundationDate || null,
-                cep, street, number, complement, neighborhood, city, state,
+                name, type, email, encryptedPhone, encryptedWhatsapp, encryptedDocument, foundationDate || null,
+                cep, encryptedStreet, encryptedNumber, encryptedComplement, neighborhood, city, state,
                 instagramUrl, facebookUrl, linkedinUrl, website,
                 notes, company_size, industry,
                 id,
@@ -121,7 +175,16 @@ const updateClient = async (req, res) => {
             return res.status(404).json({ error: 'Client not found or access denied' });
         }
 
-        res.json(result.rows[0]);
+        // Decrypt for response
+        const updatedClient = result.rows[0];
+        updatedClient.phone = decrypt(updatedClient.phone);
+        updatedClient.whatsapp = decrypt(updatedClient.whatsapp);
+        updatedClient.document = decrypt(updatedClient.document);
+        updatedClient.address_street = decrypt(updatedClient.address_street);
+        updatedClient.address_number = decrypt(updatedClient.address_number);
+        updatedClient.address_complement = decrypt(updatedClient.address_complement);
+
+        res.json(updatedClient);
     } catch (error) {
         console.error('Error updating client:', error);
         res.status(500).json({ error: 'Failed to update client' });
