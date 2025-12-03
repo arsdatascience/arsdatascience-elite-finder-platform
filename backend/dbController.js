@@ -174,11 +174,11 @@ const getLeads = async (req, res) => {
 };
 
 const createLead = async (req, res) => {
-    const { client_id, name, email, phone, company, source, status, value, notes } = req.body;
+    const { client_id, name, email, phone, company, source, status, value, notes, tags } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO leads (client_id, name, email, phone, company, source, status, value, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-            [client_id, name, email, phone, company, source, status || 'new', value || 0, notes]
+            'INSERT INTO leads (client_id, name, email, phone, company, source, status, value, notes, tags) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+            [client_id, name, email, phone, company, source, status || 'new', value || 0, notes, tags || []]
         );
         const newLead = result.rows[0];
         res.status(201).json(newLead);
@@ -221,11 +221,11 @@ const updateLeadStatus = async (req, res) => {
 
 const updateLead = async (req, res) => {
     const { id } = req.params;
-    const { name, email, phone, company, source, status, value, notes } = req.body;
+    const { name, email, phone, company, source, status, value, notes, tags } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE leads SET name = COALESCE($1, name), email = COALESCE($2, email), phone = COALESCE($3, phone), company = COALESCE($4, company), source = COALESCE($5, source), status = COALESCE($6, status), value = COALESCE($7, value), notes = COALESCE($8, notes), updated_at = NOW() WHERE id = $9 RETURNING *',
-            [name, email, phone, company, source, status, value, notes, id]
+            'UPDATE leads SET name = COALESCE($1, name), email = COALESCE($2, email), phone = COALESCE($3, phone), company = COALESCE($4, company), source = COALESCE($5, source), status = COALESCE($6, status), value = COALESCE($7, value), notes = COALESCE($8, notes), tags = COALESCE($9, tags), updated_at = NOW() WHERE id = $10 RETURNING *',
+            [name, email, phone, company, source, status, value, notes, tags, id]
         );
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Lead not found' });

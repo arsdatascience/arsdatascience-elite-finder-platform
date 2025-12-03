@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Lead, LeadStatus } from '@/types';
 import { COMPONENT_VERSIONS } from '@/componentVersions';
 import {
   CheckCircle, Plus, Download, Save,
-  MoreVertical, Clock, Tag, Users, Filter, Search, X,
+  MoreVertical, Clock, Tag, Users, Search, X,
   Phone, Mail, MessageSquare, User, Target, TrendingUp, DollarSign, Calendar
 } from 'lucide-react';
 import { motion, Variants } from 'framer-motion';
@@ -46,8 +47,56 @@ interface LeadDetailModalProps {
   onUpdate: (leadId: string, updates: Partial<Lead>) => void;
 }
 
-const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose }) => {
-  const [notes, setNotes] = useState('');
+const SUGGESTED_TAGS = ["Quente", "Interessado", "Reunião Agendada", "Sem Resposta"];
+
+const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpdate }) => {
+  const navigate = useNavigate();
+  const [notes, setNotes] = useState(lead.notes || '');
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [newTag, setNewTag] = useState('');
+
+  const handleSaveNotes = () => {
+    onUpdate(lead.id, { notes });
+    alert('Nota salva!');
+  };
+
+  const handleAddTag = (tagToAdd?: string) => {
+    const tag = tagToAdd || newTag;
+    if (!tag.trim()) return;
+    const currentTags = lead.tags || [];
+    if (!currentTags.includes(tag)) {
+      onUpdate(lead.id, { tags: [...currentTags, tag] });
+    }
+    setNewTag('');
+    setIsAddingTag(false);
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    const currentTags = lead.tags || [];
+    onUpdate(lead.id, { tags: currentTags.filter(t => t !== tagToRemove) });
+  };
+
+  const handleQuickAction = (action: 'call' | 'email' | 'whatsapp' | 'schedule') => {
+    switch (action) {
+      case 'call':
+        window.location.href = `tel:${lead.phone}`;
+        break;
+      case 'email':
+        window.location.href = `mailto:${lead.email}`;
+        break;
+      case 'whatsapp':
+        const cleanPhone = lead.phone?.replace(/\D/g, '');
+        if (cleanPhone) {
+          window.open(`https://wa.me/55${cleanPhone}`, '_blank');
+        } else {
+          alert('Telefone inválido para WhatsApp');
+        }
+        break;
+      case 'schedule':
+        navigate('/social-calendar');
+        break;
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
@@ -80,19 +129,31 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose }) => {
             <div className="md:col-span-2">
               <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Ações Rápidas</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <button className="flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 px-4 py-3 rounded-lg transition-colors">
+                <button
+                  onClick={() => handleQuickAction('call')}
+                  className="flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 px-4 py-3 rounded-lg transition-colors"
+                >
                   <Phone size={16} />
                   <span className="text-sm font-medium">Ligar</span>
                 </button>
-                <button className="flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-3 rounded-lg transition-colors">
+                <button
+                  onClick={() => handleQuickAction('email')}
+                  className="flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-3 rounded-lg transition-colors"
+                >
                   <Mail size={16} />
                   <span className="text-sm font-medium">Email</span>
                 </button>
-                <button className="flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 px-4 py-3 rounded-lg transition-colors">
+                <button
+                  onClick={() => handleQuickAction('whatsapp')}
+                  className="flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 px-4 py-3 rounded-lg transition-colors"
+                >
                   <MessageSquare size={16} />
                   <span className="text-sm font-medium">WhatsApp</span>
                 </button>
-                <button className="flex items-center justify-center gap-2 bg-orange-50 hover:bg-orange-100 text-orange-700 px-4 py-3 rounded-lg transition-colors">
+                <button
+                  onClick={() => handleQuickAction('schedule')}
+                  className="flex items-center justify-center gap-2 bg-orange-50 hover:bg-orange-100 text-orange-700 px-4 py-3 rounded-lg transition-colors"
+                >
                   <Calendar size={16} />
                   <span className="text-sm font-medium">Agendar</span>
                 </button>
@@ -124,17 +185,57 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose }) => {
             {/* Tags */}
             <div>
               <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Tags</h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mb-2">
                 {lead.tags?.map(tag => (
-                  <span key={tag} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                  <span key={tag} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 group">
                     <Tag size={12} />
                     {tag}
+                    <button onClick={() => handleRemoveTag(tag)} className="ml-1 text-gray-400 hover:text-red-500">
+                      <X size={10} />
+                    </button>
                   </span>
                 ))}
-                <button className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-medium hover:bg-blue-100">
-                  + Adicionar
-                </button>
               </div>
+
+              {isAddingTag ? (
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                      className="flex-1 px-3 py-1.5 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder="Digite uma nova tag..."
+                      autoFocus
+                    />
+                    <button onClick={() => handleAddTag()} className="text-blue-600 hover:text-blue-800"><CheckCircle size={16} /></button>
+                    <button onClick={() => setIsAddingTag(false)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-gray-500 font-semibold uppercase">Sugestões:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {SUGGESTED_TAGS.filter(t => !lead.tags?.includes(t)).map(tag => (
+                        <button
+                          key={tag}
+                          onClick={() => handleAddTag(tag)}
+                          className="text-xs bg-white border border-gray-200 text-gray-600 hover:border-blue-300 hover:text-blue-600 px-2 py-1 rounded-md transition-all shadow-sm"
+                        >
+                          + {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsAddingTag(true)}
+                  className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors"
+                >
+                  + Adicionar Tag
+                </button>
+              )}
             </div>
 
             {/* Timeline */}
@@ -172,7 +273,10 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose }) => {
                 className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
                 rows={4}
               />
-              <button className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+              <button
+                onClick={handleSaveNotes}
+                className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+              >
                 Salvar Nota
               </button>
             </div>
@@ -792,7 +896,13 @@ export const FlightControl: React.FC = () => {
                         }`}>
                         {lead.source}
                       </span>
-                      <button className="text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedLead(lead);
+                        }}
+                        className="text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
                         <MoreVertical size={14} />
                       </button>
                     </div>

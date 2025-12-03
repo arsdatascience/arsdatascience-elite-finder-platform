@@ -14,7 +14,8 @@ const runMigrations = async () => {
             '011_create_campaign_metrics.sql',
             '016_create_integrations_table.sql',
             '017_create_sales_coaching_template.sql',
-            '018_add_whatsapp_column_to_clients.sql'
+            '018_add_whatsapp_column_to_clients.sql',
+            '019_add_tags_to_leads.sql'
         ];
 
         for (const migrationFile of migrations) {
