@@ -36,7 +36,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     onPostDelete
 }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
+    const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
     const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'google', 'meta']);
     const [selectedClient, setSelectedClient] = useState<string>('all');
     const [draggedPost, setDraggedPost] = useState<Post | null>(null);
@@ -45,7 +45,14 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     const [suggestionModal, setSuggestionModal] = useState<{ isOpen: boolean, holiday: any, date: Date } | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [schedulingModal, setSchedulingModal] = useState<{ isOpen: boolean, date: Date | null }>({ isOpen: false, date: null });
-    const [newEvent, setNewEvent] = useState({ title: '', type: 'meeting', time: '09:00', description: '' });
+    const [newEvent, setNewEvent] = useState({
+        title: '',
+        type: 'meeting',
+        startTime: '09:00',
+        endTime: '10:00',
+        description: '',
+        videoConference: { type: null as 'meet' | 'zoom' | 'teams' | null, link: '' }
+    });
 
     const location = useLocation();
 
@@ -55,8 +62,10 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
             setNewEvent({
                 title: `Reunião com ${lead.name}`,
                 type: 'meeting',
-                time: '09:00',
-                description: `Lead: ${lead.name}\nEmpresa: ${lead.company || 'N/A'}\nTelefone: ${lead.phone}\nEmail: ${lead.email}\nNotas: ${lead.notes || ''}`
+                startTime: '09:00',
+                endTime: '10:00',
+                description: `Lead: ${lead.name}\nEmpresa: ${lead.company || 'N/A'}\nTelefone: ${lead.phone}\nEmail: ${lead.email}\nNotas: ${lead.notes || ''}`,
+                videoConference: { type: null, link: '' }
             });
             setSchedulingModal({ isOpen: true, date: new Date() });
             // Clear state to prevent reopening on refresh (optional, but good practice)
@@ -274,9 +283,10 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     const handleScheduleEvent = () => {
         // Here you would typically save the event to the backend
         console.log('Scheduling event:', newEvent, 'on', schedulingModal.date);
-        alert(`Evento agendado: ${newEvent.title} em ${schedulingModal.date?.toLocaleDateString()} às ${newEvent.time}`);
+        const conferenceInfo = newEvent.videoConference.type ? `\nLink: ${newEvent.videoConference.link}` : '';
+        alert(`Evento agendado: ${newEvent.title}\nData: ${schedulingModal.date?.toLocaleDateString()}\nHorário: ${newEvent.startTime} - ${newEvent.endTime}${conferenceInfo}`);
         setSchedulingModal({ isOpen: false, date: null });
-        setNewEvent({ title: '', type: 'meeting', time: '09:00', description: '' });
+        setNewEvent({ title: '', type: 'meeting', startTime: '09:00', endTime: '10:00', description: '', videoConference: { type: null, link: '' } });
     };
 
     return (
