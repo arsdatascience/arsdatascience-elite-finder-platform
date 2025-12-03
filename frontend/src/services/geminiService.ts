@@ -57,7 +57,8 @@ export const askEliteAssistant = async (
     history: ChatMessage[],
     question: string,
     provider?: string,
-    model?: string
+    model?: string,
+    internetAccess?: boolean
 ): Promise<string> => {
     try {
         const token = localStorage.getItem('token');
@@ -67,7 +68,7 @@ export const askEliteAssistant = async (
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ history, question, provider, model }),
+            body: JSON.stringify({ history, question, provider, model, internetAccess }),
         });
 
         if (!response.ok) {

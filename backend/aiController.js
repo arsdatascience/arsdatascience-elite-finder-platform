@@ -534,12 +534,30 @@ const askEliteAssistant = async (req, res) => {
     console.warn("RAG Search failed:", ragErr.message);
   }
 
+  // --- INTERNET ACCESS CONTROL ---
+  let internetContext = "";
+  if (req.body.internetAccess) {
+    internetContext = `
+      🌍 **ACESSO À INTERNET: ATIVO**
+      Você tem permissão para usar seu amplo conhecimento de treinamento para responder sobre tendências de mercado, notícias gerais e fatos externos.
+      Combine isso com os dados internos para uma resposta completa.
+      `;
+  } else {
+    internetContext = `
+      🔒 **ACESSO À INTERNET: DESATIVADO (MODO RESTRITO)**
+      Responda APENAS com base nos dados fornecidos no Contexto Interno (Financeiro, Risco de Churn, Base de Conhecimento RAG).
+      Se a resposta não estiver nos dados, diga "Não tenho informações internas suficientes para responder a isso".
+      NÃO invente fatos externos.
+      `;
+  }
+
   const prompt = `
     Você é o **Elite Strategist**, um Especialista Sênior em Marketing Digital e Vendas da plataforma 'EliteFinder'.
     
     ${churnContext}
     ${financialContext}
     ${ragContext}
+    ${internetContext}
 
     🧠 **SUAS ESPECIALIDADES:**
     1. **Tráfego Pago:** Estratégias avançadas para Google Ads, Meta Ads (Facebook/Instagram), LinkedIn Ads e TikTok Ads.
