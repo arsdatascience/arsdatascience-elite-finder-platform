@@ -32,6 +32,7 @@ import { AudioAnalysis } from '@/components/AudioAnalysis';
 import FinancialModule from '@/components/FinancialModule';
 import CreativeStudio from '@/components/CreativeStudio';
 import { SalesCoachingChat } from '@/components/SalesCoachingChat';
+import { HelpCenter } from '@/components/HelpCenter';
 
 const PATH_MAP: Record<ViewState, string> = {
   [ViewState.HOME]: '/',
@@ -56,6 +57,7 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.ADMIN]: '/admin',
   [ViewState.CREATIVE_STUDIO]: '/creative-studio',
   [ViewState.SALES_COACHING]: '/sales-coaching',
+  [ViewState.HELP_CENTER]: '/help-center',
 };
 
 const PrivateRoute: React.FC = () => {
@@ -195,6 +197,7 @@ const App: React.FC = () => {
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
           <Route path="/creative-studio" element={<CreativeStudio />} />
           <Route path="/sales-coaching" element={<SalesCoachingChat />} />
+          <Route path="/help-center" element={<HelpCenter />} />
         </Route>
       </Route>
 
