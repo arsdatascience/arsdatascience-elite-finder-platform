@@ -10,7 +10,14 @@ const calculateLeadScore = async (leadId) => {
         const log = [];
 
         // 1. Dados Básicos
-        const leadRes = await db.query('SELECT * FROM leads WHERE id = $1', [leadId]);
+        // SAAS FIX: Get tenant_id to scope the scoring
+        const leadRes = await db.query(`
+            SELECT l.*, c.tenant_id 
+            FROM leads l
+            JOIN clients c ON l.client_id = c.id
+            WHERE l.id = $1
+        `, [leadId]);
+
         if (leadRes.rows.length === 0) return;
         const lead = leadRes.rows[0];
 
@@ -21,20 +28,30 @@ const calculateLeadScore = async (leadId) => {
         if (lead.value > 5000) score += 10;
 
         // 2. Interações (Chat)
+        // Primary check: Sessions linked to this specific client
         const chatRes = await db.query(
             "SELECT COUNT(*) as count FROM chat_messages WHERE session_id IN (SELECT id FROM chat_sessions WHERE client_id = $1) AND role = 'user'",
-            [lead.client_id] // Assumindo relação lead -> client ou usando phone
+            [lead.client_id]
         );
 
-        // Se não tiver client_id, tentar pelo telefone nas sessions
-        let messageCount = 0;
-        if (lead.phone) {
+        let messageCount = parseInt(chatRes.rows[0].count);
+
+        // Fallback: Check by phone but RESTRICT TO SAME TENANT
+        if (messageCount === 0 && lead.phone && lead.tenant_id) {
             const phoneClean = lead.phone.replace(/\D/g, '');
-            const chatPhoneRes = await db.query(
-                "SELECT COUNT(*) as count FROM chat_messages cm JOIN chat_sessions cs ON cm.session_id = cs.id WHERE cs.metadata->>'phone' LIKE $1 AND cm.role = 'user'",
-                [`%${phoneClean}%`]
-            );
-            messageCount = parseInt(chatPhoneRes.rows[0].count);
+            const chatPhoneRes = await db.query(`
+                SELECT COUNT(*) as count 
+                FROM chat_messages cm 
+                JOIN chat_sessions cs ON cm.session_id = cs.id 
+                LEFT JOIN clients c ON cs.client_id = c.id
+                WHERE cs.metadata->>'phone' LIKE $1 
+                AND cm.role = 'user'
+                AND (c.tenant_id = $2 OR c.tenant_id IS NULL) -- Safety check
+            `, [`%${phoneClean}%`, lead.tenant_id]);
+
+            // Only use this count if it's greater (merge logic)
+            const phoneCount = parseInt(chatPhoneRes.rows[0].count);
+            if (phoneCount > messageCount) messageCount = phoneCount;
         }
 
         score += (messageCount * 2); // 2 pontos por mensagem enviada
