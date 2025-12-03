@@ -56,6 +56,7 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpda
   const [newTag, setNewTag] = useState('');
 
   const handleSaveNotes = () => {
+    console.log('Saving notes for lead:', lead.id, notes);
     onUpdate(lead.id, { notes });
     alert('Nota salva!');
   };
@@ -77,15 +78,28 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpda
   };
 
   const handleQuickAction = (action: 'call' | 'email' | 'whatsapp' | 'schedule') => {
+    console.log('Quick action triggered:', action);
     switch (action) {
       case 'call':
+        if (!lead.phone) {
+          alert('Telefone não cadastrado');
+          return;
+        }
         window.location.href = `tel:${lead.phone}`;
         break;
       case 'email':
+        if (!lead.email) {
+          alert('Email não cadastrado');
+          return;
+        }
         window.location.href = `mailto:${lead.email}`;
         break;
       case 'whatsapp':
-        const cleanPhone = lead.phone?.replace(/\D/g, '');
+        if (!lead.phone) {
+          alert('Telefone não cadastrado');
+          return;
+        }
+        const cleanPhone = lead.phone.replace(/\D/g, '');
         if (cleanPhone) {
           window.open(`https://wa.me/55${cleanPhone}`, '_blank');
         } else {
@@ -93,6 +107,7 @@ const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose, onUpda
         }
         break;
       case 'schedule':
+        console.log('Navigating to calendar');
         navigate('/social-calendar');
         break;
     }
@@ -319,6 +334,37 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSave }) 
     onClose();
   };
 
+  const handleQuickAction = (action: 'call' | 'email' | 'whatsapp') => {
+    switch (action) {
+      case 'call':
+        if (!formData.phone) {
+          alert('Telefone não preenchido');
+          return;
+        }
+        window.location.href = `tel:${formData.phone}`;
+        break;
+      case 'email':
+        if (!formData.email) {
+          alert('Email não preenchido');
+          return;
+        }
+        window.location.href = `mailto:${formData.email}`;
+        break;
+      case 'whatsapp':
+        if (!formData.phone) {
+          alert('Telefone não preenchido');
+          return;
+        }
+        const cleanPhone = formData.phone.replace(/\D/g, '');
+        if (cleanPhone) {
+          window.open(`https://wa.me/55${cleanPhone}`, '_blank');
+        } else {
+          alert('Telefone inválido para WhatsApp');
+        }
+        break;
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
@@ -332,6 +378,34 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSave }) 
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[80vh]">
+          {/* Quick Actions for New Lead (Preview) */}
+          <div className="flex gap-3 justify-end mb-2">
+            <button
+              type="button"
+              onClick={() => handleQuickAction('call')}
+              className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+              title="Ligar Agora"
+            >
+              <Phone size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickAction('email')}
+              className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+              title="Enviar Email"
+            >
+              <Mail size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickAction('whatsapp')}
+              className="p-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
+              title="WhatsApp"
+            >
+              <MessageSquare size={18} />
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-700">Nome Completo *</label>
@@ -706,218 +780,220 @@ export const FlightControl: React.FC = () => {
   const assignees = Array.from(new Set(localLeads.map(l => l.assignedTo)));
 
   return (
-    <motion.div
-      className="space-y-6"
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <motion.div variants={itemVariants}>
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            Controle de Voo <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.FlightControl}</span>
-            <span className="text-xs font-normal bg-slate-800 text-white px-2 py-1 rounded animate-pulse">AO VIVO</span>
-          </h2>
-          <p className="text-gray-500 text-sm">Gestão operacional de leads em tempo real</p>
-        </motion.div>
+    <>
+      <motion.div
+        className="space-y-6"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <motion.div variants={itemVariants}>
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              Controle de Voo <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.FlightControl}</span>
+              <span className="text-xs font-normal bg-slate-800 text-white px-2 py-1 rounded animate-pulse">AO VIVO</span>
+            </h2>
+            <p className="text-gray-500 text-sm">Gestão operacional de leads em tempo real</p>
+          </motion.div>
 
-        <motion.div variants={itemVariants} className="flex gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
-              <Users size={16} />
+          <motion.div variants={itemVariants} className="flex gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+                <Users size={16} />
+              </div>
+              <select
+                value={selectedClient}
+                onChange={(e) => setSelectedClient(e.target.value)}
+                className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
+              >
+                <option value="all">Todos os Clientes</option>
+                {clients.map((client: any) => (
+                  <option key={client.id} value={client.id}>{client.name}</option>
+                ))}
+              </select>
             </div>
-            <select
-              value={selectedClient}
-              onChange={(e) => setSelectedClient(e.target.value)}
-              className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
+
+            <button
+              onClick={handleExport}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
             >
-              <option value="all">Todos os Clientes</option>
-              {clients.map((client: any) => (
-                <option key={client.id} value={client.id}>{client.name}</option>
+              <Download size={18} />
+              <span className="hidden sm:inline">Exportar</span>
+            </button>
+            <button
+              onClick={() => setShowNewLeadModal(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 transition-all"
+            >
+              <Plus size={18} />
+              <span>Lead Manual</span>
+            </button>
+          </motion.div>
+        </div>
+
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <motion.div variants={itemVariants} className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
+            <div className="flex items-center justify-between mb-2">
+              <Target size={20} className="opacity-80" />
+              <TrendingUp size={16} className="opacity-60" />
+            </div>
+            <p className="text-2xl font-bold">{metrics.totalLeads}</p>
+            <p className="text-xs text-blue-100">Total de Leads</p>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
+            <div className="flex items-center justify-between mb-2">
+              <DollarSign size={20} className="opacity-80" />
+              <TrendingUp size={16} className="opacity-60" />
+            </div>
+            <p className="text-2xl font-bold">{formatCurrency(metrics.totalValue)}</p>
+            <p className="text-xs text-green-100">Pipeline Total</p>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
+            <div className="flex items-center justify-between mb-2">
+              <CheckCircle size={20} className="opacity-80" />
+              <TrendingUp size={16} className="opacity-60" />
+            </div>
+            <p className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</p>
+            <p className="text-xs text-purple-100">Taxa de Conversão</p>
+          </motion.div>
+
+          <motion.div variants={itemVariants} className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
+            <div className="flex items-center justify-between mb-2">
+              <Target size={20} className="opacity-80" />
+              <TrendingUp size={16} className="opacity-60" />
+            </div>
+            <p className="text-2xl font-bold">{formatCurrency(metrics.avgDealSize)}</p>
+            <p className="text-xs text-orange-100">Ticket Médio</p>
+          </motion.div>
+        </div>
+
+        {/* Filters Bar */}
+        <motion.div variants={itemVariants} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            {/* Search */}
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar lead..."
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+
+            {/* Source Filter */}
+            <select
+              value={selectedSource}
+              onChange={(e) => setSelectedSource(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="all">Todas as Fontes</option>
+              {sources.map(source => (
+                <option key={source} value={source}>{source}</option>
               ))}
             </select>
-          </div>
 
-          <button
-            onClick={handleExport}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
-          >
-            <Download size={18} />
-            <span className="hidden sm:inline">Exportar</span>
-          </button>
-          <button
-            onClick={() => setShowNewLeadModal(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 transition-all"
-          >
-            <Plus size={18} />
-            <span>Lead Manual</span>
-          </button>
-        </motion.div>
-      </div>
-
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div variants={itemVariants} className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
-          <div className="flex items-center justify-between mb-2">
-            <Target size={20} className="opacity-80" />
-            <TrendingUp size={16} className="opacity-60" />
-          </div>
-          <p className="text-2xl font-bold">{metrics.totalLeads}</p>
-          <p className="text-xs text-blue-100">Total de Leads</p>
-        </motion.div>
-
-        <motion.div variants={itemVariants} className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
-          <div className="flex items-center justify-between mb-2">
-            <DollarSign size={20} className="opacity-80" />
-            <TrendingUp size={16} className="opacity-60" />
-          </div>
-          <p className="text-2xl font-bold">{formatCurrency(metrics.totalValue)}</p>
-          <p className="text-xs text-green-100">Pipeline Total</p>
-        </motion.div>
-
-        <motion.div variants={itemVariants} className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
-          <div className="flex items-center justify-between mb-2">
-            <CheckCircle size={20} className="opacity-80" />
-            <TrendingUp size={16} className="opacity-60" />
-          </div>
-          <p className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</p>
-          <p className="text-xs text-purple-100">Taxa de Conversão</p>
-        </motion.div>
-
-        <motion.div variants={itemVariants} className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
-          <div className="flex items-center justify-between mb-2">
-            <Target size={20} className="opacity-80" />
-            <TrendingUp size={16} className="opacity-60" />
-          </div>
-          <p className="text-2xl font-bold">{formatCurrency(metrics.avgDealSize)}</p>
-          <p className="text-xs text-orange-100">Ticket Médio</p>
-        </motion.div>
-      </div>
-
-      {/* Filters Bar */}
-      <motion.div variants={itemVariants} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          {/* Search */}
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar lead..."
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </div>
-
-          {/* Source Filter */}
-          <select
-            value={selectedSource}
-            onChange={(e) => setSelectedSource(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-          >
-            <option value="all">Todas as Fontes</option>
-            {sources.map(source => (
-              <option key={source} value={source}>{source}</option>
-            ))}
-          </select>
-
-          {/* Value Filter */}
-          <select
-            value={selectedValue}
-            onChange={(e) => setSelectedValue(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-          >
-            <option value="all">Todos os Valores</option>
-            <option value="low">Até R$ 3.000</option>
-            <option value="medium">R$ 3.000 - R$ 10.000</option>
-            <option value="high">Acima de R$ 10.000</option>
-          </select>
-
-          {/* Assignee Filter */}
-          <select
-            value={selectedAssignee}
-            onChange={(e) => setSelectedAssignee(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-          >
-            <option value="all">Todos Responsáveis</option>
-            {assignees.map(assignee => (
-              <option key={assignee} value={assignee}>{assignee}</option>
-            ))}
-          </select>
-
-          {/* Clear Filters */}
-          <button
-            onClick={() => {
-              setSearchTerm('');
-              setSelectedSource('all');
-              setSelectedValue('all');
-              setSelectedAssignee('all');
-            }}
-            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-          >
-            <X size={16} />
-            Limpar
-          </button>
-        </div>
-      </motion.div>
-
-      {/* Kanban Board */}
-      <motion.div variants={itemVariants} className="w-full overflow-x-auto pb-4">
-        <div className="flex gap-4 min-w-full w-max">
-          {COLUMNS.map((col) => (
-            <div
-              key={col.id}
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop(col.id)}
-              className="flex-1 flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 min-w-[250px] w-[250px] flex-shrink-0 transition-all hover:border-gray-300"
+            {/* Value Filter */}
+            <select
+              value={selectedValue}
+              onChange={(e) => setSelectedValue(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <div className={`p-4 border-t-4 ${col.color} ${col.bgColor} rounded-t-xl shadow-sm`}>
-                <div className="flex justify-between items-center">
-                  <h3 className="font-semibold text-gray-700">{col.label}</h3>
-                  <span className="bg-white text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
-                    {getLeadsByStatus(col.id).length}
-                  </span>
+              <option value="all">Todos os Valores</option>
+              <option value="low">Até R$ 3.000</option>
+              <option value="medium">R$ 3.000 - R$ 10.000</option>
+              <option value="high">Acima de R$ 10.000</option>
+            </select>
+
+            {/* Assignee Filter */}
+            <select
+              value={selectedAssignee}
+              onChange={(e) => setSelectedAssignee(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="all">Todos Responsáveis</option>
+              {assignees.map(assignee => (
+                <option key={assignee} value={assignee}>{assignee}</option>
+              ))}
+            </select>
+
+            {/* Clear Filters */}
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedSource('all');
+                setSelectedValue('all');
+                setSelectedAssignee('all');
+              }}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <X size={16} />
+              Limpar
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Kanban Board */}
+        <motion.div variants={itemVariants} className="w-full overflow-x-auto pb-4">
+          <div className="flex gap-4 min-w-full w-max">
+            {COLUMNS.map((col) => (
+              <div
+                key={col.id}
+                onDragOver={handleDragOver}
+                onDrop={() => handleDrop(col.id)}
+                className="flex-1 flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 min-w-[250px] w-[250px] flex-shrink-0 transition-all hover:border-gray-300"
+              >
+                <div className={`p-4 border-t-4 ${col.color} ${col.bgColor} rounded-t-xl shadow-sm`}>
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold text-gray-700">{col.label}</h3>
+                    <span className="bg-white text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
+                      {getLeadsByStatus(col.id).length}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex-1 p-3 space-y-3">
+                  {getLeadsByStatus(col.id).map((lead) => (
+                    <div
+                      key={lead.id}
+                      draggable
+                      onDragStart={() => handleDragStart(lead)}
+                      onClick={() => setSelectedLead(lead)}
+                      className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-move group hover:scale-[1.02]"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${lead.source === 'Google Ads' ? 'bg-blue-50 text-blue-600' :
+                          lead.source === 'Instagram' ? 'bg-pink-50 text-pink-600' :
+                            'bg-green-50 text-green-600'
+                          }`}>
+                          {lead.source}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLead(lead);
+                          }}
+                          className="text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreVertical size={14} />
+                        </button>
+                      </div>
+                      <h4 className="font-bold text-gray-900 mb-1">{lead.name}</h4>
+                      <p className="text-sm text-gray-500 mb-3">{lead.productInterest}</p>
+                      <div className="flex justify-between items-center text-xs text-gray-400">
+                        <span>{formatCurrency(lead.value)}</span>
+                        <span>{lead.assignedTo}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="flex-1 p-3 space-y-3">
-                {getLeadsByStatus(col.id).map((lead) => (
-                  <div
-                    key={lead.id}
-                    draggable
-                    onDragStart={() => handleDragStart(lead)}
-                    onClick={() => setSelectedLead(lead)}
-                    className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-move group hover:scale-[1.02]"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${lead.source === 'Google Ads' ? 'bg-blue-50 text-blue-600' :
-                        lead.source === 'Instagram' ? 'bg-pink-50 text-pink-600' :
-                          'bg-green-50 text-green-600'
-                        }`}>
-                        {lead.source}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedLead(lead);
-                        }}
-                        className="text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <MoreVertical size={14} />
-                      </button>
-                    </div>
-                    <h4 className="font-bold text-gray-900 mb-1">{lead.name}</h4>
-                    <p className="text-sm text-gray-500 mb-3">{lead.productInterest}</p>
-                    <div className="flex justify-between items-center text-xs text-gray-400">
-                      <span>{formatCurrency(lead.value)}</span>
-                      <span>{lead.assignedTo}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </motion.div>
       </motion.div>
 
       {/* Modals */}
@@ -934,6 +1010,6 @@ export const FlightControl: React.FC = () => {
         onClose={() => setShowNewLeadModal(false)}
         onSave={handleAddLead}
       />
-    </motion.div>
+    </>
   );
 };

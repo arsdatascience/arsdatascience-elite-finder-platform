@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Grid3x3, List, Instagram, Facebook, Linkedin, Twitter, Edit2, Trash2, Clock, Users, Gift, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Grid3x3, List, Instagram, Facebook, Linkedin, Twitter, Edit2, Trash2, Clock, Users, Gift, Sparkles, X, Save } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/apiClient';
 
@@ -43,6 +43,9 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     const [editContent, setEditContent] = useState('');
     const [suggestionModal, setSuggestionModal] = useState<{ isOpen: boolean, holiday: any, date: Date } | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [schedulingModal, setSchedulingModal] = useState<{ isOpen: boolean, date: Date | null }>({ isOpen: false, date: null });
+    const [newEvent, setNewEvent] = useState({ title: '', type: 'meeting', time: '09:00', description: '' });
+
     const queryClient = useQueryClient();
 
     const { data: clients } = useQuery({
@@ -245,6 +248,19 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         }
     };
 
+    const handleDayClick = (day: number) => {
+        const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+        setSchedulingModal({ isOpen: true, date });
+    };
+
+    const handleScheduleEvent = () => {
+        // Here you would typically save the event to the backend
+        console.log('Scheduling event:', newEvent, 'on', schedulingModal.date);
+        alert(`Evento agendado: ${newEvent.title} em ${schedulingModal.date?.toLocaleDateString()} às ${newEvent.time}`);
+        setSchedulingModal({ isOpen: false, date: null });
+        setNewEvent({ title: '', type: 'meeting', time: '09:00', description: '' });
+    };
+
     return (
         <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in relative">
             {/* Client Filter Bar */}
@@ -374,6 +390,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                     key={day}
                                     onDragOver={handleDragOver}
                                     onDrop={() => handleDrop(day)}
+                                    onClick={() => handleDayClick(day)}
                                     className={`aspect-square border rounded-lg p-2 flex flex-col ${isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
                                         } hover:shadow-md transition-shadow cursor-pointer min-h-[100px]`}
                                 >
@@ -406,6 +423,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                     key={post.id}
                                                     draggable
                                                     onDragStart={() => handleDragStart(post)}
+                                                    onClick={(e) => { e.stopPropagation(); }}
                                                     className={`w-full text-left p-1.5 rounded border text-xs transition-all ${getPlatformColor(post.platform)} cursor-move`}
                                                 >
                                                     {isEditing ? (
@@ -484,8 +502,9 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                     key={idx}
                                     onDragOver={handleDragOver}
                                     onDrop={() => handleDrop(date.getDate(), date.getMonth(), date.getFullYear())}
+                                    onClick={() => setSchedulingModal({ isOpen: true, date })}
                                     className={`border rounded-lg p-4 ${isToday ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'
-                                        } hover:shadow-md transition-shadow`}
+                                        } hover:shadow-md transition-shadow cursor-pointer`}
                                 >
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-3">
@@ -512,7 +531,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                     key={post.id}
                                                     draggable
                                                     onDragStart={() => handleDragStart(post)}
-                                                    onClick={() => onPostClick(post)}
+                                                    onClick={(e) => { e.stopPropagation(); onPostClick(post); }}
                                                     className={`p-3 rounded-lg border cursor-pointer transition-all ${getPlatformColor(post.platform)}`}
                                                 >
                                                     <div className="flex items-start gap-2">
@@ -608,6 +627,93 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                     </div>
                 )
             }
+
+            {/* Scheduling Modal */}
+            {schedulingModal.isOpen && (
+                <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+                        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white flex justify-between items-center">
+                            <div>
+                                <h2 className="text-xl font-bold flex items-center gap-2">
+                                    <CalendarIcon size={24} /> Novo Agendamento
+                                </h2>
+                                <p className="text-blue-100 text-sm mt-1">
+                                    {schedulingModal.date?.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                </p>
+                            </div>
+                            <button onClick={() => setSchedulingModal({ isOpen: false, date: null })} className="text-white/80 hover:text-white transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700">Título do Evento</label>
+                                <input
+                                    type="text"
+                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    value={newEvent.title}
+                                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                                    placeholder="Ex: Reunião de Alinhamento"
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-700">Tipo</label>
+                                    <select
+                                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        value={newEvent.type}
+                                        onChange={(e) => setNewEvent({ ...newEvent, type: e.target.value })}
+                                    >
+                                        <option value="meeting">Reunião</option>
+                                        <option value="call">Ligação</option>
+                                        <option value="task">Tarefa</option>
+                                        <option value="reminder">Lembrete</option>
+                                        <option value="deadline">Prazo Final</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-700">Horário</label>
+                                    <input
+                                        type="time"
+                                        className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        value={newEvent.time}
+                                        onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700">Descrição</label>
+                                <textarea
+                                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"
+                                    value={newEvent.description}
+                                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                                    placeholder="Detalhes adicionais..."
+                                ></textarea>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                                <button
+                                    onClick={() => setSchedulingModal({ isOpen: false, date: null })}
+                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleScheduleEvent}
+                                    disabled={!newEvent.title}
+                                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Save size={18} /> Agendar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
