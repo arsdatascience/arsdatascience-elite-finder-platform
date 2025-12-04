@@ -248,27 +248,11 @@ const getCampaigns = async (req, res) => {
         if (client_id && client_id !== 'all') {
             const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
             query += ` ${whereOrAnd} cmp.client_id = $${params.length + 1}`;
-            params.push(client_id);
         }
 
         query += ` ORDER BY cmp.created_at DESC`;
 
         const result = await pool.query(query, params);
-
-        if (result.rows.length === 0) {
-            // Mock data for demonstration if DB is empty
-            // Mock dinâmico baseado no client_id
-            const id = parseInt(client_id) || 1;
-            const multiplier = 1 + (id * 0.2);
-
-            return res.json([
-                { id: 1, name: `Campanha Performance ${2024 + id}`, platform: 'google', status: 'active', budget: Math.floor(5000 * multiplier), spent: Math.floor(2300 * multiplier), ctr: 2.5, roas: 4.1, conversions: Math.floor(150 * multiplier), created_at: new Date() },
-                { id: 2, name: `Promoção ${id === 1 ? 'Tech' : id === 2 ? 'Food' : 'Style'}`, platform: 'meta', status: 'active', budget: Math.floor(3000 * multiplier), spent: Math.floor(1200 * multiplier), ctr: 1.8, roas: 3.5, conversions: Math.floor(80 * multiplier), created_at: new Date() },
-                { id: 3, name: 'Retargeting Institucional', platform: 'meta', status: 'paused', budget: Math.floor(1000 * multiplier), spent: Math.floor(450 * multiplier), ctr: 0.9, roas: 2.0, conversions: Math.floor(15 * multiplier), created_at: new Date() },
-                { id: 4, name: 'Search Institucional', platform: 'google', status: 'learning', budget: Math.floor(2000 * multiplier), spent: Math.floor(150 * multiplier), ctr: 3.2, roas: 0, conversions: 2, created_at: new Date() }
-            ]);
-        }
-
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching campaigns:', error);
@@ -276,9 +260,6 @@ const getCampaigns = async (req, res) => {
     }
 };
 
-// ============================================
-// LEADS
-// ============================================
 // ============================================
 // LEADS
 // ============================================
@@ -313,17 +294,12 @@ const getLeads = async (req, res) => {
 
         query += ' ORDER BY l.created_at DESC';
 
+        console.log('🔍 getLeads Params:', { client_id, status, isSuperAdmin, tenantId });
+        console.log('🔍 getLeads Query:', query);
+        console.log('🔍 getLeads DB Params:', params);
+
         const result = await pool.query(query, params);
-        if (result.rows.length === 0) {
-            // Mock data if DB is empty
-            return res.json([
-                { id: '1', name: 'Roberto Silva', email: 'roberto@empresa.com', phone: '(11) 99999-1111', status: 'new', source: 'Google Ads', value: 5000, company: 'Tech Corp', tags: ['quente'], created_at: new Date() },
-                { id: '2', name: 'Ana Santos', email: 'ana@design.com', phone: '(11) 98888-2222', status: 'in_progress', source: 'Indicação', value: 12000, company: 'Design Studio', tags: ['corporativo'], created_at: new Date() },
-                { id: '3', name: 'Carlos Oliveira', email: 'carlos@varejo.com', phone: '(21) 97777-3333', status: 'waiting', source: 'Meta Ads', value: 3500, company: 'Varejo Ltda', tags: [], created_at: new Date() },
-                { id: '4', name: 'Fernanda Lima', email: 'fernanda@consultoria.com', phone: '(31) 96666-4444', status: 'closed_won', source: 'Linkedin', value: 25000, company: 'Consultoria RH', tags: ['vip'], created_at: new Date() },
-                { id: '5', name: 'Ricardo Souza', email: 'ricardo@startup.com', phone: '(41) 95555-5555', status: 'closed_lost', source: 'Google Ads', value: 1500, company: 'Startup Inc', tags: ['frio'], created_at: new Date() }
-            ]);
-        }
+        console.log(`✅ getLeads found ${result.rows.length} records.`);
 
         res.json(result.rows);
     } catch (error) {
@@ -372,10 +348,10 @@ const createLead = async (req, res) => {
                 tenantId: tenantId // Passar contexto do tenant
             }, {
                 delay: 24 * 60 * 60 * 1000, // 24 horas
-                jobId: `followup_${newLead.id}` // ID único
+                jobId: `followup_${newLead.id} ` // ID único
             });
 
-            console.log(`🤖 Lead ${newLead.id}: Score calculado e Follow-up agendado via BullMQ.`);
+            console.log(`🤖 Lead ${newLead.id}: Score calculado e Follow - up agendado via BullMQ.`);
         } catch (sysErr) {
             console.error('Erro nos processos sistêmicos de Lead:', sysErr);
         }
@@ -397,7 +373,7 @@ const updateLeadStatus = async (req, res) => {
              SET status = $1, updated_at = NOW() 
              FROM clients c
              WHERE l.client_id = c.id AND l.id = $2 AND c.tenant_id = $3
-             RETURNING l.*`,
+             RETURNING l.* `,
             [status, id, tenantId]
         );
 
@@ -436,7 +412,7 @@ const updateLead = async (req, res) => {
              SET name = COALESCE($1, name), email = COALESCE($2, email), phone = COALESCE($3, phone), company = COALESCE($4, company), source = COALESCE($5, source), status = COALESCE($6, status), value = COALESCE($7, value), notes = COALESCE($8, notes), tags = COALESCE($9, tags), updated_at = NOW() 
              FROM clients c
              WHERE l.client_id = c.id AND l.id = $10 AND c.tenant_id = $11
-             RETURNING l.*`,
+             RETURNING l.* `,
             [name, email, phone, company, source, status, value, notes, tags, id, tenantId]
         );
         if (result.rows.length === 0) {
@@ -458,12 +434,12 @@ const getChatMessages = async (req, res) => {
     try {
 
         let query = `
-             SELECT cm.* 
-             FROM chat_messages cm
+             SELECT cm.*
+                FROM chat_messages cm
              JOIN leads l ON cm.lead_id = l.id
              JOIN clients c ON l.client_id = c.id
              WHERE cm.lead_id = $1
-        `;
+                `;
         let params = [lead_id];
 
         // if (!isSuperAdmin) {
@@ -490,10 +466,10 @@ const getSocialPosts = async (req, res) => {
         const { isSuperAdmin, tenantId } = getTenantScope(req);
 
         let query = `
-            SELECT sp.* 
-            FROM social_posts sp
+            SELECT sp.*
+                FROM social_posts sp
             JOIN clients c ON sp.client_id = c.id
-        `;
+                `;
         let params = [];
 
         // if (!isSuperAdmin) {
@@ -503,7 +479,7 @@ const getSocialPosts = async (req, res) => {
 
         if (client_id && client_id !== 'all') {
             const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
-            query += ` ${whereOrAnd} sp.client_id = $${params.length + 1}`;
+            query += ` ${whereOrAnd} sp.client_id = $${params.length + 1} `;
             params.push(client_id);
         }
 
@@ -546,12 +522,12 @@ const getWorkflowSteps = async (req, res) => {
     try {
 
         let query = `
-            SELECT s.* 
-            FROM automation_workflow_steps s
+            SELECT s.*
+                FROM automation_workflow_steps s
             JOIN automation_workflows w ON s.workflow_id = w.id
             JOIN users u ON w.user_id = u.id
             WHERE s.workflow_id = $1
-        `;
+                `;
         let params = [workflow_id];
 
         // if (!isSuperAdmin) {
@@ -592,8 +568,8 @@ const getTrainingProgress = async (req, res) => {
     // Simplified: Allow if user belongs to same tenant
     try {
         const result = await pool.query(
-            `SELECT tp.* 
-             FROM training_progress tp
+            `SELECT tp.*
+                FROM training_progress tp
              JOIN users u ON tp.user_id = u.id
              WHERE tp.user_id = $1 AND u.tenant_id = $2`,
             [user_id, tenantId]
@@ -616,10 +592,10 @@ const getKPIs = async (req, res) => {
         const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
 
         let query = `
-            SELECT k.* 
-            FROM kpis k
+            SELECT k.*
+                FROM kpis k
             JOIN clients c ON k.client_id = c.id
-        `;
+                `;
         let params = [];
 
         // if (!isSuperAdmin) {
@@ -629,7 +605,7 @@ const getKPIs = async (req, res) => {
 
         if (client_id && client_id !== 'all') {
             const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
-            query += ` ${whereOrAnd} k.client_id = $${params.length + 1}`;
+            query += ` ${whereOrAnd} k.client_id = $${params.length + 1} `;
             params.push(client_id);
         }
 
@@ -655,7 +631,7 @@ const getDeviceStats = async (req, res) => {
             SELECT ds.device_type, SUM(ds.percentage) as percentage, SUM(ds.conversions) as conversions 
             FROM device_stats ds
             JOIN clients c ON ds.client_id = c.id
-        `;
+                `;
         let params = [];
 
         // if (!isSuperAdmin) {
@@ -665,13 +641,13 @@ const getDeviceStats = async (req, res) => {
 
         if (client_id && client_id !== 'all') {
             const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
-            query += ` ${whereOrAnd} ds.client_id = $${params.length + 1}`;
+            query += ` ${whereOrAnd} ds.client_id = $${params.length + 1} `;
             params.push(client_id);
         }
 
         if (campaign_id) {
             const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
-            query += ` ${whereOrAnd} ds.campaign_id = $${params.length + 1}`;
+            query += ` ${whereOrAnd} ds.campaign_id = $${params.length + 1} `;
             params.push(campaign_id);
         }
 

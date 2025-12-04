@@ -209,9 +209,10 @@ export const apiClient = {
         }
     },
     leads: {
-        getLeads: async () => {
-            if (USE_MOCK) return []; // Implement mock if needed
-            const response = await axiosInstance.get('/leads');
+        getLeads: async (clientId?: string) => {
+            if (USE_MOCK) return [];
+            const url = clientId && clientId !== 'all' ? `/leads?client_id=${clientId}` : '/leads';
+            const response = await axiosInstance.get(url);
             return response.data;
         },
         createLead: async (lead: any) => {
