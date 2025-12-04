@@ -611,9 +611,9 @@ export const FlightControl: React.FC = () => {
 
 
   return (
-    <>
+    <div className="min-h-screen font-sans">
       <motion.div
-        className="flex flex-col h-full gap-4"
+        className="space-y-6"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -746,12 +746,12 @@ export const FlightControl: React.FC = () => {
         </motion.div>
 
         {/* Kanban Board Container */}
-        <div className="flex-1 min-h-0 w-full overflow-x-auto pb-2">
-          <div className="flex gap-4 h-full min-w-max px-1">
+        <div className="w-full overflow-x-auto pb-4">
+          <div className="flex gap-4 min-w-max px-1 pb-2">
             {COLUMNS.map(column => (
               <div
                 key={column.id}
-                className={`w-[250px] flex-1 min-w-[250px] rounded-xl ${column.bgColor} p-4 flex flex-col gap-3 h-full`}
+                className={`w-[300px] shrink-0 rounded-xl ${column.bgColor} p-4 flex flex-col gap-3 min-h-[600px]`}
                 onDragOver={handleDragOver}
                 onDrop={() => handleDrop(column.id)}
               >
@@ -825,7 +825,6 @@ export const FlightControl: React.FC = () => {
           </div>
         </div>
       </motion.div>
-
       {/* Modals */}
       {selectedLead && (
         <LeadModal
@@ -845,6 +844,6 @@ export const FlightControl: React.FC = () => {
           mode="create"
         />
       )}
-    </>
+    </div>
   );
 };
