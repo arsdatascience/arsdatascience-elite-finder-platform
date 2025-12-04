@@ -746,7 +746,7 @@ export const FlightControl: React.FC = () => {
         </motion.div>
 
         {/* Kanban Board */}
-        <div className="flex gap-4 overflow-x-auto pb-6 min-h-[600px]">
+        <div className="flex gap-4 overflow-x-auto pb-6 min-h-[calc(100vh-250px)] w-full">
           {COLUMNS.map(column => (
             <div
               key={column.id}

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 import { ChatMessage } from '@/types';
 import { askEliteAssistant } from '@/services/geminiService';
@@ -162,8 +163,14 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
                                 <Bot size={16} className="text-white" />
                             </div>
                         )}
-                        <div className={`max-w-[70%] p-3 rounded-lg ${msg.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}`}>
-                            <p className="text-sm">{msg.text}</p>
+                        <div className={`max-w-[85%] p-3 rounded-lg ${msg.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}`}>
+                            {msg.sender === 'agent' ? (
+                                <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0">
+                                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                </div>
+                            ) : (
+                                <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                            )}
                             <span className="text-xs opacity-70 mt-1 block">{msg.timestamp}</span>
                         </div>
                         {msg.sender === 'user' && (
