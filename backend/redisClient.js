@@ -13,8 +13,22 @@ const getRedisClient = () => {
 
     // 1. Tentar URL Pública (Estabilidade / Fallback)
     if (process.env.REDIS_PUBLIC_URL) {
-        console.log('🔌 Usando REDIS_PUBLIC_URL para conexão (Fallback)...');
-        return new Redis(process.env.REDIS_PUBLIC_URL, defaultOptions);
+        const url = process.env.REDIS_PUBLIC_URL;
+        const maskedUrl = url.replace(/:[^@]+@/, ':***@');
+        console.log(`🔌 Usando REDIS_PUBLIC_URL para conexão: ${maskedUrl}`);
+
+        // Debug: Verificar se a URL é válida
+        try {
+            const parsed = new URL(url);
+            console.log(`🔍 Redis Host: ${parsed.hostname}, Port: ${parsed.port}`);
+        } catch (e) {
+            console.error('❌ Erro ao analisar REDIS_PUBLIC_URL:', e.message);
+        }
+
+        return new Redis(url, {
+            ...defaultOptions,
+            family: 0 // Auto-detect IPv4/IPv6
+        });
     }
 
     // 2. Tentar URL Interna/Padrão
