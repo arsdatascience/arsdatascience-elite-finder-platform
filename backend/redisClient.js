@@ -1,19 +1,23 @@
 const Redis = require('ioredis');
 
 // Configuração flexível para suportar tanto REDIS_URL quanto variáveis separadas
-const getRedisConfig = () => {
-    if (process.env.REDIS_URL) {
-        console.log('🔌 Usando REDIS_URL para conexão...');
-        return process.env.REDIS_URL;
-    }
+const config = {
+    host: process.env.REDISHOST || 'localhost',
+    port: process.env.REDISPORT || 6379,
+    password: process.env.REDISPASSWORD || undefined,
+    username: process.env.REDISUSER || undefined,
+    maxRetriesPerRequest: null, // Necessário para BullMQ
+    enableReadyCheck: false,
+    // Railway Internal Network often uses IPv6
+    family: process.env.RAILWAY_ENVIRONMENT ? 6 : 4,
+};
 
-    return {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: process.env.REDIS_PORT || 6379,
-        password: process.env.REDIS_PASSWORD || undefined,
-        maxRetriesPerRequest: null, // Necessário para BullMQ
-        enableReadyCheck: false
-    };
+if (process.env.REDIS_URL) {
+    console.log('🔌 Usando REDIS_URL para conexão...');
+    return process.env.REDIS_URL;
+}
+
+return config;
 };
 
 const redis = new Redis(getRedisConfig());
