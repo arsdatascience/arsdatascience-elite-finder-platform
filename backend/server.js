@@ -497,6 +497,7 @@ const qdrantController = require('./qdrantController');
 const financialCtrl = require('./financialController');
 const adminCtrl = require('./adminController');
 
+app.get('/api/financial/dashboard', authenticateToken, financialCtrl.getFinancialDashboard);
 app.get('/api/financial/transactions', authenticateToken, financialCtrl.getTransactions);
 app.post('/api/financial/transactions', authenticateToken, financialCtrl.createTransaction);
 app.put('/api/financial/transactions/:id', authenticateToken, financialCtrl.updateTransaction);

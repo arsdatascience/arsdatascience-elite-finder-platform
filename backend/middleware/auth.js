@@ -18,10 +18,10 @@ const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
-    if (!token) return res.sendStatus(401);
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
 
     jwt.verify(token, JWT_SECRET, async (err, decoded) => {
-        if (err) return res.sendStatus(403);
+        if (err) return res.status(403).json({ error: 'Forbidden: Invalid token' });
 
         // FIX: Fetch fresh user data from DB to ensure role/tenant updates are applied immediately
         // without requiring re-login.
@@ -32,14 +32,14 @@ const authenticateToken = (req, res, next) => {
             );
 
             if (rows.length === 0) {
-                return res.sendStatus(403);
+                return res.status(403).json({ error: 'Forbidden: User not found' });
             }
 
             req.user = rows[0];
             next();
         } catch (dbError) {
             console.error('Auth Middleware DB Error:', dbError);
-            res.sendStatus(500);
+            res.status(500).json({ error: 'Internal Server Error' });
         }
     });
 };

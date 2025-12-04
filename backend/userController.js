@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const { encrypt, decrypt } = require('./utils/crypto');
+const { getTenantScope } = require('./utils/tenantSecurity');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'elite-secret-key-change-me';
 
@@ -98,12 +99,14 @@ const getTeamMembers = async (req, res) => {
         const params = [];
 
         // Se não for super_admin, filtrar pelo tenant
-        if (currentUser.role !== 'super_admin' && currentUser.role !== 'Super Admin' && currentUser.role !== 'super_user') {
-            if (!currentUser.tenant_id) {
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
+        
+        if (!isSuperAdmin) {
+            if (!tenantId) {
                 return res.json({ success: true, members: [] }); // Usuário sem tenant não vê ninguém
             }
             query += ` AND tenant_id = $1`;
-            params.push(currentUser.tenant_id);
+            params.push(tenantId);
         }
 
         query += ` ORDER BY created_at DESC`;
