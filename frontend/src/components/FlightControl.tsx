@@ -613,13 +613,13 @@ export const FlightControl: React.FC = () => {
   return (
     <>
       <motion.div
-        className="space-y-6"
+        className="flex flex-col h-[calc(100vh-6rem)] gap-4"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
           <motion.div variants={itemVariants}>
             <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
               Controle de Voo <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.FlightControl}</span>
@@ -663,7 +663,7 @@ export const FlightControl: React.FC = () => {
         </div>
 
         {/* Metrics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
           <motion.div variants={itemVariants} className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow-lg transform hover:scale-[1.02] transition-transform">
             <div className="flex items-center justify-between mb-2">
               <Target size={20} className="opacity-80" />
@@ -702,7 +702,7 @@ export const FlightControl: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <motion.div variants={itemVariants} className="flex flex-wrap gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <motion.div variants={itemVariants} className="flex flex-wrap gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100 shrink-0">
           <div className="flex-1 min-w-[200px] relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
@@ -746,12 +746,12 @@ export const FlightControl: React.FC = () => {
         </motion.div>
 
         {/* Kanban Board Container */}
-        <div className="w-full overflow-x-auto pb-4">
-          <div className="flex gap-4 min-w-full w-max h-[calc(100vh-340px)] min-h-[500px] items-stretch px-1">
+        <div className="flex-1 min-h-0 w-full overflow-x-auto pb-2">
+          <div className="flex gap-4 h-full min-w-max px-1">
             {COLUMNS.map(column => (
               <div
                 key={column.id}
-                className={`w-[320px] shrink-0 rounded-xl ${column.bgColor} p-4 flex flex-col gap-3 h-full`}
+                className={`w-[280px] flex-1 min-w-[280px] rounded-xl ${column.bgColor} p-4 flex flex-col gap-3 h-full`}
                 onDragOver={handleDragOver}
                 onDrop={() => handleDrop(column.id)}
               >
