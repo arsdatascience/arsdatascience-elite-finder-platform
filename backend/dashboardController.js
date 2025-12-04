@@ -356,7 +356,7 @@ const getConversionSources = async (req, res) => {
 
         query += ' GROUP BY source_name ORDER BY val DESC';
 
-        const result = await pool.query(query, params);
+        const result = await db.query(query, params);
         let data;
 
         if (result.rows.length === 0) {

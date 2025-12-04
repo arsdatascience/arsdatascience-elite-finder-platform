@@ -380,7 +380,7 @@ export const Dashboard: React.FC = () => {
         {/* Conversion Source Breakdown (Share por Plataforma) - Takes 1 Column */}
         <motion.div variants={itemVariants} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-w-0">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Share por Plataforma</h3>
-          <div className="w-full relative" style={{ width: '100%', height: 250 }}>
+          <div className="w-full relative" style={{ width: '100%', height: 300 }}>
             {conversionSources.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <PieChart>
