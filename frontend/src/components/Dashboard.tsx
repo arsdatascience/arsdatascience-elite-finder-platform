@@ -218,7 +218,7 @@ export const Dashboard: React.FC = () => {
             <Info className="w-5 h-5 text-gray-400 cursor-pointer hover:text-blue-500" />
           </div>
           <div className="h-80" style={{ width: '100%', height: 320 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorGoogle" x1="0" y1="0" x2="0" y2="1">
@@ -287,7 +287,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="h-80" style={{ width: '100%', height: 320 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart
                 layout="vertical"
                 data={funnelData}
@@ -328,7 +328,7 @@ export const Dashboard: React.FC = () => {
           <div className="flex flex-col md:flex-row items-center gap-8 h-72">
             {/* Chart Side */}
             <div className="w-full md:w-1/2 h-full relative" style={{ width: '100%', height: 288 }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <PieChart>
                   <Pie
                     data={deviceData}
