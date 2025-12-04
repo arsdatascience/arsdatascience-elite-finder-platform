@@ -208,6 +208,28 @@ export const apiClient = {
             return response.data;
         }
     },
+    leads: {
+        getLeads: async () => {
+            if (USE_MOCK) return []; // Implement mock if needed
+            const response = await axiosInstance.get('/leads');
+            return response.data;
+        },
+        createLead: async (lead: any) => {
+            if (USE_MOCK) return lead;
+            const response = await axiosInstance.post('/leads', lead);
+            return response.data;
+        },
+        updateLead: async (id: string, lead: any) => {
+            if (USE_MOCK) return lead;
+            const response = await axiosInstance.put(`/leads/${id}`, lead);
+            return response.data;
+        },
+        updateLeadStatus: async (id: string, status: string) => {
+            if (USE_MOCK) return { id, status };
+            const response = await axiosInstance.patch(`/leads/${id}/status`, { status });
+            return response.data;
+        }
+    },
     social: {
         getPosts: async (clientId?: string) => {
             if (USE_MOCK) return [];
