@@ -746,22 +746,22 @@ export const FlightControl: React.FC = () => {
         </motion.div>
 
         {/* Kanban Board */}
-        <div className="flex gap-4 overflow-x-auto pb-6 min-h-[calc(100vh-250px)] w-full">
+        <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-340px)] min-h-[500px] w-full items-stretch">
           {COLUMNS.map(column => (
             <div
               key={column.id}
-              className={`flex-1 min-w-[300px] rounded-xl ${column.bgColor} p-4 flex flex-col gap-3`}
+              className={`flex-1 min-w-[300px] rounded-xl ${column.bgColor} p-4 flex flex-col gap-3 h-full`}
               onDragOver={handleDragOver}
               onDrop={() => handleDrop(column.id)}
             >
-              <div className={`flex items-center justify-between pb-3 border-b-2 ${column.color} mb-2`}>
+              <div className={`flex items-center justify-between pb-3 border-b-2 ${column.color} mb-2 shrink-0`}>
                 <h3 className="font-bold text-gray-700">{column.label}</h3>
                 <span className="bg-white px-2 py-1 rounded-full text-xs font-bold text-gray-500 shadow-sm">
                   {getLeadsByStatus(column.id).length}
                 </span>
               </div>
 
-              <div className="flex-1 flex flex-col gap-3">
+              <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar">
                 {getLeadsByStatus(column.id).map(lead => (
                   <motion.div
                     key={lead.id}
