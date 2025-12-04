@@ -392,6 +392,7 @@ export const Dashboard: React.FC = () => {
                     outerRadius={80}
                     paddingAngle={5}
                     dataKey="val"
+                    nameKey="label"
                   >
                     {conversionSources.map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={entry.color.replace('bg-', '').replace('-500', '') === 'blue' ? '#3b82f6' :
