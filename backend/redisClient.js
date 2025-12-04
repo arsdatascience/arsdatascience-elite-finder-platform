@@ -47,4 +47,7 @@ redis.on('error', (err) => {
     console.error('❌ Erro na conexão com Redis:', safeError);
 });
 
+// Exportar a instância padrão (para compatibilidade com código antigo)
+// E anexar a factory function para quem precisar de novas conexões (BullMQ)
+redis.getRedisClient = getRedisClient;
 module.exports = redis;

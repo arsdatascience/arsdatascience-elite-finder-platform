@@ -1,24 +1,34 @@
 const Queue = require('bull');
 const n8nLogger = require('../utils/n8nLogger');
 const WebhookService = require('../services/webhookService');
+const { getRedisClient } = require('../redisClient');
 
 // Configuração da Fila
-// Se não houver REDIS_URL, o Bull tentará conectar no localhost padrão
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+// Usamos a factory centralizada para garantir a melhor conexão (Public vs Internal)
+const client = getRedisClient();
+const subscriber = getRedisClient();
+const defaultClient = getRedisClient();
 
-// Mascarar senha para log de segurança
-const safeRedisUrl = redisUrl.replace(/:([^@]+)@/, ':****@');
-n8nLogger.info(`Inicializando fila n8n-workflows em ${safeRedisUrl}`);
-
-const workflowQueue = new Queue('n8n-workflows', redisUrl, {
+// Bull (v3/v4) requer createClient ou instâncias separadas
+const workflowQueue = new Queue('n8n-workflows', {
+    createClient: function (type) {
+        switch (type) {
+            case 'client':
+                return client;
+            case 'subscriber':
+                return subscriber;
+            default:
+                return defaultClient;
+        }
+    },
     defaultJobOptions: {
-        attempts: 3, // Retries do Bull (além dos retries do WebhookService)
+        attempts: 3, // Retries do Bull
         backoff: {
             type: 'exponential',
             delay: 2000
         },
-        removeOnComplete: 100, // Manter apenas últimos 100 jobs completados
-        removeOnFail: 500 // Manter últimos 500 falhas para debug
+        removeOnComplete: 100,
+        removeOnFail: 500
     }
 });
 
