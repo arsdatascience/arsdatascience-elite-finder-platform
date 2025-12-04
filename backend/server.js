@@ -547,7 +547,5 @@ server.listen(PORT, () => {
   });
 });
 
-// Definir rota de Churn (fora do bloco de migração para garantir registro)
-const churnController = require('./churnController');
-app.get('/api/churn/predict', authenticateToken, churnController.predictChurn);
+
 
