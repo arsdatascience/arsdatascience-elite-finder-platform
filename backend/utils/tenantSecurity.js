@@ -8,13 +8,11 @@ const getTenantScope = (req) => {
         return { isSuperAdmin: false, tenantId: null };
     }
 
-    const { role, tenant_id } = req.user;
-    const superRoles = ['super_admin', 'Super Admin', 'super_user'];
-    const isSuperAdmin = superRoles.includes(role);
-
+    // FORCE GLOBAL VIEW AS REQUESTED BY USER
+    // This disables tenant isolation and allows all users to see all data.
     return {
-        isSuperAdmin,
-        tenantId: tenant_id
+        isSuperAdmin: true,
+        tenantId: req.user?.tenant_id
     };
 };
 
