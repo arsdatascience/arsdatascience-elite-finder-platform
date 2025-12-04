@@ -261,9 +261,19 @@ const getWhatsAppConfig = async (req, res) => {
         }
 
         const integration = result.rows[0];
-        // Decrypt access token if present
+
+        // SECURITY FIX: Never send full token to frontend
+        // We send a masked version just to indicate it exists
         if (integration.access_token) {
-            integration.access_token = decrypt(integration.access_token);
+            const decrypted = decrypt(integration.access_token);
+            if (decrypted) {
+                // Show first 4 and last 4 chars if long enough, else just stars
+                integration.access_token = decrypted.length > 8
+                    ? `${decrypted.substring(0, 4)}****${decrypted.substring(decrypted.length - 4)}`
+                    : '********';
+            } else {
+                integration.access_token = null;
+            }
         }
 
         res.json(integration);

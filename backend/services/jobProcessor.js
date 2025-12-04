@@ -85,8 +85,14 @@ const handleFollowUpCheck = async (payload) => {
     const { leadId } = payload;
     console.log(`🕵️ Verificando Follow-up para Lead ${leadId}...`);
 
-    // 1. Verificar status atual
-    const leadRes = await db.query("SELECT * FROM leads WHERE id = $1", [leadId]);
+    // 1. Verificar status atual e obter tenant_id
+    const leadRes = await db.query(`
+        SELECT l.*, c.tenant_id 
+        FROM leads l
+        JOIN clients c ON l.client_id = c.id
+        WHERE l.id = $1
+    `, [leadId]);
+
     if (leadRes.rows.length === 0) return { action: 'skipped', reason: 'Lead not found' };
 
     const lead = leadRes.rows[0];
@@ -101,13 +107,29 @@ const handleFollowUpCheck = async (payload) => {
             const whatsappService = require('./whatsappService'); // Lazy load
             const message = `Olá ${lead.name.split(' ')[0]}, tudo bem? Vi que você se cadastrou na Elite Finder. Ficou com alguma dúvida sobre nossos planos?`;
 
-            // Enviar como admin (ID 1)
-            await whatsappService.sendMessage(1, lead.phone.replace(/\D/g, ''), message);
+            // SAAS FIX: Find a user from this tenant to send the message (context for integration lookup)
+            // We need the ID of a user who has the WhatsApp integration configured for this tenant.
+            // Usually, integrations are linked to the tenant owner or admin.
+            const userRes = await db.query(`
+                SELECT id FROM users 
+                WHERE tenant_id = $1 AND role IN ('admin', 'super_admin') 
+                ORDER BY id ASC LIMIT 1
+            `, [lead.tenant_id]);
+
+            if (userRes.rows.length === 0) {
+                console.error(`❌ No admin user found for tenant ${lead.tenant_id} to send follow-up.`);
+                return { action: 'failed', reason: 'No tenant admin found' };
+            }
+
+            const senderId = userRes.rows[0].id;
+
+            // Enviar usando o ID do usuário do tenant correto
+            await whatsappService.sendMessage(senderId, lead.phone.replace(/\D/g, ''), message);
 
             // Atualizar status para 'contacted'
             await db.query("UPDATE leads SET status = 'contacted', updated_at = NOW() WHERE id = $1", [leadId]);
 
-            return { action: 'sent_message', message };
+            return { action: 'sent_message', message, senderId };
         }
     }
 
