@@ -20,6 +20,9 @@ const processJob = async (job) => {
             case 'roi_analysis':
                 await handleRoiAnalysis(payload);
                 break;
+            case 'process_whatsapp_message':
+                await handleWhatsAppMessage(payload);
+                break;
             default:
                 console.warn(`⚠️ Tipo de job desconhecido: ${type}`);
         }
@@ -72,6 +75,102 @@ async function handleRoiAnalysis(payload) {
 
     // Apenas chama a função de IA existente
     // await aiController.generateDashboardInsights(tenant_id);
+}
+
+// --- WHATSAPP ASYNC PROCESSING ---
+async function handleWhatsAppMessage(payload) {
+    const { sessionId, phone, messageContent, tenantId } = payload;
+    const io = global.io; // Access global socket instance
+
+    console.log(`📨 [Job] Processing WhatsApp Message for ${phone} (Session: ${sessionId})`);
+
+    try {
+        // 1. Update Lead Score
+        try {
+            const leadRes = await pool.query("SELECT id FROM leads WHERE phone LIKE $1 OR phone LIKE $2 LIMIT 1", [`%${phone}%`, phone]);
+            if (leadRes.rows.length > 0) {
+                const { calculateLeadScore } = require('./scoringService');
+                await calculateLeadScore(leadRes.rows[0].id);
+            }
+        } catch (scoreErr) {
+            console.error('⚠️ [Job] Error updating score:', scoreErr.message);
+        }
+
+        // 2. AI Coaching & Analysis
+        // Fetch recent history
+        const historyResult = await pool.query(
+            `SELECT sender_type as role, content FROM chat_messages 
+             WHERE session_id = $1 
+             ORDER BY created_at ASC LIMIT 10`,
+            [sessionId]
+        );
+
+        const messages = historyResult.rows.map(row => ({
+            role: row.role === 'client' ? 'user' : 'agent',
+            content: row.content
+        }));
+
+        // Get API Key
+        const apiKey = await aiController.getEffectiveApiKey('openai', null);
+
+        if (apiKey) {
+            const analysis = await aiController.analyzeStrategyInternal(
+                messages,
+                { product: "Elite Finder Services", goal: "Qualification & Sales" },
+                apiKey
+            );
+
+            // Save Analysis
+            await pool.query(
+                `INSERT INTO chat_analyses (session_id, analysis_type, full_report, sentiment_label, buying_stage) 
+                 VALUES ($1, 'sales_coaching', $2, $3, $4)`,
+                [sessionId, JSON.stringify(analysis), analysis.sentiment, analysis.buying_stage]
+            );
+
+            // Emit Socket Event
+            if (io) {
+                console.log(`🧠 [Job] Coaching Insight Generated for ${phone}`);
+                io.emit('sales_coaching_update', {
+                    sessionId,
+                    phone,
+                    analysis
+                });
+            }
+
+            // 3. Smart Lead Mover
+            if (analysis.buying_stage) {
+                const stageMap = {
+                    'Curiosidade': 'contacted',
+                    'Consideração': 'qualified',
+                    'Decisão': 'negotiation',
+                    'Compra': 'closed'
+                };
+                const newStatus = stageMap[analysis.buying_stage];
+
+                if (newStatus) {
+                    const leadRes = await pool.query(
+                        "SELECT id, status FROM leads WHERE phone LIKE $1 OR phone LIKE $2 LIMIT 1",
+                        [`%${phone}%`, phone]
+                    );
+
+                    if (leadRes.rows.length > 0) {
+                        const lead = leadRes.rows[0];
+                        if (lead.status !== newStatus && lead.status !== 'closed' && lead.status !== 'won') {
+                            await pool.query(
+                                "UPDATE leads SET status = $1, updated_at = NOW() WHERE id = $2",
+                                [newStatus, lead.id]
+                            );
+                            console.log(`🔄 [Job] Lead ${lead.id} moved to ${newStatus}`);
+                            if (io) io.emit('lead_updated', { id: lead.id, status: newStatus });
+                        }
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('❌ [Job] Error in WhatsApp processing:', error);
+        throw error;
+    }
 }
 
 // Inicialização do Worker

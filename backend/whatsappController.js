@@ -152,115 +152,31 @@ const handleWebhook = async (req, res) => {
             [sessionId, phone, messageContent]
         );
 
-        // 4. Emitir evento Socket.io (Mensagem Recebida)
+        // 4. Emitir evento Socket.io (Mensagem Recebida - Imediato para UI)
         if (io) {
             io.emit('whatsapp_message', {
                 sessionId,
                 phone,
-                name: clientName,
+                name: pushName,
                 content: messageContent,
                 timestamp: new Date()
             });
         }
 
-        // --- SISTÊMICO: UPDATE LEAD SCORE ---
-        try {
-            // Tentar encontrar o Lead associado a este telefone
-            const leadRes = await db.query("SELECT id FROM leads WHERE phone LIKE $1 OR phone LIKE $2 LIMIT 1", [`%${phone}%`, phone]);
-            if (leadRes.rows.length > 0) {
-                const { calculateLeadScore } = require('./services/scoringService');
-                await calculateLeadScore(leadRes.rows[0].id);
-            }
-        } catch (scoreErr) {
-            console.error('Erro ao atualizar Score por mensagem:', scoreErr);
-        }
+        // 5. OFFLOAD HEAVY PROCESSING TO QUEUE (BullMQ)
+        // Instead of waiting for AI and Scoring, we queue a job.
+        const { jobsQueue } = require('./queueClient');
+        await jobsQueue.add('process_whatsapp_message', {
+            sessionId,
+            phone,
+            messageContent,
+            tenantId
+        });
 
-        // 5. COACHING EM TEMPO REAL (Teleprompter)
-        // Recuperar histórico recente (últimas 10 msgs)
-        const historyResult = await db.query(
-            `SELECT sender_type as role, content FROM chat_messages 
-             WHERE session_id = $1 
-             ORDER BY created_at ASC LIMIT 10`,
-            [sessionId]
-        );
+        console.log(`🚀 Async Job Queued: process_whatsapp_message for ${phone}`);
 
-        const messages = historyResult.rows.map(row => ({
-            role: row.role === 'client' ? 'user' : 'agent',
-            content: row.content
-        }));
-
-        // Obter API Key do sistema (admin user id 1 ou env var)
-        const apiKey = await aiController.getEffectiveApiKey('openai', null);
-
-        if (apiKey) {
-            const analysis = await aiController.analyzeStrategyInternal(
-                messages,
-                { product: "Elite Finder Services", goal: "Qualification & Sales" },
-                apiKey
-            );
-
-            // Salvar análise no banco
-            await db.query(
-                `INSERT INTO chat_analyses (session_id, analysis_type, full_report, sentiment_label, buying_stage) 
-                 VALUES ($1, 'sales_coaching', $2, $3, $4)`,
-                [sessionId, JSON.stringify(analysis), analysis.sentiment, analysis.buying_stage]
-            );
-
-            // Emitir evento Socket.io (Coaching Update)
-            if (io) {
-                console.log(`🧠 Coaching Insight Generated for ${phone}`);
-                io.emit('sales_coaching_update', {
-                    sessionId,
-                    phone,
-                    analysis
-                });
-            }
-
-            // --- SYMBIOSIS: SMART LEAD MOVER ---
-            // Atualizar status do Lead no CRM baseado no estágio de compra detectado pela IA
-            if (analysis.buying_stage) {
-                try {
-                    // Mapeamento de Estágios da IA para Status do CRM
-                    const stageMap = {
-                        'Curiosidade': 'contacted',
-                        'Consideração': 'qualified',
-                        'Decisão': 'negotiation',
-                        'Compra': 'closed' // Se houver
-                    };
-
-                    const newStatus = stageMap[analysis.buying_stage];
-
-                    if (newStatus) {
-                        // Buscar lead pelo telefone (normalizado)
-                        // Nota: O telefone no banco pode ter formatação, então usamos LIKE ou normalização
-                        const leadRes = await db.query(
-                            "SELECT id, status FROM leads WHERE phone LIKE $1 OR phone LIKE $2 LIMIT 1",
-                            [`%${phone}%`, phone]
-                        );
-
-                        if (leadRes.rows.length > 0) {
-                            const lead = leadRes.rows[0];
-                            // Só atualizar se o status for "superior" ou diferente (lógica simplificada: se diferente)
-                            if (lead.status !== newStatus && lead.status !== 'closed' && lead.status !== 'won') {
-                                await db.query(
-                                    "UPDATE leads SET status = $1, updated_at = NOW() WHERE id = $2",
-                                    [newStatus, lead.id]
-                                );
-                                console.log(`🔄 [Symbiosis] Lead ${lead.id} moved to ${newStatus} based on AI Analysis`);
-
-                                if (io) {
-                                    io.emit('lead_updated', { id: lead.id, status: newStatus });
-                                }
-                            }
-                        }
-                    }
-                } catch (err) {
-                    console.error('⚠️ Error in Smart Lead Mover:', err);
-                }
-            }
-        }
-
-        res.status(200).send('PROCESSED');
+        // Respond immediately to WhatsApp/EvolutionAPI
+        res.status(200).send('PROCESSED_ASYNC');
 
     } catch (error) {
         console.error('Error processing WhatsApp webhook:', error);
