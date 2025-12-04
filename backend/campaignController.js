@@ -1,8 +1,20 @@
 const pool = require('./database');
 
+const redis = require('./redisClient');
+
 exports.getCampaignAnalytics = async (req, res) => {
     try {
         const { clientId, startDate, endDate, platforms } = req.query;
+
+        // Cache Key Construction
+        const cacheKey = `campaign_analytics:${clientId || 'all'}:${startDate || 'all'}:${endDate || 'all'}:${platforms || 'all'}`;
+
+        // 1. Check Cache
+        const cachedData = await redis.get(cacheKey);
+        if (cachedData) {
+            console.log('⚡ Serving Campaign Analytics from Redis Cache');
+            return res.json(JSON.parse(cachedData));
+        }
 
         // Base query conditions
         let conditions = ['1=1'];
@@ -96,12 +108,17 @@ exports.getCampaignAnalytics = async (req, res) => {
         `;
         const campaignsResult = await pool.query(campaignsQuery, params);
 
-        res.json({
+        const responseData = {
             kpis,
             chartData: chartResult.rows,
             platformData: platformResult.rows,
             campaigns: campaignsResult.rows
-        });
+        };
+
+        // 2. Save to Cache (10 minutes)
+        await redis.set(cacheKey, JSON.stringify(responseData), 'EX', 600);
+
+        res.json(responseData);
 
     } catch (error) {
         console.error('Erro ao buscar analytics:', error);

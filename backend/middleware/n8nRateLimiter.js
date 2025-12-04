@@ -1,7 +1,15 @@
 const rateLimit = require('express-rate-limit');
 const n8nLogger = require('../utils/n8nLogger');
 
+const rateLimit = require('express-rate-limit');
+const RedisStore = require('rate-limit-redis');
+const { getRedisClient } = require('../redisClient');
+const n8nLogger = require('../utils/n8nLogger');
+
 const n8nRateLimiter = rateLimit({
+    store: new RedisStore({
+        sendCommand: (...args) => getRedisClient().call(...args),
+    }),
     windowMs: 60 * 1000, // 1 minuto
     max: 1000, // limite de 1000 requisições por IP
     standardHeaders: true,

@@ -80,23 +80,36 @@ const generateEmbeddings = async (text, apiKey) => {
   }
 };
 
+const redis = require('./redisClient'); // Ensure redis is imported at top if not already
+
 const generateDashboardInsights = async (req, res) => {
   const { kpis, selectedClient, platform, dateRange, provider = 'openai' } = req.body;
   const userId = req.user ? req.user.id : null;
   const { isSuperAdmin, tenantId } = getTenantScope(req);
 
-  // SAAS FIX: Try to get key from tenant owner if possible, or system fallback
-  // For now, we use the logged user's key or system key. 
-  // Ideally, we should check if the tenant has a specific key configured.
-  const apiKey = await getEffectiveApiKey(provider, userId);
-
-  if (!apiKey) {
-    console.warn("⚠️ Dashboard Insight: No API Key found.");
-    // Return a mock insight instead of error to prevent frontend spinner hang
-    return res.json({ insight: "Aumente o investimento em campanhas de alta performance e revise os criativos com CTR abaixo de 1%." });
-  }
+  // Cache Key Strategy: Hash of the input parameters to ensure uniqueness
+  // Simple key: insight:tenant:client:dateStart:dateEnd
+  const cacheKey = `ai_insight:${tenantId}:${selectedClient || 'all'}:${dateRange?.start || 'all'}:${dateRange?.end || 'all'}`;
 
   try {
+    // 1. Check Cache
+    const cachedInsight = await redis.get(cacheKey);
+    if (cachedInsight) {
+      console.log('⚡ Serving AI Insight from Redis Cache');
+      return res.json({ insight: cachedInsight });
+    }
+
+    // SAAS FIX: Try to get key from tenant owner if possible, or system fallback
+    // For now, we use the logged user's key or system key. 
+    // Ideally, we should check if the tenant has a specific key configured.
+    const apiKey = await getEffectiveApiKey(provider, userId);
+
+    if (!apiKey) {
+      console.warn("⚠️ Dashboard Insight: No API Key found.");
+      // Return a mock insight instead of error to prevent frontend spinner hang
+      return res.json({ insight: "Aumente o investimento em campanhas de alta performance e revise os criativos com CTR abaixo de 1%." });
+    }
+
     // 1. Analyze KPIs to form a search query
     let queryText = "Estratégias gerais de marketing digital e otimização de campanhas";
     const roiKpi = kpis.find(k => k.label.includes('ROI') || k.label.includes('ROAS'));
@@ -153,8 +166,12 @@ const generateDashboardInsights = async (req, res) => {
     `;
 
     const insight = await callOpenAI(prompt, apiKey, "gpt-4-turbo-preview", false);
+    const finalInsight = insight.trim();
 
-    res.json({ insight: insight.trim() });
+    // 5. Save to Cache (1 Hour - Insights don't change that fast)
+    await redis.set(cacheKey, finalInsight, 'EX', 3600);
+
+    res.json({ insight: finalInsight });
 
   } catch (error) {
     console.error("Dashboard Insight Generation Failed:", error);

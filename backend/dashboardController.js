@@ -219,15 +219,24 @@ const getKPIs = async (req, res) => {
 const getChartData = async (req, res) => {
     const { client } = req.query;
     const clientId = client && client !== 'all' ? parseInt(client) : 1;
+    const { tenantId } = getTenantScope(req);
+    const cacheKey = `chart_data:${tenantId}:${clientId}`;
 
     try {
+        const cached = await redis.get(cacheKey);
+        if (cached) return res.json(JSON.parse(cached));
+
         const campaignsCheck = await db.query('SELECT COUNT(*) as count FROM campaigns');
+        let data;
         if (parseInt(campaignsCheck.rows[0].count) === 0) {
-            return res.json(generateMockData(clientId).chartData);
+            data = generateMockData(clientId).chartData;
+        } else {
+            // Se tiver dados mas não implementamos histórico real ainda, usamos mock
+            data = generateMockData(clientId).chartData;
         }
 
-        // Se tiver dados mas não implementamos histórico real ainda, usamos mock
-        return res.json(generateMockData(clientId).chartData);
+        await redis.set(cacheKey, JSON.stringify(data), 'EX', 300); // 5 min
+        return res.json(data);
 
     } catch (error) {
         console.error('Error fetching chart data:', error);
@@ -241,17 +250,25 @@ const getChartData = async (req, res) => {
 const getFunnelData = async (req, res) => {
     const { client } = req.query;
     const clientId = client && client !== 'all' ? parseInt(client) : 1;
+    const { tenantId } = getTenantScope(req);
+    const cacheKey = `funnel_data:${tenantId}:${clientId}`;
 
     try {
+        const cached = await redis.get(cacheKey);
+        if (cached) return res.json(JSON.parse(cached));
+
         const result = await db.query(`SELECT COUNT(*) as count FROM leads`);
+        let data;
 
         if (parseInt(result.rows[0].count) === 0) {
-            return res.json(generateMockData(clientId).funnelData);
+            data = generateMockData(clientId).funnelData;
+        } else {
+            // Se tiver dados reais, tentar usar (simplificado)
+            data = generateMockData(clientId).funnelData;
         }
 
-        // Se tiver dados reais, tentar usar (simplificado)
-        // ... (lógica existente mantida se necessário, mas priorizando mock dinâmico se vazio)
-        return res.json(generateMockData(clientId).funnelData);
+        await redis.set(cacheKey, JSON.stringify(data), 'EX', 300);
+        return res.json(data);
 
     } catch (error) {
         console.error('Error fetching funnel data:', error);
@@ -265,8 +282,13 @@ const getFunnelData = async (req, res) => {
 const getDeviceData = async (req, res) => {
     const { client } = req.query;
     const clientId = client && client !== 'all' ? parseInt(client) : 1;
+    const { tenantId } = getTenantScope(req);
+    const cacheKey = `device_data:${tenantId}:${clientId}`;
 
     try {
+        const cached = await redis.get(cacheKey);
+        if (cached) return res.json(JSON.parse(cached));
+
         // Tentar buscar por client_id primeiro
         let result = await db.query('SELECT device_type as name, percentage as value FROM device_stats WHERE client_id = $1', [clientId]);
 
@@ -275,16 +297,19 @@ const getDeviceData = async (req, res) => {
             result = await db.query('SELECT device_type as name, percentage as value FROM device_stats WHERE client_id IS NULL');
         }
 
+        let data;
         if (result.rows.length === 0) {
-            return res.json(generateMockData(clientId).deviceData);
+            data = generateMockData(clientId).deviceData;
+        } else {
+            data = result.rows.map(row => ({
+                ...row,
+                value: parseFloat(row.value),
+                color: row.name === 'Mobile' ? '#3b82f6' : row.name === 'Desktop' ? '#10b981' : '#f59e0b'
+            }));
         }
 
-        const dataWithColors = result.rows.map(row => ({
-            ...row,
-            value: parseFloat(row.value),
-            color: row.name === 'Mobile' ? '#3b82f6' : row.name === 'Desktop' ? '#10b981' : '#f59e0b'
-        }));
-        res.json(dataWithColors);
+        await redis.set(cacheKey, JSON.stringify(data), 'EX', 300);
+        res.json(data);
 
     } catch (error) {
         console.error('Error fetching device data:', error);
@@ -295,8 +320,12 @@ const getDeviceData = async (req, res) => {
 const getConversionSources = async (req, res) => {
     const { client } = req.query;
     const { isSuperAdmin, tenantId } = getTenantScope(req);
+    const cacheKey = `conversion_sources:${tenantId}:${client || 'all'}`;
 
     try {
+        const cached = await redis.get(cacheKey);
+        if (cached) return res.json(JSON.parse(cached));
+
         let query = 'SELECT source_name as label, SUM(percentage) as val FROM conversion_sources';
         let params = [];
         let conditions = [];
@@ -328,24 +357,26 @@ const getConversionSources = async (req, res) => {
         query += ' GROUP BY source_name ORDER BY val DESC';
 
         const result = await pool.query(query, params);
+        let data;
 
         if (result.rows.length === 0) {
             // Mock default
-            return res.json([
+            data = [
                 { label: 'Google Ads', val: 45, color: 'bg-blue-500' },
                 { label: 'Meta Ads', val: 32, color: 'bg-purple-500' },
                 { label: 'Busca Orgânica', val: 15, color: 'bg-green-500' },
                 { label: 'Direto/Indicação', val: 8, color: 'bg-yellow-500' }
-            ]);
+            ];
+        } else {
+            const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-indigo-500'];
+            data = result.rows.map((row, index) => ({
+                ...row,
+                val: parseFloat(row.val),
+                color: colors[index % colors.length]
+            }));
         }
 
-        const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-indigo-500'];
-        const data = result.rows.map((row, index) => ({
-            ...row,
-            val: parseFloat(row.val),
-            color: colors[index % colors.length]
-        }));
-
+        await redis.set(cacheKey, JSON.stringify(data), 'EX', 300);
         res.json(data);
     } catch (error) {
         console.error('Error fetching conversion sources:', error);
