@@ -26,10 +26,10 @@ const financialController = {
             const params = [];
             let paramCount = 1;
 
-            if (!isSuperAdmin && tenantId) {
-                query += ` AND t.tenant_id = $${paramCount++}`;
-                params.push(tenantId);
-            }
+            // if (!isSuperAdmin && tenantId) {
+            //    query += ` AND t.tenant_id = $${paramCount++}`;
+            //    params.push(tenantId);
+            // }
 
             if (startDate) {
                 query += ` AND t.date >= $${paramCount++}`;
@@ -149,10 +149,10 @@ const financialController = {
             const params = [];
             let paramCount = 1;
 
-            if (!isSuperAdmin && tenantId) {
-                filterClause += ` AND tenant_id = $${paramCount++}`;
-                params.push(tenantId);
-            }
+            // if (!isSuperAdmin && tenantId) {
+            //    filterClause += ` AND tenant_id = $${paramCount++}`;
+            //    params.push(tenantId);
+            // }
 
             // Definir datas padrão se não vierem (mês atual)
             const start = startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
@@ -195,10 +195,10 @@ const financialController = {
             const catParams = [];
             let catParamCount = 1;
 
-            if (!isSuperAdmin && tenantId) {
-                categoryFilterClause += ` AND t.tenant_id = $${catParamCount++}`;
-                catParams.push(tenantId);
-            }
+            // if (!isSuperAdmin && tenantId) {
+            //    categoryFilterClause += ` AND t.tenant_id = $${catParamCount++}`;
+            //    catParams.push(tenantId);
+            // }
 
             categoryFilterClause += ` AND t.date >= $${catParamCount++}`;
             catParams.push(start);
@@ -267,10 +267,10 @@ const financialController = {
             let query = `SELECT id, name FROM clients`;
             let params = [];
 
-            if (!isSuperAdmin && tenantId) {
-                query += ` WHERE tenant_id = $1`;
-                params.push(tenantId);
-            }
+            // if (!isSuperAdmin && tenantId) {
+            //    query += ` WHERE tenant_id = $1`;
+            //    params.push(tenantId);
+            // }
 
             query += ` ORDER BY name`;
             const result = await db.query(query, params);
@@ -288,15 +288,15 @@ const financialController = {
             let query = `SELECT * FROM financial_categories`;
             let params = [];
 
-            if (!isSuperAdmin) {
-                query += ` WHERE tenant_id = $1 OR is_default = true`;
-                params.push(tenantId);
-            } else {
-                // Super admin sees all, or maybe just all defaults + all tenants? 
-                // Usually super admin wants to see everything.
-                // But if we want to be safe, maybe just 1=1
-                query += ` WHERE 1=1`;
-            }
+            // if (!isSuperAdmin) {
+            //    query += ` WHERE tenant_id = $1 OR is_default = true`;
+            //    params.push(tenantId);
+            // } else {
+            // Super admin sees all, or maybe just all defaults + all tenants? 
+            // Usually super admin wants to see everything.
+            // But if we want to be safe, maybe just 1=1
+            query += ` WHERE 1=1`;
+            // }
 
             query += ` ORDER BY type, name`;
 
@@ -350,10 +350,10 @@ const financialController = {
             let query = `SELECT * FROM suppliers`;
             let params = [];
 
-            if (!isSuperAdmin) {
-                query += ` WHERE tenant_id = $1`;
-                params.push(tenantId);
-            }
+            // if (!isSuperAdmin) {
+            //    query += ` WHERE tenant_id = $1`;
+            //    params.push(tenantId);
+            // }
 
             query += ` ORDER BY name`;
             const result = await db.query(query, params);

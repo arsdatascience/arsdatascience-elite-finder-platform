@@ -100,14 +100,14 @@ const getTeamMembers = async (req, res) => {
 
         // Se não for super_admin, filtrar pelo tenant
         const { isSuperAdmin, tenantId } = getTenantScope(req);
-        
-        if (!isSuperAdmin) {
-            if (!tenantId) {
-                return res.json({ success: true, members: [] }); // Usuário sem tenant não vê ninguém
-            }
-            query += ` AND tenant_id = $1`;
-            params.push(tenantId);
-        }
+
+        // if (!isSuperAdmin) {
+        //    if (!tenantId) {
+        //        return res.json({ success: true, members: [] }); // Usuário sem tenant não vê ninguém
+        //    }
+        //    query += ` AND tenant_id = $1`;
+        //    params.push(tenantId);
+        // }
 
         query += ` ORDER BY created_at DESC`;
 

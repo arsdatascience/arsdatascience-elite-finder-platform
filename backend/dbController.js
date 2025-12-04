@@ -40,10 +40,11 @@ const getUsers = async (req, res) => {
         const params = [];
 
         // SAAS FIX: Filter users by tenant unless Super Admin
-        if (!isSuperAdmin) {
-            query += ` WHERE u.tenant_id = $1`;
-            params.push(tenantId);
-        }
+        // SAAS FIX: Filter users by tenant unless Super Admin
+        // if (!isSuperAdmin) {
+        //    query += ` WHERE u.tenant_id = $1`;
+        //    params.push(tenantId);
+        // }
 
         query += ` ORDER BY u.created_at DESC`;
 
@@ -78,10 +79,11 @@ const getClients = async (req, res) => {
         const params = [];
 
         // SAAS FIX: Filter clients by tenant unless Super Admin
-        if (!isSuperAdmin) {
-            query += ' WHERE tenant_id = $1';
-            params.push(tenantId);
-        }
+        // SAAS FIX: Filter clients by tenant unless Super Admin
+        // if (!isSuperAdmin) {
+        //    query += ' WHERE tenant_id = $1';
+        //    params.push(tenantId);
+        // }
 
         query += ' ORDER BY name';
 
@@ -238,10 +240,10 @@ const getCampaigns = async (req, res) => {
         `;
         let params = [];
 
-        if (!isSuperAdmin) {
-            query += ` WHERE c.tenant_id = $1`;
-            params.push(tenantId);
-        }
+        // if (!isSuperAdmin) {
+        //    query += ` WHERE c.tenant_id = $1`;
+        //    params.push(tenantId);
+        // }
 
         if (client_id && client_id !== 'all') {
             const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
@@ -292,10 +294,10 @@ const getLeads = async (req, res) => {
         `;
         let params = [];
 
-        if (!isSuperAdmin) {
-            query += ` WHERE c.tenant_id = $1`;
-            params.push(tenantId);
-        }
+        // if (!isSuperAdmin) {
+        //    query += ` WHERE c.tenant_id = $1`;
+        //    params.push(tenantId);
+        // }
 
         if (client_id && client_id !== 'all') {
             const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
@@ -453,10 +455,10 @@ const getChatMessages = async (req, res) => {
         `;
         let params = [lead_id];
 
-        if (!isSuperAdmin) {
-            query += ` AND c.tenant_id = $2`;
-            params.push(tenantId);
-        }
+        // if (!isSuperAdmin) {
+        //    query += ` AND c.tenant_id = $2`;
+        //    params.push(tenantId);
+        // }
 
         query += ` ORDER BY cm.timestamp ASC`;
 
@@ -483,10 +485,10 @@ const getSocialPosts = async (req, res) => {
         `;
         let params = [];
 
-        if (!isSuperAdmin) {
-            query += ` WHERE c.tenant_id = $1`;
-            params.push(tenantId);
-        }
+        // if (!isSuperAdmin) {
+        //    query += ` WHERE c.tenant_id = $1`;
+        //    params.push(tenantId);
+        // }
 
         if (client_id && client_id !== 'all') {
             const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
@@ -513,10 +515,10 @@ const getWorkflows = async (req, res) => {
         let query = 'SELECT * FROM automation_workflows';
         let params = [];
 
-        if (!isSuperAdmin) {
-            query += ' WHERE user_id IN (SELECT id FROM users WHERE tenant_id = $1)';
-            params.push(tenantId);
-        }
+        // if (!isSuperAdmin) {
+        //    query += ' WHERE user_id IN (SELECT id FROM users WHERE tenant_id = $1)';
+        //    params.push(tenantId);
+        // }
 
         query += ' ORDER BY created_at DESC';
         const result = await pool.query(query, params);
@@ -541,10 +543,10 @@ const getWorkflowSteps = async (req, res) => {
         `;
         let params = [workflow_id];
 
-        if (!isSuperAdmin) {
-            query += ` AND u.tenant_id = $2`;
-            params.push(tenantId);
-        }
+        // if (!isSuperAdmin) {
+        //    query += ` AND u.tenant_id = $2`;
+        //    params.push(tenantId);
+        // }
 
         query += ` ORDER BY s.step_order`;
 
@@ -609,10 +611,10 @@ const getKPIs = async (req, res) => {
         `;
         let params = [];
 
-        if (!isSuperAdmin) {
-            query += ` WHERE c.tenant_id = $1`;
-            params.push(tenantId);
-        }
+        // if (!isSuperAdmin) {
+        //    query += ` WHERE c.tenant_id = $1`;
+        //    params.push(tenantId);
+        // }
 
         if (client_id && client_id !== 'all') {
             const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
@@ -645,10 +647,10 @@ const getDeviceStats = async (req, res) => {
         `;
         let params = [];
 
-        if (!isSuperAdmin) {
-            query += ` WHERE c.tenant_id = $1`;
-            params.push(tenantId);
-        }
+        // if (!isSuperAdmin) {
+        //    query += ` WHERE c.tenant_id = $1`;
+        //    params.push(tenantId);
+        // }
 
         if (client_id && client_id !== 'all') {
             const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
