@@ -377,71 +377,67 @@ export const Dashboard: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Conversion Source Breakdown (Share por Plataforma) - Takes 1 Column */}
     </motion.div>
 
-        {/* NEW: Share por Plataforma (Reconstructed) - Full Width or Centered */ }
-  <motion.div variants={itemVariants} className="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-    <div className="flex flex-col md:flex-row gap-8">
-      {/* Chart Section */}
-      <div className="w-full md:w-1/3 flex flex-col">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Share por Plataforma</h3>
-        <div className="h-64 w-full relative" style={{ minHeight: '250px' }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={conversionSources}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={80}
-                paddingAngle={5}
-                dataKey="val"
-              >
-                {conversionSources.map((entry: any, index: number) => (
-                  <Cell key={`cell-${index}`} fill={entry.color.replace('bg-', '').replace('-500', '') === 'blue' ? '#3b82f6' :
-                    entry.color.replace('bg-', '').replace('-500', '') === 'purple' ? '#a855f7' :
-                      entry.color.replace('bg-', '').replace('-500', '') === 'green' ? '#10b981' :
-                        entry.color.replace('bg-', '').replace('-500', '') === 'yellow' ? '#f59e0b' : '#6b7280'} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value: any) => [`${value}%`, 'Share']}
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-              />
-              <Legend verticalAlign="bottom" height={36} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Insights & Churn Section (Side by Side) */}
-      <div className="w-full md:w-2/3 flex flex-col gap-6">
-        {/* AI Insight */}
-        <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-          <p className="text-sm text-blue-800 font-medium flex items-center gap-2">
-            <Users size={16} /> Insight Estratégico da IA
-          </p>
-          <p className="text-sm text-blue-600 mt-2">
-            {isLoadingInsight ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                Analisando dados de conversão...
-              </span>
-            ) : (
-              aiInsightData?.insight || "Nenhum insight disponível no momento."
-            )}
-          </p>
-        </div>
-
-        {/* Churn Widget */}
-        <div className="flex-1">
-          <ChurnRiskWidget />
-        </div>
-      </div>
+        {/* Conversion Source Breakdown (Share por Plataforma) - Takes 1 Column */ }
+  <motion.div variants={itemVariants} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+    <h3 className="text-lg font-semibold text-gray-800 mb-4">Share por Plataforma</h3>
+    <div className="h-64 w-full relative" style={{ minHeight: '250px' }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={conversionSources}
+            cx="50%"
+            cy="50%"
+            innerRadius={60}
+            outerRadius={80}
+            paddingAngle={5}
+            dataKey="val"
+          >
+            {conversionSources.map((entry: any, index: number) => (
+              <Cell key={`cell-${index}`} fill={entry.color.replace('bg-', '').replace('-500', '') === 'blue' ? '#3b82f6' :
+                entry.color.replace('bg-', '').replace('-500', '') === 'purple' ? '#a855f7' :
+                  entry.color.replace('bg-', '').replace('-500', '') === 'green' ? '#10b981' :
+                    entry.color.replace('bg-', '').replace('-500', '') === 'yellow' ? '#f59e0b' : '#6b7280'} />
+            ))}
+          </Pie>
+          <Tooltip
+            formatter={(value: any) => [`${value}%`, 'Share']}
+            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+          />
+          <Legend verticalAlign="bottom" height={36} />
+        </PieChart>
+      </ResponsiveContainer>
     </div>
   </motion.div>
       </div >
+
+  {/* Insights & Churn Section (New Row) */ }
+  < motion.div variants = { itemVariants } className = "grid grid-cols-1 md:grid-cols-2 gap-6" >
+    {/* AI Insight */ }
+    < div className = "bg-white p-6 rounded-xl shadow-sm border border-gray-100" >
+          <p className="text-sm text-blue-800 font-medium flex items-center gap-2 mb-3">
+            <Users size={18} /> Insight Estratégico da IA
+          </p>
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 h-full">
+            <p className="text-sm text-blue-600">
+              {isLoadingInsight ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Analisando dados de conversão...
+                </span>
+              ) : (
+                aiInsightData?.insight || "Nenhum insight disponível no momento."
+              )}
+            </p>
+          </div>
+        </div >
+
+  {/* Churn Widget */ }
+  < div className = "bg-white p-6 rounded-xl shadow-sm border border-gray-100" >
+    <ChurnRiskWidget />
+        </div >
+      </motion.div >
     </motion.div >
   );
 };
