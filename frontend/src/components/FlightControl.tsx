@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, Variants } from 'framer-motion';
 import socketService from '@/services/socket';
+import { apiClient } from '@/services/apiClient';
 
 // Animation Variants matching Dashboard
 const containerVariants: Variants = {
@@ -397,8 +398,7 @@ export const FlightControl: React.FC = () => {
     });
 
     // Fetch Clients
-    fetch(`${import.meta.env.VITE_API_URL}/api/clients`)
-      .then(res => res.json())
+    apiClient.clients.getClients()
       .then(data => setClients(data))
       .catch(err => console.error('Erro ao buscar clientes:', err));
 
@@ -412,11 +412,7 @@ export const FlightControl: React.FC = () => {
 
   const fetchLeads = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leads`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const data = await apiClient.leads.getLeads();
       if (Array.isArray(data)) {
         const adaptedLeads: Lead[] = data.map((l: any) => ({
           id: l.id,
@@ -476,23 +472,14 @@ export const FlightControl: React.FC = () => {
 
   const handleAddLead = async (newLead: any) => {
     try {
-      const token = localStorage.getItem('token');
       const payload = {
         ...newLead,
         status: newLead.status.toLowerCase()
       };
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leads`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+      const savedLead = await apiClient.leads.createLead(payload);
 
-      if (res.ok) {
-        const savedLead = await res.json();
+      if (savedLead) {
         const adapted: Lead = {
           id: savedLead.id,
           name: savedLead.name,
@@ -584,15 +571,7 @@ export const FlightControl: React.FC = () => {
     setDraggedLead(null);
 
     try {
-      const token = localStorage.getItem('token');
-      await fetch(`${import.meta.env.VITE_API_URL}/api/leads/${draggedLead.id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus.toLowerCase() })
-      });
+      await apiClient.leads.updateLeadStatus(draggedLead.id, newStatus.toLowerCase());
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
       setLocalLeads(oldLeads); // Revert
@@ -607,15 +586,7 @@ export const FlightControl: React.FC = () => {
     ));
 
     try {
-      const token = localStorage.getItem('token');
-      await fetch(`${import.meta.env.VITE_API_URL}/api/leads/${leadId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(updates)
-      });
+      await apiClient.leads.updateLead(leadId, updates);
     } catch (error) {
       console.error('Erro ao atualizar lead:', error);
       alert('Erro ao salvar alterações');

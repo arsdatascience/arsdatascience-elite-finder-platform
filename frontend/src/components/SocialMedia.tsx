@@ -27,8 +27,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
 
     // Fetch Clients
     React.useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/clients`)
-            .then(res => res.json())
+        apiClient.clients.getClients()
             .then(data => {
                 setClients(data);
                 if (data.length > 0) setSelectedClient(data[0].id);
