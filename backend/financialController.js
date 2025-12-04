@@ -284,13 +284,26 @@ const financialController = {
     },
 
     getCategories: async (req, res) => {
-        const { tenant_id } = req.user;
+        const { tenant_id, role } = req.user;
+        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin' || role === 'super_user';
+
         try {
-            const result = await db.query(`
-                SELECT * FROM financial_categories 
-                WHERE tenant_id = $1 OR is_default = true 
-                ORDER BY type, name
-            `, [tenant_id]);
+            let query = `SELECT * FROM financial_categories`;
+            let params = [];
+
+            if (!isSuperAdmin) {
+                query += ` WHERE tenant_id = $1 OR is_default = true`;
+                params.push(tenant_id);
+            } else {
+                // Super admin sees all, or maybe just all defaults + all tenants? 
+                // Usually super admin wants to see everything.
+                // But if we want to be safe, maybe just 1=1
+                query += ` WHERE 1=1`;
+            }
+
+            query += ` ORDER BY type, name`;
+
+            const result = await db.query(query, params);
             res.json({ success: true, data: result.rows });
         } catch (error) {
             console.error('Error fetching categories:', error);
@@ -334,9 +347,20 @@ const financialController = {
     },
 
     getSuppliers: async (req, res) => {
-        const { tenant_id } = req.user;
+        const { tenant_id, role } = req.user;
+        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin' || role === 'super_user';
+
         try {
-            const result = await db.query(`SELECT * FROM suppliers WHERE tenant_id = $1 ORDER BY name`, [tenant_id]);
+            let query = `SELECT * FROM suppliers`;
+            let params = [];
+
+            if (!isSuperAdmin) {
+                query += ` WHERE tenant_id = $1`;
+                params.push(tenant_id);
+            }
+
+            query += ` ORDER BY name`;
+            const result = await db.query(query, params);
             res.json({ success: true, data: result.rows });
         } catch (error) {
             console.error('Error fetching suppliers:', error);
