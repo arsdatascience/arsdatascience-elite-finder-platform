@@ -532,6 +532,19 @@ app.use((err, req, res, next) => {
 });
 
 // Inicialização do Servidor (IMEDIATA para evitar Timeout do Railway)
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"]
+  }
+});
+
+// Tornar io acessível globalmente se necessário
+global.io = io;
+
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
