@@ -1,38 +1,49 @@
 const Redis = require('ioredis');
 
-// Configuração flexível para suportar tanto REDIS_URL quanto variáveis separadas
-const getRedisConfig = () => {
-    // Prioridade para configuração explícita (Railway Variables)
-    const config = {
+const getRedisClient = () => {
+    // Opções obrigatórias para BullMQ e estabilidade
+    const defaultOptions = {
+        maxRetriesPerRequest: null,
+        enableReadyCheck: false,
+        retryStrategy(times) {
+            const delay = Math.min(times * 50, 2000);
+            return delay;
+        }
+    };
+
+    // 1. Tentar URL Pública (Estabilidade / Fallback)
+    if (process.env.REDIS_PUBLIC_URL) {
+        console.log('🔌 Usando REDIS_PUBLIC_URL para conexão (Fallback)...');
+        return new Redis(process.env.REDIS_PUBLIC_URL, defaultOptions);
+    }
+
+    // 2. Tentar URL Interna/Padrão
+    if (process.env.REDIS_URL) {
+        console.log('🔌 Usando REDIS_URL para conexão...');
+        return new Redis(process.env.REDIS_URL, defaultOptions);
+    }
+
+    // 3. Fallback para variáveis individuais
+    console.log('🔌 Usando variáveis de host/port para conexão...');
+    return new Redis({
         host: process.env.REDISHOST || 'localhost',
         port: process.env.REDISPORT || 6379,
         password: process.env.REDISPASSWORD || undefined,
         username: process.env.REDISUSER || undefined,
-        maxRetriesPerRequest: null, // Necessário para BullMQ
-        enableReadyCheck: false,
-        // Railway Internal Network often uses IPv6
-        family: process.env.RAILWAY_ENVIRONMENT ? 6 : 4,
-    };
-
-    // Se tiver REDIS_URL definida e não tivermos as variáveis separadas, usamos ela
-    // Mas a configuração explícita acima é preferível para controlar o 'family'
-    if (process.env.REDIS_URL && !process.env.REDISHOST) {
-        console.log('🔌 Usando REDIS_URL para conexão...');
-        return process.env.REDIS_URL;
-    }
-
-    return config;
+        family: process.env.RAILWAY_ENVIRONMENT ? 6 : 4, // Tentativa de manter IPv6 se cair aqui
+        ...defaultOptions
+    });
 };
 
-const redis = new Redis(getRedisConfig());
+const redis = getRedisClient();
 
 redis.on('connect', () => {
     console.log('✅ Conectado ao Redis com sucesso!');
 });
 
 redis.on('error', (err) => {
-    // Evitar logar a senha em caso de erro na URL
-    const safeError = err.message.replace(/:[^@]+@/, ':***@');
+    // Mascarar senha no log de erro
+    const safeError = err.message ? err.message.replace(/:[^@]+@/, ':***@') : err;
     console.error('❌ Erro na conexão com Redis:', safeError);
 });
 
