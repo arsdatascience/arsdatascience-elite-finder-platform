@@ -1,12 +1,12 @@
 const db = require('./db');
 const { syncCampaignCosts } = require('./jobs/financialSync');
+const { getTenantScope } = require('./utils/tenantSecurity');
 
 const financialController = {
     // --- TRANSACTIONS ---
 
     getTransactions: async (req, res) => {
-        const { tenant_id, role } = req.user;
-        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin' || role === 'super_user';
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
         const { startDate, endDate, type, status, category_id, client_id } = req.query;
 
         try {
@@ -26,9 +26,9 @@ const financialController = {
             const params = [];
             let paramCount = 1;
 
-            if (!isSuperAdmin && tenant_id) {
+            if (!isSuperAdmin && tenantId) {
                 query += ` AND t.tenant_id = $${paramCount++}`;
-                params.push(tenant_id);
+                params.push(tenantId);
             }
 
             if (startDate) {
@@ -141,8 +141,7 @@ const financialController = {
     // --- DASHBOARD & ANALYTICS ---
 
     getFinancialDashboard: async (req, res) => {
-        const { tenant_id, role } = req.user;
-        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin' || role === 'super_user';
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
         const { startDate, endDate, client_id } = req.query;
 
         try {
@@ -150,9 +149,9 @@ const financialController = {
             const params = [];
             let paramCount = 1;
 
-            if (!isSuperAdmin && tenant_id) {
+            if (!isSuperAdmin && tenantId) {
                 filterClause += ` AND tenant_id = $${paramCount++}`;
-                params.push(tenant_id);
+                params.push(tenantId);
             }
 
             // Definir datas padrão se não vierem (mês atual)
@@ -196,9 +195,9 @@ const financialController = {
             const catParams = [];
             let catParamCount = 1;
 
-            if (!isSuperAdmin && tenant_id) {
+            if (!isSuperAdmin && tenantId) {
                 categoryFilterClause += ` AND t.tenant_id = $${catParamCount++}`;
-                catParams.push(tenant_id);
+                catParams.push(tenantId);
             }
 
             categoryFilterClause += ` AND t.date >= $${catParamCount++}`;
@@ -262,16 +261,15 @@ const financialController = {
     // --- AUXILIARY (Categories, Suppliers, Clients) ---
 
     getClients: async (req, res) => {
-        const { tenant_id, role } = req.user;
-        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin' || role === 'super_user';
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
 
         try {
             let query = `SELECT id, name FROM clients`;
             let params = [];
 
-            if (!isSuperAdmin && tenant_id) {
+            if (!isSuperAdmin && tenantId) {
                 query += ` WHERE tenant_id = $1`;
-                params.push(tenant_id);
+                params.push(tenantId);
             }
 
             query += ` ORDER BY name`;
@@ -284,8 +282,7 @@ const financialController = {
     },
 
     getCategories: async (req, res) => {
-        const { tenant_id, role } = req.user;
-        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin' || role === 'super_user';
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
 
         try {
             let query = `SELECT * FROM financial_categories`;
@@ -293,7 +290,7 @@ const financialController = {
 
             if (!isSuperAdmin) {
                 query += ` WHERE tenant_id = $1 OR is_default = true`;
-                params.push(tenant_id);
+                params.push(tenantId);
             } else {
                 // Super admin sees all, or maybe just all defaults + all tenants? 
                 // Usually super admin wants to see everything.
@@ -347,8 +344,7 @@ const financialController = {
     },
 
     getSuppliers: async (req, res) => {
-        const { tenant_id, role } = req.user;
-        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin' || role === 'super_user';
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
 
         try {
             let query = `SELECT * FROM suppliers`;
@@ -356,7 +352,7 @@ const financialController = {
 
             if (!isSuperAdmin) {
                 query += ` WHERE tenant_id = $1`;
-                params.push(tenant_id);
+                params.push(tenantId);
             }
 
             query += ` ORDER BY name`;

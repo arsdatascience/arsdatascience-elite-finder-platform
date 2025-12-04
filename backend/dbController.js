@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const { triggerWebhook } = require('./services/webhookService');
+const { getTenantScope } = require('./utils/tenantSecurity');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -286,9 +287,7 @@ const getCampaigns = async (req, res) => {
 const getLeads = async (req, res) => {
     try {
         const { client_id, status } = req.query;
-        const tenantId = req.user.tenant_id;
-
-        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
 
         let query = `
             SELECT l.* 
@@ -446,9 +445,9 @@ const updateLead = async (req, res) => {
 // ============================================
 const getChatMessages = async (req, res) => {
     const { lead_id } = req.query;
-    const tenantId = req.user.tenant_id;
+    const { lead_id } = req.query;
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
     try {
-        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
 
         let query = `
              SELECT cm.* 
@@ -516,13 +515,8 @@ const getSocialPosts = async (req, res) => {
 // AUTOMATION WORKFLOWS
 // ============================================
 const getWorkflows = async (req, res) => {
-    const tenantId = req.user.tenant_id;
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
     try {
-        // SAAS FIX: Filter by tenant (assuming workflows have tenant_id or user_id)
-        // If workflows are global templates, this might need adjustment. Assuming user-specific for now.
-        // If workflows table doesn't have tenant_id, we might need to add it.
-        // For now, assuming they are linked to user_id which links to tenant.
-        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
         let query = 'SELECT * FROM automation_workflows';
         let params = [];
 
@@ -542,10 +536,8 @@ const getWorkflows = async (req, res) => {
 
 const getWorkflowSteps = async (req, res) => {
     const { workflow_id } = req.params;
-    const tenantId = req.user.tenant_id;
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
     try {
-        // SAAS FIX: Verify ownership via workflow
-        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
 
         let query = `
             SELECT s.* 
