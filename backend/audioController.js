@@ -5,6 +5,7 @@ const path = require('path');
 const pool = require('./database');
 
 // Inicializar OpenAI
+const OpenAI = require('openai');
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
