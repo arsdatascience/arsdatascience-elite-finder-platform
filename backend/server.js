@@ -490,6 +490,11 @@ app.use('/api/templates', templatesController);
 
 // --- QDRANT VECTOR DATABASE ---
 const qdrantController = require('./qdrantController');
+
+// --- FINANCIAL ---
+const financialCtrl = require('./financialController');
+const adminCtrl = require('./adminController');
+
 app.get('/api/financial/transactions', authenticateToken, financialCtrl.getTransactions);
 app.post('/api/financial/transactions', authenticateToken, financialCtrl.createTransaction);
 app.put('/api/financial/transactions/:id', authenticateToken, financialCtrl.updateTransaction);
