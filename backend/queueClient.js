@@ -1,16 +1,13 @@
 const { Queue, Worker } = require('bullmq');
-const redis = require('./redisClient');
+const { getRedisClient } = require('./redisClient');
 
 // Nome da fila principal
 const QUEUE_NAME = 'jobsQueue';
 
-// Configuração da conexão Redis para o BullMQ
-// O BullMQ precisa de uma conexão dedicada ou configuração compatível
-const connection = redis;
-
 // Inicializar a Fila (Producer)
+// Usamos uma conexão dedicada para a fila para evitar conflitos
 const jobsQueue = new Queue(QUEUE_NAME, {
-    connection,
+    connection: getRedisClient(),
     defaultJobOptions: {
         attempts: 3,
         backoff: {
@@ -25,8 +22,9 @@ const jobsQueue = new Queue(QUEUE_NAME, {
 // Função para criar um Worker (Consumer)
 // Deve ser chamada apenas no processo que vai processar os jobs (jobProcessor.js)
 const createWorker = (processorFunction) => {
+    // O Worker PRECISA de uma conexão exclusiva para comandos bloqueantes (BRPOP)
     const worker = new Worker(QUEUE_NAME, processorFunction, {
-        connection,
+        connection: getRedisClient(),
         concurrency: 5 // Processar até 5 jobs simultaneamente
     });
 
