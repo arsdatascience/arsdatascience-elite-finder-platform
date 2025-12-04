@@ -823,6 +823,7 @@ export const FlightControl: React.FC = () => {
               </div>
             ))}
           </div>
+        </div>
       </motion.div>
 
       {/* Modals */}
