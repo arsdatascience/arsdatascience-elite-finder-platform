@@ -746,12 +746,12 @@ export const FlightControl: React.FC = () => {
         </motion.div>
 
         {/* Kanban Board Container */}
-        <div className="w-full overflow-x-auto pb-2">
-          <div className="flex gap-4 min-w-[1280px] h-[calc(100vh-340px)] min-h-[500px] items-stretch">
+        <div className="w-full overflow-x-auto pb-4">
+          <div className="flex gap-4 min-w-full w-max h-[calc(100vh-340px)] min-h-[500px] items-stretch px-1">
             {COLUMNS.map(column => (
               <div
                 key={column.id}
-                className={`flex-1 min-w-[300px] rounded-xl ${column.bgColor} p-4 flex flex-col gap-3 h-full`}
+                className={`w-[320px] shrink-0 rounded-xl ${column.bgColor} p-4 flex flex-col gap-3 h-full`}
                 onDragOver={handleDragOver}
                 onDrop={() => handleDrop(column.id)}
               >
