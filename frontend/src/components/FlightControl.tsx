@@ -613,7 +613,7 @@ export const FlightControl: React.FC = () => {
   return (
     <>
       <motion.div
-        className="flex flex-col h-[calc(100vh-6rem)] gap-4"
+        className="flex flex-col h-full gap-4"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -751,7 +751,7 @@ export const FlightControl: React.FC = () => {
             {COLUMNS.map(column => (
               <div
                 key={column.id}
-                className={`w-[280px] flex-1 min-w-[280px] rounded-xl ${column.bgColor} p-4 flex flex-col gap-3 h-full`}
+                className={`w-[250px] flex-1 min-w-[250px] rounded-xl ${column.bgColor} p-4 flex flex-col gap-3 h-full`}
                 onDragOver={handleDragOver}
                 onDrop={() => handleDrop(column.id)}
               >
