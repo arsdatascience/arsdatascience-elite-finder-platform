@@ -68,9 +68,17 @@ export const Campaigns: React.FC = () => {
     fetch(`${import.meta.env.VITE_API_URL}/api/clients`)
       .then(res => res.json())
       .then(data => {
-        setClients(data);
+        if (Array.isArray(data)) {
+          setClients(data);
+        } else {
+          console.error('Invalid clients data:', data);
+          setClients([]);
+        }
       })
-      .catch(err => console.error('Erro ao buscar clientes:', err));
+      .catch(err => {
+        console.error('Erro ao buscar clientes:', err);
+        setClients([]);
+      });
   }, []);
 
   // Fetch Analytics

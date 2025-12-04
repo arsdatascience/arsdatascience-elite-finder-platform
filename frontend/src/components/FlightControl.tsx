@@ -399,8 +399,18 @@ export const FlightControl: React.FC = () => {
 
     // Fetch Clients
     apiClient.clients.getClients()
-      .then(data => setClients(data))
-      .catch(err => console.error('Erro ao buscar clientes:', err));
+      .then(data => {
+        if (Array.isArray(data)) {
+          setClients(data);
+        } else {
+          console.error('Invalid clients data:', data);
+          setClients([]);
+        }
+      })
+      .catch(err => {
+        console.error('Erro ao buscar clientes:', err);
+        setClients([]);
+      });
 
     fetchLeads();
 
