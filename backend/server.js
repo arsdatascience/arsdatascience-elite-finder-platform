@@ -614,20 +614,28 @@ const copiesController = require('./copiesController');
 app.use('/api/copies', copiesController);
 
 
-// Iniciar servidor após migrações
-runMigrations().then(() => {
-  // Iniciar Job Processor (Queue Worker)
-  const jobProcessor = require('./services/jobProcessor');
-  jobProcessor.start();
-  console.log('🚀 Job Processor started');
-  console.log('🔄 Force Deploy: ' + new Date().toISOString());
-  const churnController = require('./churnController');
-  app.get('/api/churn/predict', authenticateToken, churnController.predictChurn);
+// Inicialização do Servidor (IMEDIATA para evitar Timeout do Railway)
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`📡 Socket.io pronto para conexões`);
 
-  // Inicialização do Servidor
-  const PORT = process.env.PORT || 3001;
-  server.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`📡 Socket.io pronto para conexões`);
+  // Rodar processos de inicialização em background
+  runMigrations().then(() => {
+    console.log('✅ Migrações concluídas com sucesso.');
+
+    // Iniciar Job Processor (Queue Worker)
+    const jobProcessor = require('./services/jobProcessor');
+    jobProcessor.start();
+    console.log('🚀 Job Processor started');
+    console.log('🔄 Force Deploy: ' + new Date().toISOString());
+
+  }).catch(err => {
+    console.error('❌ Erro crítico na inicialização (Migrações):', err);
   });
 });
+
+// Definir rota de Churn (fora do bloco de migração para garantir registro)
+const churnController = require('./churnController');
+app.get('/api/churn/predict', authenticateToken, churnController.predictChurn);
+
