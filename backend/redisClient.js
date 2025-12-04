@@ -24,7 +24,7 @@ const getRedisClient = () => {
     }
 
     // 3. Fallback para variáveis individuais
-    console.log('🔌 Usando variáveis de host/port para conexão...');
+    console.log('⚠️  REDIS_PUBLIC_URL e REDIS_URL não encontrados. Usando variáveis de host/port (Fallback para Localhost)...');
     return new Redis({
         host: process.env.REDISHOST || 'localhost',
         port: process.env.REDISPORT || 6379,
