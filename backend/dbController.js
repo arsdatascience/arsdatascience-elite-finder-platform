@@ -334,13 +334,21 @@ const createLead = async (req, res) => {
             // 1. Calcular Score Inicial
             await calculateLeadScore(newLead.id);
 
-            // 2. Agendar Follow-up Omnichannel (24h)
-            await pool.query(`
-                INSERT INTO jobs (type, payload, scheduled_for, status)
-                VALUES ($1, $2, NOW() + INTERVAL '24 hours', 'pending')
-            `, ['check_follow_up', { leadId: newLead.id }]);
+            const { jobsQueue } = require('./queueClient');
 
-            console.log(`🤖 Lead ${newLead.id}: Score calculado e Follow-up agendado.`);
+            // ... (imports)
+
+            // ... (inside createLead function)
+            // 2. Agendar Follow-up Omnichannel (24h)
+            await jobsQueue.add('check_follow_up', {
+                leadId: newLead.id,
+                tenantId: tenantId // Passar contexto do tenant
+            }, {
+                delay: 24 * 60 * 60 * 1000, // 24 horas
+                jobId: `followup_${newLead.id}` // ID único
+            });
+
+            console.log(`🤖 Lead ${newLead.id}: Score calculado e Follow-up agendado via BullMQ.`);
         } catch (sysErr) {
             console.error('Erro nos processos sistêmicos de Lead:', sysErr);
         }

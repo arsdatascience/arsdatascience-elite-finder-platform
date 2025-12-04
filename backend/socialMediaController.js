@@ -56,6 +56,11 @@ const createPost = async (req, res) => {
         const result = await db.query(query, values);
         const newPost = result.rows[0];
 
+        const { jobsQueue } = require('./queueClient');
+
+        // ... (imports)
+
+        // ... (inside createPost function)
         // Se for agendado, criar Job na fila (SaaS Queue)
         if ((status === 'scheduled' || status === 'published') && scheduled_at) {
             // Buscar Integration ID
@@ -70,21 +75,19 @@ const createPost = async (req, res) => {
             if (intResult.rows.length > 0) {
                 const integrationId = intResult.rows[0].id;
 
-                await db.query(`
-                    INSERT INTO jobs (type, payload, scheduled_for)
-                    VALUES ($1, $2, $3)
-                `, [
-                    'publish_social_post',
-                    JSON.stringify({
-                        postId: newPost.id,
-                        integrationId,
-                        platform,
-                        content,
-                        mediaUrl: media_url
-                    }),
-                    scheduled_at
-                ]);
-                console.log(`📅 Job de publicação agendado para ${scheduled_at}`);
+                // Adicionar à fila do BullMQ
+                await jobsQueue.add('publish_social_post', {
+                    postId: newPost.id,
+                    integrationId,
+                    platform,
+                    content,
+                    mediaUrl: media_url
+                }, {
+                    delay: scheduled_at ? new Date(scheduled_at).getTime() - Date.now() : 0,
+                    jobId: `social_${newPost.id}_${Date.now()}`
+                });
+
+                console.log(`📅 Job de publicação agendado para ${scheduled_at} via BullMQ`);
             } else {
                 console.warn(`⚠️ Nenhuma integração encontrada para ${platform}. Post salvo mas não agendado na fila.`);
             }

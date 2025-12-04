@@ -627,10 +627,10 @@ server.listen(PORT, () => {
   runMigrations().then(() => {
     console.log('✅ Migrações concluídas com sucesso.');
 
-    // Iniciar Job Processor (Queue Worker)
+    // Iniciar Job Processor (Queue Worker - BullMQ)
     const jobProcessor = require('./services/jobProcessor');
     jobProcessor.start();
-    console.log('🚀 Job Processor started');
+    console.log('🚀 Job Processor (BullMQ) started');
     console.log('🔄 Force Deploy: ' + new Date().toISOString());
 
   }).catch(err => {
