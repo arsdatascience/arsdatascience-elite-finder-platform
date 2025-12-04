@@ -86,14 +86,23 @@ const handleWebhook = async (req, res) => {
 
         console.log(`📩 WhatsApp Message from ${pushName} (${phone}): ${messageContent}`);
 
-        // 1. Identificar ou Criar Cliente/Lead
-        // SAAS FIX: In a real multi-tenant scenario, we MUST know which tenant owns this WhatsApp instance.
-        // Assuming 'instance' field from EvolutionAPI maps to a tenant or we have a mapping table.
-        // For now, we will try to find the client. If duplicates exist across tenants, this is risky without instance mapping.
-
+        // 1. Identificar Tenant pela Instância (SEGURANÇA CRÍTICA)
         let tenantId = null;
-        // TODO: Resolve tenantId from req.body.instance (e.g., SELECT tenant_id FROM instances WHERE name = $1)
 
+        // Tentar resolver tenant_id pelo nome da instância
+        if (instance) {
+            const instanceRes = await db.query('SELECT tenant_id FROM whatsapp_instances WHERE instance_name = $1', [instance]);
+            if (instanceRes.rows.length > 0) {
+                tenantId = instanceRes.rows[0].tenant_id;
+            }
+        }
+
+        // Se não achou tenant pela instância, tenta fallback perigoso (mas loga aviso)
+        if (!tenantId) {
+            console.warn(`⚠️ [SECURITY WARNING] Webhook received for unknown instance: ${instance}. Trying to match client globally (RISKY).`);
+        }
+
+        // 2. Identificar ou Criar Cliente/Lead
         let query = 'SELECT id, name, tenant_id FROM clients WHERE (whatsapp LIKE $1 OR phone LIKE $1)';
         let params = [`%${phone}%`];
 
@@ -112,8 +121,8 @@ const handleWebhook = async (req, res) => {
         if (clientResult.rows.length > 0) {
             clientId = clientResult.rows[0].id;
             clientName = clientResult.rows[0].name;
-            // If we found a client, we can assume the interaction belongs to their tenant
-            tenantId = clientResult.rows[0].tenant_id;
+            // Se achamos o cliente e não tínhamos tenantId (fallback), assumimos o do cliente
+            if (!tenantId) tenantId = clientResult.rows[0].tenant_id;
         } else {
             // Opcional: Criar Lead automaticamente
             // await db.query('INSERT INTO leads ...');
