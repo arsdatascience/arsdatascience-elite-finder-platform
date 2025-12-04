@@ -119,54 +119,72 @@ export const apiClient = {
             return response.data;
         },
         getCampaignAnalytics: async (clientId: string, startDate?: string, endDate?: string, platforms?: string) => {
-            if ((email === 'admin@elite.com' || email === 'denismay@arsdatascience.com.br') && password === 'admin') {
-                console.log('[Auth] Login Mock sucesso');
-                return {
-                    user: {
-                        id: 1,
-                        name: email.includes('denis') ? 'Denis May' : 'Admin',
-                        email,
-                        role: 'admin',
-                        avatar_url: 'https://github.com/shadcn.png'
-                    },
-                    token: 'mock-jwt-token'
-                };
-            }
-            console.error('[Auth] Login Mock falhou: credenciais inválidas');
-            throw new Error('Credenciais inválidas');
+            if (USE_MOCK) return mockApi.campaigns.getCampaignAnalytics(clientId);
+            const queryParams = new URLSearchParams();
+            if (clientId) queryParams.append('clientId', clientId);
+            if (startDate) queryParams.append('startDate', startDate);
+            if (endDate) queryParams.append('endDate', endDate);
+            if (platforms) queryParams.append('platforms', platforms);
+
+            const response = await axiosInstance.get(`/campaigns/analytics?${queryParams.toString()}`);
+            return response.data;
         }
+    },
+    auth: {
+        login: async (email: string, password: string) => {
+            console.log(`[Auth] Tentando login para ${email}. Modo Mock: ${USE_MOCK}`);
+
+            if (USE_MOCK) {
+                // Simulação de login
+                if ((email === 'admin@elite.com' || email === 'denismay@arsdatascience.com.br') && password === 'admin') {
+                    console.log('[Auth] Login Mock sucesso');
+                    return {
+                        user: {
+                            id: 1,
+                            name: email.includes('denis') ? 'Denis May' : 'Admin',
+                            email,
+                            role: 'admin',
+                            avatar_url: 'https://github.com/shadcn.png'
+                        },
+                        token: 'mock-jwt-token'
+                    };
+                }
+                console.error('[Auth] Login Mock falhou: credenciais inválidas');
+                throw new Error('Credenciais inválidas');
+            }
 
             try {
-            console.log(`[Auth] Enviando request para ${axiosInstance.getUri()}/auth/login`);
-            const response = await axiosInstance.post('/auth/login', { email, password });
-            console.log('[Auth] Login Backend sucesso:', response.data);
+                console.log(`[Auth] Enviando request para ${axiosInstance.getUri()}/auth/login`);
+                const response = await axiosInstance.post('/auth/login', { email, password });
+                console.log('[Auth] Login Backend sucesso:', response.data);
+                return response.data;
+            } catch (error: any) {
+                console.error('[Auth] Login Backend erro:', error.response?.data || error.message);
+                throw error;
+            }
+        },
+        register: async (name: string, email: string, password: string) => {
+            if (USE_MOCK) {
+                // Simulação de registro
+                return {
+                    user: { id: Date.now(), name, email, role: 'user', avatar_url: '' },
+                    token: 'mock-jwt-token-register'
+                };
+            }
+            const response = await axiosInstance.post('/auth/register', { name, email, password });
             return response.data;
-        } catch(error: any) {
-            console.error('[Auth] Login Backend erro:', error.response?.data || error.message);
-            throw error;
+        },
+        forgotPassword: async (email: string) => {
+            if (USE_MOCK) return { success: true, message: 'Mock: Instruções enviadas.' };
+            const response = await axiosInstance.post('/auth/forgot-password', { email });
+            return response.data;
+        },
+        resetPassword: async (token: string, newPassword: string) => {
+            if (USE_MOCK) return { success: true, message: 'Mock: Senha alterada.' };
+            const response = await axiosInstance.post('/auth/reset-password', { token, newPassword });
+            return response.data;
         }
     },
-    register: async (name: string, email: string, password: string) => {
-        if (USE_MOCK) {
-            // Simulação de registro
-            return {
-                user: { id: Date.now(), name, email, role: 'user', avatar_url: '' },
-                token: 'mock-jwt-token-register'
-            };
-        }
-        const response = await axiosInstance.post('/auth/register', { name, email, password });
-        return response.data;
-    },
-    forgotPassword: async (email: string) => {
-        if (USE_MOCK) return { success: true, message: 'Mock: Instruções enviadas.' };
-        const response = await axiosInstance.post('/auth/forgot-password', { email });
-        return response.data;
-    },
-    resetPassword: async (token: string, newPassword: string) => {
-        if (USE_MOCK) return { success: true, message: 'Mock: Senha alterada.' };
-        const response = await axiosInstance.post('/auth/reset-password', { token, newPassword });
-        return response.data;
-    }
 },
     clients: {
         getClients: async () => {

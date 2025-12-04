@@ -217,7 +217,7 @@ export const Dashboard: React.FC = () => {
             </h3>
             <Info className="w-5 h-5 text-gray-400 cursor-pointer hover:text-blue-500" />
           </div>
-          <div className="h-80">
+          <div className="h-80" style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                 <defs>
@@ -286,7 +286,7 @@ export const Dashboard: React.FC = () => {
               <span className="flex items-center gap-1 text-gray-600"><div className="w-2 h-2 rounded-full bg-purple-500"></div>Meta</span>
             </div>
           </div>
-          <div className="h-80">
+          <div className="h-80" style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 layout="vertical"
@@ -327,7 +327,7 @@ export const Dashboard: React.FC = () => {
 
           <div className="flex flex-col md:flex-row items-center gap-8 h-72">
             {/* Chart Side */}
-            <div className="w-full md:w-1/2 h-full relative">
+            <div className="w-full md:w-1/2 h-full relative" style={{ width: '100%', height: 288 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -386,7 +386,7 @@ export const Dashboard: React.FC = () => {
 
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Share por Plataforma</h3>
-            <div className="flex-1 min-h-[200px] relative">
+            <div className="h-64 relative" style={{ width: '100%', height: 256 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
