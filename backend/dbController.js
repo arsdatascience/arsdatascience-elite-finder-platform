@@ -445,7 +445,6 @@ const updateLead = async (req, res) => {
 // ============================================
 const getChatMessages = async (req, res) => {
     const { lead_id } = req.query;
-    const { lead_id } = req.query;
     const { isSuperAdmin, tenantId } = getTenantScope(req);
     try {
 
