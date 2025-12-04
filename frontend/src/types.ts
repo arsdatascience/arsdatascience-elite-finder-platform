@@ -28,11 +28,11 @@ export enum ViewState {
 }
 
 export enum LeadStatus {
-  NEW = 'NEW',
-  IN_PROGRESS = 'IN_PROGRESS',
-  WAITING = 'WAITING',
-  CLOSED_WON = 'CLOSED_WON',
-  CLOSED_LOST = 'CLOSED_LOST'
+  NEW = 'new',
+  IN_PROGRESS = 'in_progress',
+  WAITING = 'waiting',
+  CLOSED_WON = 'closed_won',
+  CLOSED_LOST = 'closed_lost'
 }
 
 export interface Metric {

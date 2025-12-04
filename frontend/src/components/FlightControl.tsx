@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Users, Filter, Plus, Search, MoreVertical, Phone, Mail,
-  Calendar, DollarSign, Tag, AlertCircle, CheckCircle,
-  Clock, ArrowRight, TrendingUp, Target, Download
+  Users, Plus, Search, MoreVertical, Phone, Mail,
+  CheckCircle, TrendingUp, Target, Download, Loader2, DollarSign
 } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
 import { Lead, LeadStatus } from '@/types';
@@ -120,7 +118,7 @@ export const FlightControl: React.FC = () => {
   // --- Filtering ---
   const filteredLeads = leads.filter(lead => {
     const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesSource = selectedSource === 'all' || lead.source === selectedSource;
     const matchesAssignee = selectedAssignee === 'all' || lead.assignedTo === selectedAssignee;
 
@@ -152,8 +150,19 @@ export const FlightControl: React.FC = () => {
   const assignees = Array.from(new Set(leads.map(l => l.assignedTo).filter(Boolean)));
 
   // --- Render ---
+  if (loading && leads.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+          <p className="text-gray-500 font-medium">Carregando controle de voo...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8 font-sans">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
@@ -276,8 +285,8 @@ export const FlightControl: React.FC = () => {
       </div>
 
       {/* Kanban Board */}
-      <div className="w-full overflow-x-auto pb-4">
-        <div className="flex gap-6 min-w-max pb-4 px-1">
+      <div className="w-full overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="flex gap-6 min-w-max pb-4 px-1 pr-6">
           <DragDropContext onDragEnd={handleDragEnd}>
             {COLUMNS.map(column => (
               <Droppable key={column.id} droppableId={column.id}>
@@ -371,7 +380,7 @@ export const FlightControl: React.FC = () => {
           lead={selectedLead}
           isOpen={!!selectedLead}
           onClose={() => setSelectedLead(null)}
-          onSave={(updates) => handleUpdateLead(selectedLead.id, updates)}
+          onSave={(updates: any) => handleUpdateLead(selectedLead.id, updates)}
           mode="edit"
         />
       )}

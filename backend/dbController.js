@@ -269,7 +269,13 @@ const getLeads = async (req, res) => {
         const { isSuperAdmin, tenantId } = getTenantScope(req);
 
         let query = `
-            SELECT l.* 
+            SELECT 
+                l.id, l.name, l.email, l.phone, l.source, l.value, l.status, l.notes, l.tags,
+                l.client_id as "clientId", 
+                l.product_interest as "productInterest", 
+                l.assigned_to as "assignedTo", 
+                l.last_contact as "lastContact", 
+                l.created_at as "createdAt"
             FROM leads l
             JOIN clients c ON l.client_id = c.id
         `;
@@ -324,7 +330,16 @@ const createLead = async (req, res) => {
             [client_id, name, email, phone, company, source, status || 'new', value || 0, notes, tags || []]
         );
         const newLead = result.rows[0];
-        res.status(201).json(newLead);
+        // Map to camelCase
+        const formattedLead = {
+            ...newLead,
+            clientId: newLead.client_id,
+            productInterest: newLead.product_interest,
+            assignedTo: newLead.assigned_to,
+            lastContact: newLead.last_contact,
+            createdAt: newLead.created_at
+        };
+        res.status(201).json(formattedLead);
 
         // Webhook
         if (req.user && req.user.id) {
@@ -382,7 +397,16 @@ const updateLeadStatus = async (req, res) => {
         }
 
         const updatedLead = result.rows[0];
-        res.json(updatedLead);
+        // Map to camelCase
+        const formattedLead = {
+            ...updatedLead,
+            clientId: updatedLead.client_id,
+            productInterest: updatedLead.product_interest,
+            assignedTo: updatedLead.assigned_to,
+            lastContact: updatedLead.last_contact,
+            createdAt: updatedLead.created_at
+        };
+        res.json(formattedLead);
 
         // Webhook
         if (req.user && req.user.id) {
@@ -418,7 +442,17 @@ const updateLead = async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Lead not found or access denied' });
         }
-        res.json(result.rows[0]);
+        const updatedLead = result.rows[0];
+        // Map to camelCase
+        const formattedLead = {
+            ...updatedLead,
+            clientId: updatedLead.client_id,
+            productInterest: updatedLead.product_interest,
+            assignedTo: updatedLead.assigned_to,
+            lastContact: updatedLead.last_contact,
+            createdAt: updatedLead.created_at
+        };
+        res.json(formattedLead);
     } catch (error) {
         console.error('Error updating lead:', error);
         res.status(500).json({ error: 'Failed to update lead' });

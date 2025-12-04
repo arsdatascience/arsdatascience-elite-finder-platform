@@ -122,40 +122,6 @@ exports.getCampaignAnalytics = async (req, res) => {
 
     } catch (error) {
         console.error('Erro ao buscar analytics:', error);
-        console.log('⚠️ Retornando dados mockados devido a erro no banco.');
-        res.json(generateMockData(req.query.clientId));
+        res.status(500).json({ error: 'Failed to fetch campaign analytics' });
     }
-};
-
-// Mock Data Generator (Fallback)
-const generateMockData = (clientId) => {
-    return {
-        kpis: {
-            total_spend: 15420.50,
-            total_impressions: 450000,
-            total_clicks: 12500,
-            total_conversions: 350,
-            total_revenue: 61682.00
-        },
-        chartData: Array.from({ length: 30 }, (_, i) => ({
-            date: new Date(Date.now() - (29 - i) * 86400000).toISOString().split('T')[0],
-            spend: Math.floor(Math.random() * 500) + 200,
-            revenue: Math.floor(Math.random() * 2000) + 800,
-            impressions: Math.floor(Math.random() * 10000) + 5000,
-            clicks: Math.floor(Math.random() * 300) + 100,
-            conversions: Math.floor(Math.random() * 10) + 2
-        })),
-        platformData: [
-            { platform: 'google', spend: 5000, conversions: 120, revenue: 20000 },
-            { platform: 'meta', spend: 4000, conversions: 100, revenue: 15000 },
-            { platform: 'youtube', spend: 3000, conversions: 80, revenue: 12000 },
-            { platform: 'linkedin', spend: 3420, conversions: 50, revenue: 14682 }
-        ],
-        campaigns: [
-            { id: 1, name: 'Search - Institucional', platform: 'google', status: 'active', spend: 2500, impressions: 50000, clicks: 2000, conversions: 80, revenue: 10000 },
-            { id: 2, name: 'Feed - Awareness', platform: 'meta', status: 'active', spend: 2000, impressions: 100000, clicks: 1500, conversions: 50, revenue: 8000 },
-            { id: 3, name: 'TrueView - Brand', platform: 'youtube', status: 'active', spend: 1500, impressions: 200000, clicks: 1000, conversions: 30, revenue: 6000 },
-            { id: 4, name: 'B2B - Leads', platform: 'linkedin', status: 'active', spend: 3000, impressions: 20000, clicks: 500, conversions: 40, revenue: 12000 }
-        ]
-    };
 };
