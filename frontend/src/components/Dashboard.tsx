@@ -393,9 +393,9 @@ export const Dashboard: React.FC = () => {
         <Legend verticalAlign="bottom" height={36} />
       </PieChart>
     </ResponsiveContainer>
-          </div >
-        </motion.div >
-      </div >
+    </div >
+  </motion.div >
+</div >
 
   {/* Insights & Churn Section (New Row) */ }
   < motion.div variants = { itemVariants } className = "grid grid-cols-1 md:grid-cols-2 gap-6" >
