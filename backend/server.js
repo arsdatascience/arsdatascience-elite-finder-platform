@@ -4,6 +4,7 @@ console.log('🚀 STARTING SERVER INITIALIZATION...');
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 const fs = require('fs');
 const path = require('path');
 
@@ -41,6 +42,7 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200
 };
+app.use(compression());
 app.use(cors(corsOptions));
 const stripeController = require('./stripeController');
 
