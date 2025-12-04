@@ -72,6 +72,7 @@ const getClients = async (req, res) => {
     }
     const tenantId = req.user.tenant_id;
     const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+    console.log(`🔍 getClients: User=${req.user.email}, Role=${req.user.role}, Tenant=${tenantId}, IsSuper=${isSuperAdmin}`);
 
     try {
         let query = 'SELECT * FROM clients';
@@ -231,26 +232,27 @@ const getCampaigns = async (req, res) => {
         const { client_id } = req.query;
         const tenantId = req.user.tenant_id;
 
-        // SAAS FIX: Filter by tenant via JOIN
+        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+
         let query = `
             SELECT cmp.* 
             FROM campaigns cmp
             JOIN clients c ON cmp.client_id = c.id
-            WHERE c.tenant_id = $1
-            ORDER BY cmp.created_at DESC
         `;
-        let params = [tenantId];
+        let params = [];
+
+        if (!isSuperAdmin) {
+            query += ` WHERE c.tenant_id = $1`;
+            params.push(tenantId);
+        }
 
         if (client_id && client_id !== 'all') {
-            query = `
-                SELECT cmp.* 
-                FROM campaigns cmp
-                JOIN clients c ON cmp.client_id = c.id
-                WHERE c.tenant_id = $1 AND cmp.client_id = $2
-                ORDER BY cmp.created_at DESC
-            `;
-            params = [tenantId, client_id];
+            const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
+            query += ` ${whereOrAnd} cmp.client_id = $${params.length + 1}`;
+            params.push(client_id);
         }
+
+        query += ` ORDER BY cmp.created_at DESC`;
 
         const result = await pool.query(query, params);
 
@@ -286,22 +288,29 @@ const getLeads = async (req, res) => {
         const { client_id, status } = req.query;
         const tenantId = req.user.tenant_id;
 
-        // SAAS FIX: Filter leads by tenant via JOIN
+        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+
         let query = `
             SELECT l.* 
             FROM leads l
             JOIN clients c ON l.client_id = c.id
-            WHERE c.tenant_id = $1
         `;
-        let params = [tenantId];
+        let params = [];
+
+        if (!isSuperAdmin) {
+            query += ` WHERE c.tenant_id = $1`;
+            params.push(tenantId);
+        }
 
         if (client_id && client_id !== 'all') {
-            query += ` AND l.client_id = $${params.length + 1}`;
+            const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
+            query += ` ${whereOrAnd} l.client_id = $${params.length + 1}`;
             params.push(client_id);
         }
 
         if (status) {
-            query += ` AND l.status = $${params.length + 1}`;
+            const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
+            query += ` ${whereOrAnd} l.status = $${params.length + 1}`;
             params.push(status);
         }
 
@@ -439,16 +448,25 @@ const getChatMessages = async (req, res) => {
     const { lead_id } = req.query;
     const tenantId = req.user.tenant_id;
     try {
-        // SAAS FIX: Filter by tenant
-        const result = await pool.query(
-            `SELECT cm.* 
+        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+
+        let query = `
+             SELECT cm.* 
              FROM chat_messages cm
              JOIN leads l ON cm.lead_id = l.id
              JOIN clients c ON l.client_id = c.id
-             WHERE cm.lead_id = $1 AND c.tenant_id = $2
-             ORDER BY cm.timestamp ASC`,
-            [lead_id, tenantId]
-        );
+             WHERE cm.lead_id = $1
+        `;
+        let params = [lead_id];
+
+        if (!isSuperAdmin) {
+            query += ` AND c.tenant_id = $2`;
+            params.push(tenantId);
+        }
+
+        query += ` ORDER BY cm.timestamp ASC`;
+
+        const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching chat messages:', error);
@@ -464,26 +482,27 @@ const getSocialPosts = async (req, res) => {
         const { client_id } = req.query;
         const tenantId = req.user.tenant_id;
 
-        // SAAS FIX: Filter by tenant
+        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+
         let query = `
             SELECT sp.* 
             FROM social_posts sp
             JOIN clients c ON sp.client_id = c.id
-            WHERE c.tenant_id = $1
-            ORDER BY sp.created_at DESC
         `;
-        let params = [tenantId];
+        let params = [];
+
+        if (!isSuperAdmin) {
+            query += ` WHERE c.tenant_id = $1`;
+            params.push(tenantId);
+        }
 
         if (client_id && client_id !== 'all') {
-            query = `
-                SELECT sp.* 
-                FROM social_posts sp
-                JOIN clients c ON sp.client_id = c.id
-                WHERE c.tenant_id = $1 AND sp.client_id = $2
-                ORDER BY sp.created_at DESC
-            `;
-            params = [tenantId, client_id];
+            const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
+            query += ` ${whereOrAnd} sp.client_id = $${params.length + 1}`;
+            params.push(client_id);
         }
+
+        query += ` ORDER BY sp.created_at DESC`;
 
         const result = await pool.query(query, params);
         res.json(result.rows);
@@ -503,7 +522,17 @@ const getWorkflows = async (req, res) => {
         // If workflows are global templates, this might need adjustment. Assuming user-specific for now.
         // If workflows table doesn't have tenant_id, we might need to add it.
         // For now, assuming they are linked to user_id which links to tenant.
-        const result = await pool.query('SELECT * FROM automation_workflows WHERE user_id IN (SELECT id FROM users WHERE tenant_id = $1) ORDER BY created_at DESC', [tenantId]);
+        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+        let query = 'SELECT * FROM automation_workflows';
+        let params = [];
+
+        if (!isSuperAdmin) {
+            query += ' WHERE user_id IN (SELECT id FROM users WHERE tenant_id = $1)';
+            params.push(tenantId);
+        }
+
+        query += ' ORDER BY created_at DESC';
+        const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching workflows:', error);
@@ -516,15 +545,25 @@ const getWorkflowSteps = async (req, res) => {
     const tenantId = req.user.tenant_id;
     try {
         // SAAS FIX: Verify ownership via workflow
-        const result = await pool.query(
-            `SELECT s.* 
-             FROM automation_workflow_steps s
-             JOIN automation_workflows w ON s.workflow_id = w.id
-             JOIN users u ON w.user_id = u.id
-             WHERE s.workflow_id = $1 AND u.tenant_id = $2
-             ORDER BY s.step_order`,
-            [workflow_id, tenantId]
-        );
+        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+
+        let query = `
+            SELECT s.* 
+            FROM automation_workflow_steps s
+            JOIN automation_workflows w ON s.workflow_id = w.id
+            JOIN users u ON w.user_id = u.id
+            WHERE s.workflow_id = $1
+        `;
+        let params = [workflow_id];
+
+        if (!isSuperAdmin) {
+            query += ` AND u.tenant_id = $2`;
+            params.push(tenantId);
+        }
+
+        query += ` ORDER BY s.step_order`;
+
+        const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching workflow steps:', error);
@@ -576,26 +615,27 @@ const getKPIs = async (req, res) => {
         const { client_id } = req.query;
         const tenantId = req.user.tenant_id;
 
-        // SAAS FIX: Filter by tenant
+        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+
         let query = `
             SELECT k.* 
             FROM kpis k
             JOIN clients c ON k.client_id = c.id
-            WHERE c.tenant_id = $1
-            ORDER BY k.created_at DESC LIMIT 10
         `;
-        let params = [tenantId];
+        let params = [];
+
+        if (!isSuperAdmin) {
+            query += ` WHERE c.tenant_id = $1`;
+            params.push(tenantId);
+        }
 
         if (client_id && client_id !== 'all') {
-            query = `
-                SELECT k.* 
-                FROM kpis k
-                JOIN clients c ON k.client_id = c.id
-                WHERE c.tenant_id = $1 AND k.client_id = $2
-                ORDER BY k.created_at DESC LIMIT 10
-            `;
-            params = [tenantId, client_id];
+            const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
+            query += ` ${whereOrAnd} k.client_id = $${params.length + 1}`;
+            params.push(client_id);
         }
+
+        query += ` ORDER BY k.created_at DESC LIMIT 10`;
 
         const result = await pool.query(query, params);
         res.json(result.rows);
@@ -613,22 +653,29 @@ const getDeviceStats = async (req, res) => {
         const { client_id, campaign_id } = req.query;
         const tenantId = req.user.tenant_id;
 
-        // SAAS FIX: Filter by tenant
+        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+
         let query = `
             SELECT ds.device_type, SUM(ds.percentage) as percentage, SUM(ds.conversions) as conversions 
             FROM device_stats ds
             JOIN clients c ON ds.client_id = c.id
-            WHERE c.tenant_id = $1
         `;
-        let params = [tenantId];
+        let params = [];
+
+        if (!isSuperAdmin) {
+            query += ` WHERE c.tenant_id = $1`;
+            params.push(tenantId);
+        }
 
         if (client_id && client_id !== 'all') {
-            query += ` AND ds.client_id = $${params.length + 1}`;
+            const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
+            query += ` ${whereOrAnd} ds.client_id = $${params.length + 1}`;
             params.push(client_id);
         }
 
         if (campaign_id) {
-            query += ` AND ds.campaign_id = $${params.length + 1}`;
+            const whereOrAnd = params.length > 0 ? 'AND' : 'WHERE';
+            query += ` ${whereOrAnd} ds.campaign_id = $${params.length + 1}`;
             params.push(campaign_id);
         }
 
