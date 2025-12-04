@@ -304,7 +304,9 @@ async function initializeDatabase() {
 
 // Run schema initialization
 // Last updated: 2025-11-24 22:38
-initializeDatabase();
+// Run schema initialization
+// Last updated: 2025-11-24 22:38
+// initializeDatabase(); // Moved to server.listen to ensure order
 
 // --- SOCIAL ---
 const socialCtrl = require('./socialController');
@@ -551,7 +553,7 @@ server.listen(PORT, () => {
   console.log(`📡 Socket.io pronto para conexões`);
 
   // Rodar processos de inicialização em background
-  runMigrations().then(() => {
+  initializeDatabase().then(() => {
     console.log('✅ Migrações concluídas com sucesso.');
 
     // Iniciar Job Processor (Queue Worker - BullMQ)
