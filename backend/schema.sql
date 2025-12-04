@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS clients (
 CREATE TABLE IF NOT EXISTS automation_workflows (
     id SERIAL PRIMARY KEY,
     client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     trigger_type VARCHAR(50),
     status VARCHAR(20) DEFAULT 'active',
@@ -105,6 +106,28 @@ CREATE TABLE IF NOT EXISTS automation_workflow_steps (
     value TEXT,
     step_order INTEGER,
     created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- LEADS
+-- ============================================
+CREATE TABLE IF NOT EXISTS leads (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    source VARCHAR(50),
+    product_interest VARCHAR(100),
+    value DECIMAL(10, 2),
+    status VARCHAR(50) DEFAULT 'new',
+    assigned_to VARCHAR(100),
+    tags TEXT[],
+    last_contact TIMESTAMP,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 -- ============================================
