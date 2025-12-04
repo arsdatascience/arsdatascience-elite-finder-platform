@@ -22,16 +22,26 @@ const pool = new Pool({
 // ============================================
 const getUsers = async (req, res) => {
     const tenantId = req.user.tenant_id;
+    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin';
+
     try {
-        // SAAS FIX: Filter users by tenant
-        const result = await pool.query(`
+        let query = `
             SELECT u.id, u.name, u.first_name, u.last_name, u.email, u.role, u.avatar_url, u.created_at, u.status,
                    t.name as tenant_name
             FROM users u
             LEFT JOIN tenants t ON u.tenant_id = t.id
-            WHERE u.tenant_id = $1
-            ORDER BY u.created_at DESC
-        `, [tenantId]);
+        `;
+        const params = [];
+
+        // SAAS FIX: Filter users by tenant unless Super Admin
+        if (!isSuperAdmin) {
+            query += ` WHERE u.tenant_id = $1`;
+            params.push(tenantId);
+        }
+
+        query += ` ORDER BY u.created_at DESC`;
+
+        const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching users:', error);
@@ -51,9 +61,21 @@ const { encrypt, decrypt } = require('./utils/crypto');
 // ============================================
 const getClients = async (req, res) => {
     const tenantId = req.user.tenant_id;
+    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin';
+
     try {
-        // SAAS FIX: Filter clients by tenant
-        const result = await pool.query('SELECT * FROM clients WHERE tenant_id = $1 ORDER BY name', [tenantId]);
+        let query = 'SELECT * FROM clients';
+        const params = [];
+
+        // SAAS FIX: Filter clients by tenant unless Super Admin
+        if (!isSuperAdmin) {
+            query += ' WHERE tenant_id = $1';
+            params.push(tenantId);
+        }
+
+        query += ' ORDER BY name';
+
+        const result = await pool.query(query, params);
 
         // DECRYPT SENSITIVE DATA FOR DISPLAY
         const clients = result.rows.map(client => ({
