@@ -49,6 +49,11 @@ export const Campaigns: React.FC = () => {
   const [platformData, setPlatformData] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 
+  console.log('Campaigns Component Rendered');
+  console.log('Loading:', loading);
+  console.log('KPIs:', kpis);
+  console.log('ApiClient:', apiClient);
+
   // Helper Functions
   const formatCurrency = (value: string | number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value));
