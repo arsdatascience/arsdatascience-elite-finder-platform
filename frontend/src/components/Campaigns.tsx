@@ -65,9 +65,9 @@ export const Campaigns: React.FC = () => {
 
   // Fetch Clients
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/clients`)
-      .then(res => res.json())
+    apiClient.clients.getClients()
       .then(data => {
+        console.log('Clients fetched in Campaigns:', data);
         if (Array.isArray(data)) {
           setClients(data);
         } else {
