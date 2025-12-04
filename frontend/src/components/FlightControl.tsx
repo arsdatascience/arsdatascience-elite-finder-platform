@@ -745,83 +745,84 @@ export const FlightControl: React.FC = () => {
           </select>
         </motion.div>
 
-        {/* Kanban Board */}
-        <div className="flex gap-4 overflow-x-auto pb-4 h-[calc(100vh-340px)] min-h-[500px] w-full items-stretch">
-          {COLUMNS.map(column => (
-            <div
-              key={column.id}
-              className={`flex-1 min-w-[300px] rounded-xl ${column.bgColor} p-4 flex flex-col gap-3 h-full`}
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop(column.id)}
-            >
-              <div className={`flex items-center justify-between pb-3 border-b-2 ${column.color} mb-2 shrink-0`}>
-                <h3 className="font-bold text-gray-700">{column.label}</h3>
-                <span className="bg-white px-2 py-1 rounded-full text-xs font-bold text-gray-500 shadow-sm">
-                  {getLeadsByStatus(column.id).length}
-                </span>
+        {/* Kanban Board Container */}
+        <div className="w-full overflow-x-auto pb-2">
+          <div className="flex gap-4 min-w-[1280px] h-[calc(100vh-340px)] min-h-[500px] items-stretch">
+            {COLUMNS.map(column => (
+              <div
+                key={column.id}
+                className={`flex-1 min-w-[300px] rounded-xl ${column.bgColor} p-4 flex flex-col gap-3 h-full`}
+                onDragOver={handleDragOver}
+                onDrop={() => handleDrop(column.id)}
+              >
+                <div className={`flex items-center justify-between pb-3 border-b-2 ${column.color} mb-2 shrink-0`}>
+                  <h3 className="font-bold text-gray-700">{column.label}</h3>
+                  <span className="bg-white px-2 py-1 rounded-full text-xs font-bold text-gray-500 shadow-sm">
+                    {getLeadsByStatus(column.id).length}
+                  </span>
+                </div>
+
+                <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar">
+                  {getLeadsByStatus(column.id).map(lead => (
+                    <motion.div
+                      key={lead.id}
+                      layoutId={lead.id}
+                      draggable
+                      onDragStart={() => handleDragStart(lead)}
+                      onClick={() => setSelectedLead(lead)}
+                      className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-move hover:shadow-md transition-all group relative"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-bold text-gray-800 line-clamp-1">{lead.name}</h4>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLead(lead);
+                          }}
+                          className="text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreVertical size={14} />
+                        </button>
+                      </div>
+
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <Mail size={12} />
+                          <span className="truncate">{lead.email}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <Phone size={12} />
+                          <span>{lead.phone}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+                        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {lead.source}
+                        </span>
+                        <span className="text-sm font-bold text-green-600">
+                          {formatCurrency(lead.value)}
+                        </span>
+                      </div>
+
+                      {lead.tags && lead.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {lead.tags.slice(0, 3).map(tag => (
+                            <span key={tag} className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">
+                              {tag}
+                            </span>
+                          ))}
+                          {lead.tags.length > 3 && (
+                            <span className="text-[10px] text-gray-400 px-1">+{lead.tags.length - 3}</span>
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-
-              <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar">
-                {getLeadsByStatus(column.id).map(lead => (
-                  <motion.div
-                    key={lead.id}
-                    layoutId={lead.id}
-                    draggable
-                    onDragStart={() => handleDragStart(lead)}
-                    onClick={() => setSelectedLead(lead)}
-                    className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-move hover:shadow-md transition-all group relative"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-bold text-gray-800 line-clamp-1">{lead.name}</h4>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedLead(lead);
-                        }}
-                        className="text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <MoreVertical size={14} />
-                      </button>
-                    </div>
-
-                    <div className="space-y-2 mb-3">
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <Mail size={12} />
-                        <span className="truncate">{lead.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <Phone size={12} />
-                        <span>{lead.phone}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
-                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {lead.source}
-                      </span>
-                      <span className="text-sm font-bold text-green-600">
-                        {formatCurrency(lead.value)}
-                      </span>
-                    </div>
-
-                    {lead.tags && lead.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {lead.tags.slice(0, 3).map(tag => (
-                          <span key={tag} className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">
-                            {tag}
-                          </span>
-                        ))}
-                        {lead.tags.length > 3 && (
-                          <span className="text-[10px] text-gray-400 px-1">+{lead.tags.length - 3}</span>
-                        )}
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
       </motion.div>
 
       {/* Modals */}
