@@ -2,13 +2,13 @@ const pool = require('./database');
 
 exports.predictChurn = async (req, res) => {
     try {
-        // Buscar todos os clientes ativos
+        // Buscar todos os clientes (Schema validado: id, name, email, created_at)
+        // Removidos campos inexistentes: last_login, plan_status
+        // Removidas subqueries de tabelas inexistentes: tickets, audio_analyses
         const clientsResult = await pool.query(`
-            SELECT c.id, c.name, c.email, c.last_login, c.plan_status,
-                   (SELECT COUNT(*) FROM tickets t WHERE t.client_id = c.id AND t.status = 'open') as open_tickets,
-                   (SELECT AVG((global_sentiment->>'score')::float) FROM audio_analyses a WHERE a.user_id = c.user_id AND a.created_at > NOW() - INTERVAL '30 days') as avg_sentiment
+            SELECT c.id, c.name, c.email, c.created_at
             FROM clients c
-            WHERE c.status = 'active'
+            ORDER BY c.created_at DESC
         `);
 
         const clients = clientsResult.rows;
@@ -18,41 +18,26 @@ exports.predictChurn = async (req, res) => {
             let riskScore = 0;
             const riskFactors = [];
 
-            // 1. Inatividade (> 15 dias)
-            const daysSinceLogin = client.last_login ? Math.floor((new Date() - new Date(client.last_login)) / (1000 * 60 * 60 * 24)) : 30;
-            if (daysSinceLogin > 15) {
-                riskScore += 30;
-                riskFactors.push(`Inativo há ${daysSinceLogin} dias`);
-            }
+            // 1. "Inatividade" baseada em created_at (Exemplo simplificado pois não temos last_login)
+            // Se o cliente é muito antigo (> 1 ano), talvez risco? Não necessariamente.
+            // Vamos manter zero por enquanto para evitar falsos positivos.
 
-            // 2. Tickets em Aberto (> 2)
-            if (client.open_tickets > 2) {
-                riskScore += 25;
-                riskFactors.push(`${client.open_tickets} tickets de suporte abertos`);
-            }
-
-            // 3. Sentimento Negativo nas Calls (se houver)
-            if (client.avg_sentiment && client.avg_sentiment < 0.4) { // 0.0 a 1.0, onde < 0.4 é negativo/neutro-baixo
-                riskScore += 30;
-                riskFactors.push('Sentimento negativo detectado em reuniões recentes');
-            }
-
-            // 4. Problemas de Pagamento (Simulado via status do plano)
-            if (client.plan_status === 'overdue') {
-                riskScore += 40;
-                riskFactors.push('Pagamento em atraso');
+            // 2. Sem e-mail ou telefone (Dados incompletos)
+            if (!client.email) {
+                riskScore += 10;
+                riskFactors.push('Cadastro incompleto (sem e-mail)');
             }
 
             // Normalizar Score (Max 100)
             riskScore = Math.min(riskScore, 100);
 
-            if (riskScore > 50) { // Apenas reportar risco médio/alto
+            if (riskScore > 0) {
                 riskReport.push({
                     client_id: client.id,
                     name: client.name,
                     email: client.email,
                     riskScore,
-                    riskLevel: riskScore > 75 ? 'CRITICAL' : 'HIGH',
+                    riskLevel: riskScore > 75 ? 'CRITICAL' : (riskScore > 50 ? 'HIGH' : 'LOW'),
                     factors: riskFactors
                 });
             }
@@ -76,9 +61,7 @@ exports.predictChurn = async (req, res) => {
 exports.calculateRiskForClient = async (clientId) => {
     try {
         const result = await pool.query(`
-            SELECT c.id, c.name, c.email, c.last_login, c.plan_status,
-                   (SELECT COUNT(*) FROM tickets t WHERE t.client_id = c.id AND t.status = 'open') as open_tickets,
-                   (SELECT AVG((global_sentiment->>'score')::float) FROM audio_analyses a WHERE a.user_id = c.user_id AND a.created_at > NOW() - INTERVAL '30 days') as avg_sentiment
+            SELECT c.id, c.name, c.email, c.created_at
             FROM clients c
             WHERE c.id = $1
         `, [clientId]);
@@ -89,36 +72,15 @@ exports.calculateRiskForClient = async (clientId) => {
         let riskScore = 0;
         const riskFactors = [];
 
-        // 1. Inatividade (> 15 dias)
-        const daysSinceLogin = client.last_login ? Math.floor((new Date() - new Date(client.last_login)) / (1000 * 60 * 60 * 24)) : 30;
-        if (daysSinceLogin > 15) {
-            riskScore += 30;
-            riskFactors.push(`Inativo há ${daysSinceLogin} dias`);
+        // Lógica simplificada compatível com schema atual
+        if (!client.email) {
+            riskScore += 10;
+            riskFactors.push('Cadastro incompleto');
         }
-
-        // 2. Tickets em Aberto (> 2)
-        if (client.open_tickets > 2) {
-            riskScore += 25;
-            riskFactors.push(`${client.open_tickets} tickets de suporte abertos`);
-        }
-
-        // 3. Sentimento Negativo nas Calls
-        if (client.avg_sentiment && client.avg_sentiment < 0.4) {
-            riskScore += 30;
-            riskFactors.push('Sentimento negativo detectado em reuniões recentes');
-        }
-
-        // 4. Problemas de Pagamento
-        if (client.plan_status === 'overdue') {
-            riskScore += 40;
-            riskFactors.push('Pagamento em atraso');
-        }
-
-        riskScore = Math.min(riskScore, 100);
 
         return {
             riskScore,
-            riskLevel: riskScore > 75 ? 'CRITICAL' : (riskScore > 50 ? 'HIGH' : (riskScore > 25 ? 'MEDIUM' : 'LOW')),
+            riskLevel: riskScore > 50 ? 'HIGH' : 'LOW',
             factors: riskFactors
         };
 
