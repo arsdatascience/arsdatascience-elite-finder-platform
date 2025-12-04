@@ -270,7 +270,7 @@ const getLeads = async (req, res) => {
 
         let query = `
             SELECT 
-                l.id, l.name, l.email, l.phone, l.source, l.value, l.status, l.notes, l.tags,
+                l.id, l.name, l.email, l.phone, l.source, l.value::float, l.status, l.notes, l.tags,
                 l.client_id as "clientId", 
                 l.product_interest as "productInterest", 
                 l.assigned_to as "assignedTo", 
@@ -337,7 +337,8 @@ const createLead = async (req, res) => {
             productInterest: newLead.product_interest,
             assignedTo: newLead.assigned_to,
             lastContact: newLead.last_contact,
-            createdAt: newLead.created_at
+            createdAt: newLead.created_at,
+            value: parseFloat(newLead.value)
         };
         res.status(201).json(formattedLead);
 
@@ -404,7 +405,8 @@ const updateLeadStatus = async (req, res) => {
             productInterest: updatedLead.product_interest,
             assignedTo: updatedLead.assigned_to,
             lastContact: updatedLead.last_contact,
-            createdAt: updatedLead.created_at
+            createdAt: updatedLead.created_at,
+            value: parseFloat(updatedLead.value)
         };
         res.json(formattedLead);
 
@@ -450,7 +452,8 @@ const updateLead = async (req, res) => {
             productInterest: updatedLead.product_interest,
             assignedTo: updatedLead.assigned_to,
             lastContact: updatedLead.last_contact,
-            createdAt: updatedLead.created_at
+            createdAt: updatedLead.created_at,
+            value: parseFloat(updatedLead.value)
         };
         res.json(formattedLead);
     } catch (error) {

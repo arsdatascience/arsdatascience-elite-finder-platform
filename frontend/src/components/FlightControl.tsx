@@ -285,8 +285,9 @@ export const FlightControl: React.FC = () => {
       </div>
 
       {/* Kanban Board */}
+      {/* Adicionado: -mx-4 md:mx-0 px-4 md:px-0 para criar o efeito de sangria no mobile */}
       <div className="w-full overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0">
-        <div className="flex gap-6 min-w-max pb-4 px-1 pr-6">
+        <div className="flex gap-6 min-w-max pb-4 px-1 pr-6"> {/* Adicionado pr-6 */}
           <DragDropContext onDragEnd={handleDragEnd}>
             {COLUMNS.map(column => (
               <Droppable key={column.id} droppableId={column.id}>
