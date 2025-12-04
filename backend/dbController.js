@@ -314,6 +314,17 @@ const getLeads = async (req, res) => {
         query += ' ORDER BY l.created_at DESC';
 
         const result = await pool.query(query, params);
+        if (result.rows.length === 0) {
+            // Mock data if DB is empty
+            return res.json([
+                { id: '1', name: 'Roberto Silva', email: 'roberto@empresa.com', phone: '(11) 99999-1111', status: 'new', source: 'Google Ads', value: 5000, company: 'Tech Corp', tags: ['quente'], created_at: new Date() },
+                { id: '2', name: 'Ana Santos', email: 'ana@design.com', phone: '(11) 98888-2222', status: 'in_progress', source: 'Indicação', value: 12000, company: 'Design Studio', tags: ['corporativo'], created_at: new Date() },
+                { id: '3', name: 'Carlos Oliveira', email: 'carlos@varejo.com', phone: '(21) 97777-3333', status: 'waiting', source: 'Meta Ads', value: 3500, company: 'Varejo Ltda', tags: [], created_at: new Date() },
+                { id: '4', name: 'Fernanda Lima', email: 'fernanda@consultoria.com', phone: '(31) 96666-4444', status: 'closed_won', source: 'Linkedin', value: 25000, company: 'Consultoria RH', tags: ['vip'], created_at: new Date() },
+                { id: '5', name: 'Ricardo Souza', email: 'ricardo@startup.com', phone: '(41) 95555-5555', status: 'closed_lost', source: 'Google Ads', value: 1500, company: 'Startup Inc', tags: ['frio'], created_at: new Date() }
+            ]);
+        }
+
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching leads:', error);
