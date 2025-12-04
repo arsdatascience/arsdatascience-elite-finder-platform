@@ -375,47 +375,32 @@ export const Dashboard: React.FC = () => {
               ))}
             </div>
           </div>
-        </motion.div>
-
-
-
-        {/* Conversion Source Breakdown (Share por Plataforma) - Takes 1 Column */}
-        <motion.div variants={itemVariants} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Share por Plataforma</h3>
-          <div className="w-full relative" style={{ width: '100%', height: 250 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={conversionSources}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="val"
+          outerRadius={80}
+          paddingAngle={5}
+          dataKey="val"
                 >
-                  {conversionSources.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={entry.color.replace('bg-', '').replace('-500', '') === 'blue' ? '#3b82f6' :
-                      entry.color.replace('bg-', '').replace('-500', '') === 'purple' ? '#a855f7' :
-                        entry.color.replace('bg-', '').replace('-500', '') === 'green' ? '#10b981' :
-                          entry.color.replace('bg-', '').replace('-500', '') === 'yellow' ? '#f59e0b' : '#6b7280'} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: any) => [`${value}%`, 'Share']}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                />
-                <Legend verticalAlign="bottom" height={36} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
+          {conversionSources.map((entry: any, index: number) => (
+            <Cell key={`cell-${index}`} fill={entry.color.replace('bg-', '').replace('-500', '') === 'blue' ? '#3b82f6' :
+              entry.color.replace('bg-', '').replace('-500', '') === 'purple' ? '#a855f7' :
+                entry.color.replace('bg-', '').replace('-500', '') === 'green' ? '#10b981' :
+                  entry.color.replace('bg-', '').replace('-500', '') === 'yellow' ? '#f59e0b' : '#6b7280'} />
+          ))}
+        </Pie>
+        <Tooltip
+          formatter={(value: any) => [`${value}%`, 'Share']}
+          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+        />
+        <Legend verticalAlign="bottom" height={36} />
+      </PieChart>
+    </ResponsiveContainer>
+          </div >
+        </motion.div >
       </div >
 
-      {/* Insights & Churn Section (New Row) */}
-      < motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6" >
-        {/* AI Insight */}
-        < div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100" >
+  {/* Insights & Churn Section (New Row) */ }
+  < motion.div variants = { itemVariants } className = "grid grid-cols-1 md:grid-cols-2 gap-6" >
+    {/* AI Insight */ }
+    < div className = "bg-white p-6 rounded-xl shadow-sm border border-gray-100" >
           <p className="text-sm text-blue-800 font-medium flex items-center gap-2 mb-3">
             <Users size={18} /> Insight Estratégico da IA
           </p>
@@ -433,9 +418,9 @@ export const Dashboard: React.FC = () => {
           </div>
         </div >
 
-        {/* Churn Widget */}
-        < div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100" >
-          <ChurnRiskWidget />
+  {/* Churn Widget */ }
+  < div className = "bg-white p-6 rounded-xl shadow-sm border border-gray-100" >
+    <ChurnRiskWidget />
         </div >
       </motion.div >
     </motion.div >
