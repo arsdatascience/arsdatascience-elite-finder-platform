@@ -2,21 +2,10 @@ const db = require('./db');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const storageService = require('./services/storageService');
 
-// Configure storage for uploaded files
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const uploadDir = 'uploads';
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir);
-        }
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// Configure storage for uploaded files - Use Memory Storage for S3
+const storage = multer.memoryStorage();
 
 const upload = multer({ storage: storage });
 
@@ -27,9 +16,13 @@ const createPost = async (req, res) => {
         let media_url = null;
 
         if (req.file) {
-            // In production, you would upload this to S3 or similar
-            // For now, we'll serve it statically
-            media_url = `/uploads/${req.file.filename}`;
+            // Upload to S3
+            media_url = await storageService.uploadFile(
+                req.file.buffer,
+                req.file.originalname,
+                req.file.mimetype,
+                'posts'
+            );
         } else if (req.body.media_url) {
             media_url = req.body.media_url;
         }

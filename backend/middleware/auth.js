@@ -20,10 +20,27 @@ const authenticateToken = (req, res, next) => {
 
     if (!token) return res.sendStatus(401);
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
+    jwt.verify(token, JWT_SECRET, async (err, decoded) => {
         if (err) return res.sendStatus(403);
-        req.user = user;
-        next();
+
+        // FIX: Fetch fresh user data from DB to ensure role/tenant updates are applied immediately
+        // without requiring re-login.
+        try {
+            const { rows } = await require('../db').query(
+                'SELECT id, name, email, role, tenant_id FROM users WHERE id = $1',
+                [decoded.id]
+            );
+
+            if (rows.length === 0) {
+                return res.sendStatus(403);
+            }
+
+            req.user = rows[0];
+            next();
+        } catch (dbError) {
+            console.error('Auth Middleware DB Error:', dbError);
+            res.sendStatus(500);
+        }
     });
 };
 

@@ -51,7 +51,7 @@ const getKPIs = async (req, res) => {
     const { client, startDate, endDate } = req.query;
     const clientId = client && client !== 'all' ? parseInt(client) : null;
     const tenantId = req.user.tenant_id;
-    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin';
+    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
 
     // Cache Key Strategy: tenant:client:dates
     const cacheKey = `kpis:${tenantId}:${clientId || 'all'}:${startDate || 'all'}:${endDate || 'all'}`;
@@ -295,7 +295,7 @@ const getDeviceData = async (req, res) => {
 const getConversionSources = async (req, res) => {
     const { client } = req.query;
     const tenantId = req.user.tenant_id;
-    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin';
+    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
 
     try {
         let query = 'SELECT source_name as label, SUM(percentage) as val FROM conversion_sources';

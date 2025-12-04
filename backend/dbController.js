@@ -3,7 +3,10 @@ const { triggerWebhook } = require('./services/webhookService');
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    max: 5, // Limit pool size to prevent OOM on Railway
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000
 });
 
 // ============================================
@@ -21,8 +24,11 @@ const pool = new Pool({
 // USERS
 // ============================================
 const getUsers = async (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
     const tenantId = req.user.tenant_id;
-    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin';
+    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
 
     try {
         let query = `
@@ -60,8 +66,12 @@ const { encrypt, decrypt } = require('./utils/crypto');
 // CLIENTS
 // ============================================
 const getClients = async (req, res) => {
+    if (!req.user) {
+        console.error('❌ Critical: req.user is undefined in getClients. Auth middleware missing?');
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
     const tenantId = req.user.tenant_id;
-    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin';
+    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
 
     try {
         let query = 'SELECT * FROM clients';

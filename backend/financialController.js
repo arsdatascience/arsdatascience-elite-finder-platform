@@ -6,7 +6,7 @@ const financialController = {
 
     getTransactions: async (req, res) => {
         const { tenant_id, role } = req.user;
-        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin';
+        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin' || role === 'super_user';
         const { startDate, endDate, type, status, category_id, client_id } = req.query;
 
         try {
@@ -142,7 +142,7 @@ const financialController = {
 
     getFinancialDashboard: async (req, res) => {
         const { tenant_id, role } = req.user;
-        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin';
+        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin' || role === 'super_user';
         const { startDate, endDate, client_id } = req.query;
 
         try {
@@ -263,7 +263,7 @@ const financialController = {
 
     getClients: async (req, res) => {
         const { tenant_id, role } = req.user;
-        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin';
+        const isSuperAdmin = role === 'super_admin' || role === 'Super Admin' || role === 'super_user';
 
         try {
             let query = `SELECT id, name FROM clients`;

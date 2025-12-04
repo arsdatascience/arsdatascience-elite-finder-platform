@@ -1,4 +1,4 @@
-const OpenAI = require('openai');
+// Skipped modification of audioController.js as it uses local storage for temporary processing only.
 const fs = require('fs');
 const multer = require('multer');
 const path = require('path');

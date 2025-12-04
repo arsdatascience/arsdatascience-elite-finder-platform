@@ -38,6 +38,9 @@ Este plano prioriza ações de **alto impacto e baixo esforço inicial**, aprove
 - [x] **Backend:** Integração com Whisper e GPT-4o para transcrição e análise.
 - [x] **Frontend:** Componente de Upload e Visualização de Resultados.
 - [x] **Banco de Dados:** Tabela `audio_analyses` criada.
+
+### 6. Fidelização Preditiva (Churn) & Sales Coaching
+- [x] **Backend:** Lógica heurística de cálculo de risco (Inatividade, Tickets, Sentimento).
 # Plano de Implementação: Ecossistema de Automação Elite
 
 Este plano prioriza ações de **alto impacto e baixo esforço inicial**, aproveitando os módulos que já estão estáveis (FinancialModule, AgentBuilder).
@@ -79,7 +82,7 @@ Este plano prioriza ações de **alto impacto e baixo esforço inicial**, aprove
 - [x] **Frontend:** Componente de Upload e Visualização de Resultados.
 - [x] **Banco de Dados:** Tabela `audio_analyses` criada.
 
-### 6. Fidelização Preditiva (Churn)
+### 6. Fidelização Preditiva (Churn) & Sales Coaching
 - [x] **Backend:** Lógica heurística de cálculo de risco (Inatividade, Tickets, Sentimento).
 - [x] **API:** Endpoint `/api/churn/predict`.
 - [x] **Frontend:** Widget de Risco de Churn no Dashboard.
@@ -87,5 +90,12 @@ Este plano prioriza ações de **alto impacto e baixo esforço inicial**, aprove
 - [x] **IA Avançada:** Injeção de contexto de Churn no Agente de Suporte.
 - [x] **IA Avançada:** Coaching de Vendas em Tempo Real para Prospects (Análise de Sentimento/Objeções).
 - [x] **Frontend:** Interface "Teleprompter" para Coaching de Vendas.
+- [x] **Integração WhatsApp (Backend)**: Webhooks, envio de mensagens, gestão de sessões.
+- [x] **Interface de Configuração**: Modal para inserir credenciais da API (Evolution/Official).
+- [x] **Gestão de Sessões (Frontend)**: Sidebar para alternar entre conversas.
+- [x] **Criar Template do Agente**: Migration `017` rodada com sucesso (Elite Sales Coach).
+- [ ] **Testar Fluxo Completo**: Verificar se o agente responde conforme o template.
 
-**Podemos começar criando essa rota na API agora?**
+## 🔜 Próximos Passos
+1. **Gestão de Sessões:** Melhorar a seleção de clientes ativos no chat.
+2. **Consultor de ROI:** Implementar o workflow de análise financeira.

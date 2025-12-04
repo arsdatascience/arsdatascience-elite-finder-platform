@@ -10,5 +10,5 @@ export const COMPONENT_VERSIONS = {
     Reports: 'v1.2',
     Settings: 'v1.0',
     ContentGenerator: 'v2.2',
-    SalesCoachingChat: 'v1.1',
+    SalesCoachingChat: 'v1.2',
 };

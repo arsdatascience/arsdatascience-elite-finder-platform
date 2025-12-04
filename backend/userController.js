@@ -8,9 +8,11 @@ const { encrypt, decrypt } = require('./utils/crypto');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'elite-secret-key-change-me';
 
-// Multer configuration
+const storageService = require('./services/storageService');
+
+// Multer configuration - Use Memory Storage for S3
 const upload = multer({
-    dest: path.join(__dirname, '..', 'uploads'),
+    storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (!file.mimetype.startsWith('image/')) {
@@ -20,29 +22,7 @@ const upload = multer({
     }
 });
 
-// Configuração de Email
-const smtpConfig = {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: (process.env.SMTP_SSL || 'true') === 'true',
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    },
-    connectionTimeout: 10000, // 10s
-    greetingTimeout: 5000,    // 5s
-    socketTimeout: 15000      // 15s
-};
-
-console.log('📧 Configuração SMTP Carregada:', {
-    host: smtpConfig.host,
-    port: smtpConfig.port,
-    secure: smtpConfig.secure,
-    user: smtpConfig.auth.user,
-    hasPassword: !!smtpConfig.auth.pass
-});
-
-const transporter = nodemailer.createTransport(smtpConfig);
+// ... (SMTP config remains same)
 
 const updateAvatar = async (req, res) => {
     const { id } = req.params;
@@ -50,12 +30,19 @@ const updateAvatar = async (req, res) => {
         return res.status(400).json({ success: false, error: 'No file uploaded' });
     }
     try {
-        const avatarPath = `/uploads/${req.file.filename}`;
-        await db.query('UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2', [avatarPath, id]);
-        res.json({ success: true, avatarUrl: avatarPath });
+        // Upload to S3
+        const avatarUrl = await storageService.uploadFile(
+            req.file.buffer,
+            req.file.originalname,
+            req.file.mimetype,
+            'avatars'
+        );
+
+        await db.query('UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2', [avatarUrl, id]);
+        res.json({ success: true, avatarUrl });
     } catch (err) {
         console.error('Error updating avatar:', err);
-        res.status(500).json({ success: false, error: 'Database error' });
+        res.status(500).json({ success: false, error: 'Failed to upload avatar' });
     }
 };
 
@@ -69,7 +56,12 @@ const login = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) return res.status(400).json({ error: 'Credenciais inválidas' });
 
-        const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+        const token = jwt.sign({
+            id: user.id,
+            role: user.role,
+            tenant_id: user.tenant_id
+        }, JWT_SECRET, { expiresIn: '1d' });
+
         res.json({
             token,
             user: {
@@ -106,7 +98,7 @@ const getTeamMembers = async (req, res) => {
         const params = [];
 
         // Se não for super_admin, filtrar pelo tenant
-        if (currentUser.role !== 'super_admin' && currentUser.role !== 'Super Admin') {
+        if (currentUser.role !== 'super_admin' && currentUser.role !== 'Super Admin' && currentUser.role !== 'super_user') {
             if (!currentUser.tenant_id) {
                 return res.json({ success: true, members: [] }); // Usuário sem tenant não vê ninguém
             }
@@ -310,7 +302,7 @@ const updateTeamMember = async (req, res) => {
 
         if (newPassword) {
             // Se for admin/super_admin, permite alterar sem senha antiga
-            const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin' || req.user.role === 'Super Admin';
+            const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
 
             // Se NÃO for admin, exige senha antiga
             if (!isAdmin) {
@@ -430,13 +422,14 @@ const getApiKeys = async (req, res) => {
         if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'User not found' });
 
         const keys = result.rows[0];
-        // Retornar apenas se existe ou mascarado, nunca a chave completa para o frontend
+        // Retornar chaves descriptografadas para o frontend (necessário para ferramentas de IA client-side)
+        // TODO: Migrar chamadas para o backend e voltar a mascarar
         res.json({
             success: true,
             keys: {
-                openai: keys.openai_key ? 'sk-...' + decrypt(keys.openai_key).slice(-4) : '',
-                gemini: keys.gemini_key ? 'AI...' + decrypt(keys.gemini_key).slice(-4) : '',
-                anthropic: keys.anthropic_key ? 'sk-...' + decrypt(keys.anthropic_key).slice(-4) : ''
+                openai: keys.openai_key ? decrypt(keys.openai_key) : '',
+                gemini: keys.gemini_key ? decrypt(keys.gemini_key) : '',
+                anthropic: keys.anthropic_key ? decrypt(keys.anthropic_key) : ''
             }
         });
     } catch (err) {

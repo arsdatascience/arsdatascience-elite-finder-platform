@@ -15,35 +15,39 @@ app.set('trust proxy', 1); // Necessário para Railway/Vercel e rate-limiter
 
 // Middleware
 const authenticateToken = require('./middleware/auth');
+const helmet = require('helmet');
+
+// Configuração de Segurança (Helmet)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Permitir carregar imagens/assets de outros domínios
+  contentSecurityPolicy: false // Desabilitar CSP estrito por enquanto para evitar bloqueios de scripts externos
+}));
+
+// Configuração de Origens Permitidas
+const allowedOrigins = [
+  'https://marketinghub.aiiam.com.br',
+  'https://elitefinder.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+if (process.env.FRONTEND_URL) {
+  process.env.FRONTEND_URL.split(',').forEach(url => {
+    if (url) allowedOrigins.push(url.trim().replace(/\/$/, ''));
+  });
+}
+
 const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      'https://marketinghub.aiiam.com.br',
-      'https://elitefinder.vercel.app',
-      'http://localhost:5173',
-      'http://localhost:3000'
-    ];
-
-    // Adiciona origens do env se houver (suporta lista separada por vírgula)
-    if (process.env.FRONTEND_URL) {
-      process.env.FRONTEND_URL.split(',').forEach(url => {
-        if (url) allowedOrigins.push(url.trim().replace(/\/$/, '')); // Remove barra final se houver
-      });
-    }
-
-    // Permitir requests sem origin (como mobile apps ou curl) ou se estiver na lista
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log(`[CORS] Bloqueado: ${origin} (Permitidos: ${allowedOrigins.join(', ')})`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: allowedOrigins,
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   optionsSuccessStatus: 200
 };
+
 app.use(compression());
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Enable Pre-Flight for all routes
 const stripeController = require('./stripeController');
 
 // Webhook Stripe (Precisa ser antes do express.json() global para validar assinatura)
@@ -280,6 +284,15 @@ async function initializeDatabase() {
       `);
       console.log('✅ Migração de Audio Analysis verificada/aplicada.');
 
+      // Garantir que o usuário principal seja super_admin
+      console.log('🔄 Atualizando permissões do Super Admin...');
+      await pool.query(`
+            UPDATE users 
+            SET role = 'super_admin', tenant_id = NULL 
+            WHERE email = 'denismay@arsdatascience.com.br';
+      `);
+      console.log('✅ Permissões de Super Admin atualizadas.');
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
@@ -361,11 +374,11 @@ app.put('/api/team/:id', userCtrl.updateTeamMember);
 app.delete('/api/team/:id', userCtrl.deleteTeamMember);
 
 // Clients
-app.get('/api/clients', dbController.getClients);
-app.post('/api/clients', dbController.createClient);
+app.get('/api/clients', authenticateToken, dbController.getClients);
+app.post('/api/clients', authenticateToken, dbController.createClient);
 
 // Campaigns
-app.get('/api/campaigns', dbController.getCampaigns);
+app.get('/api/campaigns', authenticateToken, dbController.getCampaigns);
 
 // Leads
 // Leads
@@ -383,7 +396,7 @@ const socialMediaController = require('./socialMediaController');
 const checkLimit = require('./middleware/usageLimiter');
 
 // --- SOCIAL MEDIA ROUTES ---
-app.get('/api/social-posts', socialMediaController.getPosts);
+app.get('/api/social-posts', authenticateToken, socialMediaController.getPosts);
 app.post('/api/social-posts', authenticateToken, checkLimit('social_post'), socialMediaController.upload.single('media'), socialMediaController.createPost);
 
 // Automation Workflows
@@ -439,7 +452,7 @@ app.get('/api/dashboard/conversion-sources', dashboardCtrl.getConversionSources)
 // --- CAMPAIGNS ---
 const campaignCtrl = require('./campaignController');
 app.get('/api/campaigns/analytics', campaignCtrl.getCampaignAnalytics);
-app.get('/api/campaigns', dbController.getCampaigns); // Manter compatibilidade se necessário
+
 
 // --- USER MANAGEMENT ---
 
@@ -477,123 +490,6 @@ app.use('/api/templates', templatesController);
 
 // --- QDRANT VECTOR DATABASE ---
 const qdrantController = require('./qdrantController');
-app.use('/api/qdrant', qdrantController);
-
-
-// --- SOCIAL MEDIA INTEGRATIONS ---
-const socialIntegration = require('./socialIntegrationController');
-const integrationsCtrl = require('./integrationsController'); // Ensure this is required
-
-// WhatsApp Config Routes
-app.get('/api/integrations/whatsapp', authenticateToken, integrationsCtrl.getWhatsAppConfig);
-app.post('/api/integrations/whatsapp', authenticateToken, integrationsCtrl.saveWhatsAppConfig);
-
-app.get('/api/auth/meta', socialIntegration.initiateMetaAuth);
-app.get('/api/auth/meta/callback', socialIntegration.handleMetaCallback);
-app.get('/api/auth/linkedin', socialIntegration.initiateLinkedInAuth);
-app.get('/api/auth/linkedin/callback', socialIntegration.handleLinkedInCallback);
-app.get('/api/auth/twitter', socialIntegration.initiateTwitterAuth);
-app.get('/api/auth/twitter/callback', socialIntegration.handleTwitterCallback);
-
-// Publishing Routes
-app.post('/api/social/publish/instagram', socialIntegration.publishToInstagram);
-app.post('/api/social/publish/linkedin', socialIntegration.publishToLinkedIn);
-app.post('/api/social/publish/twitter', socialIntegration.publishToTwitter);
-
-// --- SOCIAL ACCOUNTS MANAGEMENT ---
-const socialAccountCtrl = require('./socialAccountController');
-app.get('/api/clients', dbController.getClients);
-app.get('/api/clients/:clientId/social-accounts', socialAccountCtrl.getSocialAccounts);
-
-// --- ADMIN UTILS ---
-const seedController = require('./admin/seedController');
-app.get('/api/admin/seed-campaigns', seedController.seedCampaigns);
-app.post('/api/social-accounts', socialAccountCtrl.addSocialAccount);
-app.delete('/api/social-accounts/:accountId', socialAccountCtrl.deleteSocialAccount);
-
-// Analytics Routes
-app.get('/api/social/insights/instagram', socialIntegration.getInstagramInsights);
-app.get('/api/social/analytics/linkedin', socialIntegration.getLinkedInAnalytics);
-app.get('/api/social/metrics/twitter', socialIntegration.getTwitterMetrics);
-
-
-// Iniciar Servidor com Socket.io
-const http = require('http');
-const server = http.createServer(app);
-const { Server } = require("socket.io");
-
-const io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "*",
-    methods: ["GET", "POST"]
-  }
-});
-
-io.on('connection', (socket) => {
-  console.log('⚡ Client connected:', socket.id);
-
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
-  });
-});
-
-// Tornar io acessível globalmente ou passar para controllers
-app.set('io', io);
-
-// --- ADMIN TOOLS ---
-const adminCtrl = require('./adminController');
-const seedCtrl = require('./seedController');
-const resetCtrl = require('./resetController');
-app.get('/api/seed-campaigns', seedCtrl.seedCampaigns);
-app.get('/api/reset-password', resetCtrl.resetPassword);
-app.post('/api/admin/cleanup', adminCtrl.cleanupDatabase);
-
-// N8N Dashboard Stats
-const n8nDashboardCtrl = require('./admin/n8nDashboardController');
-app.get('/api/admin/n8n/stats', n8nDashboardCtrl.getDashboardStats);
-
-// Queue Monitoring
-const queueCtrl = require('./queueController');
-app.get('/api/admin/queue-status', queueCtrl.getQueueStatus);
-
-const runMigrations = require('./migrate');
-
-// --- IMAGE GENERATION ---
-const imageGenCtrl = require('./imageGenerationController');
-const promptTemplateController = require('./promptTemplateController');
-// const authenticateToken = require('./middleware/auth'); // Moved to top
-
-app.post('/api/images/generate', authenticateToken, checkLimit('ai_generation'), imageGenCtrl.generateImage);
-app.get('/api/images', authenticateToken, imageGenCtrl.listImages);
-app.delete('/api/images/:id', authenticateToken, imageGenCtrl.deleteImage);
-app.post('/api/images/translate', authenticateToken, imageGenCtrl.translateText);
-app.get('/api/images/models', imageGenCtrl.getModels);
-app.post('/api/images/edit', authenticateToken, imageGenCtrl.editImage);
-app.post('/api/images/:id/variations', authenticateToken, imageGenCtrl.createVariations);
-app.post('/api/images/upscale', authenticateToken, imageGenCtrl.upscaleImage);
-app.post('/api/images/remove-background', authenticateToken, imageGenCtrl.removeBackground);
-app.get('/api/images/prompts', authenticateToken, imageGenCtrl.getRecentPrompts);
-app.get('/api/images/analytics', authenticateToken, imageGenCtrl.getAnalytics);
-
-// Rotas de Templates de Prompt
-app.post('/api/templates', authenticateToken, promptTemplateController.createTemplate);
-app.get('/api/templates', authenticateToken, promptTemplateController.listTemplates);
-const tenantController = require('./tenantController');
-
-// ... (outros imports)
-
-// Rotas de Tenants (Super Admin)
-app.get('/api/admin/tenants', authenticateToken, checkAdmin, tenantController.getAllTenants);
-app.post('/api/admin/tenants', authenticateToken, checkAdmin, tenantController.createTenant);
-app.put('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantController.updateTenant);
-app.delete('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantController.deleteTenant);
-
-// Rotas de Planos (Admin)
-// --- FINANCIAL MODULE ---
-const financialCtrl = require('./financialController');
-
-// Rotas Financeiras
-app.get('/api/financial/dashboard', authenticateToken, financialCtrl.getFinancialDashboard);
 app.get('/api/financial/transactions', authenticateToken, financialCtrl.getTransactions);
 app.post('/api/financial/transactions', authenticateToken, financialCtrl.createTransaction);
 app.put('/api/financial/transactions/:id', authenticateToken, financialCtrl.updateTransaction);
@@ -616,6 +512,19 @@ app.get('/api/admin/usage-stats', authenticateToken, checkAdmin, adminCtrl.getSy
 const copiesController = require('./copiesController');
 app.use('/api/copies', copiesController);
 
+// Definir rota de Churn (fora do bloco de migração para garantir registro)
+const churnController = require('./churnController');
+app.get('/api/churn/predict', authenticateToken, churnController.predictChurn);
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('❌ Global Error Handler:', err);
+  res.status(500).json({
+    success: false,
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
+});
 
 // Inicialização do Servidor (IMEDIATA para evitar Timeout do Railway)
 const PORT = process.env.PORT || 3001;
