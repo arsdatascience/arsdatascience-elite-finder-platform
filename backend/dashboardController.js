@@ -1,4 +1,5 @@
 const db = require('./database');
+const { getTenantScope } = require('./utils/tenantSecurity');
 
 // Função auxiliar para gerar dados sintéticos determinísticos baseados no ID do cliente
 const generateMockData = (clientId) => {
@@ -50,8 +51,7 @@ const redis = require('./redisClient');
 const getKPIs = async (req, res) => {
     const { client, startDate, endDate } = req.query;
     const clientId = client && client !== 'all' ? parseInt(client) : null;
-    const tenantId = req.user.tenant_id;
-    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
 
     // Cache Key Strategy: tenant:client:dates
     const cacheKey = `kpis:${tenantId}:${clientId || 'all'}:${startDate || 'all'}:${endDate || 'all'}`;
@@ -70,7 +70,7 @@ const getKPIs = async (req, res) => {
         let conditions = ['1=1'];
 
         // Tenant Filter
-        if (!isSuperAdmin) {
+        if (!isSuperAdmin && tenantId) {
             conditions.push(`c.tenant_id = $${params.length + 1}`);
             params.push(tenantId);
         }
@@ -104,7 +104,7 @@ const getKPIs = async (req, res) => {
             let fallbackParams = [];
             let fallbackConditions = ['1=1'];
 
-            if (!isSuperAdmin) {
+            if (!isSuperAdmin && tenantId) {
                 fallbackConditions.push(`c.tenant_id = $${fallbackParams.length + 1}`);
                 fallbackParams.push(tenantId);
             }
@@ -125,7 +125,7 @@ const getKPIs = async (req, res) => {
             // Rebuild conditions for fallback
             let fbConditions = ['1=1'];
             let fbParams = [];
-            if (!isSuperAdmin) {
+            if (!isSuperAdmin && tenantId) {
                 fbConditions.push(`c.tenant_id = $${fbParams.length + 1}`);
                 fbParams.push(tenantId);
             }
@@ -144,7 +144,7 @@ const getKPIs = async (req, res) => {
         let leadParams = [];
         let leadConditions = ["status IN ('won', 'closed', 'venda')"];
 
-        if (!isSuperAdmin) {
+        if (!isSuperAdmin && tenantId) {
             leadConditions.push(`c.tenant_id = $${leadParams.length + 1}`);
             leadParams.push(tenantId);
         }
@@ -294,8 +294,7 @@ const getDeviceData = async (req, res) => {
 
 const getConversionSources = async (req, res) => {
     const { client } = req.query;
-    const tenantId = req.user.tenant_id;
-    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
 
     try {
         let query = 'SELECT source_name as label, SUM(percentage) as val FROM conversion_sources';
@@ -305,7 +304,7 @@ const getConversionSources = async (req, res) => {
         if (client && client !== 'all') {
             conditions.push(`client_id = $${params.length + 1}`);
             params.push(parseInt(client));
-        } else if (!isSuperAdmin) {
+        } else if (!isSuperAdmin && tenantId) {
             // If all clients but not super admin, filter by tenant
             // Need to join with clients table to filter by tenant
             query = `

@@ -5,6 +5,7 @@ const { ClaudeService, ClaudeModel } = require('./services/anthropicService');
 const qdrantService = require('./services/qdrantService');
 const db = require('./database');
 const { decrypt } = require('./utils/crypto');
+const { getTenantScope } = require('./utils/tenantSecurity');
 
 const getEffectiveApiKey = async (provider = 'openai', userId = null) => {
   // 1. Try to get from User DB (SaaS Multi-tenant)
@@ -82,7 +83,7 @@ const generateEmbeddings = async (text, apiKey) => {
 const generateDashboardInsights = async (req, res) => {
   const { kpis, selectedClient, platform, dateRange, provider = 'openai' } = req.body;
   const userId = req.user ? req.user.id : null;
-  const tenantId = req.user ? req.user.tenant_id : null;
+  const { isSuperAdmin, tenantId } = getTenantScope(req);
 
   // SAAS FIX: Try to get key from tenant owner if possible, or system fallback
   // For now, we use the logged user's key or system key. 
@@ -496,9 +497,9 @@ const askEliteAssistant = async (req, res) => {
 
     // SAAS FIX: Use tenant_id from user object instead of user_id
     // Assuming req.user has tenant_id (injected by auth middleware)
-    const tenantId = req.user ? req.user.tenant_id : null;
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
 
-    if (tenantId) {
+    if (tenantId && !isSuperAdmin) {
       const finRes = await db.query(`
             SELECT 
                 SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as total_income,
@@ -762,7 +763,7 @@ const saveAnalysis = async (req, res) => {
 const generateContentIdeasFromChat = async (req, res) => {
   const { provider = 'openai', limit = 50 } = req.body;
   const userId = req.user ? req.user.id : null;
-  const tenantId = req.user ? req.user.tenant_id : null;
+  const { isSuperAdmin, tenantId } = getTenantScope(req);
   const apiKey = await getEffectiveApiKey(provider, userId);
 
   if (!apiKey) return res.status(500).json({ error: "API Key not configured" });
@@ -770,15 +771,23 @@ const generateContentIdeasFromChat = async (req, res) => {
   try {
     // SAAS FIX: Filter messages by Tenant ID to prevent data leak
     // Join chat_messages -> leads -> clients -> tenant_id
-    const result = await db.query(`
+    let query = `
       SELECT cm.content 
       FROM chat_messages cm
       JOIN leads l ON cm.lead_id = l.id
       JOIN clients c ON l.client_id = c.id
       WHERE cm.role = 'user' 
-      AND c.tenant_id = $1
-      ORDER BY cm.created_at DESC LIMIT $2
-    `, [tenantId, limit]);
+    `;
+    let params = [limit];
+
+    if (!isSuperAdmin && tenantId) {
+      query += ` AND c.tenant_id = $2`;
+      params.push(tenantId);
+    }
+
+    query += ` ORDER BY cm.created_at DESC LIMIT $1`;
+
+    const result = await db.query(query, params);
 
     if (result.rows.length === 0) {
       return res.json({ ideas: [] });

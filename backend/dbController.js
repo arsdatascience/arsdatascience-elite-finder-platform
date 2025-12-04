@@ -28,8 +28,7 @@ const getUsers = async (req, res) => {
     if (!req.user) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
-    const tenantId = req.user.tenant_id;
-    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
 
     try {
         let query = `
@@ -71,8 +70,7 @@ const getClients = async (req, res) => {
         console.error('❌ Critical: req.user is undefined in getClients. Auth middleware missing?');
         return res.status(401).json({ error: 'Unauthorized' });
     }
-    const tenantId = req.user.tenant_id;
-    const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
     console.log(`🔍 getClients: User=${req.user.email}, Role=${req.user.role}, Tenant=${tenantId}, IsSuper=${isSuperAdmin}`);
 
     try {
@@ -108,7 +106,7 @@ const getClients = async (req, res) => {
 };
 
 const createClient = async (req, res) => {
-    const tenantId = req.user.tenant_id;
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
     const {
         name, type, email, phone, whatsapp, document, foundationDate,
         cep, street, number, complement, neighborhood, city, state,
@@ -160,7 +158,7 @@ const createClient = async (req, res) => {
 
 const updateClient = async (req, res) => {
     const { id } = req.params;
-    const tenantId = req.user.tenant_id;
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
     const {
         name, type, email, phone, whatsapp, document, foundationDate,
         cep, street, number, complement, neighborhood, city, state,
@@ -231,9 +229,7 @@ const updateClient = async (req, res) => {
 const getCampaigns = async (req, res) => {
     try {
         const { client_id } = req.query;
-        const tenantId = req.user.tenant_id;
-
-        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
 
         let query = `
             SELECT cmp.* 
@@ -325,7 +321,7 @@ const getLeads = async (req, res) => {
 
 const createLead = async (req, res) => {
     const { client_id, name, email, phone, company, source, status, value, notes, tags } = req.body;
-    const tenantId = req.user.tenant_id;
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
 
     try {
         // SAAS FIX: Verify if client belongs to tenant
@@ -379,7 +375,7 @@ const createLead = async (req, res) => {
 const updateLeadStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
-    const tenantId = req.user.tenant_id;
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
 
     try {
         // SAAS FIX: Verify ownership
@@ -418,7 +414,7 @@ const updateLeadStatus = async (req, res) => {
 const updateLead = async (req, res) => {
     const { id } = req.params;
     const { name, email, phone, company, source, status, value, notes, tags } = req.body;
-    const tenantId = req.user.tenant_id;
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
 
     try {
         // SAAS FIX: Verify ownership
@@ -478,9 +474,7 @@ const getChatMessages = async (req, res) => {
 const getSocialPosts = async (req, res) => {
     try {
         const { client_id } = req.query;
-        const tenantId = req.user.tenant_id;
-
-        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
 
         let query = `
             SELECT sp.* 
@@ -579,7 +573,7 @@ const getTrainingModules = async (req, res) => {
 
 const getTrainingProgress = async (req, res) => {
     const { user_id } = req.query;
-    const tenantId = req.user.tenant_id;
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
 
     // Only allow viewing own progress or if admin of same tenant
     // Simplified: Allow if user belongs to same tenant
@@ -642,9 +636,7 @@ const getKPIs = async (req, res) => {
 const getDeviceStats = async (req, res) => {
     try {
         const { client_id, campaign_id } = req.query;
-        const tenantId = req.user.tenant_id;
-
-        const isSuperAdmin = req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
 
         let query = `
             SELECT ds.device_type, SUM(ds.percentage) as percentage, SUM(ds.conversions) as conversions 
