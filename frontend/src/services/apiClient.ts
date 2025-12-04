@@ -185,134 +185,134 @@ export const apiClient = {
             return response.data;
         }
     },
-},
+
     clients: {
         getClients: async () => {
-            if(USE_MOCK) return mockApi.clients.getClients();
-const response = await axiosInstance.get('/clients');
-return response.data;
+            if (USE_MOCK) return mockApi.clients.getClients();
+            const response = await axiosInstance.get('/clients');
+            return response.data;
         },
-createClient: async (client: any) => {
-    if (USE_MOCK) return mockApi.clients.createClient(client);
-    const response = await axiosInstance.post('/clients', client);
-    return response.data;
-},
-    updateClient: async (id: number, client: any) => {
-        if (USE_MOCK) return mockApi.clients.updateClient(id, client);
-        const response = await axiosInstance.put(`/clients/${id}`, client);
-        return response.data;
-    },
+        createClient: async (client: any) => {
+            if (USE_MOCK) return mockApi.clients.createClient(client);
+            const response = await axiosInstance.post('/clients', client);
+            return response.data;
+        },
+        updateClient: async (id: number, client: any) => {
+            if (USE_MOCK) return mockApi.clients.updateClient(id, client);
+            const response = await axiosInstance.put(`/clients/${id}`, client);
+            return response.data;
+        },
         deleteClient: async (id: number) => {
             if (USE_MOCK) return mockApi.clients.deleteClient(id);
             const response = await axiosInstance.delete(`/clients/${id}`);
             return response.data;
         }
     },
-social: {
-    getPosts: async (clientId?: string) => {
-        if (USE_MOCK) return [];
-        const url = clientId && clientId !== 'all' ? `/social/posts?client=${clientId}` : '/social/posts';
-        const response = await axiosInstance.get(url);
-        return response.data;
-    },
+    social: {
+        getPosts: async (clientId?: string) => {
+            if (USE_MOCK) return [];
+            const url = clientId && clientId !== 'all' ? `/social/posts?client=${clientId}` : '/social/posts';
+            const response = await axiosInstance.get(url);
+            return response.data;
+        },
         createPost: async (post: any) => {
             if (USE_MOCK) return post;
             const response = await axiosInstance.post('/social/posts', post);
             return response.data;
         },
-            updatePost: async (id: string, data: any) => {
-                if (USE_MOCK) return { ...data, id };
-                const response = await axiosInstance.put(`/social/posts/${id}`, data);
-                return response.data;
-            },
-                deletePost: async (id: string) => {
-                    if (USE_MOCK) return { success: true };
-                    const response = await axiosInstance.delete(`/social/posts/${id}`);
-                    return response.data;
-                },
-                    getHolidays: async () => {
-                        if (USE_MOCK) return [];
-                        const response = await axiosInstance.get('/social/holidays');
-                        return response.data;
-                    }
-},
-ai: {
-    generateMarketingContent: async (data: any) => {
-        if (USE_MOCK) return { body: 'Conteúdo gerado via Mock', headlines: ['Título Mock 1', 'Título Mock 2'], imageIdea: 'Ideia de imagem mock' };
-        const response = await axiosInstance.post('/ai/generate', data);
-        return response.data;
-    }
-},
-promptTemplates: {
-    create: async (data: any) => {
-        if (USE_MOCK) return data;
-        const response = await axiosInstance.post('/templates', data);
-        return response.data;
+        updatePost: async (id: string, data: any) => {
+            if (USE_MOCK) return { ...data, id };
+            const response = await axiosInstance.put(`/social/posts/${id}`, data);
+            return response.data;
+        },
+        deletePost: async (id: string) => {
+            if (USE_MOCK) return { success: true };
+            const response = await axiosInstance.delete(`/social/posts/${id}`);
+            return response.data;
+        },
+        getHolidays: async () => {
+            if (USE_MOCK) return [];
+            const response = await axiosInstance.get('/social/holidays');
+            return response.data;
+        }
     },
+    ai: {
+        generateMarketingContent: async (data: any) => {
+            if (USE_MOCK) return { body: 'Conteúdo gerado via Mock', headlines: ['Título Mock 1', 'Título Mock 2'], imageIdea: 'Ideia de imagem mock' };
+            const response = await axiosInstance.post('/ai/generate', data);
+            return response.data;
+        }
+    },
+    promptTemplates: {
+        create: async (data: any) => {
+            if (USE_MOCK) return data;
+            const response = await axiosInstance.post('/templates', data);
+            return response.data;
+        },
         list: async () => {
             if (USE_MOCK) return [];
             const response = await axiosInstance.get('/templates');
             return response.data;
         },
-            delete: async (id: number) => {
-                if (USE_MOCK) return;
-                await axiosInstance.delete(`/templates/${id}`);
-            }
-},
-imageGeneration: {
-    generate: async (data: any) => {
-        if (USE_MOCK) throw new Error('Mock not implemented for Image Gen');
-        const response = await axiosInstance.post('/images/generate', data);
-        return response.data;
+        delete: async (id: number) => {
+            if (USE_MOCK) return;
+            await axiosInstance.delete(`/templates/${id}`);
+        }
     },
+    imageGeneration: {
+        generate: async (data: any) => {
+            if (USE_MOCK) throw new Error('Mock not implemented for Image Gen');
+            const response = await axiosInstance.post('/images/generate', data);
+            return response.data;
+        },
         list: async (limit = 20, page = 1) => {
             if (USE_MOCK) return { images: [], total: 0 };
             const response = await axiosInstance.get('/images', { params: { limit, page } });
             return response.data;
         },
-            delete: async (id: string) => {
-                if (USE_MOCK) return;
-                await axiosInstance.delete(`/images/${id}`);
-            },
-                getModels: async () => {
-                    if (USE_MOCK) return [];
-                    const response = await axiosInstance.get('/images/models');
-                    return response.data;
-                },
-                    edit: async (data: any) => {
-                        if (USE_MOCK) throw new Error('Mock not implemented');
-                        const response = await axiosInstance.post('/images/edit', data);
-                        return response.data;
-                    },
-                        createVariations: async (id: string, count: number = 4) => {
-                            if (USE_MOCK) throw new Error('Mock not implemented');
-                            const response = await axiosInstance.post(`/images/${id}/variations`, { count });
-                            return response.data; // Retorna { success: true, data: GeneratedImage[] }
-                        },
-                            upscale: async (data: { imageUrl: string, scale: number }) => {
-                                if (USE_MOCK) throw new Error('Mock not implemented');
-                                const response = await axiosInstance.post('/images/upscale', data);
-                                return response.data;
-                            },
-                                removeBackground: async (imageUrl: string) => {
-                                    if (USE_MOCK) throw new Error('Mock not implemented');
-                                    const response = await axiosInstance.post('/images/remove-background', { imageUrl });
-                                    return response.data;
-                                },
-                                    getRecentPrompts: async () => {
-                                        if (USE_MOCK) return [];
-                                        const response = await axiosInstance.get('/images/prompts');
-                                        return response.data;
-                                    },
-                                        getAnalytics: async (model?: string) => {
-                                            if (USE_MOCK) return { success: true, data: { totalImages: 0, imagesByModel: [], activity: [], totalCredits: 0, recentImages: [] } };
-                                            const response = await axiosInstance.get('/images/analytics', { params: { model } });
-                                            return response.data;
-                                        },
-                                            translate: async (text: string, targetLang: 'pt' | 'en') => {
-                                                if (USE_MOCK) return { translatedText: text };
-                                                const response = await axiosInstance.post('/images/translate', { text, targetLang });
-                                                return response.data;
-                                            }
-}
+        delete: async (id: string) => {
+            if (USE_MOCK) return;
+            await axiosInstance.delete(`/images/${id}`);
+        },
+        getModels: async () => {
+            if (USE_MOCK) return [];
+            const response = await axiosInstance.get('/images/models');
+            return response.data;
+        },
+        edit: async (data: any) => {
+            if (USE_MOCK) throw new Error('Mock not implemented');
+            const response = await axiosInstance.post('/images/edit', data);
+            return response.data;
+        },
+        createVariations: async (id: string, count: number = 4) => {
+            if (USE_MOCK) throw new Error('Mock not implemented');
+            const response = await axiosInstance.post(`/images/${id}/variations`, { count });
+            return response.data; // Retorna { success: true, data: GeneratedImage[] }
+        },
+        upscale: async (data: { imageUrl: string, scale: number }) => {
+            if (USE_MOCK) throw new Error('Mock not implemented');
+            const response = await axiosInstance.post('/images/upscale', data);
+            return response.data;
+        },
+        removeBackground: async (imageUrl: string) => {
+            if (USE_MOCK) throw new Error('Mock not implemented');
+            const response = await axiosInstance.post('/images/remove-background', { imageUrl });
+            return response.data;
+        },
+        getRecentPrompts: async () => {
+            if (USE_MOCK) return [];
+            const response = await axiosInstance.get('/images/prompts');
+            return response.data;
+        },
+        getAnalytics: async (model?: string) => {
+            if (USE_MOCK) return { success: true, data: { totalImages: 0, imagesByModel: [], activity: [], totalCredits: 0, recentImages: [] } };
+            const response = await axiosInstance.get('/images/analytics', { params: { model } });
+            return response.data;
+        },
+        translate: async (text: string, targetLang: 'pt' | 'en') => {
+            if (USE_MOCK) return { translatedText: text };
+            const response = await axiosInstance.post('/images/translate', { text, targetLang });
+            return response.data;
+        }
+    }
 };
