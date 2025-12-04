@@ -117,6 +117,17 @@ export const apiClient = {
             if (USE_MOCK) return mockApi.campaigns.getCampaigns(clientId) as Promise<Campaign[]>;
             const response = await axiosInstance.get(`/campaigns?client_id=${clientId}`);
             return response.data;
+        },
+        getCampaignAnalytics: async (clientId: string, startDate?: string, endDate?: string, platforms?: string) => {
+            if (USE_MOCK) return mockApi.campaigns.getCampaignAnalytics(clientId);
+            const queryParams = new URLSearchParams();
+            if (clientId) queryParams.append('clientId', clientId);
+            if (startDate) queryParams.append('startDate', startDate);
+            if (endDate) queryParams.append('endDate', endDate);
+            if (platforms) queryParams.append('platforms', platforms);
+
+            const response = await axiosInstance.get(`/campaigns/analytics?${queryParams.toString()}`);
+            return response.data;
         }
     },
     auth: {

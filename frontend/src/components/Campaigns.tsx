@@ -70,37 +70,42 @@ export const Campaigns: React.FC = () => {
 
   // Fetch Analytics
   useEffect(() => {
-    setLoading(true);
-    const queryParams = new URLSearchParams({
-      clientId: selectedClient,
-      startDate: dateRange.start,
-      endDate: dateRange.end,
-      platforms: selectedPlatforms.join(',')
-    });
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const data = await apiClient.campaigns.getCampaignAnalytics(
+          selectedClient,
+          dateRange.start,
+          dateRange.end,
+          selectedPlatforms.join(',')
+        );
 
-    // Fetch Analytics Data
-    fetch(`${import.meta.env.VITE_API_URL}/api/campaigns/analytics?${queryParams}`)
-      .then(res => res.json())
-      .then(data => {
-        setKpis(data.kpis);
-        setChartData(data.chartData.map((item: any) => ({
-          ...item,
-          spend: Number(item.spend),
-          revenue: Number(item.revenue),
-          impressions: Number(item.impressions),
-          clicks: Number(item.clicks),
-          conversions: Number(item.conversions)
-        })));
-        setPlatformData(data.platformData.map((item: any) => ({
-          ...item,
-          spend: Number(item.spend),
-          revenue: Number(item.revenue),
-          conversions: Number(item.conversions)
-        })));
-        setCampaigns(data.campaigns);
-      })
-      .catch(err => console.error('Erro ao buscar analytics:', err))
-      .finally(() => setLoading(false));
+        if (data) {
+          setKpis(data.kpis || null);
+          setChartData((data.chartData || []).map((item: any) => ({
+            ...item,
+            spend: Number(item.spend || 0),
+            revenue: Number(item.revenue || 0),
+            impressions: Number(item.impressions || 0),
+            clicks: Number(item.clicks || 0),
+            conversions: Number(item.conversions || 0)
+          })));
+          setPlatformData((data.platformData || []).map((item: any) => ({
+            ...item,
+            spend: Number(item.spend || 0),
+            revenue: Number(item.revenue || 0),
+            conversions: Number(item.conversions || 0)
+          })));
+          setCampaigns(data.campaigns || []);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar analytics:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [selectedClient, selectedPlatforms, dateRange]);
 
   // Prepare KPIs for AI Insight
