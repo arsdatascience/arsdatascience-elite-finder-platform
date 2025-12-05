@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Grid3x3, List, Instagram, Facebook, Linkedin, Twitter, Edit2, Trash2, Clock, Users, Gift, Sparkles, X, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Grid3x3, List, Instagram, Facebook, Linkedin, Twitter, Trash2, Clock, Users, Gift, Sparkles, X, Save } from 'lucide-react';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/apiClient';
 
@@ -36,7 +37,7 @@ const MOCK_POSTS: Post[] = [
 
 export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     posts = MOCK_POSTS,
-    onPostClick = () => { },
+    onPostClick,
     onPostUpdate,
     onPostDelete
 }) => {
@@ -45,8 +46,6 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['instagram', 'facebook', 'linkedin', 'twitter', 'youtube', 'google', 'meta']);
     const [selectedClient, setSelectedClient] = useState<string>('all');
     const [draggedPost, setDraggedPost] = useState<Post | null>(null);
-    const [editingPostId, setEditingPostId] = useState<string | null>(null);
-    const [editContent, setEditContent] = useState('');
     const [suggestionModal, setSuggestionModal] = useState<{ isOpen: boolean, holiday: any, date: Date } | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [schedulingModal, setSchedulingModal] = useState<{ isOpen: boolean, date: Date | null }>({ isOpen: false, date: null });
@@ -103,6 +102,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
             description: post.description || '',
             videoConference: post.videoConference || { type: null, link: '' }
         });
+        if (onPostClick) onPostClick(post);
         setEditingEventId(post.id);
         setSchedulingModal({ isOpen: true, date });
     };
@@ -293,27 +293,23 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         setDraggedPost(null);
     };
 
-    // Inline Edit
-    const startEdit = (post: Post) => {
-        setEditingPostId(post.id);
-        setEditContent(post.content);
-    };
-
-    const saveEdit = () => {
-        setEditingPostId(null);
-    };
-
-    const cancelEdit = () => {
-        setEditingPostId(null);
-    };
-
     // Delete Mutation
     const deletePostMutation = useMutation({
         mutationFn: apiClient.social.deletePost,
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['socialPosts'] });
+            if (onPostDelete) onPostDelete(variables);
         }
     });
+
+    const handleDeletePost = (e: React.MouseEvent, postId: string) => {
+        e.stopPropagation();
+        if (confirm('Tem certeza que deseja excluir este agendamento?')) {
+            deletePostMutation.mutate(postId);
+        }
+    };
+
+
 
     // AI Suggestion
     const handleHolidayClick = (holiday: any, date: Date) => {
@@ -450,7 +446,21 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                     onClick={() => handleDayClick(day)}
                                     className={`aspect-square border rounded-lg p-2 flex flex-col ${isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'} hover:shadow-md transition-shadow cursor-pointer min-h-[100px]`}
                                 >
-                                    <div className={`text-sm font-bold mb-1 ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>{day}</div>
+                                    <div className={`text-sm font-bold mb-1 flex justify-between items-start ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
+                                        <span>{day}</span>
+                                        {holidays.find(h => h.date === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0]) && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleHolidayClick(holidays.find(h => h.date === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0]), new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
+                                                }}
+                                                className="text-amber-500 hover:text-amber-600 transition-colors"
+                                                title="Feriado/Data Comemorativa"
+                                            >
+                                                <Gift size={14} />
+                                            </button>
+                                        )}
+                                    </div>
                                     <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar">
                                         {dayPosts.map(post => {
                                             const Icon = getPlatformIcon(post.platform);
@@ -462,9 +472,15 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                     onClick={(e) => { e.stopPropagation(); handleEditPost(post); }}
                                                     className={`w-full text-left p-1.5 rounded border text-xs transition-all ${getPlatformColor(post.platform)} cursor-move`}
                                                 >
-                                                    <div className="flex items-center gap-1 group">
-                                                        <Icon size={12} />
+                                                    <div className="flex items-center gap-1 group relative pr-4">
+                                                        <Icon size={12} className="shrink-0" />
                                                         <span className="truncate flex-1">{post.content.substring(0, 20)}...</span>
+                                                        <button
+                                                            onClick={(e) => handleDeletePost(e, post.id)}
+                                                            className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-100 text-red-500 rounded transition-all"
+                                                        >
+                                                            <Trash2 size={10} />
+                                                        </button>
                                                     </div>
                                                 </div>
                                             );

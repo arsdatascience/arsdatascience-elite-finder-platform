@@ -153,6 +153,30 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
                         </label>
                     </div>
                 </div>
+
+                <div className="mt-4 bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                    <h4 className="text-xs font-bold text-yellow-800 flex items-center gap-1 mb-2">
+                        💡 Dica: Qual modelo usar?
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        <div className="flex flex-col">
+                            <span className="font-semibold text-yellow-900">🧠 Raciocínio & Estratégia</span>
+                            <span className="text-yellow-700">Claude 3.5 Sonnet ou GPT-4o</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="font-semibold text-yellow-900">🎨 Criatividade & Copy</span>
+                            <span className="text-yellow-700">Claude 3.5 Sonnet</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="font-semibold text-yellow-900">📊 Análise de Dados</span>
+                            <span className="text-yellow-700">Gemini 1.5 Pro (Contexto Longo)</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="font-semibold text-yellow-900">⚡ Respostas Rápidas</span>
+                            <span className="text-yellow-700">Gemini Flash ou GPT-4o Mini</span>
+                        </div>
+                    </div>
+                </div>
             )}
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">

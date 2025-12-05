@@ -251,6 +251,33 @@ async function initializeDatabase() {
       `);
       console.log('✅ Migração de Clientes verificada/aplicada.');
 
+      // Migração de Reparo (Fix DB Issues)
+      console.log('🔄 Executando migração de reparo (022)...');
+      await pool.query(`
+          -- 1. Ensure 'document' column exists in clients
+          DO $$
+          BEGIN
+              IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'clients' AND column_name = 'document') THEN
+                  ALTER TABLE clients ADD COLUMN document VARCHAR(20);
+              END IF;
+          END $$;
+
+          -- 2. Increase column lengths for clients
+          ALTER TABLE clients ALTER COLUMN state_registration TYPE VARCHAR(100);
+          ALTER TABLE clients ALTER COLUMN municipal_registration TYPE VARCHAR(100);
+          ALTER TABLE clients ALTER COLUMN fantasy_name TYPE VARCHAR(255);
+          ALTER TABLE clients ALTER COLUMN legal_rep_email TYPE VARCHAR(255);
+
+          -- 3. Ensure User ID 1 exists
+          INSERT INTO users (id, name, email, password_hash, role, status)
+          VALUES (1, 'System User', 'system@elitefinder.com', '$2a$10$abcdefghijklmnopqrstuvwxyz123456', 'super_admin', 'active')
+          ON CONFLICT (id) DO NOTHING;
+
+          -- 4. Fix sequences
+          SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
+      `);
+      console.log('✅ Migração de reparo (022) aplicada.');
+
       // Migração para Planos e Limites (SaaS)
       console.log('🔄 Verificando migrações de Planos e Limites...');
       await pool.query(`
@@ -485,6 +512,17 @@ app.get('/api/whatsapp/sessions/:sessionId/messages', authenticateToken, whatsap
 
 // --- AI SERVICES ---
 const aiController = require('./aiController');
+const imageController = require('./imageController');
+
+// --- IMAGE GENERATION ROUTES ---
+app.get('/api/images/models', authenticateToken, imageController.getModels);
+app.get('/api/images', authenticateToken, imageController.listImages);
+app.post('/api/images/generate', authenticateToken, checkLimit('ai_generation'), imageController.generateImage);
+app.post('/api/images/edit', authenticateToken, checkLimit('ai_generation'), imageController.editImage);
+app.post('/api/images/upscale', authenticateToken, checkLimit('ai_generation'), imageController.upscaleImage);
+app.post('/api/images/:id/variations', authenticateToken, checkLimit('ai_generation'), imageController.createVariations);
+app.post('/api/images/translate', authenticateToken, imageController.translate);
+app.delete('/api/images/:id', authenticateToken, imageController.deleteImage);
 
 
 

@@ -521,7 +521,7 @@ const updateLead = async (req, res) => {
         // SAAS FIX: Verify ownership
         const result = await pool.query(
             `UPDATE leads l
-             SET name = COALESCE($1, name), email = COALESCE($2, email), phone = COALESCE($3, phone), company = COALESCE($4, company), source = COALESCE($5, source), status = COALESCE($6, status), value = COALESCE($7, value), notes = COALESCE($8, notes), tags = COALESCE($9, tags), updated_at = NOW() 
+             SET name = COALESCE($1, l.name), email = COALESCE($2, l.email), phone = COALESCE($3, l.phone), company = COALESCE($4, l.company), source = COALESCE($5, l.source), status = COALESCE($6, l.status), value = COALESCE($7, l.value), notes = COALESCE($8, l.notes), tags = COALESCE($9, l.tags), updated_at = NOW() 
              FROM clients c
              WHERE l.client_id = c.id AND l.id = $10 AND c.tenant_id = $11
              RETURNING l.* `,

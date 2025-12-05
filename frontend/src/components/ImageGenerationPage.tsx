@@ -308,7 +308,7 @@ export const ImageGenerationPage: React.FC = () => {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1" title="Mais passos = maior qualidade (e tempo)">Passos (Steps): {steps}</label>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1" title="Mais passos = maior qualidade (e tempo)">Passos: {steps}</label>
                                             <input
                                                 type="range" min="1" max="50" value={steps}
                                                 onChange={(e) => setSteps(Number(e.target.value))}
@@ -316,7 +316,7 @@ export const ImageGenerationPage: React.FC = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1" title="Quão fiel ao prompt (7-10 é ideal)">Guidance Scale: {guidance}</label>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1" title="Quão fiel ao prompt (7-10 é ideal)">Fidelidade (Guidance): {guidance}</label>
                                             <input
                                                 type="range" min="1" max="20" step="0.5" value={guidance}
                                                 onChange={(e) => setGuidance(Number(e.target.value))}
@@ -326,7 +326,7 @@ export const ImageGenerationPage: React.FC = () => {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">Quantidade (Batch Size): {batchSize}</label>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">Quantidade: {batchSize}</label>
                                         <div className="flex items-center gap-4">
                                             <input
                                                 type="range" min="1" max="4" value={batchSize}
