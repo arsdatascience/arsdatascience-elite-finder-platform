@@ -266,16 +266,21 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         e.preventDefault();
     };
 
-    const handleDrop = (day: number, month?: number, year?: number) => {
+    const handleDrop = (day?: number, month?: number, year?: number, hour?: number, minute?: number) => {
         if (!draggedPost) return;
 
-        const newDate = new Date(currentDate);
-        newDate.setDate(day);
+        const newDate = new Date(draggedPost.scheduled_date || currentDate);
+
+        // Update date components if provided
+        if (day !== undefined) newDate.setDate(day);
         if (month !== undefined) newDate.setMonth(month);
         if (year !== undefined) newDate.setFullYear(year);
 
+        // Update time components if provided
+        if (hour !== undefined) newDate.setHours(hour);
+        if (minute !== undefined) newDate.setMinutes(minute);
+
         // Optimistic update
-        // In a real app, we would update the backend here
         if (onPostUpdate) {
             onPostUpdate(draggedPost.id, newDate.toISOString());
         } else {
@@ -295,7 +300,6 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     };
 
     const saveEdit = () => {
-        // Implement save logic
         setEditingPostId(null);
     };
 
@@ -320,7 +324,6 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         if (!suggestionModal) return;
         setIsGenerating(true);
         try {
-            // Simulate AI generation
             await new Promise(resolve => setTimeout(resolve, 2000));
             alert(`Sugestão gerada para ${suggestionModal.holiday.name}: "Celebre este dia especial com..."`);
             setSuggestionModal(null);
@@ -335,8 +338,6 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
         setSchedulingModal({ isOpen: true, date });
     };
-
-
 
     return (
         <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in relative">
@@ -360,41 +361,30 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
 
             {/* Toolbar */}
             <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-wrap gap-4 items-center justify-between shrink-0">
-                {/* View Mode Toggle */}
                 <div className="flex gap-2 bg-white rounded-lg p-1 shadow-sm">
                     <button
                         onClick={() => setViewMode('month')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'month'
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-600 hover:bg-gray-100'
-                            }`}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'month' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
                     >
                         <Grid3x3 size={16} />
                         Mês
                     </button>
                     <button
                         onClick={() => setViewMode('week')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'week'
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-600 hover:bg-gray-100'
-                            }`}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'week' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
                     >
                         <List size={16} />
                         Semana
                     </button>
                     <button
                         onClick={() => setViewMode('day')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'day'
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-600 hover:bg-gray-100'
-                            }`}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'day' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
                     >
                         <Clock size={16} />
                         Dia
                     </button>
                 </div>
 
-                {/* Platform Filters */}
                 <div className="flex items-center gap-2">
                     <Filter size={16} className="text-gray-500" />
                     <span className="text-sm font-medium text-gray-600">Filtros:</span>
@@ -405,10 +395,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                             <button
                                 key={platform.id}
                                 onClick={() => togglePlatform(platform.id)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${isSelected
-                                    ? getPlatformColor(platform.id)
-                                    : 'bg-gray-100 text-gray-400 border border-gray-200'
-                                    }`}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${isSelected ? getPlatformColor(platform.id) : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
                             >
                                 <Icon size={14} />
                                 {platform.name}
@@ -417,7 +404,6 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                     })}
                 </div>
 
-                {/* Post Count */}
                 <div className="flex items-center gap-3">
                     <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">v1.0</span>
                     <div className="text-sm text-gray-600">
@@ -428,24 +414,16 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
 
             {/* Calendar Navigation */}
             <div className="p-4 border-b border-gray-200 flex items-center justify-between shrink-0">
-                <button
-                    onClick={previousPeriod}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
+                <button onClick={previousPeriod} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                     <ChevronLeft size={24} />
                 </button>
-
                 <h4 className="text-xl font-bold text-gray-800">
                     {viewMode === 'month'
                         ? `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`
                         : `Semana de ${weekDays[0].getDate()} a ${weekDays[6].getDate()} de ${monthNames[currentDate.getMonth()]}`
                     }
                 </h4>
-
-                <button
-                    onClick={nextPeriod}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
+                <button onClick={nextPeriod} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                     <ChevronRight size={24} />
                 </button>
             </div>
@@ -454,60 +432,28 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
             <div className="flex-1 overflow-y-auto p-6">
                 {viewMode === 'month' ? (
                     <div className="grid grid-cols-7 gap-2">
-                        {/* Day headers */}
                         {dayNames.map(day => (
-                            <div key={day} className="text-center font-bold text-gray-600 text-sm py-2">
-                                {day}
-                            </div>
+                            <div key={day} className="text-center font-bold text-gray-600 text-sm py-2">{day}</div>
                         ))}
-
-                        {/* Empty cells for days before month starts */}
                         {Array.from({ length: startingDayOfWeek }).map((_, i) => (
                             <div key={`empty-${i}`} className="aspect-square" />
                         ))}
-
-                        {/* Calendar days */}
                         {Array.from({ length: daysInMonth }).map((_, i) => {
                             const day = i + 1;
                             const dayPosts = getPostsForDay(day);
-                            const isToday =
-                                day === new Date().getDate() &&
-                                currentDate.getMonth() === new Date().getMonth() &&
-                                currentDate.getFullYear() === new Date().getFullYear();
-
+                            const isToday = day === new Date().getDate() && currentDate.getMonth() === new Date().getMonth() && currentDate.getFullYear() === new Date().getFullYear();
                             return (
                                 <div
                                     key={day}
                                     onDragOver={handleDragOver}
                                     onDrop={() => handleDrop(day)}
                                     onClick={() => handleDayClick(day)}
-                                    className={`aspect-square border rounded-lg p-2 flex flex-col ${isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
-                                        } hover:shadow-md transition-shadow cursor-pointer min-h-[100px]`}
+                                    className={`aspect-square border rounded-lg p-2 flex flex-col ${isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'} hover:shadow-md transition-shadow cursor-pointer min-h-[100px]`}
                                 >
-                                    <div className={`text-sm font-bold mb-1 ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
-                                        {day}
-                                    </div>
-
-                                    {holidays?.find((h: any) => h.date === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0]) && (
-                                        <div
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const h = holidays.find((h: any) => h.date === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0]);
-                                                handleHolidayClick(h, new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
-                                            }}
-                                            className="text-[10px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded mb-1 truncate cursor-pointer hover:bg-green-100 border border-green-100 flex items-center gap-1 font-medium transition-colors"
-                                            title="Clique para gerar sugestão com IA"
-                                        >
-                                            <Gift size={10} />
-                                            {holidays.find((h: any) => h.date === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0])?.name}
-                                        </div>
-                                    )}
-
+                                    <div className={`text-sm font-bold mb-1 ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>{day}</div>
                                     <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar">
                                         {dayPosts.map(post => {
                                             const Icon = getPlatformIcon(post.platform);
-                                            const isEditing = editingPostId === post.id;
-
                                             return (
                                                 <div
                                                     key={post.id}
@@ -516,62 +462,10 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                     onClick={(e) => { e.stopPropagation(); handleEditPost(post); }}
                                                     className={`w-full text-left p-1.5 rounded border text-xs transition-all ${getPlatformColor(post.platform)} cursor-move`}
                                                 >
-                                                    {isEditing ? (
-                                                        <div className="space-y-1">
-                                                            <input
-                                                                type="text"
-                                                                value={editContent}
-                                                                onChange={(e) => setEditContent(e.target.value)}
-                                                                className="w-full px-1 py-0.5 text-xs border rounded"
-                                                                autoFocus
-                                                            />
-                                                            <div className="flex gap-1">
-                                                                <button
-                                                                    onClick={saveEdit}
-                                                                    className="px-2 py-0.5 bg-green-600 text-white rounded text-[10px]"
-                                                                >
-                                                                    Salvar
-                                                                </button>
-                                                                <button
-                                                                    onClick={cancelEdit}
-                                                                    className="px-2 py-0.5 bg-gray-400 text-white rounded text-[10px]"
-                                                                >
-                                                                    Cancelar
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex items-center gap-1 group">
-                                                            <Icon size={12} />
-                                                            <span className="truncate flex-1">{post.content.substring(0, 20)}...</span>
-                                                            <div className="hidden group-hover:flex gap-0.5">
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        startEdit(post);
-                                                                    }}
-                                                                    className="p-0.5 hover:bg-white/50 rounded"
-                                                                >
-                                                                    <Edit2 size={10} />
-                                                                </button>
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        if (confirm('Deletar este post?')) {
-                                                                            if (onPostDelete) {
-                                                                                onPostDelete(post.id);
-                                                                            } else {
-                                                                                deletePostMutation.mutate(post.id);
-                                                                            }
-                                                                        }
-                                                                    }}
-                                                                    className="p-0.5 hover:bg-red-500/20 rounded"
-                                                                >
-                                                                    <Trash2 size={10} />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    )}
+                                                    <div className="flex items-center gap-1 group">
+                                                        <Icon size={12} />
+                                                        <span className="truncate flex-1">{post.content.substring(0, 20)}...</span>
+                                                    </div>
                                                 </div>
                                             );
                                         })}
@@ -585,56 +479,30 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                         {weekDays.map((date, idx) => {
                             const dayPosts = getPostsForDate(date);
                             const isToday = date.toDateString() === new Date().toDateString();
-
                             return (
                                 <div
                                     key={idx}
                                     onDragOver={handleDragOver}
                                     onDrop={() => handleDrop(date.getDate(), date.getMonth(), date.getFullYear())}
                                     onClick={() => setSchedulingModal({ isOpen: true, date })}
-                                    className={`border rounded-lg p-4 ${isToday ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'
-                                        } hover:shadow-md transition-shadow cursor-pointer`}
+                                    className={`border rounded-lg p-4 ${isToday ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'} hover:shadow-md transition-shadow cursor-pointer`}
                                 >
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-3">
-                                            <div className={`text-2xl font-bold ${isToday ? 'text-purple-600' : 'text-gray-700'}`}>
-                                                {date.getDate}
-                                            </div>
+                                            <div className="text-2xl font-bold">{date.getDate()}</div>
                                             <div>
                                                 <div className="font-bold text-gray-800">{dayNames[date.getDay()]}</div>
-                                                <div className="text-xs text-gray-500">
-                                                    {monthNames[date.getMonth()]} {date.getFullYear()}
-                                                </div>
                                             </div>
                                         </div>
-                                        <div className="text-sm text-gray-500">
-                                            {dayPosts.length} {dayPosts.length === 1 ? 'post' : 'posts'}
-                                        </div>
                                     </div>
-
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                                         {dayPosts.map(post => {
                                             const Icon = getPlatformIcon(post.platform);
                                             return (
-                                                <div
-                                                    key={post.id}
-                                                    draggable
-                                                    onDragStart={() => handleDragStart(post)}
-                                                    onClick={(e) => { e.stopPropagation(); handleEditPost(post); }}
-                                                    className={`p-3 rounded-lg border cursor-pointer transition-all ${getPlatformColor(post.platform)}`}
-                                                >
+                                                <div key={post.id} draggable onDragStart={() => handleDragStart(post)} onClick={(e) => { e.stopPropagation(); handleEditPost(post); }} className={`p-3 rounded-lg border cursor-pointer transition-all ${getPlatformColor(post.platform)}`}>
                                                     <div className="flex items-start gap-2">
                                                         <Icon size={16} className="shrink-0 mt-0.5" />
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-medium line-clamp-2">{post.content}</p>
-                                                            <div className="flex items-center gap-1 mt-1 text-xs opacity-75">
-                                                                <Clock size={10} />
-                                                                {new Date(post.scheduled_date).toLocaleTimeString('pt-BR', {
-                                                                    hour: '2-digit',
-                                                                    minute: '2-digit'
-                                                                })}
-                                                            </div>
-                                                        </div>
+                                                        <p className="text-sm font-medium line-clamp-2">{post.content}</p>
                                                     </div>
                                                 </div>
                                             );
@@ -645,7 +513,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                         })}
                     </div>
                 ) : (
-                    /* Day View Implementation */
+                    /* Day View with DND */
                     <div className="flex flex-col gap-0 border border-gray-200 rounded-lg overflow-hidden">
                         {Array.from({ length: 24 }).map((_, hour) => {
                             const timeString = `${hour.toString().padStart(2, '0')}:00`;
@@ -657,6 +525,18 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                             return (
                                 <div
                                     key={hour}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        const offsetY = e.clientY - rect.top;
+                                        const percentage = Math.min(Math.max(offsetY / rect.height, 0), 1);
+                                        const minute = Math.floor(percentage * 60);
+                                        const roundedMinute = Math.round(minute / 15) * 15;
+                                        const finalMinute = roundedMinute === 60 ? 0 : roundedMinute;
+                                        const finalHour = roundedMinute === 60 ? hour + 1 : hour;
+                                        handleDrop(undefined, undefined, undefined, finalHour, finalMinute);
+                                    }}
                                     className="flex border-b border-gray-100 min-h-[60px] group hover:bg-gray-50 transition-colors"
                                     onClick={() => {
                                         setNewEvent(prev => ({ ...prev, startTime: timeString, endTime: `${(hour + 1).toString().padStart(2, '0')}:00` }));
@@ -667,18 +547,15 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                         {timeString}
                                     </div>
                                     <div className="flex-1 p-2 relative">
-                                        {/* Horizontal Lines for 15, 30, 45 mins (visual guide) */}
                                         <div className="absolute top-1/4 left-0 right-0 border-t border-gray-50 pointer-events-none"></div>
                                         <div className="absolute top-2/4 left-0 right-0 border-t border-gray-50 pointer-events-none"></div>
                                         <div className="absolute top-3/4 left-0 right-0 border-t border-gray-50 pointer-events-none"></div>
-
                                         <div className="flex flex-wrap gap-2 relative z-10">
                                             {dayPosts.map(post => {
                                                 const Icon = getPlatformIcon(post.platform);
                                                 const postDate = new Date(post.scheduled_date);
                                                 const minutes = postDate.getMinutes();
-                                                const topOffset = (minutes / 60) * 100; // Position based on minutes
-
+                                                const topOffset = (minutes / 60) * 100;
                                                 return (
                                                     <div
                                                         key={post.id}
@@ -686,7 +563,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                         onDragStart={() => handleDragStart(post)}
                                                         onClick={(e) => { e.stopPropagation(); handleEditPost(post); }}
                                                         className={`px-3 py-1.5 rounded border text-xs transition-all ${getPlatformColor(post.platform)} cursor-move flex items-center gap-2 shadow-sm`}
-                                                        style={{ marginTop: `${topOffset}%` }} // Approximate positioning
+                                                        style={{ marginTop: `${topOffset}%` }}
                                                     >
                                                         <Icon size={12} />
                                                         <span className="font-medium">{postDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
@@ -703,7 +580,6 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                 )}
             </div>
 
-            {/* Legend */}
             <div className="p-4 border-t border-gray-200 bg-gray-50 shrink-0">
                 <div className="flex flex-wrap gap-4 justify-center items-center">
                     <div className="text-sm text-gray-600 font-medium">Legenda:</div>
@@ -724,282 +600,70 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                 </div>
             </div>
 
-            {
-                suggestionModal && (
-                    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 animate-in fade-in">
-                        <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
-                                    <Sparkles size={24} />
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-lg text-gray-800">Sugestão de Post com IA</h3>
-                                    <p className="text-sm text-gray-500">{suggestionModal.holiday.name}</p>
-                                </div>
-                            </div>
-
-                            <p className="text-sm text-gray-600 mb-6">
-                                Deseja que a IA gere uma sugestão de conteúdo criativo para o feriado <strong>{suggestionModal.holiday.name}</strong> no dia {suggestionModal.date.toLocaleDateString()}?
-                            </p>
-
-                            <div className="flex gap-3 justify-end">
-                                <button
-                                    onClick={() => setSuggestionModal(null)}
-                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium"
-                                    disabled={isGenerating}
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={generateSuggestion}
-                                    disabled={isGenerating}
-                                    className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-2"
-                                >
-                                    {isGenerating ? (
-                                        <>
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            Gerando...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Sparkles size={16} />
-                                            Gerar Sugestão
-                                        </>
-                                    )}
-                                </button>
+            {suggestionModal && (
+                <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-purple-100 rounded-lg text-purple-600"><Sparkles size={24} /></div>
+                            <div>
+                                <h3 className="font-bold text-lg text-gray-800">Sugestão de Post com IA</h3>
+                                <p className="text-sm text-gray-500">{suggestionModal.holiday.name}</p>
                             </div>
                         </div>
+                        <p className="text-sm text-gray-600 mb-6">
+                            Deseja que a IA gere uma sugestão de conteúdo criativo para o feriado <strong>{suggestionModal.holiday.name}</strong> no dia {suggestionModal.date.toLocaleDateString()}?
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button onClick={() => setSuggestionModal(null)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium" disabled={isGenerating}>Cancelar</button>
+                            <button onClick={generateSuggestion} disabled={isGenerating} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-2">
+                                {isGenerating ? 'Gerando...' : 'Gerar Sugestão'}
+                            </button>
+                        </div>
                     </div>
-                )
-            }
+                </div>
+            )}
 
-            {/* Scheduling Modal */}
             {schedulingModal.isOpen && (
                 <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
                         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white flex justify-between items-center shrink-0">
                             <div>
-                                <h2 className="text-xl font-bold flex items-center gap-2">
-                                    <CalendarIcon size={24} /> Novo Agendamento
-                                </h2>
-                                <p className="text-blue-100 text-sm mt-1">
-                                    {schedulingModal.date?.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                                </p>
+                                <h2 className="text-xl font-bold flex items-center gap-2"><CalendarIcon size={24} /> Novo Agendamento</h2>
+                                <p className="text-blue-100 text-sm mt-1">{schedulingModal.date?.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                             </div>
-                            <button onClick={() => setSchedulingModal({ isOpen: false, date: null })} className="text-white/80 hover:text-white transition-colors">
-                                <X size={24} />
-                            </button>
+                            <button onClick={() => setSchedulingModal({ isOpen: false, date: null })} className="text-white/80 hover:text-white transition-colors"><X size={24} /></button>
                         </div>
-
                         <div className="p-6 space-y-6 overflow-y-auto">
-                            {/* Category Toggle */}
                             <div className="flex p-1 bg-gray-100 rounded-lg mb-6">
-                                <button
-                                    onClick={() => setNewEvent({ ...newEvent, category: 'meeting' })}
-                                    className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${newEvent.category === 'meeting' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                                >
-                                    Compromisso / Reunião
-                                </button>
-                                <button
-                                    onClick={() => setNewEvent({ ...newEvent, category: 'social_post' })}
-                                    className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${newEvent.category === 'social_post' ? 'bg-white shadow text-pink-600' : 'text-gray-500 hover:text-gray-700'}`}
-                                >
-                                    Postagem Social
-                                </button>
+                                <button onClick={() => setNewEvent({ ...newEvent, category: 'meeting' })} className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${newEvent.category === 'meeting' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>Compromisso / Reunião</button>
+                                <button onClick={() => setNewEvent({ ...newEvent, category: 'social_post' })} className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${newEvent.category === 'social_post' ? 'bg-white shadow text-pink-600' : 'text-gray-500 hover:text-gray-700'}`}>Postagem Social</button>
                             </div>
 
                             {newEvent.category === 'meeting' ? (
-                                <>
+                                <div className="space-y-4">
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-gray-700">Título do Evento</label>
-                                        <input
-                                            type="text"
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-lg"
-                                            value={newEvent.title}
-                                            onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                                            placeholder="Adicionar título"
-                                            autoFocus
-                                        />
+                                        <input type="text" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-lg" value={newEvent.title} onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })} placeholder="Adicionar título" autoFocus />
                                     </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-bold text-gray-700">Tipo</label>
-                                            <select
-                                                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                                value={newEvent.type}
-                                                onChange={(e) => setNewEvent({ ...newEvent, type: e.target.value })}
-                                            >
-                                                <option value="meeting">Reunião</option>
-                                                <option value="call">Ligação</option>
-                                                <option value="task">Tarefa</option>
-                                                <option value="reminder">Lembrete</option>
-                                                <option value="deadline">Prazo Final</option>
-                                            </select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-bold text-gray-700">Início</label>
-                                            <input
-                                                type="time"
-                                                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                                value={newEvent.startTime}
-                                                onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-bold text-gray-700">Fim</label>
-                                            <input
-                                                type="time"
-                                                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                                value={newEvent.endTime}
-                                                onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                                            />
-                                        </div>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div><label className="text-sm font-bold text-gray-700">Início</label><input type="time" className="w-full p-2.5 border border-gray-300 rounded-lg" value={newEvent.startTime} onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })} /></div>
+                                        <div><label className="text-sm font-bold text-gray-700">Fim</label><input type="time" className="w-full p-2.5 border border-gray-300 rounded-lg" value={newEvent.endTime} onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })} /></div>
                                     </div>
-
-                                    {/* Video Conference Section */}
-                                    <div className="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                                        <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                                            <Users size={16} /> Adicionar Videoconferência
-                                        </label>
-                                        <div className="flex gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => setNewEvent(prev => ({ ...prev, videoConference: { ...prev.videoConference, type: 'meet' } }))}
-                                                className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2 ${newEvent.videoConference.type === 'meet' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
-                                            >
-                                                Google Meet
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setNewEvent(prev => ({ ...prev, videoConference: { ...prev.videoConference, type: 'zoom' } }))}
-                                                className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2 ${newEvent.videoConference.type === 'zoom' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
-                                            >
-                                                Zoom
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setNewEvent(prev => ({ ...prev, videoConference: { ...prev.videoConference, type: 'teams' } }))}
-                                                className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2 ${newEvent.videoConference.type === 'teams' ? 'bg-blue-100 border-blue-300 text-blue-700' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
-                                            >
-                                                Teams
-                                            </button>
-                                        </div>
-                                        {newEvent.videoConference.type && (
-                                            <div className="flex gap-2 animate-in fade-in slide-in-from-top-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Link da reunião..."
-                                                    value={newEvent.videoConference.link}
-                                                    onChange={(e) => setNewEvent(prev => ({ ...prev, videoConference: { ...prev.videoConference, link: e.target.value } }))}
-                                                    className="flex-1 p-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const links = {
-                                                            meet: 'https://meet.google.com/abc-defg-hij',
-                                                            zoom: 'https://zoom.us/j/123456789',
-                                                            teams: 'https://teams.microsoft.com/l/meetup-join/...'
-                                                        };
-                                                        if (newEvent.videoConference.type) {
-                                                            setNewEvent(prev => ({
-                                                                ...prev,
-                                                                videoConference: { ...prev.videoConference, link: links[newEvent.videoConference.type!] }
-                                                            }));
-                                                        }
-                                                    }}
-                                                    className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                                                >
-                                                    Gerar Link
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700">Descrição</label>
-                                        <textarea
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-32 resize-none"
-                                            value={newEvent.description}
-                                            onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
-                                            placeholder="Detalhes adicionais, pauta da reunião, etc..."
-                                        ></textarea>
-                                    </div>
-                                </>
+                                </div>
                             ) : (
-                                /* Social Post Form */
-                                <>
+                                <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700">Plataforma</label>
-                                        <div className="flex gap-2 overflow-x-auto pb-2">
-                                            {platforms.filter(p => ['instagram', 'facebook', 'linkedin', 'twitter', 'youtube'].includes(p.id)).map(platform => {
-                                                const Icon = getPlatformIcon(platform.id);
-                                                const isSelected = newEvent.platform === platform.id;
-                                                return (
-                                                    <button
-                                                        key={platform.id}
-                                                        onClick={() => setNewEvent({ ...newEvent, platform: platform.id })}
-                                                        className={`px-3 py-2 rounded-lg border flex items-center gap-2 transition-all whitespace-nowrap ${isSelected ? getPlatformColor(platform.id) + ' ring-2 ring-offset-1' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                                                    >
-                                                        <Icon size={16} />
-                                                        {platform.name}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
+                                        <label className="text-sm font-bold text-gray-700">Conteúdo</label>
+                                        <textarea className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none h-32" value={newEvent.content} onChange={(e) => setNewEvent({ ...newEvent, content: e.target.value })} placeholder="Escreva seu post..."></textarea>
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700">Conteúdo do Post</label>
-                                        <textarea
-                                            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none h-40 resize-none"
-                                            value={newEvent.content}
-                                            onChange={(e) => setNewEvent({ ...newEvent, content: e.target.value })}
-                                            placeholder={`Escreva seu post para o ${platforms.find(p => p.id === newEvent.platform)?.name}...`}
-                                            autoFocus
-                                        ></textarea>
-                                        <div className="flex justify-between text-xs text-gray-500">
-                                            <span>{newEvent.content.length} caracteres</span>
-                                            <button className="text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1">
-                                                <Sparkles size={12} /> Melhorar com IA
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700">Horário da Publicação</label>
-                                        <input
-                                            type="time"
-                                            className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 outline-none"
-                                            value={newEvent.startTime}
-                                            onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
-                                        />
-                                    </div>
-
-                                    <div className="p-4 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center text-gray-400 hover:bg-gray-50 hover:border-gray-300 transition-colors cursor-pointer h-32">
-                                        <div className="p-2 bg-gray-100 rounded-full mb-2">
-                                            <Users size={20} />
-                                        </div>
-                                        <span className="text-sm font-medium">Adicionar Mídia (Foto/Vídeo)</span>
-                                    </div>
-                                </>
+                                    <div><label className="text-sm font-bold text-gray-700">Horário</label><input type="time" className="w-full p-2.5 border border-gray-300 rounded-lg" value={newEvent.startTime} onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })} /></div>
+                                </div>
                             )}
-                        </div>
 
-                        <div className="flex justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50 shrink-0">
-                            <button
-                                onClick={() => setSchedulingModal({ isOpen: false, date: null })}
-                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleScheduleEvent}
-                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center gap-2 shadow-lg shadow-blue-200 transition-all"
-                            >
-                                <Save size={18} /> Salvar Agendamento
-                            </button>
+                            <div className="flex justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50 shrink-0">
+                                <button onClick={() => setSchedulingModal({ isOpen: false, date: null })} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors">Cancelar</button>
+                                <button onClick={handleScheduleEvent} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center gap-2 shadow-lg shadow-blue-200 transition-all"><Save size={18} /> Salvar Agendamento</button>
+                            </div>
                         </div>
                     </div>
                 </div>
