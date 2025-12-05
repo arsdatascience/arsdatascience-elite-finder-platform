@@ -49,7 +49,7 @@ const DroppableColumn = ({ column, leads, children }: { column: any, leads: Lead
   return (
     <div
       ref={setNodeRef}
-      className={`w-[270px] flex-shrink-0 rounded-xl ${column.bgColor} p-4 flex flex-col gap-3`}
+      className={`w-[270px] h-[850px] flex-shrink-0 rounded-xl ${column.bgColor} p-4 flex flex-col gap-3`}
     >
       <div className={`flex items-center justify-between pb-3 border-b-2 ${column.color} mb-2`}>
         <h3 className="font-bold text-gray-700">{column.label}</h3>
@@ -57,7 +57,9 @@ const DroppableColumn = ({ column, leads, children }: { column: any, leads: Lead
           {leads.length}
         </span>
       </div>
-      {children}
+      <div className="flex-1 overflow-y-auto pr-1">
+        {children}
+      </div>
     </div>
   );
 };
@@ -629,7 +631,7 @@ export const FlightControl: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 w-full max-w-[1600px] mx-auto pb-[300px]">
+      <div className="flex-1 w-full max-w-[1600px] mx-auto pb-[300px] min-h-[1300px]">
         {viewMode === 'kanban' && (
           <DndContext
             sensors={sensors}
