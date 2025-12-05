@@ -47,14 +47,27 @@ const fetchLeadsForExport = async (req) => {
 };
 
 const exportLeadsPdf = async (req, res) => {
+    console.log('Starting PDF export...');
+    let browser = null;
     try {
         const leads = await fetchLeadsForExport(req);
+        console.log(`Fetched ${leads.length} leads for export.`);
 
-        const browser = await puppeteer.launch({
-            headless: 'new',
-            args: ['--no-sandbox', '--disable-setuid-sandbox'] // Required for Railway/Docker
+        console.log('Launching Puppeteer...');
+        browser = await puppeteer.launch({
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage', // Addresses memory issues in some environments
+                '--disable-gpu'
+            ],
+            timeout: 60000
         });
+        console.log('Puppeteer launched successfully.');
+
         const page = await browser.newPage();
+        console.log('New page created.');
 
         // Basic HTML Template
         const htmlContent = `
@@ -66,11 +79,11 @@ const exportLeadsPdf = async (req, res) => {
                     h1 { color: #333; text-align: center; }
                     table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
                     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    th { bg-color: #f2f2f2; font-weight: bold; }
-                    tr:nth-child(even) { bg-color: #f9f9f9; }
+                    th { background-color: #f2f2f2; font-weight: bold; }
+                    tr:nth-child(even) { background-color: #f9f9f9; }
                     .status { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; }
-                    .status-new { bg-color: #e3f2fd; color: #1565c0; }
-                    .status-closed_won { bg-color: #e8f5e9; color: #2e7d32; }
+                    .status-new { background-color: #e3f2fd; color: #1565c0; }
+                    .status-closed_won { background-color: #e8f5e9; color: #2e7d32; }
                     .footer { margin-top: 20px; text-align: right; font-size: 10px; color: #777; }
                 </style>
             </head>
@@ -114,10 +127,14 @@ const exportLeadsPdf = async (req, res) => {
             </html>
         `;
 
-        await page.setContent(htmlContent);
+        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+        console.log('Page content set.');
+
         const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+        console.log('PDF generated successfully.');
 
         await browser.close();
+        browser = null;
 
         res.set({
             'Content-Type': 'application/pdf',
@@ -127,8 +144,9 @@ const exportLeadsPdf = async (req, res) => {
         res.send(pdfBuffer);
 
     } catch (error) {
-        console.error('Error generating PDF:', error);
-        res.status(500).json({ error: 'Failed to generate PDF report' });
+        console.error('CRITICAL ERROR generating PDF:', error);
+        if (browser) await browser.close();
+        res.status(500).json({ error: 'Failed to generate PDF report', details: error.message });
     }
 };
 
