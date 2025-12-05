@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/services/apiClient';
+import { CampaignModal } from './CampaignModal';
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
@@ -52,6 +53,10 @@ export const Campaigns: React.FC = () => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [platformData, setPlatformData] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+
+  // State for Modal
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Helper Functions
   const formatCurrency = (value: string | number) => {
@@ -165,6 +170,11 @@ export const Campaigns: React.FC = () => {
       console.error('Error exporting:', error);
       alert('Erro ao exportar arquivo. Tente novamente.');
     }
+  };
+
+  const handleCampaignClick = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setIsModalOpen(true);
   };
 
   if (loading && !kpis) {
@@ -449,7 +459,13 @@ export const Campaigns: React.FC = () => {
                 </div>
                 <div className="flex flex-col gap-3">
                   {campaignsByStatus.active.map(camp => (
-                    <CampaignCard key={camp.id} camp={camp} formatCurrency={formatCurrency} formatNumber={formatNumber} />
+                    <CampaignCard
+                      key={camp.id}
+                      camp={camp}
+                      formatCurrency={formatCurrency}
+                      formatNumber={formatNumber}
+                      onClick={() => handleCampaignClick(camp)}
+                    />
                   ))}
                 </div>
               </div>
@@ -464,7 +480,13 @@ export const Campaigns: React.FC = () => {
                 </div>
                 <div className="flex flex-col gap-3">
                   {campaignsByStatus.paused.map(camp => (
-                    <CampaignCard key={camp.id} camp={camp} formatCurrency={formatCurrency} formatNumber={formatNumber} />
+                    <CampaignCard
+                      key={camp.id}
+                      camp={camp}
+                      formatCurrency={formatCurrency}
+                      formatNumber={formatNumber}
+                      onClick={() => handleCampaignClick(camp)}
+                    />
                   ))}
                 </div>
               </div>
@@ -479,7 +501,13 @@ export const Campaigns: React.FC = () => {
                 </div>
                 <div className="flex flex-col gap-3">
                   {campaignsByStatus.ended.map(camp => (
-                    <CampaignCard key={camp.id} camp={camp} formatCurrency={formatCurrency} formatNumber={formatNumber} />
+                    <CampaignCard
+                      key={camp.id}
+                      camp={camp}
+                      formatCurrency={formatCurrency}
+                      formatNumber={formatNumber}
+                      onClick={() => handleCampaignClick(camp)}
+                    />
                   ))}
                 </div>
               </div>
@@ -490,10 +518,14 @@ export const Campaigns: React.FC = () => {
         {viewMode === 'list' && (
           <div className="space-y-3">
             {campaigns.map(camp => (
-              <div key={camp.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all flex items-center justify-between">
+              <div
+                key={camp.id}
+                onClick={() => handleCampaignClick(camp)}
+                className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all flex items-center justify-between cursor-pointer"
+              >
                 <div className="flex items-center gap-4">
                   <div className={`w-2 h-12 rounded-full ${camp.status === 'active' ? 'bg-green-500' :
-                      camp.status === 'paused' ? 'bg-yellow-500' : 'bg-gray-300'
+                    camp.status === 'paused' ? 'bg-yellow-500' : 'bg-gray-300'
                     }`}></div>
                   <div>
                     <h4 className="font-bold text-gray-800">{camp.name}</h4>
@@ -536,7 +568,11 @@ export const Campaigns: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {campaigns.map((camp) => (
-                  <tr key={camp.id} className="hover:bg-gray-50 transition-colors">
+                  <tr
+                    key={camp.id}
+                    onClick={() => handleCampaignClick(camp)}
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900">{camp.name}</div>
                       <div className="text-xs text-gray-400">ID: {camp.id}</div>
@@ -552,10 +588,10 @@ export const Campaigns: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`flex items-center gap-1.5 text-sm font-medium ${camp.status === 'active' ? 'text-green-600' :
-                          camp.status === 'paused' ? 'text-yellow-600' : 'text-gray-500'
+                        camp.status === 'paused' ? 'text-yellow-600' : 'text-gray-500'
                         }`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${camp.status === 'active' ? 'bg-green-600' :
-                            camp.status === 'paused' ? 'bg-yellow-600' : 'bg-gray-500'
+                          camp.status === 'paused' ? 'bg-yellow-600' : 'bg-gray-500'
                           }`}></span> {camp.status}
                       </span>
                     </td>
@@ -575,6 +611,12 @@ export const Campaigns: React.FC = () => {
           </div>
         )}
       </div>
+
+      <CampaignModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        campaign={selectedCampaign}
+      />
     </div>
   );
 };
@@ -595,13 +637,16 @@ const KpiCard = ({ title, value, icon, trend, trendUp, color }: any) => (
   </div>
 );
 
-const CampaignCard = ({ camp, formatCurrency, formatNumber }: any) => (
-  <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all">
+const CampaignCard = ({ camp, formatCurrency, formatNumber, onClick }: any) => (
+  <div
+    onClick={onClick}
+    className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all cursor-pointer"
+  >
     <div className="flex justify-between items-start mb-2">
       <h4 className="font-bold text-gray-800 text-sm line-clamp-2">{camp.name}</h4>
       <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${camp.platform === 'google' ? 'bg-blue-50 text-blue-700' :
-          camp.platform === 'meta' ? 'bg-indigo-50 text-indigo-700' :
-            'bg-gray-50 text-gray-700'
+        camp.platform === 'meta' ? 'bg-indigo-50 text-indigo-700' :
+          'bg-gray-50 text-gray-700'
         }`}>{camp.platform}</span>
     </div>
 

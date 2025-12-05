@@ -10,6 +10,7 @@ import {
   DragStartEvent,
   DragOverEvent,
   DragEndEvent,
+  useDroppable,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -38,6 +39,28 @@ const COLUMNS = [
   { id: LeadStatus.CLOSED_WON, label: 'Fechado', color: 'border-green-500', bgColor: 'bg-green-50' },
   { id: LeadStatus.CLOSED_LOST, label: 'Perdido', color: 'border-red-500', bgColor: 'bg-red-50' }
 ];
+
+// --- Droppable Column Component ---
+const DroppableColumn = ({ column, leads, children }: { column: any, leads: Lead[], children: React.ReactNode }) => {
+  const { setNodeRef } = useDroppable({
+    id: column.id,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`w-[270px] flex-shrink-0 rounded-xl ${column.bgColor} p-4 flex flex-col gap-3`}
+    >
+      <div className={`flex items-center justify-between pb-3 border-b-2 ${column.color} mb-2`}>
+        <h3 className="font-bold text-gray-700">{column.label}</h3>
+        <span className="bg-white px-2 py-1 rounded-full text-xs font-bold text-gray-500 shadow-sm">
+          {leads.length}
+        </span>
+      </div>
+      {children}
+    </div>
+  );
+};
 
 // --- Sortable Item Component ---
 const SortableItem = ({ lead, onClick, onQuickAction }: { lead: Lead, onClick: () => void, onQuickAction: (action: string, lead: Lead) => void }) => {
@@ -166,6 +189,7 @@ export const FlightControl: React.FC = () => {
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [activeDragStatus, setActiveDragStatus] = useState<LeadStatus | null>(null);
 
   // --- Sensors ---
   const sensors = useSensors(
@@ -183,7 +207,6 @@ export const FlightControl: React.FC = () => {
 
     const handleUpdate = (data: any) => {
       console.log('🔄 Real-time update received:', data);
-      // Refresh leads on any update (coaching, status change, etc.)
       fetchLeads();
     };
 
@@ -198,7 +221,6 @@ export const FlightControl: React.FC = () => {
 
   const fetchLeads = async () => {
     try {
-      // Don't set loading to true on background refreshes if we already have data
       if (leads.length === 0) setLoading(true);
       const data = await apiClient.leads.getLeads(selectedClient !== 'all' ? selectedClient : undefined);
       setLeads(data);
@@ -220,67 +242,87 @@ export const FlightControl: React.FC = () => {
 
   // --- Handlers ---
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveDragId(event.active.id as string);
+    const { active } = event;
+    setActiveDragId(active.id as string);
+    const lead = leads.find(l => l.id === active.id);
+    if (lead) {
+      setActiveDragStatus(lead.status);
+    }
   };
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) return;
 
-    const activeId = active.id;
-    const overId = over.id;
+    const activeId = active.id as string;
+    const overId = over.id as string;
 
     if (activeId === overId) return;
 
     const isActiveALead = active.data.current?.type === 'Lead';
-
     if (!isActiveALead) return;
 
-    // Dropping over a column
-    if (COLUMNS.some(col => col.id === overId)) {
-      // Logic handled in DragEnd for simplicity in this version
-    }
-  };
+    const activeLead = leads.find(l => l.id === activeId);
+    if (!activeLead) return;
 
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    setActiveDragId(null);
+    const isOverColumn = COLUMNS.some(col => col.id === overId);
+    const isOverLead = active.data.current?.type === 'Lead' && over.data.current?.type === 'Lead';
 
-    if (!over) return;
+    let newStatus: LeadStatus | null = null;
 
-    const activeId = active.id as string;
-    const overId = over.id as string;
-
-    // Find the lead
-    const lead = leads.find(l => l.id === activeId);
-    if (!lead) return;
-
-    // Check if dropped on a column
-    const isColumn = COLUMNS.some(col => col.id === overId);
-    let newStatus = lead.status;
-
-    if (isColumn) {
+    if (isOverColumn) {
       newStatus = overId as LeadStatus;
-    } else {
-      // Dropped on another lead, find that lead's status
+    } else if (isOverLead) {
       const overLead = leads.find(l => l.id === overId);
       if (overLead) {
         newStatus = overLead.status;
       }
     }
 
-    if (newStatus !== lead.status) {
-      // Optimistic Update
-      const updatedLeads = leads.map(l =>
-        l.id === activeId ? { ...l, status: newStatus } : l
-      );
-      setLeads(updatedLeads);
+    if (newStatus && newStatus !== activeLead.status) {
+      setLeads((prev) => {
+        return prev.map(l =>
+          l.id === activeId ? { ...l, status: newStatus! } : l
+        );
+      });
+    }
+  };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveDragId(null);
+    setActiveDragStatus(null);
+
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const lead = leads.find(l => l.id === activeId);
+    if (!lead) return;
+
+    const isColumn = COLUMNS.some(col => col.id === overId);
+    let newStatus = lead.status;
+
+    if (isColumn) {
+      newStatus = overId as LeadStatus;
+    } else {
+      const overLead = leads.find(l => l.id === overId);
+      if (overLead) {
+        newStatus = overLead.status;
+      }
+    }
+
+    console.log('DragEnd:', { activeId, activeDragStatus, newStatus });
+
+    if (activeDragStatus && newStatus !== activeDragStatus) {
       try {
+        console.log('Sending update to backend...');
         await apiClient.leads.updateLeadStatus(activeId, newStatus);
+        console.log('Update success!');
       } catch (error) {
         console.error('Error updating status:', error);
-        fetchLeads(); // Revert
+        fetchLeads();
       }
     }
   };
@@ -340,24 +382,14 @@ export const FlightControl: React.FC = () => {
 
   // --- Filtering Logic ---
   const filteredLeads = leads.filter(lead => {
-    // 1. Search (Name/Email)
     const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    // 2. Source
     const matchesSource = selectedSource === 'all' || lead.source === selectedSource;
-
-    // 3. Responsible (Assigned To)
     const matchesAssignee = selectedAssignee === 'all' || lead.assignedTo === selectedAssignee;
-
-    // 4. Value Range
     const matchesMin = !minValue || lead.value >= parseFloat(minValue);
     const matchesMax = !maxValue || lead.value <= parseFloat(maxValue);
 
-    // 5. Date Range (Created At)
-    // Assuming lead.lastContact or adding createdAt if available. Using lastContact for now or mocking createdAt if missing.
-    // In a real scenario, we'd use lead.createdAt. Let's assume it exists on the type or fallback to lastContact.
-    const leadDate = new Date(lead.lastContact || new Date().toISOString()); // Fallback
+    const leadDate = new Date(lead.lastContact || new Date().toISOString());
     const matchesStart = !startDate || leadDate >= new Date(startDate);
     const matchesEnd = !endDate || leadDate <= new Date(endDate + 'T23:59:59');
 
@@ -380,7 +412,6 @@ export const FlightControl: React.FC = () => {
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
-  // Extract unique values for dropdowns and merge with defaults
   const DEFAULT_SOURCES = [
     'Google Ads', 'Meta Ads', 'Instagram', 'Facebook', 'LinkedIn',
     'TikTok', 'YouTube', 'Email Marketing', 'WhatsApp', 'Site/Blog',
@@ -389,7 +420,6 @@ export const FlightControl: React.FC = () => {
 
   const uniqueSources = Array.from(new Set(leads.map(l => l.source).filter(Boolean)));
   const sources = Array.from(new Set([...DEFAULT_SOURCES, ...uniqueSources])).sort();
-
   const assignees = Array.from(new Set(leads.map(l => l.assignedTo).filter(Boolean)));
 
   if (loading) {
@@ -401,8 +431,8 @@ export const FlightControl: React.FC = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* Header - Fixed at top */}
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      {/* Header */}
       <div className="flex-shrink-0 p-4 md:p-8 bg-gray-50">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
@@ -414,7 +444,6 @@ export const FlightControl: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
-            {/* View Switcher */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Kanban">
                 <LayoutGrid size={18} />
@@ -466,7 +495,7 @@ export const FlightControl: React.FC = () => {
           </div>
         </div>
 
-        {/* Metrics Grid */}
+        {/* Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-blue-500">
             <div className="flex items-center justify-between mb-2">
@@ -502,10 +531,9 @@ export const FlightControl: React.FC = () => {
           </div>
         </div>
 
-        {/* Filters Bar */}
+        {/* Filters */}
         <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
           <div className="flex flex-wrap gap-4 items-center">
-            {/* Search */}
             <div className="flex-1 min-w-[200px] relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <input
@@ -517,7 +545,6 @@ export const FlightControl: React.FC = () => {
               />
             </div>
 
-            {/* Source Filter */}
             <select
               className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={selectedSource}
@@ -529,7 +556,6 @@ export const FlightControl: React.FC = () => {
               ))}
             </select>
 
-            {/* Assignee Filter */}
             <select
               className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={selectedAssignee}
@@ -544,15 +570,12 @@ export const FlightControl: React.FC = () => {
 
           <div className="flex flex-wrap gap-4 items-center border-t border-gray-100 pt-4">
             <span className="text-sm font-medium text-gray-500 flex items-center gap-1"><Filter size={14} /> Filtros Avançados:</span>
-
-            {/* Date Range */}
             <div className="flex items-center gap-2">
               <input
                 type="date"
                 className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                title="Data Inicial"
               />
               <span className="text-gray-400">-</span>
               <input
@@ -560,11 +583,8 @@ export const FlightControl: React.FC = () => {
                 className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                title="Data Final"
               />
             </div>
-
-            {/* Value Range */}
             <div className="flex items-center gap-2">
               <div className="relative w-24">
                 <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">R$</span>
@@ -588,8 +608,6 @@ export const FlightControl: React.FC = () => {
                 />
               </div>
             </div>
-
-            {/* Clear Filters */}
             {(searchTerm || selectedSource !== 'all' || selectedAssignee !== 'all' || startDate || endDate || minValue || maxValue) && (
               <button
                 onClick={() => {
@@ -610,8 +628,8 @@ export const FlightControl: React.FC = () => {
         </div>
       </div>
 
-      {/* Content Area - Scrollable */}
-      <div className="flex-1 relative overflow-hidden w-full max-w-[1600px] mx-auto">
+      {/* Content Area */}
+      <div className="flex-1 w-full max-w-[1600px] mx-auto pb-8">
         {viewMode === 'kanban' && (
           <DndContext
             sensors={sensors}
@@ -620,22 +638,15 @@ export const FlightControl: React.FC = () => {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
-            <div className="absolute inset-0 overflow-x-auto overflow-y-hidden px-4 md:px-8 pb-4">
-              <div className="flex gap-6 h-full">
+            <div className="overflow-x-auto px-4 md:px-8 pb-4 min-h-[500px]">
+              <div className="flex gap-6 min-w-max">
                 {COLUMNS.map(column => (
-                  <div key={column.id} className={`w-[270px] flex-shrink-0 rounded-xl ${column.bgColor} p-4 flex flex-col gap-3`}>
-                    <div className={`flex items-center justify-between pb-3 border-b-2 ${column.color} mb-2`}>
-                      <h3 className="font-bold text-gray-700">{column.label}</h3>
-                      <span className="bg-white px-2 py-1 rounded-full text-xs font-bold text-gray-500 shadow-sm">
-                        {getLeadsByStatus(column.id).length}
-                      </span>
-                    </div>
-
+                  <DroppableColumn key={column.id} column={column} leads={getLeadsByStatus(column.id)}>
                     <SortableContext
                       items={getLeadsByStatus(column.id).map(l => l.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <div className="flex-1 overflow-y-auto flex flex-col gap-3 pr-2">
+                      <div className="flex-1 flex flex-col gap-3 min-h-[100px]">
                         {getLeadsByStatus(column.id).map(lead => (
                           <SortableItem
                             key={lead.id}
@@ -646,7 +657,7 @@ export const FlightControl: React.FC = () => {
                         ))}
                       </div>
                     </SortableContext>
-                  </div>
+                  </DroppableColumn>
                 ))}
               </div>
             </div>
@@ -662,14 +673,14 @@ export const FlightControl: React.FC = () => {
         )}
 
         {viewMode === 'list' && (
-          <div className="h-full overflow-y-auto px-4 md:px-8 pb-4">
+          <div className="px-4 md:px-8 pb-4">
             <div className="max-w-4xl mx-auto space-y-3">
               {filteredLeads.map(lead => (
                 <div key={lead.id} onClick={() => setSelectedLead(lead)} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className={`w-2 h-12 rounded-full ${lead.status === LeadStatus.NEW ? 'bg-blue-500' :
-                        lead.status === LeadStatus.CLOSED_WON ? 'bg-green-500' :
-                          lead.status === LeadStatus.CLOSED_LOST ? 'bg-red-500' : 'bg-gray-300'
+                      lead.status === LeadStatus.CLOSED_WON ? 'bg-green-500' :
+                        lead.status === LeadStatus.CLOSED_LOST ? 'bg-red-500' : 'bg-gray-300'
                       }`}></div>
                     <div>
                       <h4 className="font-bold text-gray-800">{lead.name}</h4>
@@ -694,7 +705,7 @@ export const FlightControl: React.FC = () => {
         )}
 
         {viewMode === 'table' && (
-          <div className="h-full overflow-auto px-4 md:px-8 pb-4">
+          <div className="px-4 md:px-8 pb-4">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-w-[1000px]">
               <table className="w-full text-left">
                 <thead className="bg-gray-50 border-b border-gray-200">

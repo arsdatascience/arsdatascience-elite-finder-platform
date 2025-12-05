@@ -159,6 +159,10 @@ export const apiClient = {
         deleteClient: async (id: number) => {
             const response = await axiosInstance.delete(`/clients/${id}`);
             return response.data;
+        },
+        exportExcel: async () => {
+            const response = await axiosInstance.get('/export/clients/excel', { responseType: 'blob' });
+            return response.data;
         }
     },
     leads: {

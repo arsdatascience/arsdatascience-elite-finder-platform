@@ -381,17 +381,25 @@ const updateLeadStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     const { isSuperAdmin, tenantId } = getTenantScope(req);
+    console.log(`[updateLeadStatus] ID: ${id}, Status: ${status}, isSuperAdmin: ${isSuperAdmin}, tenantId: ${tenantId}`);
 
     try {
-        // SAAS FIX: Verify ownership
-        const result = await pool.query(
-            `UPDATE leads l
-             SET status = $1, updated_at = NOW() 
-             FROM clients c
-             WHERE l.client_id = c.id AND l.id = $2 AND c.tenant_id = $3
-             RETURNING l.* `,
-            [status, id, tenantId]
-        );
+        let query = `
+            UPDATE leads l
+            SET status = $1, updated_at = NOW() 
+            FROM clients c
+            WHERE l.client_id = c.id AND l.id = $2
+        `;
+        const params = [status, id];
+
+        if (!isSuperAdmin) {
+            query += ` AND c.tenant_id = $3`;
+            params.push(tenantId);
+        }
+
+        query += ` RETURNING l.*`;
+
+        const result = await pool.query(query, params);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Lead not found or access denied' });

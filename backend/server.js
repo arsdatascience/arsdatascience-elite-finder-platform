@@ -403,6 +403,7 @@ app.get('/api/export/leads/pdf', authenticateToken, exportController.exportLeads
 app.get('/api/export/leads/excel', authenticateToken, exportController.exportLeadsExcel);
 app.get('/api/export/campaigns/pdf', authenticateToken, exportController.exportCampaignsPdf);
 app.get('/api/export/campaigns/excel', authenticateToken, exportController.exportCampaignsExcel);
+app.get('/api/export/clients/excel', authenticateToken, exportController.exportClientsExcel);
 
 // --- SOCIAL MEDIA ROUTES ---
 app.get('/api/social-posts', authenticateToken, socialMediaController.getPosts);

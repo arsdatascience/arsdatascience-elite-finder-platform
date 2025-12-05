@@ -388,9 +388,84 @@ const exportCampaignsExcel = async (req, res) => {
     }
 };
 
+const fetchClientsForExport = async (req) => {
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
+
+    let query = `
+        SELECT 
+            c.id, c.name, c.email, c.phone, c.company, c.status, c.notes,
+            c.created_at as "createdAt",
+            c.updated_at as "updatedAt"
+        FROM clients c
+    `;
+    let params = [];
+
+    // if (!isSuperAdmin) {
+    //    query += ` WHERE c.tenant_id = $1`;
+    //    params.push(tenantId);
+    // }
+
+    query += ` ORDER BY c.created_at DESC`;
+
+    const result = await pool.query(query, params);
+    return result.rows;
+};
+
+const exportClientsExcel = async (req, res) => {
+    try {
+        const clients = await fetchClientsForExport(req);
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Clientes');
+
+        worksheet.columns = [
+            { header: 'ID', key: 'id', width: 10 },
+            { header: 'Nome', key: 'name', width: 30 },
+            { header: 'Email', key: 'email', width: 30 },
+            { header: 'Telefone', key: 'phone', width: 20 },
+            { header: 'Empresa', key: 'company', width: 25 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'Notas', key: 'notes', width: 40 },
+            { header: 'Data Criação', key: 'createdAt', width: 20 },
+        ];
+
+        // Style header
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' }
+        };
+
+        clients.forEach(client => {
+            worksheet.addRow({
+                id: client.id,
+                name: client.name,
+                email: client.email,
+                phone: client.phone,
+                company: client.company,
+                status: client.status,
+                notes: client.notes,
+                createdAt: new Date(client.createdAt).toLocaleDateString('pt-BR')
+            });
+        });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="clients_export.xlsx"');
+
+        await workbook.xlsx.write(res);
+        res.end();
+
+    } catch (error) {
+        console.error('Error generating Clients Excel:', error);
+        res.status(500).json({ error: 'Failed to generate Excel export' });
+    }
+};
+
 module.exports = {
     exportLeadsPdf,
     exportLeadsExcel,
     exportCampaignsPdf,
-    exportCampaignsExcel
+    exportCampaignsExcel,
+    exportClientsExcel
 };
