@@ -451,17 +451,17 @@ export const FlightControl: React.FC = () => {
 
             <button
               onClick={() => handleExport('pdf')}
-              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg transition-colors font-medium text-sm border border-red-200"
               title="Exportar PDF"
             >
-              <FileText size={20} />
+              <FileText size={18} /> Exportar PDF
             </button>
             <button
               onClick={() => handleExport('excel')}
-              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors font-medium text-sm border border-green-200"
               title="Exportar Excel"
             >
-              <FileSpreadsheet size={20} />
+              <FileSpreadsheet size={18} /> Exportar XLS
             </button>
           </div>
         </div>
