@@ -73,23 +73,23 @@ const SortableItem = ({ lead, onClick, onQuickAction }: { lead: Lead, onClick: (
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 cursor-move hover:shadow-md transition-all group relative"
+      className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-move transition-all relative"
     >
       <div className="flex justify-between items-start mb-2">
-        <h4 className="font-bold text-gray-800 line-clamp-1">{lead.name}</h4>
+        <h4 className="font-bold text-gray-800 line-clamp-1 text-sm">{lead.name}</h4>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onClick();
           }}
-          className="text-gray-300 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-all p-1 hover:bg-blue-50 rounded"
+          className="text-gray-400 hover:text-blue-600 transition-all p-1 hover:bg-blue-50 rounded"
           title="Editar Lead"
         >
           <MoreVertical size={16} />
         </button>
       </div>
 
-      <div className="space-y-2 mb-3">
+      <div className="space-y-1.5 mb-3">
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <Mail size={12} />
           <span className="truncate">{lead.email}</span>
@@ -106,8 +106,8 @@ const SortableItem = ({ lead, onClick, onQuickAction }: { lead: Lead, onClick: (
         )}
       </div>
 
-      {/* Quick Actions Overlay (Visible on Hover) */}
-      <div className="absolute inset-x-0 bottom-10 flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 py-1">
+      {/* Quick Actions - Always Visible */}
+      <div className="flex justify-center gap-2 py-2 border-t border-gray-50 mt-2">
         <button onClick={(e) => { e.stopPropagation(); onQuickAction('whatsapp', lead); }} className="p-1.5 bg-green-100 text-green-600 rounded-full hover:bg-green-200" title="WhatsApp">
           <MessageCircle size={14} />
         </button>
@@ -119,11 +119,11 @@ const SortableItem = ({ lead, onClick, onQuickAction }: { lead: Lead, onClick: (
         </button>
       </div>
 
-      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
-        <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
+        <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
           {lead.source}
         </span>
-        <span className="text-sm font-bold text-green-600">
+        <span className="text-xs font-bold text-green-600">
           {formatCurrency(lead.value)}
         </span>
       </div>
@@ -586,7 +586,7 @@ export const FlightControl: React.FC = () => {
             <div className="absolute inset-0 overflow-x-auto overflow-y-hidden px-4 md:px-8 pb-4">
               <div className="flex gap-6 h-full">
                 {COLUMNS.map(column => (
-                  <div key={column.id} className={`w-80 flex-shrink-0 rounded-xl ${column.bgColor} p-4 flex flex-col gap-3`}>
+                  <div key={column.id} className={`w-[270px] flex-shrink-0 rounded-xl ${column.bgColor} p-4 flex flex-col gap-3`}>
                     <div className={`flex items-center justify-between pb-3 border-b-2 ${column.color} mb-2`}>
                       <h3 className="font-bold text-gray-700">{column.label}</h3>
                       <span className="bg-white px-2 py-1 rounded-full text-xs font-bold text-gray-500 shadow-sm">
