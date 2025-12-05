@@ -381,298 +381,306 @@ export const FlightControl: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen min-w-fit bg-gray-50 p-4 md:p-8 font-sans">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-            <Users className="text-blue-600" /> Controle de Voo
-            <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.FlightControl}</span>
-          </h1>
-          <p className="text-gray-500 mt-1">Gestão operacional de leads em tempo real</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
-          {/* View Switcher */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Kanban">
-              <LayoutGrid size={18} />
-            </button>
-            <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Lista">
-              <ListIcon size={18} />
-            </button>
-            <button onClick={() => setViewMode('table')} className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Tabela">
-              <TableIcon size={18} />
-            </button>
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+      {/* Header - Fixed at top */}
+      <div className="flex-shrink-0 p-4 md:p-8 bg-gray-50">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+              <Users className="text-blue-600" /> Controle de Voo
+              <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.FlightControl}</span>
+            </h1>
+            <p className="text-gray-500 mt-1">Gestão operacional de leads em tempo real</p>
           </div>
 
-          <div className="h-6 w-px bg-gray-300 mx-1"></div>
-
-          <select
-            value={selectedClient}
-            onChange={(e) => setSelectedClient(e.target.value)}
-            className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
-          >
-            <option value="all">Todos os Clientes</option>
-            {clients.map(client => (
-              <option key={client.id} value={client.id}>{client.name}</option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => setShowNewLeadModal(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 transition-all text-sm"
-          >
-            <Plus size={16} /> Novo Lead
-          </button>
-        </div>
-      </div>
-
-      {/* Metrics Grid (Preserved) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-blue-500">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 rounded-lg bg-blue-50"><Target size={20} className="text-blue-600" /></div>
-            <TrendingUp size={16} className="text-green-500" />
-          </div>
-          <p className="text-sm text-gray-500">Total de Leads</p>
-          <h3 className="text-2xl font-bold text-gray-800">{metrics.totalLeads}</h3>
-        </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-green-500">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 rounded-lg bg-green-50"><DollarSign size={20} className="text-green-600" /></div>
-            <TrendingUp size={16} className="text-green-500" />
-          </div>
-          <p className="text-sm text-gray-500">Pipeline Total</p>
-          <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(metrics.totalValue)}</h3>
-        </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-purple-500">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 rounded-lg bg-purple-50"><CheckCircle size={20} className="text-purple-600" /></div>
-            <TrendingUp size={16} className="text-green-500" />
-          </div>
-          <p className="text-sm text-gray-500">Taxa de Conversão</p>
-          <h3 className="text-2xl font-bold text-gray-800">{metrics.conversionRate.toFixed(1)}%</h3>
-        </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-orange-500">
-          <div className="flex items-center justify-between mb-2">
-            <div className="p-2 rounded-lg bg-orange-50"><DollarSign size={20} className="text-orange-600" /></div>
-            <TrendingUp size={16} className="text-green-500" />
-          </div>
-          <p className="text-sm text-gray-500">Ticket Médio</p>
-          <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(metrics.avgDealSize)}</h3>
-        </div>
-      </div>
-
-      {/* Filters Bar */}
-      <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-8">
-        <div className="flex flex-wrap gap-4 items-center">
-          {/* Search */}
-          <div className="flex-1 min-w-[200px] relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="Buscar por nome ou email..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          {/* Source Filter */}
-          <select
-            className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={selectedSource}
-            onChange={(e) => setSelectedSource(e.target.value)}
-          >
-            <option value="all">Origem: Todas</option>
-            {sources.map(source => (
-              <option key={source} value={source}>{source}</option>
-            ))}
-          </select>
-
-          {/* Assignee Filter */}
-          <select
-            className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={selectedAssignee}
-            onChange={(e) => setSelectedAssignee(e.target.value)}
-          >
-            <option value="all">Responsável: Todos</option>
-            {assignees.map(assignee => (
-              <option key={assignee} value={assignee}>{assignee}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex flex-wrap gap-4 items-center border-t border-gray-100 pt-4">
-          <span className="text-sm font-medium text-gray-500 flex items-center gap-1"><Filter size={14} /> Filtros Avançados:</span>
-
-          {/* Date Range */}
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              title="Data Inicial"
-            />
-            <span className="text-gray-400">-</span>
-            <input
-              type="date"
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              title="Data Final"
-            />
-          </div>
-
-          {/* Value Range */}
-          <div className="flex items-center gap-2">
-            <div className="relative w-24">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">R$</span>
-              <input
-                type="number"
-                placeholder="Min"
-                className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={minValue}
-                onChange={(e) => setMinValue(e.target.value)}
-              />
+          <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
+            {/* View Switcher */}
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Kanban">
+                <LayoutGrid size={18} />
+              </button>
+              <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Lista">
+                <ListIcon size={18} />
+              </button>
+              <button onClick={() => setViewMode('table')} className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Tabela">
+                <TableIcon size={18} />
+              </button>
             </div>
-            <span className="text-gray-400">-</span>
-            <div className="relative w-24">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">R$</span>
-              <input
-                type="number"
-                placeholder="Max"
-                className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={maxValue}
-                onChange={(e) => setMaxValue(e.target.value)}
-              />
-            </div>
-          </div>
 
-          {/* Clear Filters */}
-          {(searchTerm || selectedSource !== 'all' || selectedAssignee !== 'all' || startDate || endDate || minValue || maxValue) && (
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedSource('all');
-                setSelectedAssignee('all');
-                setStartDate('');
-                setEndDate('');
-                setMinValue('');
-                setMaxValue('');
-              }}
-              className="text-xs text-red-500 hover:text-red-700 font-medium ml-auto"
+            <div className="h-6 w-px bg-gray-300 mx-1"></div>
+
+            <select
+              value={selectedClient}
+              onChange={(e) => setSelectedClient(e.target.value)}
+              className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              Limpar Filtros
+              <option value="all">Todos os Clientes</option>
+              {clients.map(client => (
+                <option key={client.id} value={client.id}>{client.name}</option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => setShowNewLeadModal(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 transition-all text-sm"
+            >
+              <Plus size={16} /> Novo Lead
             </button>
-          )}
+          </div>
+        </div>
+
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-blue-500">
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 rounded-lg bg-blue-50"><Target size={20} className="text-blue-600" /></div>
+              <TrendingUp size={16} className="text-green-500" />
+            </div>
+            <p className="text-sm text-gray-500">Total de Leads</p>
+            <h3 className="text-2xl font-bold text-gray-800">{metrics.totalLeads}</h3>
+          </div>
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-green-500">
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 rounded-lg bg-green-50"><DollarSign size={20} className="text-green-600" /></div>
+              <TrendingUp size={16} className="text-green-500" />
+            </div>
+            <p className="text-sm text-gray-500">Pipeline Total</p>
+            <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(metrics.totalValue)}</h3>
+          </div>
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-purple-500">
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 rounded-lg bg-purple-50"><CheckCircle size={20} className="text-purple-600" /></div>
+              <TrendingUp size={16} className="text-green-500" />
+            </div>
+            <p className="text-sm text-gray-500">Taxa de Conversão</p>
+            <h3 className="text-2xl font-bold text-gray-800">{metrics.conversionRate.toFixed(1)}%</h3>
+          </div>
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-orange-500">
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 rounded-lg bg-orange-50"><DollarSign size={20} className="text-orange-600" /></div>
+              <TrendingUp size={16} className="text-green-500" />
+            </div>
+            <p className="text-sm text-gray-500">Ticket Médio</p>
+            <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(metrics.avgDealSize)}</h3>
+          </div>
+        </div>
+
+        {/* Filters Bar */}
+        <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex flex-wrap gap-4 items-center">
+            {/* Search */}
+            <div className="flex-1 min-w-[200px] relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                placeholder="Buscar por nome ou email..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+
+            {/* Source Filter */}
+            <select
+              className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={selectedSource}
+              onChange={(e) => setSelectedSource(e.target.value)}
+            >
+              <option value="all">Origem: Todas</option>
+              {sources.map(source => (
+                <option key={source} value={source}>{source}</option>
+              ))}
+            </select>
+
+            {/* Assignee Filter */}
+            <select
+              className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={selectedAssignee}
+              onChange={(e) => setSelectedAssignee(e.target.value)}
+            >
+              <option value="all">Responsável: Todos</option>
+              {assignees.map(assignee => (
+                <option key={assignee} value={assignee}>{assignee}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-wrap gap-4 items-center border-t border-gray-100 pt-4">
+            <span className="text-sm font-medium text-gray-500 flex items-center gap-1"><Filter size={14} /> Filtros Avançados:</span>
+
+            {/* Date Range */}
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                title="Data Inicial"
+              />
+              <span className="text-gray-400">-</span>
+              <input
+                type="date"
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                title="Data Final"
+              />
+            </div>
+
+            {/* Value Range */}
+            <div className="flex items-center gap-2">
+              <div className="relative w-24">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">R$</span>
+                <input
+                  type="number"
+                  placeholder="Min"
+                  className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={minValue}
+                  onChange={(e) => setMinValue(e.target.value)}
+                />
+              </div>
+              <span className="text-gray-400">-</span>
+              <div className="relative w-24">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">R$</span>
+                <input
+                  type="number"
+                  placeholder="Max"
+                  className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={maxValue}
+                  onChange={(e) => setMaxValue(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Clear Filters */}
+            {(searchTerm || selectedSource !== 'all' || selectedAssignee !== 'all' || startDate || endDate || minValue || maxValue) && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedSource('all');
+                  setSelectedAssignee('all');
+                  setStartDate('');
+                  setEndDate('');
+                  setMinValue('');
+                  setMaxValue('');
+                }}
+                className="text-xs text-red-500 hover:text-red-700 font-medium ml-auto"
+              >
+                Limpar Filtros
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Content Area */}
-      {viewMode === 'kanban' ? (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="flex gap-6 min-w-max pb-4 px-1 pr-6 overflow-x-auto">
-            {COLUMNS.map(column => (
-              <div key={column.id} className={`w-[320px] flex-shrink-0 rounded-xl ${column.bgColor} p-4 flex flex-col gap-3 min-h-[600px]`}>
-                <div className={`flex items-center justify-between pb-3 border-b-2 ${column.color} mb-2`}>
-                  <h3 className="font-bold text-gray-700">{column.label}</h3>
-                  <span className="bg-white px-2 py-1 rounded-full text-xs font-bold text-gray-500 shadow-sm">
-                    {getLeadsByStatus(column.id).length}
-                  </span>
-                </div>
+      {/* Content Area - Scrollable */}
+      <div className="flex-1 relative overflow-hidden w-full max-w-[1600px] mx-auto">
+        {viewMode === 'kanban' ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="absolute inset-0 overflow-x-auto overflow-y-hidden px-4 md:px-8 pb-4">
+              <div className="flex gap-6 h-full">
+                {COLUMNS.map(column => (
+                  <div key={column.id} className={`w-80 flex-shrink-0 rounded-xl ${column.bgColor} p-4 flex flex-col gap-3`}>
+                    <div className={`flex items-center justify-between pb-3 border-b-2 ${column.color} mb-2`}>
+                      <h3 className="font-bold text-gray-700">{column.label}</h3>
+                      <span className="bg-white px-2 py-1 rounded-full text-xs font-bold text-gray-500 shadow-sm">
+                        {getLeadsByStatus(column.id).length}
+                      </span>
+                    </div>
 
-                <SortableContext
-                  items={getLeadsByStatus(column.id).map(l => l.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="flex-1 flex flex-col gap-3">
-                    {getLeadsByStatus(column.id).map(lead => (
-                      <SortableItem
-                        key={lead.id}
-                        lead={lead}
-                        onClick={() => setSelectedLead(lead)}
-                        onQuickAction={handleQuickAction}
-                      />
-                    ))}
+                    <SortableContext
+                      items={getLeadsByStatus(column.id).map(l => l.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="flex-1 overflow-y-auto flex flex-col gap-3 pr-2">
+                        {getLeadsByStatus(column.id).map(lead => (
+                          <SortableItem
+                            key={lead.id}
+                            lead={lead}
+                            onClick={() => setSelectedLead(lead)}
+                            onQuickAction={handleQuickAction}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
                   </div>
-                </SortableContext>
+                ))}
               </div>
-            ))}
+            </div>
+
+            <DragOverlay>
+              {activeDragId ? (
+                <div className="bg-white p-4 rounded-lg shadow-xl border-2 border-blue-500 rotate-2 scale-105 w-[300px]">
+                  <h4 className="font-bold text-gray-800">{leads.find(l => l.id === activeDragId)?.name}</h4>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        ) : (
+          <div className="h-full overflow-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-w-[800px]">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Nome</th>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Email</th>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Origem</th>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Responsável</th>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Status</th>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Valor</th>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLeads.map(lead => (
+                    <tr key={lead.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="p-4 font-medium text-gray-800">{lead.name}</td>
+                      <td className="p-4 text-gray-600 text-sm">{lead.email}</td>
+                      <td className="p-4 text-gray-600 text-sm">{lead.source}</td>
+                      <td className="p-4 text-gray-600 text-sm">{lead.assignedTo || '-'}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${lead.status === LeadStatus.NEW ? 'bg-blue-100 text-blue-700' :
+                          lead.status === LeadStatus.CLOSED_WON ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                          {lead.status}
+                        </span>
+                      </td>
+                      <td className="p-4 font-bold text-green-600">{formatCurrency(lead.value)}</td>
+                      <td className="p-4">
+                        <button onClick={() => setSelectedLead(lead)} className="text-blue-600 hover:text-blue-800 font-medium text-sm">Editar</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
+        )}
 
-          <DragOverlay>
-            {activeDragId ? (
-              <div className="bg-white p-4 rounded-lg shadow-xl border-2 border-blue-500 rotate-2 scale-105 w-[300px]">
-                <h4 className="font-bold text-gray-800">{leads.find(l => l.id === activeDragId)?.name}</h4>
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="p-4 font-bold text-gray-600 text-sm">Nome</th>
-                <th className="p-4 font-bold text-gray-600 text-sm">Email</th>
-                <th className="p-4 font-bold text-gray-600 text-sm">Origem</th>
-                <th className="p-4 font-bold text-gray-600 text-sm">Responsável</th>
-                <th className="p-4 font-bold text-gray-600 text-sm">Status</th>
-                <th className="p-4 font-bold text-gray-600 text-sm">Valor</th>
-                <th className="p-4 font-bold text-gray-600 text-sm">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLeads.map(lead => (
-                <tr key={lead.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="p-4 font-medium text-gray-800">{lead.name}</td>
-                  <td className="p-4 text-gray-600 text-sm">{lead.email}</td>
-                  <td className="p-4 text-gray-600 text-sm">{lead.source}</td>
-                  <td className="p-4 text-gray-600 text-sm">{lead.assignedTo || '-'}</td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${lead.status === LeadStatus.NEW ? 'bg-blue-100 text-blue-700' :
-                      lead.status === LeadStatus.CLOSED_WON ? 'bg-green-100 text-green-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                      {lead.status}
-                    </span>
-                  </td>
-                  <td className="p-4 font-bold text-green-600">{formatCurrency(lead.value)}</td>
-                  <td className="p-4">
-                    <button onClick={() => setSelectedLead(lead)} className="text-blue-600 hover:text-blue-800 font-medium text-sm">Editar</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        {selectedLead && (
+          <LeadModal
+            isOpen={!!selectedLead}
+            onClose={() => setSelectedLead(null)}
+            lead={selectedLead}
+            onSave={(data) => handleUpdateLead(selectedLead.id, data)}
+            mode="edit"
+          />
+        )}
 
-      {selectedLead && (
         <LeadModal
-          isOpen={!!selectedLead}
-          onClose={() => setSelectedLead(null)}
-          lead={selectedLead}
-          onSave={(data) => handleUpdateLead(selectedLead.id, data)}
-          mode="edit"
+          isOpen={showNewLeadModal}
+          onClose={() => setShowNewLeadModal(false)}
+          onSave={handleAddLead}
+          mode="create"
         />
-      )}
-
-      <LeadModal
-        isOpen={showNewLeadModal}
-        onClose={() => setShowNewLeadModal(false)}
-        onSave={handleAddLead}
-        mode="create"
-      />
+      </div>
     </div>
   );
 };
