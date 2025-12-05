@@ -5,7 +5,7 @@ import { ViewState } from '@/types';
 import { Rocket } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { UserCircle, Shield, X, LogOut } from 'lucide-react';
+import { UserCircle, Shield, X, LogOut, Activity } from 'lucide-react';
 
 interface SidebarProps {
   activeView: ViewState;
@@ -66,6 +66,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen
               Admin Panel
             </button>
           )}
+
+
+          {/* BullMQ Dashboard - Admin Only */}
+          {(user?.role === 'super_admin' || user?.role === 'admin') && (
+            <a
+              href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/admin/queues`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 text-orange-400 hover:bg-orange-900/20 hover:text-orange-300 mt-2 border border-orange-500/30"
+            >
+              <Activity className="w-5 h-5 mr-3" />
+              Fila de Processos
+            </a>
+          )}
         </nav>
       </div>
 
@@ -91,6 +105,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen
           <LogOut size={20} />
         </button>
       </div>
-    </div>
+    </div >
   );
 };

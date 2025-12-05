@@ -373,7 +373,17 @@ const AdminDashboard: React.FC = () => {
             {/* Filas de Jobs */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-[#1e293b] rounded-xl border border-slate-700 p-6">
-                    <h3 className="text-xl font-semibold text-white mb-4">Status da Fila de Jobs</h3>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-xl font-semibold text-white">Status da Fila de Jobs</h3>
+                        <a
+                            href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/admin/queues`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
+                        >
+                            Ver Painel <Activity size={12} />
+                        </a>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-[#0f172a] p-4 rounded-lg">
                             <div className="text-slate-400 text-sm">Pending Jobs</div>
