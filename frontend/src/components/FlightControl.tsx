@@ -629,7 +629,7 @@ export const FlightControl: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 w-full max-w-[1600px] mx-auto pb-8">
+      <div className="flex-1 w-full max-w-[1600px] mx-auto pb-[300px]">
         {viewMode === 'kanban' && (
           <DndContext
             sensors={sensors}
@@ -638,7 +638,7 @@ export const FlightControl: React.FC = () => {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
-            <div className="overflow-x-auto px-4 md:px-8 pb-4 min-h-[500px]">
+            <div className="overflow-x-auto px-4 md:px-8 pb-4 min-h-[800px]">
               <div className="flex gap-6 min-w-max">
                 {COLUMNS.map(column => (
                   <DroppableColumn key={column.id} column={column} leads={getLeadsByStatus(column.id)}>
