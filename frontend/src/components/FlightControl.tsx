@@ -612,7 +612,7 @@ export const FlightControl: React.FC = () => {
 
       {/* Content Area - Scrollable */}
       <div className="flex-1 relative overflow-hidden w-full max-w-[1600px] mx-auto">
-        {viewMode === 'kanban' ? (
+        {viewMode === 'kanban' && (
           <DndContext
             sensors={sensors}
             collisionDetection={closestCorners}
@@ -659,9 +659,43 @@ export const FlightControl: React.FC = () => {
               ) : null}
             </DragOverlay>
           </DndContext>
-        ) : (
-          <div className="h-full overflow-auto">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-w-[800px]">
+        )}
+
+        {viewMode === 'list' && (
+          <div className="h-full overflow-y-auto px-4 md:px-8 pb-4">
+            <div className="max-w-4xl mx-auto space-y-3">
+              {filteredLeads.map(lead => (
+                <div key={lead.id} onClick={() => setSelectedLead(lead)} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-2 h-12 rounded-full ${lead.status === LeadStatus.NEW ? 'bg-blue-500' :
+                        lead.status === LeadStatus.CLOSED_WON ? 'bg-green-500' :
+                          lead.status === LeadStatus.CLOSED_LOST ? 'bg-red-500' : 'bg-gray-300'
+                      }`}></div>
+                    <div>
+                      <h4 className="font-bold text-gray-800">{lead.name}</h4>
+                      <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                        <span className="flex items-center gap-1"><Mail size={14} /> {lead.email}</span>
+                        <span className="flex items-center gap-1"><Phone size={14} /> {lead.phone}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600">{lead.source}</span>
+                    <span className="font-bold text-green-600">{formatCurrency(lead.value)}</span>
+                    <div className="flex gap-2">
+                      <button onClick={(e) => { e.stopPropagation(); handleQuickAction('whatsapp', lead); }} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100"><MessageCircle size={18} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); handleQuickAction('call', lead); }} className="p-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100"><Phone size={18} /></button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {viewMode === 'table' && (
+          <div className="h-full overflow-auto px-4 md:px-8 pb-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-w-[1000px]">
               <table className="w-full text-left">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>

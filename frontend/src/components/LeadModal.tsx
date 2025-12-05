@@ -12,6 +12,11 @@ interface LeadModalProps {
     mode: 'create' | 'edit';
 }
 
+const PREDEFINED_TAGS = [
+    'Quente', 'Frio', 'Morno', 'Urgente', 'Retorno',
+    'Cliente Antigo', 'Novo', 'Indicação', 'VIP', 'Corporativo'
+];
+
 export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onSave, mode }) => {
     const { register, handleSubmit, reset, setValue } = useForm();
     const [showSchedule, setShowSchedule] = useState(false);
@@ -349,13 +354,29 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                <Tag size={16} className="text-orange-500" /> Tags (separadas por vírgula)
+                                <Tag size={16} className="text-orange-500" /> Tags
                             </label>
                             <input
                                 {...register('tags')}
                                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                                 placeholder="quente, urgente, corporativo"
                             />
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {PREDEFINED_TAGS.map(tag => (
+                                    <button
+                                        key={tag}
+                                        type="button"
+                                        onClick={() => {
+                                            const currentTags = (document.querySelector('input[name="tags"]') as HTMLInputElement).value;
+                                            const newTags = currentTags ? `${currentTags}, ${tag}` : tag;
+                                            setValue('tags', newTags);
+                                        }}
+                                        className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-200"
+                                    >
+                                        + {tag}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         <div className="space-y-2">
