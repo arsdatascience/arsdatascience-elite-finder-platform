@@ -381,7 +381,6 @@ const updateLeadStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     const { isSuperAdmin, tenantId } = getTenantScope(req);
-    console.log(`[updateLeadStatus] ID: ${id}, Status: ${status}, isSuperAdmin: ${isSuperAdmin}, tenantId: ${tenantId}`);
 
     try {
         let query = `

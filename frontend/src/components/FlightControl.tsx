@@ -315,13 +315,9 @@ export const FlightControl: React.FC = () => {
       }
     }
 
-    console.log('DragEnd:', { activeId, activeDragStatus, newStatus });
-
     if (activeDragStatus && newStatus !== activeDragStatus) {
       try {
-        console.log('Sending update to backend...');
         await apiClient.leads.updateLeadStatus(activeId, newStatus);
-        console.log('Update success!');
       } catch (error) {
         console.error('Error updating status:', error);
         fetchLeads();
