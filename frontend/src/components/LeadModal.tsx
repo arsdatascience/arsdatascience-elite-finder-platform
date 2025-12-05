@@ -17,7 +17,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
     const [showSchedule, setShowSchedule] = useState(false);
     const [scheduleDate, setScheduleDate] = useState('');
     const [scheduleTime, setScheduleTime] = useState('');
-    const [scheduleType, setScheduleType] = useState<'meet' | 'zoom' | 'teams' | 'call'>('meet');
+    const [scheduleType, setScheduleType] = useState<'meet' | 'zoom' | 'teams' | 'call' | 'email' | 'whatsapp' | 'presencial' | 'skype' | 'slack' | 'outros'>('meet');
     const [isScheduling, setIsScheduling] = useState(false);
     const [addToCalendar, setAddToCalendar] = useState(false);
     const [clients, setClients] = useState<any[]>([]);
@@ -134,9 +134,9 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
         }
     };
 
-    // Generate time slots (15 min increments)
+    // Generate time slots (24h, 15 min increments)
     const timeSlots = [];
-    for (let i = 8; i <= 18; i++) {
+    for (let i = 0; i < 24; i++) {
         for (let j = 0; j < 60; j += 15) {
             const hour = i.toString().padStart(2, '0');
             const minute = j.toString().padStart(2, '0');
@@ -209,13 +209,13 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                             <div>
                                 <label className="text-xs font-bold text-purple-700 uppercase mb-1 block">Plataforma</label>
                                 <div className="flex gap-2">
-                                    {['meet', 'zoom', 'teams', 'call'].map(type => (
+                                    {['meet', 'zoom', 'teams', 'call', 'whatsapp', 'email', 'presencial'].map(type => (
                                         <button
                                             key={type}
                                             onClick={() => setScheduleType(type as any)}
                                             className={`flex-1 py-1.5 text-xs font-medium rounded border transition-all ${scheduleType === type ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-600 border-purple-200 hover:bg-purple-50'}`}
                                         >
-                                            {type === 'call' ? 'Telefone' : type.charAt(0).toUpperCase() + type.slice(1)}
+                                            {type.charAt(0).toUpperCase() + type.slice(1)}
                                         </button>
                                     ))}
                                 </div>
@@ -420,6 +420,12 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                             <option value="zoom">Zoom</option>
                                             <option value="teams">Teams</option>
                                             <option value="call">Telefone</option>
+                                            <option value="whatsapp">WhatsApp</option>
+                                            <option value="email">Email</option>
+                                            <option value="presencial">Presencial</option>
+                                            <option value="skype">Skype</option>
+                                            <option value="slack">Slack</option>
+                                            <option value="outros">Outros</option>
                                         </select>
                                     </div>
                                 </div>
