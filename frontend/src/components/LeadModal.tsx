@@ -19,6 +19,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
     const [scheduleTime, setScheduleTime] = useState('');
     const [scheduleType, setScheduleType] = useState<'meet' | 'zoom' | 'teams' | 'call'>('meet');
     const [isScheduling, setIsScheduling] = useState(false);
+    const [addToCalendar, setAddToCalendar] = useState(false);
     const [clients, setClients] = useState<any[]>([]);
 
     useEffect(() => {
@@ -55,13 +56,38 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
 
     if (!isOpen) return null;
 
-    const onSubmit = (data: any) => {
-        const formattedData = {
+    const onSubmit = async (data: any) => {
+        let formattedData = {
             ...data,
             value: Number(data.value),
             tags: data.tags ? data.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
             clientId: data.clientId ? Number(data.clientId) : null
         };
+
+        // Handle Scheduling
+        if (addToCalendar && scheduleDate && scheduleTime) {
+            try {
+                const dateTime = new Date(`${scheduleDate}T${scheduleTime}`);
+
+                // 1. Create Calendar Event
+                await apiClient.social.createPost({
+                    content: `Reunião com ${data.name} (${scheduleType})`,
+                    scheduled_date: dateTime.toISOString(),
+                    platform: 'google',
+                    category: 'meeting',
+                    videoConference: { type: scheduleType, link: '' }
+                });
+
+                // 2. Append to Notes
+                const scheduleNote = `\n[Agendamento] ${dateTime.toLocaleDateString('pt-BR')} às ${scheduleTime} (${scheduleType})`;
+                formattedData.notes = (formattedData.notes || '') + scheduleNote;
+
+            } catch (error) {
+                console.error('Error scheduling:', error);
+                alert('Erro ao agendar no calendário, mas o lead será salvo.');
+            }
+        }
+
         onSave(formattedData);
     };
 
@@ -342,6 +368,62 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
                                 placeholder="Observações importantes sobre o lead..."
                             />
+                        </div>
+
+                        {/* Scheduling Section in Main Form */}
+                        <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="addToCalendar"
+                                    checked={addToCalendar}
+                                    onChange={(e) => setAddToCalendar(e.target.checked)}
+                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                />
+                                <label htmlFor="addToCalendar" className="text-sm font-bold text-gray-700 flex items-center gap-2 cursor-pointer">
+                                    <Calendar size={16} className="text-blue-500" /> Incluir no Calendário
+                                </label>
+                            </div>
+
+                            {addToCalendar && (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in slide-in-from-top-2">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">Data</label>
+                                        <input
+                                            type="date"
+                                            className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            value={scheduleDate}
+                                            onChange={(e) => setScheduleDate(e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">Horário (15 min)</label>
+                                        <select
+                                            className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            value={scheduleTime}
+                                            onChange={(e) => setScheduleTime(e.target.value)}
+                                        >
+                                            <option value="">Selecione...</option>
+                                            {timeSlots.map(time => (
+                                                <option key={time} value={time}>{time}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">Tipo</label>
+                                        <select
+                                            className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            value={scheduleType}
+                                            onChange={(e) => setScheduleType(e.target.value as any)}
+                                        >
+                                            <option value="meet">Google Meet</option>
+                                            <option value="zoom">Zoom</option>
+                                            <option value="teams">Teams</option>
+                                            <option value="call">Telefone</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </form>
                 </div>
