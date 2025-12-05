@@ -7,7 +7,7 @@ const OpenAI = require('openai');
 const { GoogleGenAI } = require("@google/genai");
 
 // Configurações
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || 'sk-dummy-key' });
 if (!process.env.OPENAI_API_KEY) console.warn('⚠️ OPENAI_API_KEY não encontrada! DALL-E falhará.');
 
 cloudinary.config({

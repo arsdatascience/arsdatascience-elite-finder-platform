@@ -7,7 +7,7 @@ const pool = require('./database');
 // Inicializar OpenAI
 const OpenAI = require('openai');
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY || 'sk-dummy-key',
 });
 
 // Configuração do Multer para salvar temporariamente

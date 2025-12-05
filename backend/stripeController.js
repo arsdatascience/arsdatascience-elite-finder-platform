@@ -1,4 +1,4 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy');
 const db = require('./db');
 
 // MAPA DE PREÇOS (Substituir pelos Price IDs reais do Stripe Dashboard)

@@ -277,7 +277,7 @@ const getLeads = async (req, res) => {
                 l.last_contact as "lastContact", 
                 l.created_at as "createdAt"
             FROM leads l
-            JOIN clients c ON l.client_id = c.id
+            LEFT JOIN clients c ON l.client_id = c.id
         `;
         let params = [];
 
