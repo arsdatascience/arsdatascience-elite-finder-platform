@@ -32,6 +32,9 @@ import { AudioAnalysis } from '@/components/AudioAnalysis';
 import FinancialModule from '@/components/FinancialModule';
 import CreativeStudio from '@/components/CreativeStudio';
 import { SalesCoachingChat } from '@/components/SalesCoachingChat';
+import { ProjectCenter } from '@/components/ProjectCenter';
+import { AssetLibrary } from '@/components/AssetLibrary';
+import { ApprovalCenter } from '@/components/ApprovalCenter';
 import { HelpCenter } from '@/components/HelpCenter';
 
 const PATH_MAP: Record<ViewState, string> = {
@@ -58,7 +61,17 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.CREATIVE_STUDIO]: '/creative-studio',
   [ViewState.SALES_COACHING]: '/sales-coaching',
   [ViewState.HELP_CENTER]: '/help-center',
+  [ViewState.PROJECTS]: '/projects',
+  [ViewState.ASSETS]: '/assets',
+  [ViewState.APPROVALS]: '/approvals',
 };
+
+// ... (lines 67-205)
+
+          <Route path="/assets" element={<AssetLibrary />} />
+          <Route path="/approvals" element={<ApprovalCenter />} />
+        </Route >
+      </Route >
 
 const PrivateRoute: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -198,6 +211,9 @@ const App: React.FC = () => {
           <Route path="/creative-studio" element={<CreativeStudio />} />
           <Route path="/sales-coaching" element={<SalesCoachingChat />} />
           <Route path="/help-center" element={<HelpCenter />} />
+          <Route path="/projects" element={<ProjectCenter />} />
+          <Route path="/assets" element={<AssetLibrary />} />
+          <Route path="/approvals" element={<ApprovalCenter />} />
         </Route>
       </Route>
 

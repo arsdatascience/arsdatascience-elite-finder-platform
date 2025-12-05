@@ -236,6 +236,54 @@ export const apiClient = {
             await axiosInstance.delete(`/templates/${id}`);
         }
     },
+    // --- PROJECTS ---
+    projects: {
+        list: async (params?: any) => {
+            const response = await axiosInstance.get('/projects', { params });
+            return response.data;
+        },
+        create: async (data: any) => {
+            const response = await axiosInstance.post('/projects', data);
+            return response.data;
+        },
+        get: async (id: number) => {
+            const response = await axiosInstance.get(`/projects/${id}`);
+            return response.data;
+        },
+        update: async (id: number, data: any) => {
+            const response = await axiosInstance.put(`/projects/${id}`, data);
+            return response.data;
+        },
+        delete: async (id: number) => {
+            const response = await axiosInstance.delete(`/projects/${id}`);
+            return response.data;
+        }
+    },
+
+    // --- TASKS ---
+    tasks: {
+        list: async (params?: any) => {
+            const response = await axiosInstance.get('/tasks', { params });
+            return response.data;
+        },
+        create: async (data: any) => {
+            const response = await axiosInstance.post('/tasks', data);
+            return response.data;
+        },
+        update: async (id: number, data: any) => {
+            const response = await axiosInstance.put(`/tasks/${id}`, data);
+            return response.data;
+        },
+        delete: async (id: number) => {
+            const response = await axiosInstance.delete(`/tasks/${id}`);
+            return response.data;
+        },
+        reorder: async (tasks: any[]) => {
+            const response = await axiosInstance.post('/tasks/reorder', { tasks });
+            return response.data;
+        }
+    },
+
     imageGeneration: {
         generate: async (data: any) => {
             const response = await axiosInstance.post('/images/generate', data);
@@ -278,6 +326,58 @@ export const apiClient = {
         },
         translate: async (text: string, targetLang: 'pt' | 'en') => {
             const response = await axiosInstance.post('/images/translate', { text, targetLang });
+            return response.data;
+        }
+    },
+
+    // --- ASSETS (Digital Library) ---
+    assets: {
+        list: async (params?: any) => {
+            const response = await axiosInstance.get('/assets', { params });
+            return response.data;
+        },
+        listFolders: async (params?: any) => {
+            const response = await axiosInstance.get('/folders', { params });
+            return response.data;
+        },
+        createFolder: async (data: { name: string, parent_id?: number, project_id?: number }) => {
+            const response = await axiosInstance.post('/folders', data);
+            return response.data;
+        },
+        upload: async (formData: FormData) => {
+            // Note: Content-Type header is handled automatically by browser/axios for FormData
+            const response = await axiosInstance.post('/assets', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            return response.data;
+        },
+        delete: async (id: number) => {
+            const response = await axiosInstance.delete(`/assets/${id}`);
+            return response.data;
+        }
+    },
+
+    // --- APPROVALS ---
+    approvals: {
+        list: async (type: 'pending' | 'history' | 'sent' = 'pending') => {
+            const response = await axiosInstance.get('/approvals', { params: { type } });
+            return response.data;
+        },
+        create: async (data: { title: string, notes?: string, asset_id?: number, social_post_id?: number }) => {
+            const response = await axiosInstance.post('/approvals', data);
+            return response.data;
+        },
+        review: async (id: number, status: 'approved' | 'rejected' | 'changes_requested', comments?: string) => {
+            const response = await axiosInstance.put(`/approvals/${id}/review`, { status, comments });
+            return response.data;
+        },
+        // Public methods
+        getPublicData: async (token: string) => {
+            const response = await axiosInstance.get(`/public/approvals/${token}`);
+            return response.data;
+        },
+        publicReview: async (token: string, status: string, comments?: string) => {
+            const response = await axiosInstance.post(`/public/approvals/${token}/review`, { status, comments });
             return response.data;
         }
     }

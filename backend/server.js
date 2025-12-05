@@ -370,6 +370,116 @@ async function initializeDatabase() {
       `);
       console.log('✅ Permissões de Super Admin atualizadas.');
 
+      // Migração para Project Management (Digital Maturity Phase 1)
+      console.log('🔄 Verificando migrações de Project Management...');
+      await pool.query(`
+          -- 1. PROJECTS TABLE
+          CREATE TABLE IF NOT EXISTS projects (
+              id SERIAL PRIMARY KEY,
+              tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+              client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
+              owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+              
+              name VARCHAR(255) NOT NULL,
+              description TEXT,
+              status VARCHAR(50) DEFAULT 'planning', 
+              priority VARCHAR(20) DEFAULT 'medium',
+              
+              start_date DATE,
+              end_date DATE,
+              budget DECIMAL(12, 2),
+              
+              settings JSONB DEFAULT '{}',
+              
+              created_at TIMESTAMP DEFAULT NOW(),
+              updated_at TIMESTAMP DEFAULT NOW()
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_projects_tenant ON projects(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_projects_client ON projects(client_id);
+          CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
+
+          -- 2. PROJECT MEMBERS
+          CREATE TABLE IF NOT EXISTS project_members (
+              project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+              user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+              role VARCHAR(50) DEFAULT 'member',
+              joined_at TIMESTAMP DEFAULT NOW(),
+              PRIMARY KEY (project_id, user_id)
+          );
+
+          -- 3. TASKS TABLE
+          CREATE TABLE IF NOT EXISTS tasks (
+              id SERIAL PRIMARY KEY,
+              tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+              project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+              parent_task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+              
+              title VARCHAR(255) NOT NULL,
+              description TEXT,
+              
+              status VARCHAR(50) DEFAULT 'todo',
+              priority VARCHAR(20) DEFAULT 'medium',
+              
+              assignee_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+              reporter_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+              
+              due_date TIMESTAMP,
+              start_date TIMESTAMP,
+              completed_at TIMESTAMP,
+              
+              estimated_minutes INTEGER DEFAULT 0,
+              logged_minutes INTEGER DEFAULT 0,
+              
+              tags TEXT[],
+              column_order INTEGER DEFAULT 0,
+              
+              metadata JSONB DEFAULT '{}',
+              
+              created_at TIMESTAMP DEFAULT NOW(),
+              updated_at TIMESTAMP DEFAULT NOW()
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_tasks_tenant ON tasks(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
+          CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks(assignee_id);
+          CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+
+          -- 4. TASK COMMENTS
+          CREATE TABLE IF NOT EXISTS task_comments (
+              id SERIAL PRIMARY KEY,
+              task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+              user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+              
+              content TEXT NOT NULL,
+              is_internal BOOLEAN DEFAULT false,
+              
+              created_at TIMESTAMP DEFAULT NOW(),
+              updated_at TIMESTAMP DEFAULT NOW()
+          );
+          
+          -- 5. PROJECT ACTIVITY LOG
+          CREATE TABLE IF NOT EXISTS project_activity_log (
+              id SERIAL PRIMARY KEY,
+              tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+              project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+              task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+              user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+              
+              action_type VARCHAR(50) NOT NULL,
+              details JSONB,
+              
+              created_at TIMESTAMP DEFAULT NOW()
+          );
+      `);
+      console.log('✅ Migração de Project Management verificada/aplicada.');
+
+      // Migração para Operations & Knowledge (Digital Maturity Phase 2)
+      console.log('🔄 Verificando migrações de Operations & Knowledge...');
+      const operationsMigration = fs.readFileSync(path.join(__dirname, 'migrations', '024_phase2_operations.sql'), 'utf8');
+      await pool.query(operationsMigration);
+      console.log('✅ Migração de Operations & Knowledge verificada/aplicada.');
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
@@ -582,9 +692,46 @@ app.post('/api/team/members', userCtrl.createTeamMember);
 app.put('/api/team/members/:id', userCtrl.updateTeamMember);
 app.delete('/api/team/members/:id', userCtrl.deleteTeamMember);
 
+// --- PROJECT & TASK MANAGEMENT ---
+const projectCtrl = require('./projectController');
+const taskCtrl = require('./taskController');
+
+// Projects
+app.get('/api/projects', authenticateToken, projectCtrl.getProjects);
+app.post('/api/projects', authenticateToken, projectCtrl.createProject);
+app.get('/api/projects/:id', authenticateToken, projectCtrl.getProject);
+app.put('/api/projects/:id', authenticateToken, projectCtrl.updateProject);
+app.delete('/api/projects/:id', authenticateToken, projectCtrl.deleteProject);
+
+// Tasks
+app.get('/api/tasks', authenticateToken, taskCtrl.getTasks);
+app.post('/api/tasks', authenticateToken, taskCtrl.createTask);
+app.post('/api/tasks/reorder', authenticateToken, taskCtrl.updateOrder); // Batch reorder
+app.put('/api/tasks/:id', authenticateToken, taskCtrl.updateTask);
+app.delete('/api/tasks/:id', authenticateToken, taskCtrl.deleteTask);
+
 // --- AGENT TEMPLATES ---
 const templatesController = require('./templatesController');
 app.use('/api/templates', templatesController);
+
+// --- ASSET LIBRARY ROUTES (Phase 2) ---
+const assetCtrl = require('./assetController');
+app.get('/api/assets', authenticateToken, assetCtrl.listAssets);
+app.post('/api/assets', authenticateToken, checkLimit('storage'), socialMediaController.upload.single('file'), assetCtrl.uploadAsset); // Using existing upload middleware for now
+app.delete('/api/assets/:id', authenticateToken, assetCtrl.deleteAsset);
+
+app.get('/api/folders', authenticateToken, assetCtrl.listFolders);
+app.post('/api/folders', authenticateToken, assetCtrl.createFolder);
+
+// --- APPROVAL WORKFLOW ROUTES (Phase 2) ---
+const approvalCtrl = require('./approvalController');
+app.get('/api/approvals', authenticateToken, approvalCtrl.getApprovals);
+app.post('/api/approvals', authenticateToken, approvalCtrl.createApproval);
+app.put('/api/approvals/:id/review', authenticateToken, approvalCtrl.reviewApproval);
+
+// Public Approval Routes (No Auth required)
+app.get('/api/public/approvals/:token', approvalCtrl.getPublicApproval);
+app.post('/api/public/approvals/:token/review', approvalCtrl.publicReview);
 
 // --- QDRANT VECTOR DATABASE ---
 const qdrantController = require('./qdrantController');
