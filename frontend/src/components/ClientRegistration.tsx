@@ -1,85 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { User, MapPin, Phone, Mail, Save, X, Check, Building2, Globe, Calendar, AlertTriangle, LayoutGrid, List as ListIcon, Table as TableIcon, Download, Search, Filter } from 'lucide-react';
-import { COMPONENT_VERSIONS } from '../componentVersions';
+
+import { User, MapPin, Phone, Mail, Building2, AlertTriangle, LayoutGrid, List as ListIcon, Table as TableIcon, Download, Search } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/services/apiClient';
 import { ClientModal } from './ClientModal';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 // --- SCHEMAS DE VALIDAÇÃO (ZOD) ---
-
-const clientSchema = z.object({
-    type: z.enum(['PF', 'PJ']),
-    name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-    document: z.string().min(11, 'Documento inválido'),
-    foundationDate: z.string().optional(),
-    email: z.string().email('Email inválido'),
-    phone: z.string().min(10, 'Telefone inválido'),
-    whatsapp: z.string().optional(),
-    cep: z.string().min(8, 'CEP inválido'),
-    street: z.string().min(3, 'Rua obrigatória'),
-    number: z.string().min(1, 'Número obrigatório'),
-    complement: z.string().optional(),
-    neighborhood: z.string().min(2, 'Bairro obrigatório'),
-    city: z.string().min(2, 'Cidade obrigatória'),
-    state: z.string().length(2, 'Selecione um estado'),
-    instagramUrl: z.string().url('URL inválida').optional().or(z.literal('')),
-    facebookUrl: z.string().url('URL inválida').optional().or(z.literal('')),
-    linkedinUrl: z.string().url('URL inválida').optional().or(z.literal('')),
-    website: z.string().url('URL inválida').optional().or(z.literal('')),
-    notes: z.string().optional(),
-    status: z.string().optional()
-}).refine((data) => {
-    if (data.type === 'PF') return data.document.length >= 11;
-    if (data.type === 'PJ') return data.document.length >= 14;
-    return true;
-}, {
-    message: "Documento inválido para o tipo selecionado",
-    path: ["document"]
-});
-
-type ClientFormData = z.infer<typeof clientSchema>;
+// Schema is now handled internally by ClientModal
 
 // --- MÁSCARAS ---
-
-const maskPhone = (value: string) => {
-    return value
-        .replace(/\D/g, '')
-        .replace(/^(\d{2})(\d)/g, '($1) $2')
-        .replace(/(\d)(\d{4})$/, '$1-$2')
-        .slice(0, 15);
-};
-
-const maskCEP = (value: string) => {
-    return value
-        .replace(/\D/g, '')
-        .replace(/^(\d{5})(\d)/, '$1-$2')
-        .slice(0, 9);
-};
-
-const maskCPF = (value: string) => {
-    return value
-        .replace(/\D/g, '')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d{1,2})/, '$1-$2')
-        .replace(/(-\d{2})\d+?$/, '$1');
-};
-
-const maskCNPJ = (value: string) => {
-    return value
-        .replace(/\D/g, '')
-        .replace(/^(\d{2})(\d)/, '$1.$2')
-        .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-        .replace(/\.(\d{3})(\d)/, '.$1/$2')
-        .replace(/(\d{4})(\d)/, '$1-$2')
-        .slice(0, 18);
-};
+// Masks are now handled internally by ClientModal
 
 // --- KANBAN COMPONENTS ---
 const SortableClientCard = ({ client, onClick }: { client: any, onClick: () => void }) => {
@@ -103,7 +35,6 @@ const SortableClientCard = ({ client, onClick }: { client: any, onClick: () => v
 
 export const ClientRegistration: React.FC = () => {
     const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'table'>('list');
-    const [editingId, setEditingId] = useState<number | null>(null);
     const [successMsg, setSuccessMsg] = useState('');
     const [churnRisks, setChurnRisks] = useState<any[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);

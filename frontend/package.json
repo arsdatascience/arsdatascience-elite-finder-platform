@@ -19,6 +19,7 @@
     "@tiptap/starter-kit": "^3.11.0",
     "@types/react-beautiful-dnd": "^13.1.8",
     "axios": "^1.13.2",
+    "cpf-cnpj-validator": "^1.0.3",
     "docx": "^9.5.1",
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.5",

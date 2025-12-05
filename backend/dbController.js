@@ -60,6 +60,7 @@ const getUsers = async (req, res) => {
 // CLIENTS
 // ============================================
 const { encrypt, decrypt } = require('./utils/crypto');
+const bcrypt = require('bcryptjs');
 
 // ... (existing imports)
 
@@ -111,45 +112,76 @@ const createClient = async (req, res) => {
     const { isSuperAdmin, tenantId } = getTenantScope(req);
     const {
         name, type, email, phone, whatsapp, document, foundationDate,
-        cep, street, number, complement, neighborhood, city, state,
+        cep, address_street, address_number, address_complement, address_neighborhood, address_city, address_state, address_district,
         instagramUrl, facebookUrl, linkedinUrl, website,
-        notes, company_size, industry
+        notes, company_size, industry,
+        username, password,
+        terms_accepted, privacy_accepted, data_consent, marketing_optin,
+        rg, birth_date, gender, marital_status, nationality, mother_name,
+        fantasy_name, state_registration, municipal_registration, cnae,
+        legal_rep_name, legal_rep_cpf, legal_rep_role, legal_rep_email, legal_rep_phone,
+        bank_name, bank_agency, bank_account, bank_account_type, pix_key,
+        referral_source, client_references
     } = req.body;
 
     try {
+        let password_hash = null;
+        if (password) {
+            password_hash = await bcrypt.hash(password, 10);
+        }
+
         // ENCRYPT SENSITIVE DATA
         const encryptedPhone = encrypt(phone);
-        const encryptedWhatsapp = encrypt(whatsapp);
-        const encryptedDocument = encrypt(document);
-        const encryptedStreet = encrypt(street);
-        const encryptedNumber = encrypt(number);
-        const encryptedComplement = encrypt(complement);
+        const encryptedWhatsapp = whatsapp ? encrypt(whatsapp) : null;
+        const encryptedDocument = document ? encrypt(document) : null;
+        const encryptedStreet = address_street ? encrypt(address_street) : null;
+        const encryptedNumber = address_number ? encrypt(address_number) : null;
+        const encryptedComplement = address_complement ? encrypt(address_complement) : null;
+        const encryptedRg = rg ? encrypt(rg) : null;
+        const encryptedLegalRepCpf = legal_rep_cpf ? encrypt(legal_rep_cpf) : null;
+        const encryptedBankAccount = bank_account ? encrypt(bank_account) : null;
+        const encryptedPixKey = pix_key ? encrypt(pix_key) : null;
 
         // SAAS FIX: Insert with tenant_id
         const result = await pool.query(
             `INSERT INTO clients (
                 tenant_id, name, type, email, phone, whatsapp, document, foundation_date,
-                address_zip, address_street, address_number, address_complement, address_neighborhood, address_city, address_state,
+                address_zip, address_street, address_number, address_complement, address_neighborhood, address_city, address_state, address_district,
                 instagram_url, facebook_url, linkedin_url, website,
-                notes, company_size, industry
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22) RETURNING *`,
+                notes, company_size, industry,
+                username, password_hash,
+                terms_accepted, privacy_accepted, data_consent, marketing_optin,
+                rg, birth_date, gender, marital_status, nationality, mother_name,
+                fantasy_name, state_registration, municipal_registration, cnae,
+                legal_rep_name, legal_rep_cpf, legal_rep_role, legal_rep_email, legal_rep_phone,
+                bank_name, bank_agency, bank_account, bank_account_type, pix_key,
+                referral_source, client_references
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50) RETURNING *`,
             [
                 tenantId,
                 name, type, email, encryptedPhone, encryptedWhatsapp, encryptedDocument, foundationDate || null,
-                cep, encryptedStreet, encryptedNumber, encryptedComplement, neighborhood, city, state,
+                cep, encryptedStreet, encryptedNumber, encryptedComplement, address_neighborhood, address_city, address_state, address_district,
                 instagramUrl, facebookUrl, linkedinUrl, website,
-                notes, company_size, industry
+                notes, company_size, industry,
+                username, password_hash,
+                terms_accepted, privacy_accepted, data_consent, marketing_optin,
+                encryptedRg, birth_date || null, gender, marital_status, nationality, mother_name,
+                fantasy_name, state_registration, municipal_registration, cnae,
+                legal_rep_name, encryptedLegalRepCpf, legal_rep_role, legal_rep_email, legal_rep_phone,
+                bank_name, bank_agency, encryptedBankAccount, bank_account_type, encryptedPixKey,
+                referral_source, client_references
             ]
         );
 
         // Return decrypted data to the creator
         const newClient = result.rows[0];
+        // We can create a helper to decrypt everything, but for now specific overrides
         newClient.phone = phone;
         newClient.whatsapp = whatsapp;
         newClient.document = document;
-        newClient.address_street = street;
-        newClient.address_number = number;
-        newClient.address_complement = complement;
+        newClient.address_street = address_street;
+        newClient.address_number = address_number;
+        newClient.address_complement = address_complement;
 
         res.status(201).json(newClient);
     } catch (error) {
@@ -163,47 +195,94 @@ const updateClient = async (req, res) => {
     const { isSuperAdmin, tenantId } = getTenantScope(req);
     const {
         name, type, email, phone, whatsapp, document, foundationDate,
-        cep, street, number, complement, neighborhood, city, state,
+        cep, address_street, address_number, address_complement, address_neighborhood, address_city, address_state, address_district,
         instagramUrl, facebookUrl, linkedinUrl, website,
-        notes, company_size, industry
+        notes, company_size, industry,
+        username, password,
+        terms_accepted, privacy_accepted, data_consent, marketing_optin,
+        rg, birth_date, gender, marital_status, nationality, mother_name,
+        fantasy_name, state_registration, municipal_registration, cnae,
+        legal_rep_name, legal_rep_cpf, legal_rep_role, legal_rep_email, legal_rep_phone,
+        bank_name, bank_agency, bank_account, bank_account_type, pix_key,
+        referral_source, client_references
     } = req.body;
 
     try {
-        // ENCRYPT SENSITIVE DATA (If provided)
-        // Note: In a real partial update, we'd need to check what changed. 
-        // Assuming full payload or handling logic. For simplicity, we encrypt what's passed.
-        // If frontend sends plaintext, we encrypt. If it sends null, we might overwrite.
-        // Ideally, fetch existing, merge, then encrypt. But assuming standard PUT behavior here.
-
         const encryptedPhone = phone ? encrypt(phone) : null;
         const encryptedWhatsapp = whatsapp ? encrypt(whatsapp) : null;
         const encryptedDocument = document ? encrypt(document) : null;
-        const encryptedStreet = street ? encrypt(street) : null;
-        const encryptedNumber = number ? encrypt(number) : null;
-        const encryptedComplement = complement ? encrypt(complement) : null;
+        const encryptedStreet = address_street ? encrypt(address_street) : null;
+        const encryptedNumber = address_number ? encrypt(address_number) : null;
+        const encryptedComplement = address_complement ? encrypt(address_complement) : null;
+        const encryptedRg = rg ? encrypt(rg) : null;
+        const encryptedLegalRepCpf = legal_rep_cpf ? encrypt(legal_rep_cpf) : null;
+        const encryptedBankAccount = bank_account ? encrypt(bank_account) : null;
+        const encryptedPixKey = pix_key ? encrypt(pix_key) : null;
 
-        // SAAS FIX: Ensure tenant_id matches
-        // We use COALESCE in SQL usually for PATCH, but here we are doing a full update set.
-        // To be safe with potentially missing fields in req.body, we should be careful.
-        // However, the original code was a direct UPDATE. We will maintain that but with encryption.
+        let query = `
+            UPDATE clients SET 
+                name = COALESCE($1, name), type = COALESCE($2, type), email = COALESCE($3, email), 
+                phone = COALESCE($4, phone), whatsapp = COALESCE($5, whatsapp), document = COALESCE($6, document), 
+                foundation_date = COALESCE($7, foundation_date),
+                address_zip = COALESCE($8, address_zip), address_street = COALESCE($9, address_street), 
+                address_number = COALESCE($10, address_number), address_complement = COALESCE($11, address_complement), 
+                address_neighborhood = COALESCE($12, address_neighborhood), address_city = COALESCE($13, address_city), 
+                address_state = COALESCE($14, address_state), address_district = COALESCE($15, address_district),
+                instagram_url = COALESCE($16, instagram_url), facebook_url = COALESCE($17, facebook_url), 
+                linkedin_url = COALESCE($18, linkedin_url), website = COALESCE($19, website),
+                notes = COALESCE($20, notes), company_size = COALESCE($21, company_size), industry = COALESCE($22, industry),
+                username = COALESCE($23, username),
+                terms_accepted = COALESCE($24, terms_accepted), privacy_accepted = COALESCE($25, privacy_accepted),
+                data_consent = COALESCE($26, data_consent), marketing_optin = COALESCE($27, marketing_optin),
+                rg = COALESCE($28, rg), birth_date = COALESCE($29, birth_date),
+                gender = COALESCE($30, gender), marital_status = COALESCE($31, marital_status),
+                nationality = COALESCE($32, nationality), mother_name = COALESCE($33, mother_name),
+                fantasy_name = COALESCE($34, fantasy_name), state_registration = COALESCE($35, state_registration),
+                municipal_registration = COALESCE($36, municipal_registration), cnae = COALESCE($37, cnae),
+                legal_rep_name = COALESCE($38, legal_rep_name), legal_rep_cpf = COALESCE($39, legal_rep_cpf),
+                legal_rep_role = COALESCE($40, legal_rep_role), legal_rep_email = COALESCE($41, legal_rep_email),
+                legal_rep_phone = COALESCE($42, legal_rep_phone),
+                bank_name = COALESCE($43, bank_name), bank_agency = COALESCE($44, bank_agency),
+                bank_account = COALESCE($45, bank_account), bank_account_type = COALESCE($46, bank_account_type),
+                pix_key = COALESCE($47, pix_key),
+                referral_source = COALESCE($48, referral_source), client_references = COALESCE($49, client_references),
+                updated_at = NOW()
+        `;
 
-        const result = await pool.query(
-            `UPDATE clients SET 
-                name = $1, type = $2, email = $3, phone = $4, whatsapp = $5, document = $6, foundation_date = $7,
-                address_zip = $8, address_street = $9, address_number = $10, address_complement = $11, address_neighborhood = $12, address_city = $13, address_state = $14,
-                instagram_url = $15, facebook_url = $16, linkedin_url = $17, website = $18,
-                notes = $19, company_size = $20, industry = $21, 
-                updated_at = NOW() 
-            WHERE id = $22 AND tenant_id = $23 RETURNING *`,
-            [
-                name, type, email, encryptedPhone, encryptedWhatsapp, encryptedDocument, foundationDate || null,
-                cep, encryptedStreet, encryptedNumber, encryptedComplement, neighborhood, city, state,
-                instagramUrl, facebookUrl, linkedinUrl, website,
-                notes, company_size, industry,
-                id,
-                tenantId
-            ]
-        );
+        const params = [
+            name, type, email, encryptedPhone, encryptedWhatsapp, encryptedDocument, foundationDate || null,
+            cep, encryptedStreet, encryptedNumber, encryptedComplement, address_neighborhood, address_city, address_state, address_district,
+            instagramUrl, facebookUrl, linkedinUrl, website,
+            notes, company_size, industry,
+            username,
+            terms_accepted, privacy_accepted, data_consent, marketing_optin,
+            encryptedRg, birth_date || null,
+            gender, marital_status,
+            nationality, mother_name,
+            fantasy_name, state_registration,
+            municipal_registration, cnae,
+            legal_rep_name, encryptedLegalRepCpf,
+            legal_rep_role, legal_rep_email,
+            legal_rep_phone,
+            bank_name, bank_agency,
+            encryptedBankAccount, bank_account_type,
+            encryptedPixKey,
+            referral_source, client_references
+        ];
+
+        let paramIndex = 50;
+
+        if (password) {
+            const password_hash = await bcrypt.hash(password, 10);
+            query += `, password_hash = $${paramIndex}`;
+            params.push(password_hash);
+            paramIndex++;
+        }
+
+        query += ` WHERE id = $${paramIndex} AND tenant_id = $${paramIndex + 1} RETURNING *`;
+        params.push(id, tenantId);
+
+        const result = await pool.query(query, params);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Client not found or access denied' });
@@ -211,12 +290,12 @@ const updateClient = async (req, res) => {
 
         // Decrypt for response
         const updatedClient = result.rows[0];
-        updatedClient.phone = decrypt(updatedClient.phone);
-        updatedClient.whatsapp = decrypt(updatedClient.whatsapp);
-        updatedClient.document = decrypt(updatedClient.document);
-        updatedClient.address_street = decrypt(updatedClient.address_street);
-        updatedClient.address_number = decrypt(updatedClient.address_number);
-        updatedClient.address_complement = decrypt(updatedClient.address_complement);
+        updatedClient.phone = updatedClient.phone ? decrypt(updatedClient.phone) : null;
+        updatedClient.whatsapp = updatedClient.whatsapp ? decrypt(updatedClient.whatsapp) : null;
+        updatedClient.document = updatedClient.document ? decrypt(updatedClient.document) : null;
+        updatedClient.address_street = updatedClient.address_street ? decrypt(updatedClient.address_street) : null;
+        updatedClient.address_number = updatedClient.address_number ? decrypt(updatedClient.address_number) : null;
+        updatedClient.address_complement = updatedClient.address_complement ? decrypt(updatedClient.address_complement) : null;
 
         res.json(updatedClient);
     } catch (error) {
