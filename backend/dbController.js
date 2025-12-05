@@ -113,7 +113,7 @@ const createClient = async (req, res) => {
     const {
         name, type, email, phone, whatsapp, document, foundationDate,
         cep, address_street, address_number, address_complement, address_neighborhood, address_city, address_state, address_district,
-        instagramUrl, facebookUrl, linkedinUrl, website,
+        instagram_url, facebook_url, linkedin_url, website,
         notes, company_size, industry,
         username, password,
         terms_accepted, privacy_accepted, data_consent, marketing_optin,
@@ -161,7 +161,7 @@ const createClient = async (req, res) => {
                 tenantId,
                 name, type, email, encryptedPhone, encryptedWhatsapp, encryptedDocument, foundationDate || null,
                 cep, encryptedStreet, encryptedNumber, encryptedComplement, address_neighborhood, address_city, address_state, address_district,
-                instagramUrl, facebookUrl, linkedinUrl, website,
+                instagram_url, facebook_url, linkedin_url, website,
                 notes, company_size, industry,
                 username, password_hash,
                 terms_accepted, privacy_accepted, data_consent, marketing_optin,
@@ -196,7 +196,7 @@ const updateClient = async (req, res) => {
     const {
         name, type, email, phone, whatsapp, document, foundationDate,
         cep, address_street, address_number, address_complement, address_neighborhood, address_city, address_state, address_district,
-        instagramUrl, facebookUrl, linkedinUrl, website,
+        instagram_url, facebook_url, linkedin_url, website,
         notes, company_size, industry,
         username, password,
         terms_accepted, privacy_accepted, data_consent, marketing_optin,
@@ -252,7 +252,7 @@ const updateClient = async (req, res) => {
         const params = [
             name, type, email, encryptedPhone, encryptedWhatsapp, encryptedDocument, foundationDate || null,
             cep, encryptedStreet, encryptedNumber, encryptedComplement, address_neighborhood, address_city, address_state, address_district,
-            instagramUrl, facebookUrl, linkedinUrl, website,
+            instagram_url, facebook_url, linkedin_url, website,
             notes, company_size, industry,
             username,
             terms_accepted, privacy_accepted, data_consent, marketing_optin,

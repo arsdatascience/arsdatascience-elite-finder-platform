@@ -34,9 +34,9 @@ const schema = z.object({
     address_district: z.string().optional(), // Adding district just in case
 
     // Social Media
-    instagramUrl: z.string().optional(),
-    facebookUrl: z.string().optional(),
-    linkedinUrl: z.string().optional(),
+    instagram_url: z.string().optional(),
+    facebook_url: z.string().optional(),
+    linkedin_url: z.string().optional(),
     website: z.string().optional(),
 
     // Access
@@ -440,15 +440,15 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-1"><Instagram size={12} /> Instagram</label>
-                                        <input {...register('instagramUrl')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="https://instagram.com/..." />
+                                        <input {...register('instagram_url')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="https://instagram.com/..." />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-1"><Facebook size={12} /> Facebook</label>
-                                        <input {...register('facebookUrl')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="https://facebook.com/..." />
+                                        <input {...register('facebook_url')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="https://facebook.com/..." />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-1"><Linkedin size={12} /> LinkedIn</label>
-                                        <input {...register('linkedinUrl')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="https://linkedin.com/in/..." />
+                                        <input {...register('linkedin_url')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="https://linkedin.com/in/..." />
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-1"><Globe size={12} /> Website</label>
