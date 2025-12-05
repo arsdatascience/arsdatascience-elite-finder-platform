@@ -21,7 +21,8 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   Users, Plus, Search, MoreVertical, Phone, Mail,
   CheckCircle, TrendingUp, Target, Loader2, DollarSign,
-  LayoutGrid, List as ListIcon, Table as TableIcon, Filter, MessageCircle, User
+  LayoutGrid, List as ListIcon, Table as TableIcon, Filter, MessageCircle, User,
+  FileText, FileSpreadsheet
 } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
 import socketService from '@/services/socket';
@@ -318,6 +319,25 @@ export const FlightControl: React.FC = () => {
     }
   };
 
+  const handleExport = async (type: 'pdf' | 'excel') => {
+    try {
+      const blob = type === 'pdf'
+        ? await apiClient.leads.exportPdf(selectedClient)
+        : await apiClient.leads.exportExcel(selectedClient);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `leads_export.${type === 'pdf' ? 'pdf' : 'xlsx'}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Error exporting:', error);
+      alert('Erro ao exportar arquivo. Tente novamente.');
+    }
+  };
+
   // --- Filtering Logic ---
   const filteredLeads = leads.filter(lead => {
     // 1. Search (Name/Email)
@@ -425,6 +445,23 @@ export const FlightControl: React.FC = () => {
               className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 transition-all text-sm"
             >
               <Plus size={16} /> Novo Lead
+            </button>
+
+            <div className="h-6 w-px bg-gray-300 mx-1"></div>
+
+            <button
+              onClick={() => handleExport('pdf')}
+              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              title="Exportar PDF"
+            >
+              <FileText size={20} />
+            </button>
+            <button
+              onClick={() => handleExport('excel')}
+              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+              title="Exportar Excel"
+            >
+              <FileSpreadsheet size={20} />
             </button>
           </div>
         </div>

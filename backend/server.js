@@ -397,6 +397,11 @@ app.get('/api/chat-messages', dbController.getChatMessages);
 const socialMediaController = require('./socialMediaController');
 const checkLimit = require('./middleware/usageLimiter');
 
+// --- EXPORT ROUTES ---
+const exportController = require('./exportController');
+app.get('/api/export/leads/pdf', authenticateToken, exportController.exportLeadsPdf);
+app.get('/api/export/leads/excel', authenticateToken, exportController.exportLeadsExcel);
+
 // --- SOCIAL MEDIA ROUTES ---
 app.get('/api/social-posts', authenticateToken, socialMediaController.getPosts);
 app.post('/api/social-posts', authenticateToken, checkLimit('social_post'), socialMediaController.upload.single('media'), socialMediaController.createPost);

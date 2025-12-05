@@ -168,6 +168,16 @@ export const apiClient = {
         updateLeadStatus: async (id: string, status: string) => {
             const response = await axiosInstance.patch(`/leads/${id}/status`, { status });
             return response.data;
+        },
+        exportPdf: async (clientId?: string) => {
+            const url = clientId && clientId !== 'all' ? `/export/leads/pdf?client_id=${clientId}` : '/export/leads/pdf';
+            const response = await axiosInstance.get(url, { responseType: 'blob' });
+            return response.data;
+        },
+        exportExcel: async (clientId?: string) => {
+            const url = clientId && clientId !== 'all' ? `/export/leads/excel?client_id=${clientId}` : '/export/leads/excel';
+            const response = await axiosInstance.get(url, { responseType: 'blob' });
+            return response.data;
         }
     },
     social: {
