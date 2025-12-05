@@ -66,12 +66,7 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.APPROVALS]: '/approvals',
 };
 
-// ... (lines 67-205)
 
-          <Route path="/assets" element={<AssetLibrary />} />
-          <Route path="/approvals" element={<ApprovalCenter />} />
-        </Route >
-      </Route >
 
 const PrivateRoute: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
