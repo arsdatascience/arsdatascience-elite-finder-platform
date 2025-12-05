@@ -401,6 +401,8 @@ const checkLimit = require('./middleware/usageLimiter');
 const exportController = require('./exportController');
 app.get('/api/export/leads/pdf', authenticateToken, exportController.exportLeadsPdf);
 app.get('/api/export/leads/excel', authenticateToken, exportController.exportLeadsExcel);
+app.get('/api/export/campaigns/pdf', authenticateToken, exportController.exportCampaignsPdf);
+app.get('/api/export/campaigns/excel', authenticateToken, exportController.exportCampaignsExcel);
 
 // --- SOCIAL MEDIA ROUTES ---
 app.get('/api/social-posts', authenticateToken, socialMediaController.getPosts);

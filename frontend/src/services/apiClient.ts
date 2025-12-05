@@ -105,6 +105,16 @@ export const apiClient = {
 
             const response = await axiosInstance.get(`/campaigns/analytics?${queryParams.toString()}`);
             return response.data;
+        },
+        exportPdf: async (clientId?: string) => {
+            const url = clientId && clientId !== 'all' ? `/export/campaigns/pdf?client_id=${clientId}` : '/export/campaigns/pdf';
+            const response = await axiosInstance.get(url, { responseType: 'blob' });
+            return response.data;
+        },
+        exportExcel: async (clientId?: string) => {
+            const url = clientId && clientId !== 'all' ? `/export/campaigns/excel?client_id=${clientId}` : '/export/campaigns/excel';
+            const response = await axiosInstance.get(url, { responseType: 'blob' });
+            return response.data;
         }
     },
     auth: {
