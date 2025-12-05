@@ -109,7 +109,7 @@ interface ClientModalProps {
 
 export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClose, onSave, mode }) => {
     const [activeTab, setActiveTab] = useState('identity');
-    const { register, handleSubmit, setValue, watch, control, formState: { errors } } = useForm({
+    const { register, handleSubmit, setValue, reset, watch, control, formState: { errors } } = useForm({
         resolver: zodResolver(schema),
         defaultValues: client || {
             type: 'PF',
@@ -145,6 +145,22 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                 .catch(err => console.error('Erro ao buscar CEP:', err));
         }
     }, [cep, setValue]);
+
+    // Update form when client changes (Edit Mode)
+    useEffect(() => {
+        if (client) {
+            reset(client);
+        } else {
+            reset({
+                type: 'PF',
+                status: 'active',
+                terms_accepted: false,
+                privacy_accepted: false,
+                data_consent: false,
+                marketing_optin: false
+            });
+        }
+    }, [client, reset]);
 
     if (!isOpen) return null;
 

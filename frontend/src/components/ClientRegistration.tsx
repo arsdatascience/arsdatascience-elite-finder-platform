@@ -125,7 +125,7 @@ export const ClientRegistration: React.FC = () => {
 
     const handleNewClient = () => {
         setSelectedClient(null);
-        setIsModalOpen(true);
+        setTimeout(() => setIsModalOpen(true), 10);
     };
 
     const handleExport = async () => {
@@ -160,6 +160,11 @@ export const ClientRegistration: React.FC = () => {
     return (
         <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
             {/* Header */}
+            {successMsg && (
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-[60] flex items-center gap-2 animate-in slide-in-from-top-4 fade-in duration-300">
+                    <span className="font-bold">✓</span> {successMsg}
+                </div>
+            )}
             <div className="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center shrink-0">
                 <div>
                     <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
