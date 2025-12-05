@@ -609,6 +609,11 @@ app.get('/api/financial/suppliers', authenticateToken, financialCtrl.getSupplier
 app.post('/api/financial/suppliers', authenticateToken, financialCtrl.createSupplier);
 app.get('/api/financial/clients', authenticateToken, financialCtrl.getClients);
 
+// --- BULLMQ DASHBOARD ---
+const serverAdapter = require('./queueBoard');
+// Note: router need to be used as a middleware
+app.use('/admin/queues', authenticateToken, checkAdmin, serverAdapter.getRouter());
+
 // Rotas de Estatísticas do Sistema (Admin)
 app.get('/api/admin/usage-stats', authenticateToken, checkAdmin, adminCtrl.getSystemUsage);
 
