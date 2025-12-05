@@ -23,7 +23,7 @@ import {
   Users, Plus, Search, MoreVertical, Phone, Mail,
   CheckCircle, TrendingUp, Target, Loader2, DollarSign,
   LayoutGrid, List as ListIcon, Table as TableIcon, Filter, MessageCircle, User,
-  FileText, FileSpreadsheet
+  FileText, FileSpreadsheet, Info
 } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
 import socketService from '@/services/socket';
@@ -636,6 +636,13 @@ export const FlightControl: React.FC = () => {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
+            <div className="px-4 md:px-8 mb-4">
+              <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg border border-blue-100 text-sm">
+                <Info size={16} />
+                <span className="font-medium">Dica:</span> Para trocar o status, basta arrastar e soltar o card na coluna desejada.
+              </div>
+            </div>
+
             <div className="overflow-x-auto px-4 md:px-8 pb-4 min-h-[800px]">
               <div className="flex gap-6 min-w-max">
                 {COLUMNS.map(column => (

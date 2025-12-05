@@ -3,13 +3,11 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { cpf, cnpj } from 'cpf-cnpj-validator';
-import { X, Save, User, Mail, Phone, Building, MessageCircle, AlertTriangle, Lock, CreditCard, FileText, Globe, Linkedin, Facebook, Instagram } from 'lucide-react';
-
-// --- MASKS ---
-const maskCPF = (v: string) => v.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})/, '$1-$2').replace(/(-\d{2})\d+?$/, '$1');
-const maskCNPJ = (v: string) => v.replace(/\D/g, '').replace(/^(\d{2})(\d)/, '$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3').replace(/\.(\d{3})(\d)/, '.$1/$2').replace(/(\d{4})(\d)/, '$1-$2').slice(0, 18);
-const maskPhone = (v: string) => v.replace(/\D/g, '').replace(/^(\d{2})(\d)/g, '($1) $2').replace(/(\d)(\d{4})$/, '$1-$2').slice(0, 15);
-const maskCEP = (v: string) => v.replace(/\D/g, '').replace(/^(\d{5})(\d)/, '$1-$2').slice(0, 9);
+import {
+    X, Save, User, Mail, Phone, Building, MessageCircle, AlertTriangle, Lock, CreditCard,
+    FileText, Calendar, Tag, Plus
+} from 'lucide-react';
+import { maskCEP, maskPhone, maskCPF, maskCNPJ } from '../utils/masks';
 
 // --- VALIDATION SCHEMA ---
 const schema = z.object({
@@ -31,7 +29,7 @@ const schema = z.object({
     address_neighborhood: z.string().min(2, 'Bairro obrigatório'),
     address_city: z.string().min(2, 'Cidade obrigatória'),
     address_state: z.string().length(2, 'Estado (UF) obrigatório'),
-    address_district: z.string().optional(), // Adding district just in case
+    address_district: z.string().optional(),
 
     // Social Media
     instagram_url: z.string().optional(),
@@ -82,6 +80,14 @@ const schema = z.object({
     referral_source: z.string().optional(),
     client_references: z.string().optional(),
 
+    // Management
+    tags: z.union([z.array(z.string()), z.string()]).optional().transform(val => {
+        if (typeof val === 'string') return val.split(',').filter(Boolean);
+        return val || [];
+    }),
+    next_meeting: z.string().optional(),
+    meeting_notes: z.string().optional(),
+
     status: z.string().optional(),
 }).superRefine((data, ctx) => {
     if (data.type === 'PF') {
@@ -111,21 +117,21 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
     const [activeTab, setActiveTab] = useState('identity');
     const { register, handleSubmit, setValue, reset, watch, control, formState: { errors } } = useForm({
         resolver: zodResolver(schema),
-        defaultValues: client || {
+        defaultValues: {
             type: 'PF',
             status: 'active',
             terms_accepted: false,
             privacy_accepted: false,
             data_consent: false,
-            marketing_optin: false
+            marketing_optin: false,
+            tags: []
         }
     });
 
-    // Watch fields for logic
     const clientType = watch('type');
     const cep = watch('cep');
+    const currentTags = watch('tags') || [];
 
-    // CEP Integration
     useEffect(() => {
         if (cep && cep.length === 9) {
             const cleanCep = cep.replace('-', '');
@@ -138,7 +144,6 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                         setValue('address_city', data.localidade);
                         setValue('address_state', data.uf);
                         setValue('address_complement', data.complemento);
-                        // Focus on number
                         document.getElementById('address_number')?.focus();
                     }
                 })
@@ -146,10 +151,15 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
         }
     }, [cep, setValue]);
 
-    // Update form when client changes (Edit Mode)
     useEffect(() => {
-        if (client) {
-            reset(client);
+        // Prepare tags to be an array for local state
+        const safeClient = client ? {
+            ...client,
+            tags: Array.isArray(client.tags) ? client.tags : (client.tags ? client.tags.split(',') : [])
+        } : null;
+
+        if (safeClient) {
+            reset(safeClient);
         } else {
             reset({
                 type: 'PF',
@@ -157,7 +167,8 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                 terms_accepted: false,
                 privacy_accepted: false,
                 data_consent: false,
-                marketing_optin: false
+                marketing_optin: false,
+                tags: []
             });
         }
     }, [client, reset]);
@@ -165,15 +176,25 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
     if (!isOpen) return null;
 
     const onSubmit = (data: any) => {
-        // Clean up data before sending (e.g. remove confirmPassword)
         const { confirmPassword, ...submitData } = data;
         onSave(submitData);
     };
+
+    const toggleTag = (tag: string) => {
+        const current = Array.isArray(currentTags) ? currentTags : [];
+        const newTags = current.includes(tag)
+            ? current.filter((t: string) => t !== tag)
+            : [...current, tag];
+        setValue('tags', newTags, { shouldDirty: true, shouldValidate: true });
+    };
+
+    const predefinedTags = ['VIP', 'Novo', 'Quente', 'Frio', 'Retorno', 'Contrato Enviado', 'Risco Churn', 'High Ticket'];
 
     const tabs = [
         { id: 'identity', label: 'Identificação', icon: User },
         { id: 'address', label: 'Endereço', icon: Building },
         { id: 'details', label: 'Detalhes', icon: FileText },
+        { id: 'management', label: 'Gestão', icon: Calendar },
         { id: 'access', label: 'Acesso', icon: Lock },
         { id: 'finance', label: 'Financeiro', icon: CreditCard },
     ];
@@ -188,6 +209,23 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                             {mode === 'create' ? 'Novo Cliente' : `Editar ${client?.name || 'Cliente'}`}
                         </h2>
                         <p className="text-xs text-gray-500">Preencha os dados completos para o cadastro.</p>
+
+                        {mode === 'edit' && (
+                            <div className="flex gap-2 mt-3">
+                                <button type="button" onClick={() => window.open(`https://wa.me/55${client?.whatsapp?.replace(/\D/g, '')}`, '_blank')} className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm" title="WhatsApp">
+                                    <MessageCircle size={16} />
+                                </button>
+                                <button type="button" onClick={() => window.location.href = `mailto:${client?.email}`} className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm" title="Email">
+                                    <Mail size={16} />
+                                </button>
+                                <button type="button" onClick={() => window.location.href = `tel:${client?.phone}`} className="p-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors shadow-sm" title="Ligar">
+                                    <Phone size={16} />
+                                </button>
+                                <button type="button" onClick={() => setActiveTab('management')} className="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors shadow-sm" title="Agendar">
+                                    <Calendar size={16} />
+                                </button>
+                            </div>
+                        )}
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500">
                         <X size={20} />
@@ -211,7 +249,6 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                     })}
                 </div>
 
-                {/* Form Content */}
                 <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 bg-gray-50/30">
 
                     {/* --- IDENTITY TAB --- */}
@@ -231,7 +268,6 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                                         </label>
                                     </div>
                                 </div>
-
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-700 uppercase">Status</label>
                                     <select {...register('status')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm">
@@ -240,66 +276,47 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                                         <option value="lead">Lead</option>
                                     </select>
                                 </div>
-
                                 <div className="space-y-1 md:col-span-2">
                                     <label className="text-xs font-bold text-gray-700 uppercase">Nome Completo / Razão Social <span className="text-red-500">*</span></label>
-                                    <input {...register('name')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder={clientType === 'PJ' ? 'Razão Social da Empresa' : 'Nome Completo'} />
+                                    <input {...register('name')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                                     {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message as string}</p>}
                                 </div>
-
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">{clientType === 'PJ' ? 'CNPJ' : 'CPF'} <span className="text-red-500">*</span></label>
+                                    <label className="text-xs font-bold text-gray-700 uppercase">Email <span className="text-red-500">*</span></label>
+                                    <input {...register('email')} type="email" className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message as string}</p>}
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-700 uppercase">Documento</label>
                                     <Controller
                                         name="document"
                                         control={control}
                                         render={({ field }) => (
-                                            <input
-                                                {...field}
-                                                onChange={(e) => field.onChange(clientType === 'PJ' ? maskCNPJ(e.target.value) : maskCPF(e.target.value))}
-                                                className={`w-full p-2.5 rounded-lg border ${errors.document ? 'border-red-300 bg-red-50' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 outline-none transition-all`}
-                                                placeholder={clientType === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00'}
-                                            />
+                                            <input {...field} onChange={(e) => field.onChange(clientType === 'PF' ? maskCPF(e.target.value) : maskCNPJ(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                                         )}
                                     />
                                     {errors.document && <p className="text-red-500 text-xs mt-1">{errors.document.message as string}</p>}
                                 </div>
-
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Email <span className="text-red-500">*</span></label>
-                                    <div className="relative">
-                                        <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                        <input {...register('email')} type="email" className="w-full pl-10 p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="cliente@email.com" />
-                                    </div>
-                                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message as string}</p>}
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Telefone Principal <span className="text-red-500">*</span></label>
+                                    <label className="text-xs font-bold text-gray-700 uppercase">Telefone</label>
                                     <Controller
                                         name="phone"
                                         control={control}
                                         render={({ field }) => (
-                                            <div className="relative">
-                                                <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                                <input {...field} onChange={(e) => field.onChange(maskPhone(e.target.value))} className="w-full pl-10 p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="(00) 0000-0000" />
-                                            </div>
+                                            <input {...field} onChange={(e) => field.onChange(maskPhone(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                                         )}
                                     />
                                     {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message as string}</p>}
                                 </div>
-
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">WhatsApp / Celular</label>
-                                    <div className="relative">
-                                        <MessageCircle size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-green-500" />
-                                        <Controller
-                                            name="whatsapp"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <input {...field} onChange={(e) => field.onChange(maskPhone(e.target.value))} className="w-full pl-10 p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="(00) 90000-0000" />
-                                            )}
-                                        />
-                                    </div>
+                                    <label className="text-xs font-bold text-gray-700 uppercase">WhatsApp</label>
+                                    <Controller
+                                        name="whatsapp"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <input {...field} onChange={(e) => field.onChange(maskPhone(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                        )}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -315,36 +332,33 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                                         name="cep"
                                         control={control}
                                         render={({ field }) => (
-                                            <input {...field} onChange={(e) => field.onChange(maskCEP(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="00000-000" />
+                                            <input {...field} onChange={(e) => field.onChange(maskCEP(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                                         )}
                                     />
-                                    {errors.cep && <p className="text-red-500 text-xs mt-1">{errors.cep.message as string}</p>}
                                 </div>
                                 <div className="space-y-1 md:col-span-2">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Rua / Logradouro <span className="text-red-500">*</span></label>
-                                    <input {...register('address_street')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                    <label className="text-xs font-bold text-gray-700 uppercase">Logradouro</label>
+                                    <input {...register('address_street')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-gray-50" />
                                 </div>
-
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Número <span className="text-red-500">*</span></label>
-                                    <input id="address_number" {...register('address_number')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                    <label className="text-xs font-bold text-gray-700 uppercase">Número</label>
+                                    <input id="address_number" {...register('address_number')} className="w-full p-2.5 rounded-lg border border-gray-200" />
                                 </div>
                                 <div className="space-y-1 md:col-span-2">
                                     <label className="text-xs font-bold text-gray-700 uppercase">Complemento</label>
-                                    <input {...register('address_complement')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Apto, Bloco, Sala..." />
-                                </div>
-
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Bairro <span className="text-red-500">*</span></label>
-                                    <input {...register('address_neighborhood')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                    <input {...register('address_complement')} className="w-full p-2.5 rounded-lg border border-gray-200" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Cidade <span className="text-red-500">*</span></label>
-                                    <input {...register('address_city')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                    <label className="text-xs font-bold text-gray-700 uppercase">Bairro</label>
+                                    <input {...register('address_neighborhood')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-gray-50" />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Estado (UF) <span className="text-red-500">*</span></label>
-                                    <input {...register('address_state')} maxLength={2} className="w-full p-2.5 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all uppercase" placeholder="SP" />
+                                    <label className="text-xs font-bold text-gray-700 uppercase">Cidade</label>
+                                    <input {...register('address_city')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-gray-50" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-gray-700 uppercase">Estado</label>
+                                    <input {...register('address_state')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-gray-50" />
                                 </div>
                             </div>
                         </div>
@@ -353,129 +367,89 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                     {/* --- DETAILS TAB --- */}
                     {activeTab === 'details' && (
                         <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
-                            {/* PF Fields */}
                             {clientType === 'PF' && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-700 uppercase">RG</label>
-                                        <input {...register('rg')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-700 uppercase">Data de Nascimento</label>
-                                        <input type="date" {...register('birth_date')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-700 uppercase">Sexo / Gênero</label>
-                                        <select {...register('gender')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                            <option value="">Selecione...</option>
-                                            <option value="M">Masculino</option>
-                                            <option value="F">Feminino</option>
-                                            <option value="O">Outro</option>
-                                            <option value="N">Prefiro não informar</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-700 uppercase">Estado Civil</label>
-                                        <select {...register('marital_status')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                            <option value="">Selecione...</option>
-                                            <option value="solteiro">Solteiro(a)</option>
-                                            <option value="casado">Casado(a)</option>
-                                            <option value="divorciado">Divorciado(a)</option>
-                                            <option value="viuvo">Viúvo(a)</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-700 uppercase">Nacionalidade</label>
-                                        <input {...register('nationality')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" defaultValue="Brasileira" />
-                                    </div>
+                                    <div className="space-y-1"><label className="text-xs font-bold text-gray-700 uppercase">RG</label><input {...register('rg')} className="w-full p-2.5 rounded-lg border border-gray-200" /></div>
+                                    <div className="space-y-1"><label className="text-xs font-bold text-gray-700 uppercase">Data Nasc.</label><input type="date" {...register('birth_date')} className="w-full p-2.5 rounded-lg border border-gray-200" /></div>
                                 </div>
                             )}
-
-                            {/* PJ Fields */}
                             {clientType === 'PJ' && (
-                                <div className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-1 md:col-span-2">
-                                            <label className="text-xs font-bold text-gray-700 uppercase">Nome Fantasia</label>
-                                            <input {...register('fantasy_name')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-gray-700 uppercase">Inscrição Estadual</label>
-                                            <input {...register('state_registration')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-gray-700 uppercase">Inscrição Municipal</label>
-                                            <input {...register('municipal_registration')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-gray-700 uppercase">Porte da Empresa</label>
-                                            <select {...register('company_size')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                                <option value="">Selecione...</option>
-                                                <option value="MEI">MEI</option>
-                                                <option value="ME">ME (Microempresa)</option>
-                                                <option value="EPP">EPP (Pequeno Porte)</option>
-                                                <option value="LTDA">LTDA / Média / Grande</option>
-                                                <option value="SA">S.A.</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                                        <h4 className="font-bold text-blue-800 mb-3 flex items-center gap-2"><User size={16} /> Responsável Legal</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-bold text-blue-700 uppercase">Nome</label>
-                                                <input {...register('legal_rep_name')} className="w-full p-2.5 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-bold text-blue-700 uppercase">CPF</label>
-                                                <Controller
-                                                    name="legal_rep_cpf"
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <input {...field} onChange={(e) => field.onChange(maskCPF(e.target.value))} className="w-full p-2.5 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="000.000.000-00" />
-                                                    )}
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-bold text-blue-700 uppercase">Cargo</label>
-                                                <input {...register('legal_rep_role')} className="w-full p-2.5 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Sócio / Diretor" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-bold text-blue-700 uppercase">Email</label>
-                                                <input {...register('legal_rep_email')} type="email" className="w-full p-2.5 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1"><label className="text-xs font-bold text-gray-700 uppercase">Nome Fantasia</label><input {...register('fantasy_name')} className="w-full p-2.5 rounded-lg border border-gray-200" /></div>
+                                    <div className="space-y-1"><label className="text-xs font-bold text-gray-700 uppercase">IE</label><input {...register('state_registration')} className="w-full p-2.5 rounded-lg border border-gray-200" /></div>
                                 </div>
                             )}
+                            <div className="pt-4 mt-4 border-t border-gray-100">
+                                <label className="text-xs font-bold text-gray-700 uppercase">Observações</label>
+                                <textarea {...register('notes')} className="w-full p-2.5 rounded-lg border border-gray-200 h-24" />
+                            </div>
+                        </div>
+                    )}
 
-                            {/* Social Media Section */}
-                            <div className="pt-4 border-t border-gray-100">
-                                <h4 className="font-bold text-gray-700 mb-3 flex items-center gap-2 text-sm uppercase"><Globe size={14} /> Redes Sociais & Web</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-1"><Instagram size={12} /> Instagram</label>
-                                        <input {...register('instagram_url')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="https://instagram.com/..." />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-1"><Facebook size={12} /> Facebook</label>
-                                        <input {...register('facebook_url')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="https://facebook.com/..." />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-1"><Linkedin size={12} /> LinkedIn</label>
-                                        <input {...register('linkedin_url')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="https://linkedin.com/in/..." />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-1"><Globe size={12} /> Website</label>
-                                        <input {...register('website')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="https://..." />
+                    {/* --- MANAGEMENT TAB (NEW) --- */}
+                    {activeTab === 'management' && (
+                        <div className="space-y-8 animate-in slide-in-from-right-4 fade-in duration-300">
+                            {/* Tags */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
+                                    <Tag className="text-blue-600" size={18} />
+                                    <h3 className="font-bold text-gray-800">Tags e Segmentação</h3>
+                                </div>
+                                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                                    <div className="flex flex-wrap gap-2">
+                                        {predefinedTags.map(tag => (
+                                            <button
+                                                key={tag}
+                                                type="button"
+                                                onClick={() => toggleTag(tag)}
+                                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${(Array.isArray(currentTags) ? currentTags : []).includes(tag)
+                                                    ? 'bg-blue-100 text-blue-700 border-blue-200 shadow-sm'
+                                                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                {tag} {(Array.isArray(currentTags) ? currentTags : []).includes(tag) && '✓'}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-1 pt-4 border-t border-gray-100">
-                                <label className="text-xs font-bold text-gray-700 uppercase">Observações Gerais</label>
-                                <textarea {...register('notes')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all h-24 resize-none" />
+                            {/* Schedule */}
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
+                                    <Calendar className="text-orange-500" size={18} />
+                                    <h3 className="font-bold text-gray-800">Agendamento</h3>
+                                </div>
+                                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-gray-700 uppercase">Data da Reunião</label>
+                                            <input id="meeting_date" type="datetime-local" {...register('next_meeting')} className="w-full p-2.5 rounded-lg border border-gray-200" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-bold text-gray-700 uppercase">Pauta</label>
+                                            <textarea {...register('meeting_notes')} className="w-full p-2.5 rounded-lg border border-gray-200 h-10 resize-none" placeholder="Assunto..." />
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 mt-4 justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const date = watch('next_meeting');
+                                                if (!date) return alert('Selecione uma data para adicionar ao calendário.');
+                                                const title = `Reunião com: ${watch('name')}`;
+                                                // Google Calendar Link
+                                                const start = new Date(date).toISOString().replace(/-|:|\.\d\d\d/g, "");
+                                                const end = new Date(new Date(date).getTime() + 60 * 60000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+                                                const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(watch('meeting_notes') || '')}`;
+                                                window.open(url, '_blank');
+                                            }}
+                                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                                        >
+                                            <Plus size={16} /> Adicionar ao Google Calendar
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -485,66 +459,11 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                         <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
                             <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg flex items-start gap-3">
                                 <AlertTriangle className="text-yellow-600 shrink-0 mt-0.5" size={20} />
-                                <div className="text-sm text-yellow-800">
-                                    <p className="font-bold">Credenciais de Acesso</p>
-                                    <p>Esses dados permitirão que o cliente acesse o portal (se disponível). A senha será armazenada de forma segura.</p>
-                                </div>
+                                <div className="text-sm text-yellow-800"><p className="font-bold">Acesso</p><p>Credenciais para acesso ao portal.</p></div>
                             </div>
-
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Nome de Usuário / Login</label>
-                                    <input {...register('username')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Ex: nome.sobrenome" />
-                                </div>
-                                <div className="hidden md:block"></div> {/* Spacer */}
-
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Senha De Acesso</label>
-                                    <input type="password" {...register('password')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="••••••••" />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Confirmar Senha</label>
-                                    <input type="password" {...register('confirmPassword')} className={`w-full p-2.5 rounded-lg border ${errors.confirmPassword ? 'border-red-300 bg-red-50' : 'border-gray-200'} focus:ring-2 focus:ring-blue-500 outline-none transition-all`} placeholder="••••••••" />
-                                    {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message as string}</p>}
-                                </div>
-                            </div>
-
-                            <div className="border-t border-gray-100 pt-6 space-y-4">
-                                <h4 className="font-bold text-gray-800 flex items-center gap-2"><Lock size={16} /> Compliance & LGPD</h4>
-
-                                <label className="flex items-start gap-3 cursor-pointer group">
-                                    <div className="relative flex items-center">
-                                        <input type="checkbox" {...register('terms_accepted')} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-all" />
-                                    </div>
-                                    <div>
-                                        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Aceite dos Termos de Uso</span>
-                                        <p className="text-xs text-gray-400">O cliente concordou com os termos de serviço.</p>
-                                    </div>
-                                </label>
-
-                                <label className="flex items-start gap-3 cursor-pointer group">
-                                    <input type="checkbox" {...register('privacy_accepted')} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-all" />
-                                    <div>
-                                        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Política de Privacidade</span>
-                                        <p className="text-xs text-gray-400">O cliente leu e aceitou a política de privacidade.</p>
-                                    </div>
-                                </label>
-
-                                <label className="flex items-start gap-3 cursor-pointer group">
-                                    <input type="checkbox" {...register('data_consent')} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-all" />
-                                    <div>
-                                        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Consentimento de Dados (LGPD)</span>
-                                        <p className="text-xs text-gray-400">Consentimento explícito para armazenamento e processamento de dados sensíveis.</p>
-                                    </div>
-                                </label>
-
-                                <label className="flex items-start gap-3 cursor-pointer group">
-                                    <input type="checkbox" {...register('marketing_optin')} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-all" />
-                                    <div>
-                                        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">Opt-in de Comunicações</span>
-                                        <p className="text-xs text-gray-400">Permissão para envio de newsletters, promoções e avisos via Whatsapp/Email.</p>
-                                    </div>
-                                </label>
+                                <div className="space-y-1"><label className="text-xs font-bold text-gray-700 uppercase">Usuário</label><input {...register('username')} className="w-full p-2.5 rounded-lg border border-gray-200" /></div>
+                                <div className="space-y-1"><label className="text-xs font-bold text-gray-700 uppercase">Senha</label><input type="password" {...register('password')} className="w-full p-2.5 rounded-lg border border-gray-200" /></div>
                             </div>
                         </div>
                     )}
@@ -553,52 +472,20 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                     {activeTab === 'finance' && (
                         <div className="space-y-6 animate-in slide-in-from-right-4 fade-in duration-300">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Banco</label>
-                                    <input {...register('bank_name')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Ex: Nubank, Itaú..." />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Tipo de Conta</label>
-                                    <select {...register('bank_account_type')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-                                        <option value="">Selecione...</option>
-                                        <option value="corrente">Corrente</option>
-                                        <option value="poupanca">Poupança</option>
-                                        <option value="pagamento">Pagamento</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Agência</label>
-                                    <input {...register('bank_agency')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Conta</label>
-                                    <input {...register('bank_account')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
-                                </div>
-                                <div className="space-y-1 md:col-span-2">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Chave PIX</label>
-                                    <input {...register('pix_key')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="CPF, Email, Telefone ou Aleatória" />
-                                </div>
-                            </div>
-
-                            <div className="pt-4 border-t border-gray-100">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-gray-700 uppercase">Como conheceu?</label>
-                                    <input {...register('referral_source')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Indicação, Google, Instagram..." />
-                                </div>
+                                <div className="space-y-1"><label className="text-xs font-bold text-gray-700 uppercase">Banco</label><input {...register('bank_name')} className="w-full p-2.5 rounded-lg border border-gray-200" /></div>
+                                <div className="space-y-1"><label className="text-xs font-bold text-gray-700 uppercase">Agência</label><input {...register('bank_agency')} className="w-full p-2.5 rounded-lg border border-gray-200" /></div>
+                                <div className="space-y-1"><label className="text-xs font-bold text-gray-700 uppercase">Conta</label><input {...register('bank_account')} className="w-full p-2.5 rounded-lg border border-gray-200" /></div>
+                                <div className="space-y-1"><label className="text-xs font-bold text-gray-700 uppercase">PIX</label><input {...register('pix_key')} className="w-full p-2.5 rounded-lg border border-gray-200" /></div>
                             </div>
                         </div>
                     )}
 
                 </form>
 
-                {/* Footer */}
                 <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 shrink-0">
-                    <button onClick={onClose} className="px-6 py-2 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors">
-                        Cancelar
-                    </button>
+                    <button onClick={onClose} className="px-6 py-2 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
                     <button onClick={handleSubmit(onSubmit)} className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all flex items-center gap-2">
-                        <Save size={18} />
-                        Salvar Cliente
+                        <Save size={18} /> Salvar Cliente
                     </button>
                 </div>
             </div>
