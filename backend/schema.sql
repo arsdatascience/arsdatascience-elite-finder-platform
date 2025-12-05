@@ -78,6 +78,50 @@ CREATE TABLE IF NOT EXISTS clients (
     address_neighborhood VARCHAR(100),
     address_city VARCHAR(100),
     address_state CHAR(2),
+    address_district VARCHAR(100),
+
+    -- Compliance & Access
+    username VARCHAR(100),
+    password_hash TEXT,
+    terms_accepted BOOLEAN DEFAULT false,
+    privacy_accepted BOOLEAN DEFAULT false,
+    data_consent BOOLEAN DEFAULT false,
+    marketing_optin BOOLEAN DEFAULT false,
+
+    -- PF Specific
+    rg VARCHAR(30),
+    birth_date DATE,
+    gender VARCHAR(50),
+    marital_status VARCHAR(50),
+    nationality VARCHAR(100),
+    mother_name VARCHAR(255),
+
+    -- PJ Specific
+    fantasy_name VARCHAR(255),
+    state_registration VARCHAR(50),
+    municipal_registration VARCHAR(50),
+    company_size VARCHAR(50),
+    cnae VARCHAR(100),
+
+    -- PJ Legal Representative
+    legal_rep_name VARCHAR(255),
+    legal_rep_cpf VARCHAR(20),
+    legal_rep_role VARCHAR(100),
+    legal_rep_email VARCHAR(255),
+    legal_rep_phone VARCHAR(50),
+
+    -- Banking Information
+    bank_name VARCHAR(100),
+    bank_agency VARCHAR(50),
+    bank_account VARCHAR(50),
+    bank_account_type VARCHAR(50),
+    pix_key VARCHAR(100),
+
+    -- Additional Info
+    notes TEXT,
+    referral_source VARCHAR(100),
+    client_references TEXT,
+    
     triggers TEXT,
     steps_count INTEGER DEFAULT 0,
     enrolled_count INTEGER DEFAULT 0,
