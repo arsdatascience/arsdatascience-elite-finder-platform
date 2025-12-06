@@ -126,210 +126,221 @@ export const SocialIntegrations: React.FC = () => {
                 return;
             }
 
-            let authUrl = '';
-            switch (platform) {
-                case 'instagram':
-                case 'facebook': authUrl = `${API_URL}/api/auth/meta`; break;
-                case 'linkedin': authUrl = `${API_URL}/api/auth/linkedin`; break;
-                case 'twitter': authUrl = `${API_URL}/api/auth/twitter`; break;
+            let provider = platform;
+            if (platform === 'instagram') provider = 'facebook';
+
+            // Twitter/LinkedIn support pending in backend
+            if (['linkedin', 'twitter'].includes(platform)) {
+                alert('Integração em breve!');
+                setConnectingPlatform(null);
+                return;
             }
 
-            window.location.href = authUrl;
+            try {
+                // Fetch Auth URL from Backend
+                const response = await fetch(`${API_URL}/api/oauth/init?provider=${provider}&clientId=${CLIENT_ID}`);
+                const data = await response.json();
 
-        } catch (error) {
-            console.error('Connection error:', error);
-            setConnectingPlatform(null);
-        }
-    };
-
-    const handleDisconnect = async (accountId: string, platform: string) => {
-        if (!confirm(`Tem certeza que deseja remover esta conta do ${platform}?`)) return;
-
-        try {
-            // Optimistic update
-            setAccounts(prev => prev.filter(a => a.id !== accountId));
-
-            await fetch(`${API_URL}/api/social-accounts/${accountId}`, { method: 'DELETE' });
-        } catch (error) {
-            console.error('Error disconnecting:', error);
-            alert('Erro ao desconectar conta.');
-            fetchAccounts(); // Revert on error
-        }
-    };
-
-    const handleSaveN8n = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const res = await fetch(`${API_URL}/api/integrations/n8n`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ webhookUrl: n8nUrl })
-            });
-            if (res.ok) {
-                alert('Configuração salva com sucesso!');
-            } else {
-                alert('Erro ao salvar configuração.');
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    throw new Error('URL de autenticação não gerada');
+                }
+            } catch (err) {
+                console.error('Erro ao iniciar OAuth:', err);
+                alert('Erro ao iniciar conexão com ' + platform);
+                setConnectingPlatform(null);
             }
-        } catch (error) {
-            console.error(error);
-            alert('Erro de conexão.');
-        }
-    };
+        };
 
-    return (
-        <div className="space-y-8">
-            {/* Header */}
-            <div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Gerenciamento de Contas Sociais</h2>
-                <p className="text-gray-600">Conecte múltiplas contas para gerenciar todas as suas redes em um só lugar.</p>
-            </div>
+        const handleDisconnect = async (accountId: string, platform: string) => {
+            if (!confirm(`Tem certeza que deseja remover esta conta do ${platform}?`)) return;
 
-            {/* Add New Account Section */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-primary-600" />
-                    Adicionar Nova Conta
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {['instagram', 'facebook', 'linkedin', 'twitter'].map(platform => {
-                        const info = getPlatformInfo(platform);
-                        const Icon = info.icon;
-                        const isConnecting = connectingPlatform === platform;
+            try {
+                // Optimistic update
+                setAccounts(prev => prev.filter(a => a.id !== accountId));
 
-                        return (
-                            <button
-                                key={platform}
-                                onClick={() => handleConnectNew(platform)}
-                                disabled={isConnecting}
-                                className={`flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all group ${isConnecting ? 'opacity-70 cursor-wait' : ''}`}
-                            >
-                                <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${info.color} flex items-center justify-center text-white mb-2 group-hover:scale-110 transition-transform`}>
-                                    {isConnecting ? <Loader2 className="animate-spin" size={20} /> : <Icon size={20} />}
-                                </div>
-                                <span className="font-medium text-gray-700 group-hover:text-primary-700">{info.name}</span>
-                            </button>
-                        );
-                    })}
+                await fetch(`${API_URL}/api/social-accounts/${accountId}`, { method: 'DELETE' });
+            } catch (error) {
+                console.error('Error disconnecting:', error);
+                alert('Erro ao desconectar conta.');
+                fetchAccounts(); // Revert on error
+            }
+        };
+
+        const handleSaveN8n = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`${API_URL}/api/integrations/n8n`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ webhookUrl: n8nUrl })
+                });
+                if (res.ok) {
+                    alert('Configuração salva com sucesso!');
+                } else {
+                    alert('Erro ao salvar configuração.');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Erro de conexão.');
+            }
+        };
+
+        return (
+            <div className="space-y-8">
+                {/* Header */}
+                <div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Gerenciamento de Contas Sociais</h2>
+                    <p className="text-gray-600">Conecte múltiplas contas para gerenciar todas as suas redes em um só lugar.</p>
                 </div>
-            </div>
 
-            {/* Connected Accounts List */}
-            <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-green-600" />
-                    Contas Conectadas ({accounts.length})
-                </h3>
-
-                {loading ? (
-                    <div className="flex justify-center py-8">
-                        <Loader2 className="animate-spin text-primary-500" size={32} />
-                    </div>
-                ) : accounts.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-                        <p className="text-gray-500">Nenhuma conta conectada ainda.</p>
-                        <p className="text-sm text-gray-400 mt-1">Use os botões acima para adicionar sua primeira conta.</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {accounts.map(account => {
-                            const info = getPlatformInfo(account.platform);
+                {/* Add New Account Section */}
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <Plus className="w-5 h-5 text-primary-600" />
+                        Adicionar Nova Conta
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {['instagram', 'facebook', 'linkedin', 'twitter'].map(platform => {
+                            const info = getPlatformInfo(platform);
                             const Icon = info.icon;
+                            const isConnecting = connectingPlatform === platform;
 
                             return (
-                                <div key={account.id} className={`bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow ${info.borderColor}`}>
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${info.color} flex items-center justify-center text-white`}>
-                                                <Icon size={20} />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-gray-800">{account.account_name || info.name}</h4>
-                                                <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full w-fit mt-1">
-                                                    <CheckCircle size={10} />
-                                                    Conectado
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => handleDisconnect(account.id, account.platform)}
-                                            className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors"
-                                            title="Remover conta"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
+                                <button
+                                    key={platform}
+                                    onClick={() => handleConnectNew(platform)}
+                                    disabled={isConnecting}
+                                    className={`flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all group ${isConnecting ? 'opacity-70 cursor-wait' : ''}`}
+                                >
+                                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${info.color} flex items-center justify-center text-white mb-2 group-hover:scale-110 transition-transform`}>
+                                        {isConnecting ? <Loader2 className="animate-spin" size={20} /> : <Icon size={20} />}
                                     </div>
-
-                                    {/* Metrics Preview */}
-                                    <div className="grid grid-cols-3 gap-2 py-3 border-t border-b border-gray-100 mb-3">
-                                        <div className="text-center">
-                                            <p className="text-xs text-gray-500">Seguidores</p>
-                                            <p className="font-semibold text-gray-800">{account.metrics?.followers?.toLocaleString() || '-'}</p>
-                                        </div>
-                                        <div className="text-center border-l border-gray-100">
-                                            <p className="text-xs text-gray-500">Engajamento</p>
-                                            <p className="font-semibold text-gray-800">{account.metrics?.engagement || '-'}%</p>
-                                        </div>
-                                        <div className="text-center border-l border-gray-100">
-                                            <p className="text-xs text-gray-500">Posts</p>
-                                            <p className="font-semibold text-gray-800">{account.metrics?.posts || '-'}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        <button className={`flex-1 py-1.5 text-sm font-medium rounded-lg ${info.bgColor} ${info.textColor} hover:opacity-80 transition-opacity`}>
-                                            Ver Relatórios
-                                        </button>
-                                        <button className="flex-1 py-1.5 text-sm font-medium rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
-                                            Configurações
-                                        </button>
-                                    </div>
-                                </div>
+                                    <span className="font-medium text-gray-700 group-hover:text-primary-700">{info.name}</span>
+                                </button>
                             );
                         })}
                     </div>
-                )}
-            </div>
-
-            {/* N8N Integration */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-orange-600" />
-                    Automação (n8n)
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                    Configure a URL do Webhook do n8n para receber eventos de leads (criação e atualização).
-                </p>
-                <div className="flex gap-3">
-                    <input
-                        type="text"
-                        value={n8nUrl}
-                        onChange={(e) => setN8nUrl(e.target.value)}
-                        placeholder="https://seu-n8n.com/webhook/..."
-                        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                    />
-                    <button
-                        onClick={handleSaveN8n}
-                        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium transition-colors"
-                    >
-                        Salvar
-                    </button>
                 </div>
-            </div>
 
-            {/* Info Box */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3 items-start">
-                <AlertCircle className="text-primary-600 shrink-0 mt-0.5" size={20} />
-                <div className="text-sm text-primary-800">
-                    <p className="font-bold mb-1">Sobre a conexão segura (OAuth)</p>
-                    <p>
-                        Para garantir a segurança dos seus dados e evitar bloqueios, utilizamos a conexão oficial de cada plataforma.
-                        Isso permite que você conecte múltiplas contas sem compartilhar suas senhas diretamente conosco.
+                {/* Connected Accounts List */}
+                <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <Users className="w-5 h-5 text-green-600" />
+                        Contas Conectadas ({accounts.length})
+                    </h3>
+
+                    {loading ? (
+                        <div className="flex justify-center py-8">
+                            <Loader2 className="animate-spin text-primary-500" size={32} />
+                        </div>
+                    ) : accounts.length === 0 ? (
+                        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                            <p className="text-gray-500">Nenhuma conta conectada ainda.</p>
+                            <p className="text-sm text-gray-400 mt-1">Use os botões acima para adicionar sua primeira conta.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {accounts.map(account => {
+                                const info = getPlatformInfo(account.platform);
+                                const Icon = info.icon;
+
+                                return (
+                                    <div key={account.id} className={`bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow ${info.borderColor}`}>
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${info.color} flex items-center justify-center text-white`}>
+                                                    <Icon size={20} />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-gray-800">{account.account_name || info.name}</h4>
+                                                    <div className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full w-fit mt-1">
+                                                        <CheckCircle size={10} />
+                                                        Conectado
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handleDisconnect(account.id, account.platform)}
+                                                className="text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                                title="Remover conta"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+
+                                        {/* Metrics Preview */}
+                                        <div className="grid grid-cols-3 gap-2 py-3 border-t border-b border-gray-100 mb-3">
+                                            <div className="text-center">
+                                                <p className="text-xs text-gray-500">Seguidores</p>
+                                                <p className="font-semibold text-gray-800">{account.metrics?.followers?.toLocaleString() || '-'}</p>
+                                            </div>
+                                            <div className="text-center border-l border-gray-100">
+                                                <p className="text-xs text-gray-500">Engajamento</p>
+                                                <p className="font-semibold text-gray-800">{account.metrics?.engagement || '-'}%</p>
+                                            </div>
+                                            <div className="text-center border-l border-gray-100">
+                                                <p className="text-xs text-gray-500">Posts</p>
+                                                <p className="font-semibold text-gray-800">{account.metrics?.posts || '-'}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <button className={`flex-1 py-1.5 text-sm font-medium rounded-lg ${info.bgColor} ${info.textColor} hover:opacity-80 transition-opacity`}>
+                                                Ver Relatórios
+                                            </button>
+                                            <button className="flex-1 py-1.5 text-sm font-medium rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors">
+                                                Configurações
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* N8N Integration */}
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-orange-600" />
+                        Automação (n8n)
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                        Configure a URL do Webhook do n8n para receber eventos de leads (criação e atualização).
                     </p>
+                    <div className="flex gap-3">
+                        <input
+                            type="text"
+                            value={n8nUrl}
+                            onChange={(e) => setN8nUrl(e.target.value)}
+                            placeholder="https://seu-n8n.com/webhook/..."
+                            className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                        />
+                        <button
+                            onClick={handleSaveN8n}
+                            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium transition-colors"
+                        >
+                            Salvar
+                        </button>
+                    </div>
+                </div>
+
+                {/* Info Box */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3 items-start">
+                    <AlertCircle className="text-primary-600 shrink-0 mt-0.5" size={20} />
+                    <div className="text-sm text-primary-800">
+                        <p className="font-bold mb-1">Sobre a conexão segura (OAuth)</p>
+                        <p>
+                            Para garantir a segurança dos seus dados e evitar bloqueios, utilizamos a conexão oficial de cada plataforma.
+                            Isso permite que você conecte múltiplas contas sem compartilhar suas senhas diretamente conosco.
+                        </p>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
-};
+        );
+    };
