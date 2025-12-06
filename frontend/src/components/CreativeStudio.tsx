@@ -163,222 +163,235 @@ const CreativeStudio: React.FC = () => {
                                 onClick={() => setActiveTab('copy')}
                                 className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'copy'
                                     ? 'bg-white text-purple-700 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                            >
+                                <FileText size={18} />
+                                Sniper Copywriter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Content Area */}
+                <div className="flex-1 p-8">
+                    <div className="max-w-6xl mx-auto w-full h-full">
+
                         {activeTab === 'design' ? (
-                                    <div className="h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                        <ContentGenerator
-                                            isOpen={true}
-                                            onClose={() => { }}
-                                            mode="page"
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
-                                        {/* Coluna da Esquerda: Histórico (Condicional ou Fixo) */}
-                                        {showHistory && (
-                                            <div className="lg:col-span-3 space-y-4 animate-fade-in">
-                                                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-[calc(100vh-200px)] overflow-y-auto">
-                                                    <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                                        <History size={16} /> Copys Salvas
-                                                    </h3>
-                                                    {savedCopies.length === 0 ? (
-                                                        <p className="text-sm text-slate-400 text-center py-8">Nenhuma copy salva ainda.</p>
-                                                    ) : (
-                                                        <div className="space-y-3">
-                                                            {savedCopies.map((copy) => (
-                                                                <div
-                                                                    key={copy.id}
-                                                                    onClick={() => loadCopy(copy)}
-                                                                    className="p-3 rounded-lg border border-slate-100 hover:border-purple-200 hover:bg-purple-50 cursor-pointer transition-all group relative"
-                                                                >
-                                                                    <div className="flex justify-between items-start mb-1">
-                                                                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${copy.platform === 'instagram' ? 'bg-pink-100 text-pink-700' :
-                                                                            copy.platform === 'linkedin' ? 'bg-blue-100 text-blue-700' :
-                                                                                'bg-gray-100 text-gray-700'
-                                                                            }`}>
-                                                                            {copy.platform}
-                                                                        </span>
-                                                                        <button
-                                                                            onClick={(e) => handleDelete(copy.id, e)}
-                                                                            className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                        >
-                                                                            <Trash2 size={14} />
-                                                                        </button>
-                                                                    </div>
-                                                                    <p className="text-sm font-medium text-slate-800 line-clamp-2 mb-1">{copy.topic}</p>
-                                                                    <p className="text-xs text-slate-400">{new Date(copy.created_at).toLocaleDateString()}</p>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Coluna Central: Configuração */}
-                                        <div className={`${showHistory ? 'lg:col-span-3' : 'lg:col-span-4'} space-y-6 transition-all`}>
-                                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                                                <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                                                    <PenTool size={18} /> Configuração
-                                                </h3>
-
-                                                <div className="space-y-4">
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-slate-700 mb-1">Tópico / Tema</label>
-                                                        <textarea
-                                                            value={topic}
-                                                            onChange={(e) => setTopic(e.target.value)}
-                                                            placeholder="Ex: Promoção de Black Friday para curso de inglês..."
-                                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 h-32 resize-none"
-                                                        />
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-slate-700 mb-1">Plataforma</label>
-                                                        <div className="grid grid-cols-2 gap-2">
-                                                            <button
-                                                                onClick={() => setPlatform('instagram')}
-                                                                className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'instagram' ? 'bg-pink-50 border-pink-500 text-pink-700' : 'hover:bg-slate-50'}`}
-                                                            >
-                                                                <Instagram size={20} /> <span className="text-xs font-medium">Instagram</span>
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setPlatform('linkedin')}
-                                                                className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'linkedin' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'hover:bg-slate-50'}`}
-                                                            >
-                                                                <Linkedin size={20} /> <span className="text-xs font-medium">LinkedIn</span>
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setPlatform('email')}
-                                                                className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'email' ? 'bg-yellow-50 border-yellow-500 text-yellow-700' : 'hover:bg-slate-50'}`}
-                                                            >
-                                                                <Mail size={20} /> <span className="text-xs font-medium">Email Mkt</span>
-                                                            </button>
-                                                            <button
-                                                                onClick={() => setPlatform('whatsapp')}
-                                                                className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'whatsapp' ? 'bg-green-50 border-green-500 text-green-700' : 'hover:bg-slate-50'}`}
-                                                            >
-                                                                <MessageCircle size={20} /> <span className="text-xs font-medium">WhatsApp</span>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-slate-700 mb-1">Tom de Voz</label>
-                                                        <select
-                                                            value={tone}
-                                                            onChange={(e) => setTone(e.target.value)}
-                                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                            <div className="h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                <ContentGenerator
+                                    isOpen={true}
+                                    onClose={() => { }}
+                                    mode="page"
+                                />
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
+                                {/* Coluna da Esquerda: Histórico (Condicional ou Fixo) */}
+                                {showHistory && (
+                                    <div className="lg:col-span-3 space-y-4 animate-fade-in">
+                                        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-[calc(100vh-200px)] overflow-y-auto">
+                                            <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                                                <History size={16} /> Copys Salvas
+                                            </h3>
+                                            {savedCopies.length === 0 ? (
+                                                <p className="text-sm text-slate-400 text-center py-8">Nenhuma copy salva ainda.</p>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {savedCopies.map((copy) => (
+                                                        <div
+                                                            key={copy.id}
+                                                            onClick={() => loadCopy(copy)}
+                                                            className="p-3 rounded-lg border border-slate-100 hover:border-purple-200 hover:bg-purple-50 cursor-pointer transition-all group relative"
                                                         >
-                                                            <option value="persuasive">Persuasivo (Vendas)</option>
-                                                            <option value="educational">Educativo / Autoridade</option>
-                                                            <option value="funny">Descontraído / Humor</option>
-                                                            <option value="urgent">Urgência / Escassez</option>
-                                                            <option value="professional">Corporativo / Sério</option>
-                                                        </select>
-                                                    </div>
-
-                                                    <button
-                                                        onClick={handleGenerate}
-                                                        disabled={loading || !topic}
-                                                        className={`w-full py-3 rounded-lg font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all ${loading || !topic ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 hover:shadow-purple-200'}`}
-                                                    >
-                                                        {loading ? (
-                                                            <>Generating...</>
-                                                        ) : (
-                                                            <><Send size={18} /> Gerar Copy</>
-                                                        )}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Coluna da Direita: Resultado */}
-                                        <div className={`${showHistory ? 'lg:col-span-6' : 'lg:col-span-8'} transition-all`}>
-                                            <div className="bg-white h-full min-h-[600px] rounded-xl shadow-sm border border-slate-200 flex flex-col">
-                                                <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
-                                                    <h3 className="font-bold text-slate-700">Resultado Gerado</h3>
-                                                    <div className="flex gap-2">
-                                                        {generatedContent && (
-                                                            <button
-                                                                onClick={handleSave}
-                                                                className="text-sm text-slate-600 hover:text-primary-600 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors border border-transparent hover:border-slate-200"
-                                                            >
-                                                                <Save size={16} /> Salvar
-                                                            </button>
-                                                        )}
-                                                        {generatedContent && (
-                                                            <button
-                                                                onClick={() => copyToClipboard(generatedContent.body || JSON.stringify(generatedContent))}
-                                                                className="text-sm text-slate-600 hover:text-purple-600 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors border border-transparent hover:border-slate-200"
-                                                            >
-                                                                {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-                                                                {copied ? 'Copiado!' : 'Copiar'}
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-250px)]">
-                                                    {!generatedContent && !loading && (
-                                                        <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                                                            <Sparkles size={48} className="mb-4 opacity-20" />
-                                                            <p>Seu conteúdo gerado por IA aparecerá aqui.</p>
-                                                        </div>
-                                                    )}
-
-                                                    {loading && (
-                                                        <div className="h-full flex flex-col items-center justify-center text-purple-600">
-                                                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
-                                                            <p className="animate-pulse">Criando magia...</p>
-                                                        </div>
-                                                    )}
-
-                                                    {generatedContent && (
-                                                        <div className="space-y-6 animate-fade-in">
-                                                            {/* Headlines */}
-                                                            {generatedContent.headlines && (
-                                                                <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                                                                    <h4 className="text-xs font-bold text-purple-700 uppercase mb-2">Opções de Título</h4>
-                                                                    <ul className="space-y-2">
-                                                                        {generatedContent.headlines.map((h: string, i: number) => (
-                                                                            <li key={i} className="flex gap-2 text-purple-900 font-medium">
-                                                                                <span className="text-purple-400">{i + 1}.</span> {h}
-                                                                            </li>
-                                                                        ))}
-                                                                    </ul>
-                                                                </div>
-                                                            )}
-
-                                                            {/* Body */}
-                                                            <div className="prose prose-slate max-w-none">
-                                                                <div className="whitespace-pre-wrap text-slate-800 text-lg leading-relaxed">
-                                                                    {generatedContent.body}
-                                                                </div>
+                                                            <div className="flex justify-between items-start mb-1">
+                                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${copy.platform === 'instagram' ? 'bg-pink-100 text-pink-700' :
+                                                                    copy.platform === 'linkedin' ? 'bg-blue-100 text-blue-700' :
+                                                                        'bg-gray-100 text-gray-700'
+                                                                    }`}>
+                                                                    {copy.platform}
+                                                                </span>
+                                                                <button
+                                                                    onClick={(e) => handleDelete(copy.id, e)}
+                                                                    className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
                                                             </div>
-
-                                                            {/* Extras */}
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-                                                                {generatedContent.hashtags && (
-                                                                    <div>
-                                                                        <h4 className="text-xs font-bold text-slate-500 uppercase mb-1">Hashtags</h4>
-                                                                        <p className="text-primary-600 text-sm">{generatedContent.hashtags.join(' ')}</p>
-                                                                    </div>
-                                                                )}
-                                                                {generatedContent.imageIdea && (
-                                                                    <div>
-                                                                        <h4 className="text-xs font-bold text-slate-500 uppercase mb-1">Ideia Visual</h4>
-                                                                        <p className="text-slate-600 text-sm italic">"{generatedContent.imageIdea}"</p>
-                                                                    </div>
-                                                                )}
-                                                            </div>
+                                                            <p className="text-sm font-medium text-slate-800 line-clamp-2 mb-1">{copy.topic}</p>
+                                                            <p className="text-xs text-slate-400">{new Date(copy.created_at).toLocaleDateString()}</p>
                                                         </div>
-                                                    )}
+                                                    ))}
                                                 </div>
-                                            </div>
+                                            )}
                                         </div>
                                     </div>
                                 )}
-                        </div>
+
+                                {/* Coluna Central: Configuração */}
+                                <div className={`${showHistory ? 'lg:col-span-3' : 'lg:col-span-4'} space-y-6 transition-all`}>
+                                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                        <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                            <PenTool size={18} /> Configuração
+                                        </h3>
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">Tópico / Tema</label>
+                                                <textarea
+                                                    value={topic}
+                                                    onChange={(e) => setTopic(e.target.value)}
+                                                    placeholder="Ex: Promoção de Black Friday para curso de inglês..."
+                                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 h-32 resize-none"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">Plataforma</label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <button
+                                                        onClick={() => setPlatform('instagram')}
+                                                        className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'instagram' ? 'bg-pink-50 border-pink-500 text-pink-700' : 'hover:bg-slate-50'}`}
+                                                    >
+                                                        <Instagram size={20} /> <span className="text-xs font-medium">Instagram</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setPlatform('linkedin')}
+                                                        className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'linkedin' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'hover:bg-slate-50'}`}
+                                                    >
+                                                        <Linkedin size={20} /> <span className="text-xs font-medium">LinkedIn</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setPlatform('email')}
+                                                        className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'email' ? 'bg-yellow-50 border-yellow-500 text-yellow-700' : 'hover:bg-slate-50'}`}
+                                                    >
+                                                        <Mail size={20} /> <span className="text-xs font-medium">Email Mkt</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setPlatform('whatsapp')}
+                                                        className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'whatsapp' ? 'bg-green-50 border-green-500 text-green-700' : 'hover:bg-slate-50'}`}
+                                                    >
+                                                        <MessageCircle size={20} /> <span className="text-xs font-medium">WhatsApp</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-slate-700 mb-1">Tom de Voz</label>
+                                                <select
+                                                    value={tone}
+                                                    onChange={(e) => setTone(e.target.value)}
+                                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                                                >
+                                                    <option value="persuasive">Persuasivo (Vendas)</option>
+                                                    <option value="educational">Educativo / Autoridade</option>
+                                                    <option value="funny">Descontraído / Humor</option>
+                                                    <option value="urgent">Urgência / Escassez</option>
+                                                    <option value="professional">Corporativo / Sério</option>
+                                                </select>
+                                            </div>
+
+                                            <button
+                                                onClick={handleGenerate}
+                                                disabled={loading || !topic}
+                                                className={`w-full py-3 rounded-lg font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all ${loading || !topic ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 hover:shadow-purple-200'}`}
+                                            >
+                                                {loading ? (
+                                                    <>Generating...</>
+                                                ) : (
+                                                    <><Send size={18} /> Gerar Copy</>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Coluna da Direita: Resultado */}
+                                <div className={`${showHistory ? 'lg:col-span-6' : 'lg:col-span-8'} transition-all`}>
+                                    <div className="bg-white h-full min-h-[600px] rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                                            <h3 className="font-bold text-slate-700">Resultado Gerado</h3>
+                                            <div className="flex gap-2">
+                                                {generatedContent && (
+                                                    <button
+                                                        onClick={handleSave}
+                                                        className="text-sm text-slate-600 hover:text-primary-600 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors border border-transparent hover:border-slate-200"
+                                                    >
+                                                        <Save size={16} /> Salvar
+                                                    </button>
+                                                )}
+                                                {generatedContent && (
+                                                    <button
+                                                        onClick={() => copyToClipboard(generatedContent.body || JSON.stringify(generatedContent))}
+                                                        className="text-sm text-slate-600 hover:text-purple-600 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors border border-transparent hover:border-slate-200"
+                                                    >
+                                                        {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                                                        {copied ? 'Copiado!' : 'Copiar'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-250px)]">
+                                            {!generatedContent && !loading && (
+                                                <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                                    <Sparkles size={48} className="mb-4 opacity-20" />
+                                                    <p>Seu conteúdo gerado por IA aparecerá aqui.</p>
+                                                </div>
+                                            )}
+
+                                            {loading && (
+                                                <div className="h-full flex flex-col items-center justify-center text-purple-600">
+                                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+                                                    <p className="animate-pulse">Criando magia...</p>
+                                                </div>
+                                            )}
+
+                                            {generatedContent && (
+                                                <div className="space-y-6 animate-fade-in">
+                                                    {/* Headlines */}
+                                                    {generatedContent.headlines && (
+                                                        <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                                                            <h4 className="text-xs font-bold text-purple-700 uppercase mb-2">Opções de Título</h4>
+                                                            <ul className="space-y-2">
+                                                                {generatedContent.headlines.map((h: string, i: number) => (
+                                                                    <li key={i} className="flex gap-2 text-purple-900 font-medium">
+                                                                        <span className="text-purple-400">{i + 1}.</span> {h}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Body */}
+                                                    <div className="prose prose-slate max-w-none">
+                                                        <div className="whitespace-pre-wrap text-slate-800 text-lg leading-relaxed">
+                                                            {generatedContent.body}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Extras */}
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+                                                        {generatedContent.hashtags && (
+                                                            <div>
+                                                                <h4 className="text-xs font-bold text-slate-500 uppercase mb-1">Hashtags</h4>
+                                                                <p className="text-primary-600 text-sm">{generatedContent.hashtags.join(' ')}</p>
+                                                            </div>
+                                                        )}
+                                                        {generatedContent.imageIdea && (
+                                                            <div>
+                                                                <h4 className="text-xs font-bold text-slate-500 uppercase mb-1">Ideia Visual</h4>
+                                                                <p className="text-slate-600 text-sm italic">"{generatedContent.imageIdea}"</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
