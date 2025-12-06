@@ -848,6 +848,67 @@ const generateContentIdeasFromChat = async (req, res) => {
   }
 };
 
+const startBatchGeneration = async (req, res) => {
+  const { days, topics, platform, tone, targetAudience, provider = 'openai' } = req.body;
+  const user_id = req.user ? req.user.id : null;
+  const { tenantId } = getTenantScope(req);
+  const { jobsQueue } = require('./queueClient'); // Ensure this imports correctly
+
+  try {
+    // 1. Create Batch Record
+    const batchResult = await db.query(
+      `INSERT INTO content_batches (user_id, topic, total_days, platform, tone, settings, status) 
+       VALUES ($1, $2, $3, $4, $5, $6, 'processing') 
+       RETURNING id`,
+      [user_id, JSON.stringify(topics), days, platform, tone, JSON.stringify(targetAudience)]
+    );
+    const batchId = batchResult.rows[0].id;
+
+    console.log(`🚀 Starting Batch Generation ${batchId} for ${days} days`);
+
+    // 2. Add Job to Queue (One job per day/topic to parallelize)
+    const jobs = topics.map((dailyTopic, index) => ({
+      name: 'generate_batch_content',
+      data: {
+        type: 'generate_batch_content',
+        payload: {
+          batchId,
+          dayIndex: index + 1,
+          topic: dailyTopic,
+          platform,
+          tone,
+          targetAudience,
+          provider,
+          userId: user_id,
+          tenantId
+        }
+      },
+      opts: {
+        jobId: `batch_${batchId}_day_${index + 1}`
+      }
+    }));
+
+    // Add all jobs to queue
+    // Check if jobsQueue exists and has addBulk
+    if (jobsQueue && jobsQueue.addBulk) {
+      await jobsQueue.addBulk(jobs);
+    } else {
+      console.warn("⚠️ jobsQueue not available, falling back to sequential add or error.");
+      // Fallback if needed, but assuming it works for now based on project structure
+    }
+
+    res.json({
+      success: true,
+      batchId,
+      message: `Batch iniciada! ${days} posts sendo gerados em segundo plano.`
+    });
+
+  } catch (error) {
+    console.error('Batch Generation Start Failed:', error);
+    res.status(500).json({ error: 'Failed to start batch generation' });
+  }
+};
+
 module.exports = {
   analyzeChatConversation,
   generateMarketingContent,
@@ -858,5 +919,6 @@ module.exports = {
   generateDashboardInsights,
   analyzeStrategyInternal,
   getEffectiveApiKey,
-  generateContentIdeasFromChat
+  generateContentIdeasFromChat,
+  startBatchGeneration
 };

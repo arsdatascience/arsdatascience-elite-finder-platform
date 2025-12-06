@@ -698,6 +698,7 @@ app.delete('/api/images/:id', authenticateToken, imageController.deleteImage);
 // Iniciar servidor após migrações
 app.post('/api/ai/analyze', authenticateToken, aiController.analyzeChatConversation);
 app.post('/api/ai/generate', authenticateToken, checkLimit('ai_generation'), aiController.generateMarketingContent);
+app.post('/api/ai/batch-generate', authenticateToken, checkLimit('ai_generation'), aiController.startBatchGeneration); // NEW BATCH ROUTE
 app.post('/api/ai/chat', authenticateToken, checkLimit('ai_generation'), aiController.askEliteAssistant);
 // AI Analysis Routes
 app.post('/api/ai/analyze-strategy', authenticateToken, aiController.analyzeConversationStrategy);

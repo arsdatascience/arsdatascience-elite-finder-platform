@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { PenTool, Send, Copy, Check, Sparkles, Instagram, Linkedin, Mail, MessageCircle, Save, History, Trash2, Layout, FileText } from 'lucide-react';
+import { PenTool, Send, Copy, Check, Sparkles, Instagram, Linkedin, Mail, MessageCircle, Save, History, Trash2, Layout, FileText, Layers } from 'lucide-react';
 import { ContentGenerator } from './ContentGenerator';
+import { BatchWizard } from './BatchWizard';
 
 const CreativeStudio: React.FC = () => {
     const [topic, setTopic] = useState('');
@@ -120,7 +121,38 @@ const CreativeStudio: React.FC = () => {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const [activeTab, setActiveTab] = useState<'copy' | 'design'>('design');
+    const [activeTab, setActiveTab] = useState<'copy' | 'design' | 'batch'>('batch');
+
+    const handleBatchGenerate = async (config: any) => {
+        setLoading(true);
+        try {
+            console.log('Sending Batch Config:', config);
+
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/batch-generate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(config) // Config matches { days, topics, platform, tone, targetAudience }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                alert(`🚀 Produção em série iniciada! ID do Lote: ${data.batchId}.\n\nVocê pode acompanhar o progresso na aba "Agendamento" em breve.`);
+                // Reset to design or clear logic if needed
+                setActiveTab('design');
+            } else {
+                throw new Error('Falha ao iniciar processamento em lote');
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert('Erro ao iniciar produção em lote. Verifique se o backend está rodando.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="flex flex-col h-full bg-slate-50 min-h-screen">
@@ -169,6 +201,16 @@ const CreativeStudio: React.FC = () => {
                                 <FileText size={18} />
                                 Sniper Copywriter
                             </button>
+                            <button
+                                onClick={() => setActiveTab('batch')}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'batch'
+                                    ? 'bg-white text-purple-700 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                            >
+                                <Layers size={18} />
+                                Produção em Série (Batch)
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -177,7 +219,11 @@ const CreativeStudio: React.FC = () => {
                 <div className="flex-1 p-8">
                     <div className="max-w-6xl mx-auto w-full h-full">
 
-                        {activeTab === 'design' ? (
+                        {activeTab === 'batch' ? (
+                            <div className="h-full">
+                                <BatchWizard onGenerate={handleBatchGenerate} loading={loading} />
+                            </div>
+                        ) : activeTab === 'design' ? (
                             <div className="h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                                 <ContentGenerator
                                     isOpen={true}

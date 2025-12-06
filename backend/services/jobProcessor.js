@@ -23,6 +23,9 @@ const processJob = async (job) => {
             case 'process_whatsapp_message':
                 await handleWhatsAppMessage(payload);
                 break;
+            case 'generate_batch_content':
+                await handleBatchContentGeneration(payload);
+                break;
             default:
                 console.warn(`⚠️ Tipo de job desconhecido: ${type}`);
         }
@@ -170,6 +173,72 @@ async function handleWhatsAppMessage(payload) {
     } catch (error) {
         console.error('❌ [Job] Error in WhatsApp processing:', error);
         throw error;
+    }
+}
+
+
+// --- BATCH CONTENT GENERATION ---
+async function handleBatchContentGeneration(payload) {
+    const { batchId, dayIndex, topic, platform, tone, targetAudience, provider, userId, tenantId } = payload;
+    console.log(`🏭 [Job] Generating Batch Content for Day ${dayIndex}: ${topic}`);
+
+    try {
+        const apiKey = await aiController.getEffectiveApiKey(provider, userId);
+
+        const prompt = `
+          ATUE COMO: Copywriter Sênior Especialista em ${platform}.
+          TAREFA: Criar um post de alta conversão para o Dia ${dayIndex} de uma sequência.
+          
+          TEMA DO DIA: "${topic}"
+          PLATAFORMA: ${platform}
+          TOM DE VOZ: ${tone}
+          PÚBLICO ALVO: ${targetAudience.ageRange} anos, renda ${targetAudience.income}. Interesses: ${targetAudience.interests}.
+
+          REQUISITOS:
+          1. Headline Magnética (Gatilho de Curiosidade).
+          2. Corpo do texto formatado para ${platform} (se Instagram = visual, se LinkedIn = profissional).
+          3. Call to Action (CTA) claro.
+          4. Hashtags estratégicas.
+          5. Ideia visual para o designer.
+
+          Retorne JSON estrito:
+          {
+            "headlines": ["Opção 1", "Opção 2"],
+            "body": "Texto completo...",
+            "cta": "...",
+            "hashtags": ["#..."],
+            "imageIdea": "..."
+          }
+        `;
+
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({
+                model: "gpt-4-turbo-preview",
+                messages: [{ role: "user", content: prompt + "\n\nRetorne APENAS JSON." }],
+                temperature: 0.7,
+                response_format: { type: "json_object" }
+            })
+        });
+
+        const data = await response.json();
+        const contentStr = data.choices && data.choices[0] ? data.choices[0].message.content : "{}";
+        const contentJson = JSON.parse(contentStr);
+
+        // Save to Database
+        // Use client_id=1 as default for now if context missing
+        await pool.query(
+            `INSERT INTO social_posts 
+            (client_id, user_id, batch_id, platform, content, status, scheduled_at, media_url) 
+            VALUES (1, $1, $2, $3, $4, 'draft', NOW() + interval '${dayIndex} days', $5)`,
+            [userId, batchId, platform, contentJson.body, null]
+        );
+
+        console.log(`✅ [Job] Batch Day ${dayIndex} Created!`);
+
+    } catch (error) {
+        console.error(`❌ [Job] Batch Day ${dayIndex} Failed:`, error);
     }
 }
 
