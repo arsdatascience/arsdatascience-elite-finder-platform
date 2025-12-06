@@ -157,6 +157,19 @@ export const ProjectCenter: React.FC = () => {
         return Math.round((completed / total) * 100);
     };
 
+    const handleDeleteProject = async (id: number) => {
+        if (!confirm('Tem certeza que deseja excluir este projeto?')) return;
+        try {
+            await apiClient.projects.delete(id);
+            setSelectedProject(null);
+            setView('portfolio');
+            fetchProjects();
+        } catch (error) {
+            console.error('Error deleting project:', error);
+            alert('Erro ao excluir projeto');
+        }
+    };
+
     if (view === 'details' && selectedProject) {
         return (
             <div className="h-full flex flex-col bg-gray-50">
@@ -171,7 +184,11 @@ export const ProjectCenter: React.FC = () => {
                     <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
                     Voltar para Portfolio
                 </button>
-                <TaskBoard project={selectedProject} />
+                <TaskBoard
+                    project={selectedProject}
+                    onDeleteProject={() => handleDeleteProject(selectedProject.id)}
+                    onAdd={() => alert('Funcionalidade de Nova Tarefa em desenvolvimento...')}
+                />
             </div>
         );
     }
