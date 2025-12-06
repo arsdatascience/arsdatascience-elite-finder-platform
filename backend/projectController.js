@@ -11,14 +11,17 @@ exports.getProjects = async (req, res) => {
         const { status, owner_id } = req.query;
 
         // 1. Fetch Projects from Ops DB (No Joins to Core Tables)
+        // Handle NULL tenant_id
+        let whereClause = tenantId ? `p.tenant_id = $1` : `p.tenant_id IS NULL`;
+        let params = tenantId ? [tenantId] : [];
+
         let query = `
             SELECT p.*, 
                    (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id) as total_tasks,
                    (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id AND t.status = 'done') as completed_tasks
             FROM projects p
-            WHERE p.tenant_id = $1
+            WHERE ${whereClause}
         `;
-        const params = [tenantId];
 
         if (status) {
             query += ` AND p.status = $${params.length + 1}`;
@@ -115,9 +118,12 @@ exports.getProject = async (req, res) => {
         const tenantId = req.user.tenant_id;
 
         // 1. Fetch Project from Ops DB
+        const whereClause = tenantId ? `p.id = $1 AND p.tenant_id = $2` : `p.id = $1 AND p.tenant_id IS NULL`;
+        const params = tenantId ? [id, tenantId] : [id];
+
         const result = await opsPool.query(
-            `SELECT p.* FROM projects p WHERE p.id = $1 AND p.tenant_id = $2`,
-            [id, tenantId]
+            `SELECT p.* FROM projects p WHERE ${whereClause}`,
+            params
         );
 
         if (result.rows.length === 0) {
@@ -170,12 +176,13 @@ exports.updateProject = async (req, res) => {
         if (fields.length === 0) return res.json({ message: 'No updates provided' });
 
         values.push(id);
-        values.push(tenantId);
+        const whereClause = tenantId ? `id = $${idx} AND tenant_id = $${idx + 1}` : `id = $${idx} AND tenant_id IS NULL`;
+        if (tenantId) values.push(tenantId);
 
         const query = `
             UPDATE projects 
             SET ${fields.join(', ')}, updated_at = NOW()
-            WHERE id = $${idx} AND tenant_id = $${idx + 1}
+            WHERE ${whereClause}
             RETURNING *
         `;
 
@@ -198,9 +205,12 @@ exports.deleteProject = async (req, res) => {
         const { id } = req.params;
         const tenantId = req.user.tenant_id; // Check tenant ownership
 
+        const whereClause = tenantId ? `id = $1 AND tenant_id = $2` : `id = $1 AND tenant_id IS NULL`;
+        const params = tenantId ? [id, tenantId] : [id];
+
         const result = await opsPool.query(
-            'DELETE FROM projects WHERE id = $1 AND tenant_id = $2 RETURNING id',
-            [id, tenantId]
+            `DELETE FROM projects WHERE ${whereClause} RETURNING id`,
+            params
         );
 
         if (result.rows.length === 0) {
@@ -213,3 +223,4 @@ exports.deleteProject = async (req, res) => {
         res.status(500).json({ error: 'Failed to delete project' });
     }
 };
+
