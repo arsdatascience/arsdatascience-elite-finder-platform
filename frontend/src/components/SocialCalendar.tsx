@@ -107,13 +107,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         setSchedulingModal({ isOpen: true, date });
     };
 
-    const handleScheduleEvent = () => {
-        console.log(editingEventId ? 'Updating event:' : 'Scheduling event:', newEvent, 'on', schedulingModal.date);
-        const conferenceInfo = newEvent.videoConference.type ? `\nLink: ${newEvent.videoConference.link}` : '';
-        const action = editingEventId ? 'atualizado' : 'agendado';
-        alert(`Evento ${action}: ${newEvent.title}\nData: ${schedulingModal.date?.toLocaleDateString()}\nHorário: ${newEvent.startTime} - ${newEvent.endTime}${conferenceInfo}`);
-
-        setSchedulingModal({ isOpen: false, date: null });
+    const resetNewEvent = () => {
         setNewEvent({
             id: null,
             category: 'meeting',
@@ -126,7 +120,27 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
             description: '',
             videoConference: { type: null, link: '' }
         });
-        setEditingEventId(null);
+    };
+
+    const handleScheduleEvent = () => {
+        if (!schedulingModal.date) return;
+
+        // Combine date and time
+        const [hours, minutes] = newEvent.startTime.split(':').map(Number);
+        const scheduledDate = new Date(schedulingModal.date);
+        scheduledDate.setHours(hours, minutes, 0, 0);
+
+        const payload = {
+            ...newEvent,
+            scheduled_date: scheduledDate.toISOString(),
+            clientId: selectedClient === 'all' ? undefined : selectedClient
+        };
+
+        if (editingEventId) {
+            updatePostMutation.mutate({ id: editingEventId, data: payload });
+        } else {
+            createPostMutation.mutate(payload);
+        }
     };
 
     const queryClient = useQueryClient();
@@ -280,16 +294,17 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         if (hour !== undefined) newDate.setHours(hour);
         if (minute !== undefined) newDate.setMinutes(minute);
 
-        // Optimistic update
+        // Call API to persist change
+        updatePostMutation.mutate({
+            id: draggedPost.id,
+            data: { scheduled_date: newDate.toISOString() }
+        });
+
+        // Optimistic update (optional, but good for UX)
         if (onPostUpdate) {
             onPostUpdate(draggedPost.id, newDate.toISOString());
-        } else {
-            // Local update for demo
-            const postIndex = posts.findIndex(p => p.id === draggedPost.id);
-            if (postIndex >= 0) {
-                posts[postIndex].scheduled_date = newDate.toISOString();
-            }
         }
+
         setDraggedPost(null);
     };
 
@@ -299,6 +314,37 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['socialPosts'] });
             if (onPostDelete) onPostDelete(variables);
+        }
+    });
+
+    // Create Mutation
+    const createPostMutation = useMutation({
+        mutationFn: apiClient.social.createPost,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['socialPosts'] });
+            setSchedulingModal({ isOpen: false, date: null });
+            resetNewEvent();
+            alert('Agendamento criado com sucesso!');
+        },
+        onError: (error) => {
+            console.error('Failed to create post:', error);
+            alert('Falha ao criar agendamento. Tente novamente.');
+        }
+    });
+
+    // Update Mutation
+    const updatePostMutation = useMutation({
+        mutationFn: ({ id, data }: { id: string, data: any }) => apiClient.social.updatePost(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['socialPosts'] });
+            setSchedulingModal({ isOpen: false, date: null });
+            resetNewEvent();
+            setEditingEventId(null);
+            alert('Agendamento atualizado com sucesso!');
+        },
+        onError: (error) => {
+            console.error('Failed to update post:', error);
+            alert('Falha ao atualizar agendamento. Tente novamente.');
         }
     });
 
