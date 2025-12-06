@@ -404,5 +404,33 @@ export const apiClient = {
             const response = await axiosInstance.delete(`/services/${id}`);
             return response.data;
         }
+    },
+
+    // --- SOP TEMPLATES ---
+    templates: {
+        list: async () => {
+            const response = await axiosInstance.get('/templates');
+            return response.data;
+        },
+        create: async (data: any) => {
+            const response = await axiosInstance.post('/templates', data);
+            return response.data;
+        },
+        get: async (id: number) => {
+            const response = await axiosInstance.get(`/templates/${id}`);
+            return response.data;
+        },
+        update: async (id: number, data: any) => {
+            const response = await axiosInstance.put(`/templates/${id}`, data);
+            return response.data;
+        },
+        delete: async (id: number) => {
+            const response = await axiosInstance.delete(`/templates/${id}`);
+            return response.data;
+        },
+        applyToProject: async (projectId: number, templateId: number) => {
+            const response = await axiosInstance.post(`/projects/${projectId}/apply-template`, { templateId });
+            return response.data;
+        }
     }
 };
