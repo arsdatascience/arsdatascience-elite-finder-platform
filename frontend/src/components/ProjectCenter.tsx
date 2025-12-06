@@ -75,13 +75,19 @@ export const ProjectCenter = () => {
             if (projectData.id) {
                 // Edit
                 await apiClient.projects.update(projectData.id, projectData);
+                fetchProjects();
             } else {
                 // Create
-                await apiClient.projects.create(projectData);
+                const newProject = await apiClient.projects.create(projectData);
+                // Automatically open the new project
+                if (newProject) {
+                    setSelectedProject(newProject);
+                    setView('details');
+                }
+                fetchProjects();
             }
             setShowNewProjectModal(false);
             setShowEditProjectModal(false);
-            fetchProjects();
         } catch (error) {
             console.error('Error saving project:', error);
             alert('Erro ao salvar projeto');
