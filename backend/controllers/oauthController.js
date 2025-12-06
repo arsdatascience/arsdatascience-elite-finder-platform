@@ -9,7 +9,8 @@ const CONFIG = {
         clientSecret: process.env.META_SECRET,
         authUrl: 'https://www.facebook.com/v18.0/dialog/oauth',
         tokenUrl: 'https://graph.facebook.com/v18.0/oauth/access_token',
-        redirectUri: `${process.env.BACKEND_URL}/api/oauth/facebook/callback`,
+        // User requested specific domain and legacy path for Facebook App Match
+        redirectUri: 'https://marketinghub.aiiam.com.br/api/auth/meta',
         scopes: ['ads_read', 'read_insights', 'pages_show_list']
     },
     google: {

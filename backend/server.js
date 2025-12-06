@@ -656,6 +656,13 @@ app.use('/api/oauth', oauthRoutes);
 app.get('/auth/google-ads/callback', integrationsController.handleGoogleAdsCallback);
 app.get('/auth/meta-ads/callback', integrationsController.handleMetaAdsCallback);
 
+// Custom Legacy Route for Facebook (Requested by User)
+const oauthController = require('./controllers/oauthController');
+app.get('/api/auth/meta', (req, res) => {
+  req.params.provider = 'facebook';
+  oauthController.handleCallback(req, res);
+});
+
 app.post('/api/integrations/whatsapp/setup', integrationsController.setupWhatsAppWebhook);
 app.get('/api/integrations/whatsapp', authenticateToken, integrationsController.getWhatsAppConfig);
 app.post('/api/integrations/whatsapp', authenticateToken, integrationsController.saveWhatsAppConfig);
