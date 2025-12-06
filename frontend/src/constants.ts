@@ -23,6 +23,9 @@ export const NAV_ITEMS = [
   { id: 'HELP_CENTER', label: 'Manual de Uso', icon: HelpCircle },
   { id: 'SERVICE_CATALOG', label: 'Catálogo de Serviços', icon: ShoppingBag },
   { id: 'PROCESSES', label: 'Processos e Modelos', icon: List },
+  { id: 'SOCIAL_CALENDAR', label: 'Calendário Social', icon: Calendar },
+  { id: 'SOCIAL_INTEGRATIONS', label: 'Integrações Sociais', icon: Share2 },
+  { id: 'SETTINGS', label: 'Configurações', icon: Settings },
 ];
 
 export const CLIENTS_LIST = [
