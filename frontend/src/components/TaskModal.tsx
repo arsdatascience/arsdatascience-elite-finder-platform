@@ -1,8 +1,17 @@
-task ?: Task; // If provided, Edit mode
-initialStatus ?: string;
-projectId ?: number;
-users ?: { id: number; name: string; avatar_url?: string }[];
-projects ?: { id: number; name: string }[];
+import React, { useState, useEffect } from 'react';
+import { X, Save, Clock, CheckSquare, Users, FileText, Flag, MessageSquare, Paperclip, ChevronDown, Plus, Trash2, Layout, ListChecks, Tag, CheckCircle2, Layers, Zap } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { Task } from '../types';
+
+interface TaskModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (taskData: Partial<Task>) => Promise<void>;
+    task?: Task; // If provided, Edit mode
+    initialStatus?: string;
+    projectId?: number;
+    users?: { id: number; name: string; avatar_url?: string }[];
+    projects?: { id: number; name: string }[];
 }
 
 const TaskModal: React.FC<TaskModalProps> = ({
