@@ -1,4 +1,6 @@
-const db = require('./db');
+const db = require('./database');
+const corePool = db;
+const opsPool = db.opsPool;
 const { syncCampaignCosts } = require('./jobs/financialSync');
 const { getTenantScope } = require('./utils/tenantSecurity');
 
@@ -10,26 +12,18 @@ const financialController = {
         const { startDate, endDate, type, status, category_id, client_id } = req.query;
 
         try {
+            // 1. Fetch Transactions from Ops DB (Join Categories/Suppliers OK, Users/Clients NO)
             let query = `
                 SELECT t.*, 
                        c.name as category_name, c.color as category_color,
-                       s.name as supplier_name,
-                       cl.name as client_name,
-                       u.name as user_name
+                       s.name as supplier_name
                 FROM financial_transactions t
                 LEFT JOIN financial_categories c ON t.category_id = c.id
                 LEFT JOIN suppliers s ON t.supplier_id = s.id
-                LEFT JOIN clients cl ON t.client_id = cl.id
-                LEFT JOIN users u ON t.user_id = u.id
                 WHERE 1=1
             `;
             const params = [];
             let paramCount = 1;
-
-            // if (!isSuperAdmin && tenantId) {
-            //    query += ` AND t.tenant_id = $${paramCount++}`;
-            //    params.push(tenantId);
-            // }
 
             if (startDate) {
                 query += ` AND t.date >= $${paramCount++}`;
@@ -58,8 +52,49 @@ const financialController = {
 
             query += ` ORDER BY t.date DESC, t.created_at DESC`;
 
-            const result = await db.query(query, params);
-            res.json({ success: true, data: result.rows });
+            const result = await opsPool.query(query, params);
+            const transactions = result.rows;
+
+            if (transactions.length === 0) {
+                return res.json({ success: true, data: [] });
+            }
+
+            // 2. Extract IDs for Core DB enrichment
+            const userIds = [...new Set(transactions.map(t => t.user_id).filter(id => id))];
+            const clientIds = [...new Set(transactions.map(t => t.client_id).filter(id => id))];
+
+            // 3. Fetch Data from Core DB
+            let users = [];
+            let clients = [];
+
+            if (userIds.length > 0) {
+                const usersRes = await corePool.query(
+                    `SELECT id, name FROM users WHERE id = ANY($1)`,
+                    [userIds]
+                );
+                users = usersRes.rows;
+            }
+
+            if (clientIds.length > 0) {
+                const clientsRes = await corePool.query(
+                    `SELECT id, name FROM clients WHERE id = ANY($1)`,
+                    [clientIds]
+                );
+                clients = clientsRes.rows;
+            }
+
+            // 4. Merge Data
+            const enrichedTransactions = transactions.map(t => {
+                const user = users.find(u => u.id === t.user_id);
+                const client = clients.find(c => c.id === t.client_id);
+                return {
+                    ...t,
+                    user_name: user ? user.name : null,
+                    client_name: client ? client.name : null
+                };
+            });
+
+            res.json({ success: true, data: enrichedTransactions });
         } catch (error) {
             console.error('Error fetching transactions:', error);
             res.status(500).json({ success: false, error: 'Database error' });
@@ -75,7 +110,7 @@ const financialController = {
         } = req.body;
 
         try {
-            const result = await db.query(`
+            const result = await opsPool.query(`
                 INSERT INTO financial_transactions (
                     tenant_id, description, amount, type, category_id, supplier_id,
                     campaign_id, client_id, user_id,
@@ -104,7 +139,7 @@ const financialController = {
         } = req.body;
 
         try {
-            const result = await db.query(`
+            const result = await opsPool.query(`
                 UPDATE financial_transactions SET
                     description=$1, amount=$2, type=$3, category_id=$4, supplier_id=$5,
                     campaign_id=$6, client_id=$7, user_id=$8,
@@ -130,7 +165,7 @@ const financialController = {
     deleteTransaction: async (req, res) => {
         const { id } = req.params;
         try {
-            await db.query('DELETE FROM financial_transactions WHERE id = $1', [id]);
+            await opsPool.query('DELETE FROM financial_transactions WHERE id = $1', [id]);
             res.json({ success: true });
         } catch (error) {
             console.error('Error deleting transaction:', error);
@@ -149,12 +184,6 @@ const financialController = {
             const params = [];
             let paramCount = 1;
 
-            // if (!isSuperAdmin && tenantId) {
-            //    filterClause += ` AND tenant_id = $${paramCount++}`;
-            //    params.push(tenantId);
-            // }
-
-            // Definir datas padrão se não vierem (mês atual)
             const start = startDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
             const end = endDate || new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
 
@@ -189,16 +218,10 @@ const financialController = {
                 ORDER BY day
             `;
 
-            // Para despesas por categoria, precisamos ajustar o filtro pois tem JOIN
-            // Usando alias 't' para transactions
+            // Alias 't' for transactions used here
             let categoryFilterClause = 'WHERE t.type = \'expense\' AND t.status = \'paid\'';
             const catParams = [];
             let catParamCount = 1;
-
-            // if (!isSuperAdmin && tenantId) {
-            //    categoryFilterClause += ` AND t.tenant_id = $${catParamCount++}`;
-            //    catParams.push(tenantId);
-            // }
 
             categoryFilterClause += ` AND t.date >= $${catParamCount++}`;
             catParams.push(start);
@@ -210,13 +233,6 @@ const financialController = {
                 catParams.push(client_id);
             }
 
-            console.log('DEBUG Dashboard:', {
-                filterClause,
-                categoryFilterClause,
-                params,
-                catParams
-            });
-
             const categoryExpensesQuery = `
                 SELECT c.name, c.color, SUM(t.amount) as value
                 FROM financial_transactions t
@@ -226,30 +242,47 @@ const financialController = {
                 ORDER BY value DESC
             `;
 
-            // Query para Despesas por Cliente
-            // Reutilizando a lógica de filtro de categoria pois é similar (expense, paid, date range)
+            // Note: Join with Clients will fail if cross-DB. We must remove JOIN and enrich or simplify.
+            // Simplified: Just returning client_id group for now, or removing this chart temporarily?
+            // Or better: Group by client_id and fetch names after.
+
             const clientExpensesQuery = `
-                SELECT cl.name, SUM(t.amount) as value
+                SELECT t.client_id, SUM(t.amount) as value
                 FROM financial_transactions t
-                JOIN clients cl ON t.client_id = cl.id
                 ${categoryFilterClause}
-                GROUP BY cl.name
+                GROUP BY t.client_id
                 ORDER BY value DESC
             `;
 
-            const [totals, cashFlow, categoryExpenses, clientExpenses] = await Promise.all([
-                db.query(totalsQuery, params),
-                db.query(cashFlowQuery, params),
-                db.query(categoryExpensesQuery, catParams),
-                db.query(clientExpensesQuery, catParams)
+            const [totals, cashFlow, categoryExpenses, clientExpensesRes] = await Promise.all([
+                opsPool.query(totalsQuery, params),
+                opsPool.query(cashFlowQuery, params),
+                opsPool.query(categoryExpensesQuery, catParams),
+                opsPool.query(clientExpensesQuery, catParams)
             ]);
+
+            // Enrich Client Names
+            let finalClientExpenses = clientExpensesRes.rows;
+            if (finalClientExpenses.length > 0) {
+                const cIds = [...new Set(finalClientExpenses.map(r => r.client_id).filter(id => id))];
+                if (cIds.length > 0) {
+                    const cRes = await corePool.query(`SELECT id, name FROM clients WHERE id = ANY($1)`, [cIds]);
+                    const cMap = {};
+                    cRes.rows.forEach(c => cMap[c.id] = c.name);
+
+                    finalClientExpenses = finalClientExpenses.map(r => ({
+                        name: cMap[r.client_id] || 'Unknown Client',
+                        value: r.value
+                    }));
+                }
+            }
 
             res.json({
                 success: true,
                 summary: totals.rows[0] || { total_income: 0, total_expense: 0, pending_income: 0, pending_expense: 0 },
                 cashFlow: cashFlow.rows,
                 categoryExpenses: categoryExpenses.rows,
-                clientExpenses: clientExpenses.rows
+                clientExpenses: finalClientExpenses
             });
 
         } catch (error) {
@@ -261,19 +294,9 @@ const financialController = {
     // --- AUXILIARY (Categories, Suppliers, Clients) ---
 
     getClients: async (req, res) => {
-        const { isSuperAdmin, tenantId } = getTenantScope(req);
-
+        // Clients are in CORE DB
         try {
-            let query = `SELECT id, name FROM clients`;
-            let params = [];
-
-            // if (!isSuperAdmin && tenantId) {
-            //    query += ` WHERE tenant_id = $1`;
-            //    params.push(tenantId);
-            // }
-
-            query += ` ORDER BY name`;
-            const result = await db.query(query, params);
+            const result = await corePool.query(`SELECT id, name FROM clients ORDER BY name`);
             res.json({ success: true, data: result.rows });
         } catch (error) {
             console.error('Error fetching clients:', error);
@@ -282,25 +305,9 @@ const financialController = {
     },
 
     getCategories: async (req, res) => {
-        const { isSuperAdmin, tenantId } = getTenantScope(req);
-
+        // Categories are in OPS DB
         try {
-            let query = `SELECT * FROM financial_categories`;
-            let params = [];
-
-            // if (!isSuperAdmin) {
-            //    query += ` WHERE tenant_id = $1 OR is_default = true`;
-            //    params.push(tenantId);
-            // } else {
-            // Super admin sees all, or maybe just all defaults + all tenants? 
-            // Usually super admin wants to see everything.
-            // But if we want to be safe, maybe just 1=1
-            query += ` WHERE 1=1`;
-            // }
-
-            query += ` ORDER BY type, name`;
-
-            const result = await db.query(query, params);
+            const result = await opsPool.query(`SELECT * FROM financial_categories WHERE 1=1 ORDER BY type, name`);
             res.json({ success: true, data: result.rows });
         } catch (error) {
             console.error('Error fetching categories:', error);
@@ -312,7 +319,7 @@ const financialController = {
         const { tenant_id } = req.user;
         const { name, type, color } = req.body;
         try {
-            const result = await db.query(`
+            const result = await opsPool.query(`
                 INSERT INTO financial_categories (tenant_id, name, type, color)
                 VALUES ($1, $2, $3, $4)
                 RETURNING *
@@ -328,7 +335,7 @@ const financialController = {
         const { id } = req.params;
         const { name, type, color } = req.body;
         try {
-            const result = await db.query(`
+            const result = await opsPool.query(`
                 UPDATE financial_categories 
                 SET name = $1, type = $2, color = $3
                 WHERE id = $4
@@ -344,19 +351,10 @@ const financialController = {
     },
 
     getSuppliers: async (req, res) => {
-        const { isSuperAdmin, tenantId } = getTenantScope(req);
-
+        // Suppliers are in OPS DB?
+        // Assuming OPS DB based on createSupplier usage of `db` (opsPool) in original code.
         try {
-            let query = `SELECT * FROM suppliers`;
-            let params = [];
-
-            // if (!isSuperAdmin) {
-            //    query += ` WHERE tenant_id = $1`;
-            //    params.push(tenantId);
-            // }
-
-            query += ` ORDER BY name`;
-            const result = await db.query(query, params);
+            const result = await opsPool.query(`SELECT * FROM suppliers ORDER BY name`);
             res.json({ success: true, data: result.rows });
         } catch (error) {
             console.error('Error fetching suppliers:', error);
@@ -368,7 +366,7 @@ const financialController = {
         const { tenant_id } = req.user;
         const { name, contact_name, email, phone, service_type, tax_id, pix_key, notes } = req.body;
         try {
-            const result = await db.query(`
+            const result = await opsPool.query(`
                 INSERT INTO suppliers (tenant_id, name, contact_name, email, phone, service_type, tax_id, pix_key, notes)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 RETURNING *

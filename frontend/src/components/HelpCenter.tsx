@@ -8,21 +8,14 @@ import {
     MessageSquare,
     Users,
     Share2,
-    Calendar,
-    Link,
-    Palette,
-    Image,
-    Mic2,
-    DollarSign,
     GitBranch,
-    GraduationCap,
-    FileText,
-    Bot,
+    Palette,
     Sparkles,
-    Settings,
     ChevronDown,
-    ChevronUp,
-    Search
+    Search,
+    Briefcase,
+    Wallet,
+    ShoppingBag
 } from 'lucide-react';
 
 interface HelpSection {
@@ -194,6 +187,58 @@ const HELP_SECTIONS: HelpSection[] = [
             {
                 title: 'Templates',
                 content: 'Use modelos prontos para automações comuns de marketing e vendas.'
+            }
+        ]
+    },
+    {
+        id: 'projects',
+        title: 'Gestão de Projetos',
+        icon: Briefcase,
+        description: 'Gerencie projetos, tarefas e prazos.',
+        steps: [
+            {
+                title: 'Novo Projeto',
+                content: 'Clique em "Novo Projeto" no Project Center. Defina cliente, orçamento e prazos. O status inicial pode ser "Planejamento".'
+            },
+            {
+                title: 'Quadro Kanban',
+                content: 'Gerencie tarefas arrastando cards entre colunas (Backlog -> Em Andamento -> Concluído). O progresso atualiza a barra do projeto.'
+            },
+            {
+                title: 'Carga de Trabalho',
+                content: 'Visualize quantas tarefas cada membro da equipe possui para evitar sobrecarga.'
+            }
+        ]
+    },
+    {
+        id: 'financial',
+        title: 'Gestão Financeira',
+        icon: Wallet,
+        description: 'Controle de receitas, despesas e fluxo de caixa.',
+        steps: [
+            {
+                title: 'Transações',
+                content: 'Registre entradas e saídas. Vincule a clientes e projetos para relatórios de rentabilidade.'
+            },
+            {
+                title: 'Dashboard Financeiro',
+                content: 'Acompanhe o fluxo de caixa, lucro líquido e despesas por categoria em tempo real.'
+            }
+        ]
+    },
+    {
+        id: 'service_catalog',
+        title: 'Catálogo de Serviços',
+        icon: ShoppingBag,
+        description: 'Gestão de produtos e serviços oferecidos (Em Implementação).',
+        steps: [
+            {
+                title: 'Definição de Produtos',
+                content: 'Cadastre seus pacotes de serviços (ex: "Gestão de Mídias Social Starter") com preços e escopo padrão.'
+            },
+            {
+                title: 'Propostas Rápidas',
+                content: 'Use os serviços cadastrados para gerar propostas comerciais padronizadas em segundos.'
             }
         ]
     },

@@ -1,189 +1,212 @@
-const pool = require('./database');
+const { opsPool: db } = require('./database'); // Use Hybrid Ops DB
 const storageService = require('./services/storageService');
-const fs = require('fs');
+const { getTenantScope } = require('./utils/tenantSecurity');
 
-/**
- * List assets (files) with optional filtering by folder, project, or client
- */
-exports.listAssets = async (req, res) => {
-    try {
-        const tenantId = req.user.tenant_id;
-        const { folder_id, project_id, client_id, search } = req.query;
+const assetController = {
+    // --- FOLDERS ---
 
-        let query = `
-            SELECT a.*, u.name as uploader_name
-            FROM assets a
-            LEFT JOIN users u ON a.uploader_id = u.id
-            WHERE a.tenant_id = $1
-        `;
-        const params = [tenantId];
-        let paramIndex = 2;
+    listFolders: async (req, res) => {
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
+        const { client_id, project_id, parent_id } = req.query;
 
-        if (folder_id) {
-            query += ` AND a.folder_id = $${paramIndex}`;
-            params.push(folder_id);
-            paramIndex++;
-        } else if (project_id) {
-            // If filtering by project but no specific folder, showing root project assets?
-            // Actually, usually we filter by folder. If project_id is passed, we might want to find folders for that project.
-            // But let's assume assets can be directly linked or we filter by folders linked to project.
-            // FOR NOW: Direct filter if column exists, or ignored if logic differs.
-            // Since schema has project_id in FOLDERS, not ASSETS directly (assets are in folders), 
-            // we should probably filter by folders that belong to the project.
+        try {
+            let query = `
+                SELECT f.*, 
+                       (SELECT COUNT(*) FROM asset_folders sub WHERE sub.parent_id = f.id) as subfolder_count,
+                       (SELECT COUNT(*) FROM assets a WHERE a.folder_id = f.id) as file_count
+                SELECT f.* FROM asset_folders f
+                WHERE f.tenant_id = $1
+            `;
+            // Simplify query for now
+            let sql = `
+                SELECT f.*, 
+                    (SELECT COUNT(*) FROM asset_folders sub WHERE sub.parent_id = f.id) as subfolder_count,
+                    (SELECT COUNT(*) FROM assets a WHERE a.folder_id = f.id) as file_count
+                FROM asset_folders f
+                WHERE 1=1
+            `;
+            const params = [];
+            let paramCount = 1;
+
+            // Tenant Scope
+            // if (!isSuperAdmin) {
+            //     sql += ` AND f.tenant_id = $${paramCount++}`;
+            //     params.push(tenantId);
+            // }
+
+            // Parent ID (Navigation)
+            if (parent_id && parent_id !== 'null') {
+                sql += ` AND f.parent_id = $${paramCount++}`;
+                params.push(parent_id);
+            } else {
+                sql += ` AND f.parent_id IS NULL`;
+            }
+
+            // Context Filter (Client vs Project vs Global)
+            if (client_id) {
+                sql += ` AND f.client_id = $${paramCount++}`;
+                params.push(client_id);
+            } else if (project_id) {
+                sql += ` AND f.project_id = $${paramCount++}`;
+                params.push(project_id);
+            } else {
+                // Root/Global folders (not specific to client/project)
+                // sql += ` AND f.client_id IS NULL AND f.project_id IS NULL`;
+            }
+
+            sql += ` ORDER BY f.is_system DESC, f.name ASC`;
+
+            const result = await db.query(sql, params);
+            res.json({ success: true, data: result.rows });
+        } catch (error) {
+            console.error('Error listing folders:', error);
+            res.status(500).json({ success: false, error: 'Database error' });
         }
+    },
 
-        if (search) {
-            query += ` AND a.name ILIKE $${paramIndex}`;
-            params.push(`%${search}%`);
-            paramIndex++;
+    createFolder: async (req, res) => {
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
+        const { name, parent_id, client_id, project_id, color } = req.body;
+
+        try {
+            const result = await db.query(`
+                INSERT INTO asset_folders (tenant_id, name, parent_id, client_id, project_id, color)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING *
+            `, [tenantId, name, parent_id || null, client_id || null, project_id || null, color || '#cbd5e1']);
+
+            res.status(201).json({ success: true, data: result.rows[0] });
+        } catch (error) {
+            console.error('Error creating folder:', error);
+            res.status(500).json({ success: false, error: 'Failed to create folder' });
         }
+    },
 
-        query += ` ORDER BY a.created_at DESC`;
+    deleteFolder: async (req, res) => {
+        const { id } = req.params;
+        try {
+            // Check if folder is not system
+            const check = await db.query('SELECT is_system FROM asset_folders WHERE id = $1', [id]);
+            if (check.rows.length > 0 && check.rows[0].is_system) {
+                return res.status(403).json({ success: false, error: 'Cannot delete system folders' });
+            }
 
-        const result = await pool.query(query, params);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error listing assets:', error);
-        res.status(500).json({ error: 'Failed to list assets' });
-    }
-};
-
-/**
- * List folders (hierarchical)
- */
-exports.listFolders = async (req, res) => {
-    try {
-        const tenantId = req.user.tenant_id;
-        const { parent_id, project_id, client_id } = req.query;
-
-        let query = `SELECT * FROM asset_folders WHERE tenant_id = $1`;
-        const params = [tenantId];
-        let paramIndex = 2;
-
-        if (parent_id) {
-            query += ` AND parent_id = $${paramIndex}`;
-            params.push(parent_id);
-            paramIndex++;
-        } else {
-            query += ` AND parent_id IS NULL`; // Root folders
+            await db.query('DELETE FROM asset_folders WHERE id = $1', [id]);
+            res.json({ success: true });
+        } catch (error) {
+            console.error('Error deleting folder:', error);
+            res.status(500).json({ success: false, error: 'Database error' });
         }
+    },
 
-        if (project_id) {
-            query += ` AND project_id = $${paramIndex}`;
-            params.push(project_id);
-            paramIndex++;
-        } else if (client_id) {
-            query += ` AND client_id = $${paramIndex}`;
-            params.push(client_id);
-            paramIndex++;
+    // --- ASSETS ---
+
+    listAssets: async (req, res) => {
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
+        const { folder_id, search } = req.query;
+
+        try {
+            let sql = `SELECT * FROM assets WHERE 1=1`;
+            const params = [];
+            let paramCount = 1;
+
+            // if (!isSuperAdmin) {
+            //     sql += ` AND tenant_id = $${paramCount++}`;
+            //     params.push(tenantId);
+            // }
+
+            if (folder_id && folder_id !== 'null') {
+                sql += ` AND folder_id = $${paramCount++}`;
+                params.push(folder_id);
+            } else if (!search) {
+                // If not searching and no folder, show unfiled assets? Or root?
+                sql += ` AND folder_id IS NULL`;
+            }
+
+            if (search) {
+                sql += ` AND name ILIKE $${paramCount++}`;
+                params.push(`%${search}%`);
+            }
+
+            sql += ` ORDER BY created_at DESC`;
+
+            const result = await db.query(sql, params);
+            res.json({ success: true, data: result.rows });
+        } catch (error) {
+            console.error('Error listing assets:', error);
+            res.status(500).json({ success: false, error: 'Database error' });
         }
+    },
 
-        query += ` ORDER BY name ASC`;
-
-        const result = await pool.query(query, params);
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error listing folders:', error);
-        res.status(500).json({ error: 'Failed to list folders' });
-    }
-};
-
-/**
- * Create a new folder
- */
-exports.createFolder = async (req, res) => {
-    try {
-        const tenantId = req.user.tenant_id;
-        const { name, parent_id, project_id, client_id } = req.body;
-
-        const result = await pool.query(
-            `INSERT INTO asset_folders (tenant_id, name, parent_id, project_id, client_id) 
-             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-            [tenantId, name, parent_id, project_id, client_id]
-        );
-        res.json(result.rows[0]);
-    } catch (error) {
-        console.error('Error creating folder:', error);
-        res.status(500).json({ error: 'Failed to create folder' });
-    }
-};
-
-/**
- * Upload a file (Asset)
- * Expects 'file' to be present in req (multer)
- */
-exports.uploadAsset = async (req, res) => {
-    try {
-        const tenantId = req.user.tenant_id;
-        const userId = req.user.id;
+    uploadAsset: async (req, res) => {
+        const { tenantId, id: userId } = req.user; // req.user populated by auth middleware
         const { folder_id, name, description } = req.body;
         const file = req.file;
 
         if (!file) {
-            return res.status(400).json({ error: 'No file uploaded' });
+            return res.status(400).json({ success: false, error: 'No file uploaded' });
         }
 
-        // Upload to S3
-        const fileUrl = await storageService.uploadFile(
-            file.buffer,
-            file.originalname,
-            file.mimetype,
-            `tenant_${tenantId}/assets`
-        );
+        try {
+            // 1. Upload to S3
+            // Assuming file.buffer is available (memory storage)
+            const s3Url = await storageService.uploadFile(
+                file.buffer,
+                file.originalname,
+                file.mimetype,
+                `tenants/${tenantId}/assets`
+            );
 
-        // Save to DB
-        const result = await pool.query(
-            `INSERT INTO assets (tenant_id, folder_id, uploader_id, name, description, file_key, file_url, file_type, file_size)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
-            [
+            // 2. Save to DB
+            const result = await db.query(`
+                INSERT INTO assets (
+                    tenant_id, folder_id, uploader_id, 
+                    name, description, 
+                    file_key, file_url, file_type, file_size
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                RETURNING *
+            `, [
                 tenantId,
-                folder_id || null,
+                folder_id === 'null' ? null : folder_id,
                 userId,
                 name || file.originalname,
                 description || '',
-                fileUrl.split('/').pop(), // Key (simplified)
-                fileUrl,
+                s3Url, // Key/URL simplification for now
+                s3Url,
                 file.mimetype,
                 file.size
-            ]
-        );
+            ]);
 
-        res.json(result.rows[0]);
-    } catch (error) {
-        console.error('Error uploading asset:', error);
-        res.status(500).json({ error: 'Failed to upload asset' });
-    }
-};
+            res.status(201).json({ success: true, data: result.rows[0] });
+        } catch (error) {
+            console.error('Error uploading asset:', error);
+            res.status(500).json({ success: false, error: 'Upload failed' });
+        }
+    },
 
-/**
- * Delete asset
- */
-exports.deleteAsset = async (req, res) => {
-    try {
-        const tenantId = req.user.tenant_id;
+    deleteAsset: async (req, res) => {
         const { id } = req.params;
 
-        // Get asset first to get URL
-        const assetResult = await pool.query(
-            `SELECT * FROM assets WHERE id = $1 AND tenant_id = $2`,
-            [id, tenantId]
-        );
+        try {
+            // 1. Get File URL
+            const assetRes = await db.query('SELECT file_url FROM assets WHERE id = $1', [id]);
+            if (assetRes.rows.length === 0) return res.status(404).json({ error: 'Asset not found' });
 
-        if (assetResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Asset not found' });
+            const fileUrl = assetRes.rows[0].file_url;
+
+            // 2. Delete from S3 (Async, don't block)
+            storageService.deleteFile(fileUrl).catch(err => console.error('S3 Delete Error:', err));
+
+            // 3. Delete from DB
+            await db.query('DELETE FROM assets WHERE id = $1', [id]);
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error('Error deleting asset:', error);
+            res.status(500).json({ success: false, error: 'Database error' });
         }
-
-        const asset = assetResult.rows[0];
-
-        // Delete from S3
-        await storageService.deleteFile(asset.file_url);
-
-        // Delete from DB
-        await pool.query(`DELETE FROM assets WHERE id = $1`, [id]);
-
-        res.json({ success: true });
-    } catch (error) {
-        console.error('Error deleting asset:', error);
-        res.status(500).json({ error: 'Failed to delete asset' });
     }
 };
+
+module.exports = assetController;

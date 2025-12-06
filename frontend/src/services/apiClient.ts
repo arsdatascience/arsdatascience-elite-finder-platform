@@ -332,26 +332,29 @@ export const apiClient = {
 
     // --- ASSETS (Digital Library) ---
     assets: {
-        list: async (params?: any) => {
+        list: async (params?: { folder_id?: number | null, search?: string }) => {
             const response = await axiosInstance.get('/assets', { params });
             return response.data;
         },
-        listFolders: async (params?: any) => {
+        listFolders: async (params?: { parent_id?: number | null, client_id?: number, project_id?: number }) => {
             const response = await axiosInstance.get('/folders', { params });
             return response.data;
         },
-        createFolder: async (data: { name: string, parent_id?: number, project_id?: number }) => {
+        createFolder: async (data: { name: string, parent_id?: number | null, client_id?: number, project_id?: number, color?: string }) => {
             const response = await axiosInstance.post('/folders', data);
             return response.data;
         },
+        deleteFolder: async (id: number) => {
+            const response = await axiosInstance.delete(`/folders/${id}`);
+            return response.data;
+        },
         upload: async (formData: FormData) => {
-            // Note: Content-Type header is handled automatically by browser/axios for FormData
             const response = await axiosInstance.post('/assets', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             return response.data;
         },
-        delete: async (id: number) => {
+        deleteAsset: async (id: number) => {
             const response = await axiosInstance.delete(`/assets/${id}`);
             return response.data;
         }
@@ -378,6 +381,27 @@ export const apiClient = {
         },
         publicReview: async (token: string, status: string, comments?: string) => {
             const response = await axiosInstance.post(`/public/approvals/${token}/review`, { status, comments });
+            return response.data;
+        }
+    }
+    ,
+
+    // --- SERVICE CATALOG ---
+    services: {
+        list: async () => {
+            const response = await axiosInstance.get('/services');
+            return response.data;
+        },
+        create: async (data: any) => {
+            const response = await axiosInstance.post('/services', data);
+            return response.data;
+        },
+        update: async (id: number, data: any) => {
+            const response = await axiosInstance.put(`/services/${id}`, data);
+            return response.data;
+        },
+        delete: async (id: number) => {
+            const response = await axiosInstance.delete(`/services/${id}`);
             return response.data;
         }
     }

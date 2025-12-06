@@ -7,10 +7,24 @@ const pool = new Pool({
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Handle pool errors
-pool.on('error', (err) => {
-    console.error('⚠️  Unexpected database error:', err.message);
+// Create Operations connection pool (New Modules: Projects, Tasks, SOPs, Finance)
+const opsPool = new Pool({
+    connectionString: process.env.OPERATIONS_DB_URL || process.env.DATABASE_URL, // Fallback to main if not set
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Export the pool for use in controllers
+// Handle pool errors
+pool.on('error', (err) => {
+    console.error('⚠️  Unexpected CORE database error:', err.message);
+});
+
+opsPool.on('error', (err) => {
+    console.error('⚠️  Unexpected OPS database error:', err.message);
+});
+
+// Attach opsPool to pool for backward compatibility and destructuring
+pool.opsPool = opsPool;
+pool.pool = pool; // Allow const { pool } = require... as well
+
+// Export the pool (Core) as default, with opsPool attached
 module.exports = pool;

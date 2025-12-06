@@ -711,8 +711,20 @@ app.put('/api/tasks/:id', authenticateToken, taskCtrl.updateTask);
 app.delete('/api/tasks/:id', authenticateToken, taskCtrl.deleteTask);
 
 // --- AGENT TEMPLATES ---
-const templatesController = require('./templatesController');
-app.use('/api/templates', templatesController);
+const templatesController = require('./templatesController'); // Kept for legacy if needed, or replace if duplicate
+// New SOP Template Controller
+const templateController = require('./controllers/templateController');
+
+// Template CRUD
+app.get('/api/templates', authenticateToken, templateController.getAllTemplates);
+app.post('/api/templates', authenticateToken, templateController.createTemplate);
+app.get('/api/templates/:id', authenticateToken, templateController.getTemplateDetails);
+app.put('/api/templates/:id', authenticateToken, templateController.updateTemplate);
+app.delete('/api/templates/:id', authenticateToken, templateController.deleteTemplate);
+
+// Apply Template to Project
+app.post('/api/projects/:id/apply-template', authenticateToken, templateController.applyTemplateToProject);
+
 
 // --- ASSET LIBRARY ROUTES (Phase 2) ---
 const assetCtrl = require('./assetController');
@@ -735,6 +747,13 @@ app.post('/api/public/approvals/:token/review', approvalCtrl.publicReview);
 
 // --- QDRANT VECTOR DATABASE ---
 const qdrantController = require('./qdrantController');
+
+// --- SERVICE CATALOG (Phase 2) ---
+const serviceCtrl = require('./controllers/serviceController');
+app.get('/api/services', authenticateToken, serviceCtrl.getServices);
+app.post('/api/services', authenticateToken, serviceCtrl.createService);
+app.put('/api/services/:id', authenticateToken, serviceCtrl.updateService);
+app.delete('/api/services/:id', authenticateToken, serviceCtrl.deleteService);
 
 // --- FINANCIAL ---
 const financialCtrl = require('./financialController');

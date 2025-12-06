@@ -36,6 +36,8 @@ import { ProjectCenter } from '@/components/ProjectCenter';
 import { AssetLibrary } from '@/components/AssetLibrary';
 import { ApprovalCenter } from '@/components/ApprovalCenter';
 import { HelpCenter } from '@/components/HelpCenter';
+import { ServiceCatalog } from '@/components/ServiceCatalog';
+import SOPManager from '@/components/SOPManager';
 
 const PATH_MAP: Record<ViewState, string> = {
   [ViewState.HOME]: '/',
@@ -64,6 +66,8 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.PROJECTS]: '/projects',
   [ViewState.ASSETS]: '/assets',
   [ViewState.APPROVALS]: '/approvals',
+  [ViewState.SERVICE_CATALOG]: '/services',
+  [ViewState.PROCESSES]: '/processes',
 };
 
 
@@ -209,6 +213,8 @@ const App: React.FC = () => {
           <Route path="/projects" element={<ProjectCenter />} />
           <Route path="/assets" element={<AssetLibrary />} />
           <Route path="/approvals" element={<ApprovalCenter />} />
+          <Route path="/services" element={<ServiceCatalog />} />
+          <Route path="/processes" element={<SOPManager />} />
         </Route>
       </Route>
 

@@ -1,6 +1,6 @@
 // Navigation and data constants
 import { Campaign, Lead, LeadStatus, Metric, ChatMessage } from './types';
-import { Home, LayoutDashboard, Megaphone, Plane, MessageSquare, Settings, Share2, GitBranch, BookOpen, Sparkles, Users, FileText, Bot, Calendar, Palette, Mic, Wallet, HelpCircle, Briefcase, Folder, CheckCircle2 } from 'lucide-react';
+import { Home, LayoutDashboard, Megaphone, Plane, MessageSquare, Settings, Share2, GitBranch, BookOpen, Sparkles, Users, FileText, Bot, Calendar, Palette, Mic, Wallet, HelpCircle, Briefcase, Folder, CheckCircle2, ShoppingBag, List } from 'lucide-react';
 
 export const NAV_ITEMS = [
   // Home
@@ -31,6 +31,8 @@ export const NAV_ITEMS = [
   { id: 'ASSETS', label: 'Biblioteca Digital', icon: Folder },
   { id: 'APPROVALS', label: 'Central de Aprovações', icon: CheckCircle2 },
   { id: 'HELP_CENTER', label: 'Manual de Uso', icon: HelpCircle },
+  { id: 'SERVICE_CATALOG', label: 'Catálogo de Serviços', icon: ShoppingBag },
+  { id: 'PROCESSES', label: 'Processos e Modelos', icon: List },
 ];
 
 export const CLIENTS_LIST = [

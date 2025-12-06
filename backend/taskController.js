@@ -1,4 +1,6 @@
-const pool = require('./database');
+const db = require('./database');
+const corePool = db;
+const opsPool = db.opsPool;
 
 // --- TASKS ---
 
@@ -8,14 +10,12 @@ exports.getTasks = async (req, res) => {
         const tenantId = req.user.tenant_id;
         const { project_id, assignee_id, status } = req.query;
 
+        // 1. Fetch Tasks from Ops DB (Join Projects is OK, Join Users is NOT)
         let query = `
             SELECT t.*, 
-                   p.name as project_name,
-                   u.name as assignee_name,
-                   u.avatar_url as assignee_avatar
+                   p.name as project_name
             FROM tasks t
             LEFT JOIN projects p ON t.project_id = p.id
-            LEFT JOIN users u ON t.assignee_id = u.id
             WHERE t.tenant_id = $1
         `;
         const params = [tenantId];
@@ -38,8 +38,37 @@ exports.getTasks = async (req, res) => {
         // Order by column_order for Kanban, then recently created
         query += ` ORDER BY t.column_order ASC, t.created_at DESC`;
 
-        const result = await pool.query(query, params);
-        res.json(result.rows);
+        const result = await opsPool.query(query, params);
+        const tasks = result.rows;
+
+        if (tasks.length === 0) {
+            return res.json([]);
+        }
+
+        // 2. Extract Assignee IDs
+        const assigneeIds = [...new Set(tasks.map(t => t.assignee_id).filter(id => id))];
+
+        // 3. Fetch Assignees from Core DB
+        let assignees = [];
+        if (assigneeIds.length > 0) {
+            const usersRes = await corePool.query(
+                `SELECT id, name, avatar_url FROM users WHERE id = ANY($1)`,
+                [assigneeIds]
+            );
+            assignees = usersRes.rows;
+        }
+
+        // 4. Merge Data
+        const enrichedTasks = tasks.map(t => {
+            const assignee = assignees.find(u => u.id === t.assignee_id);
+            return {
+                ...t,
+                assignee_name: assignee ? assignee.name : null,
+                assignee_avatar: assignee ? assignee.avatar_url : null
+            };
+        });
+
+        res.json(enrichedTasks);
     } catch (error) {
         console.error('Error getting tasks:', error);
         res.status(500).json({ error: 'Failed to fetch tasks' });
@@ -55,7 +84,7 @@ exports.createTask = async (req, res) => {
             assignee_id, due_date, estimated_minutes, tags, column_order
         } = req.body;
 
-        const result = await pool.query(
+        const result = await opsPool.query(
             `INSERT INTO tasks 
             (tenant_id, project_id, title, description, status, priority, assignee_id, reporter_id, due_date, estimated_minutes, tags, column_order)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
@@ -68,7 +97,6 @@ exports.createTask = async (req, res) => {
             ]
         );
 
-        // Log formatted result for frontend update
         const task = result.rows[0];
         res.status(201).json(task);
     } catch (error) {
@@ -108,7 +136,7 @@ exports.updateTask = async (req, res) => {
             RETURNING *
         `;
 
-        const result = await pool.query(query, values);
+        const result = await opsPool.query(query, values);
 
         if (result.rows.length === 0) return res.status(404).json({ error: 'Task not found' });
 
@@ -125,7 +153,7 @@ exports.deleteTask = async (req, res) => {
         const { id } = req.params;
         const tenantId = req.user.tenant_id;
 
-        await pool.query('DELETE FROM tasks WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+        await opsPool.query('DELETE FROM tasks WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
         res.json({ message: 'Task deleted' });
     } catch (error) {
         console.error('Error deleting task:', error);
@@ -140,7 +168,7 @@ exports.updateOrder = async (req, res) => {
         const { tasks } = req.body; // Array of { id, column_order, status }
 
         // Use a transaction for batch updates
-        const client = await pool.connect();
+        const client = await opsPool.connect();
         try {
             await client.query('BEGIN');
 

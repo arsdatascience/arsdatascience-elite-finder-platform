@@ -120,10 +120,21 @@ export const AssetLibrary: React.FC = () => {
     const handleDeleteAsset = async (id: number) => {
         if (!confirm('Tem certeza que deseja excluir este arquivo?')) return;
         try {
-            await apiClient.assets.delete(id);
+            await apiClient.assets.deleteAsset(id);
             loadContent();
         } catch (error) {
             console.error('Error deleting asset:', error);
+        }
+    };
+
+    const handleDeleteFolder = async (id: number) => {
+        if (!confirm('Tem certeza que deseja excluir esta pasta e todo seu conteúdo?')) return;
+        try {
+            await apiClient.assets.deleteFolder(id);
+            loadContent();
+        } catch (error) {
+            console.error('Error deleting folder:', error);
+            alert('Erro ao excluir pasta.');
         }
     };
 
@@ -143,15 +154,15 @@ export const AssetLibrary: React.FC = () => {
     };
 
     return (
-        <div className="h-full flex flex-col bg-[#0f172a] text-white p-6 overflow-hidden">
+        <div className="h-full flex flex-col bg-white text-gray-900 p-6 overflow-hidden rounded-xl shadow-sm border border-gray-200">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold mb-2">Biblioteca Digital</h1>
-                    <div className="flex items-center space-x-2 text-slate-400 text-sm">
+                    <h1 className="text-2xl font-bold mb-2 text-gray-900">Biblioteca Digital</h1>
+                    <div className="flex items-center space-x-2 text-gray-500 text-sm">
                         <button
                             onClick={() => navigateUp(-1)}
-                            className="hover:text-white flex items-center transition-colors"
+                            className="hover:text-blue-600 flex items-center transition-colors"
                         >
                             <Home size={16} />
                         </button>
@@ -160,7 +171,7 @@ export const AssetLibrary: React.FC = () => {
                                 <ChevronRight size={14} />
                                 <button
                                     onClick={() => navigateUp(idx)}
-                                    className="hover:text-white transition-colors"
+                                    className="hover:text-blue-600 transition-colors"
                                 >
                                     {folder.name}
                                 </button>
@@ -171,27 +182,27 @@ export const AssetLibrary: React.FC = () => {
 
                 <div className="flex items-center gap-3">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
                             type="text"
                             placeholder="Buscar arquivos..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && loadContent()}
-                            className="bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-purple-500 w-64"
+                            className="bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500 w-64 shadow-sm"
                         />
                     </div>
 
                     <button
                         onClick={() => setShowNewFolderModal(true)}
-                        className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border border-slate-700"
+                        className="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border border-gray-200 shadow-sm font-medium"
                     >
                         <Plus size={18} />
                         Nova Pasta
                     </button>
 
                     <label className={`
-                        bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer
+                        bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer shadow-sm font-medium
                         ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
                     `}>
                         <Upload size={18} />
@@ -209,7 +220,7 @@ export const AssetLibrary: React.FC = () => {
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto pr-2">
                 {loading ? (
-                    <div className="flex justify-center items-center h-64 text-slate-400">
+                    <div className="flex justify-center items-center h-64 text-gray-400">
                         Carregando...
                     </div>
                 ) : (
@@ -217,18 +228,27 @@ export const AssetLibrary: React.FC = () => {
                         {/* Folders Section */}
                         {folders.length > 0 && (
                             <div>
-                                <h2 className="text-slate-400 text-sm font-semibold mb-3 uppercase tracking-wider">Pastas</h2>
+                                <h2 className="text-gray-500 text-sm font-semibold mb-3 uppercase tracking-wider">Pastas</h2>
                                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                                     {folders.map(folder => (
                                         <div
                                             key={folder.id}
                                             onClick={() => navigateToFolder(folder)}
-                                            className="group bg-slate-800 p-4 rounded-xl border border-slate-700 hover:border-purple-500/50 hover:bg-slate-750 transition-all cursor-pointer flex flex-col items-center text-center gap-3"
+                                            className="group bg-white p-4 rounded-xl border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer flex flex-col items-center text-center gap-3"
                                         >
-                                            <div className="p-3 bg-purple-500/10 rounded-full text-purple-400 group-hover:bg-purple-500/20 group-hover:scale-110 transition-transform">
+                                            <div className="p-3 bg-blue-50 rounded-full text-blue-500 group-hover:bg-blue-100 group-hover:scale-110 transition-transform">
                                                 <Folder size={32} fill="currentColor" fillOpacity={0.2} />
                                             </div>
-                                            <span className="text-sm font-medium truncate w-full">{folder.name}</span>
+                                            <div className="flex justify-between w-full items-center">
+                                                <span className="text-sm font-medium text-gray-700 truncate flex-1 text-center" title={folder.name}>{folder.name}</span>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }}
+                                                    className="p-1 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                                    title="Excluir Pasta"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -238,17 +258,17 @@ export const AssetLibrary: React.FC = () => {
                         {/* Files Section */}
                         {assets.length > 0 ? (
                             <div>
-                                <h2 className="text-slate-400 text-sm font-semibold mb-3 uppercase tracking-wider">Arquivos</h2>
+                                <h2 className="text-gray-500 text-sm font-semibold mb-3 uppercase tracking-wider">Arquivos</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                     {assets.map(asset => (
                                         <div
                                             key={asset.id}
-                                            className="group bg-slate-800 rounded-xl border border-slate-700 hover:border-slate-600 overflow-hidden transition-all flex flex-col"
+                                            className="group bg-white rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-md overflow-hidden transition-all flex flex-col"
                                         >
                                             {/* Preview / Icon Area */}
-                                            <div className="h-32 bg-slate-900 flex items-center justify-center relative">
+                                            <div className="h-32 bg-gray-50 flex items-center justify-center relative border-b border-gray-100">
                                                 {asset.file_type.startsWith('image/') ? (
-                                                    <img src={asset.file_url} alt={asset.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                                    <img src={asset.file_url} alt={asset.name} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
                                                 ) : (
                                                     <div className="transform group-hover:scale-110 transition-transform">
                                                         {getFileIcon(asset.file_type)}
@@ -256,20 +276,20 @@ export const AssetLibrary: React.FC = () => {
                                                 )}
 
                                                 {/* Hover Actions */}
-                                                <div className="absolute inset-0 bg-black/60 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[1px]">
                                                     <a
                                                         href={asset.file_url}
                                                         download
                                                         target="_blank"
                                                         rel="noreferrer"
-                                                        className="p-2 bg-slate-700 rounded-full hover:bg-blue-600 text-white transition-colors"
+                                                        className="p-2 bg-white/90 rounded-full hover:bg-blue-600 hover:text-white text-gray-700 transition-colors shadow-sm"
                                                         title="Download"
                                                     >
                                                         <Download size={16} />
                                                     </a>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleDeleteAsset(asset.id); }}
-                                                        className="p-2 bg-slate-700 rounded-full hover:bg-red-600 text-white transition-colors"
+                                                        className="p-2 bg-white/90 rounded-full hover:bg-red-600 hover:text-white text-gray-700 transition-colors shadow-sm"
                                                         title="Excluir"
                                                     >
                                                         <Trash2 size={16} />
@@ -280,12 +300,12 @@ export const AssetLibrary: React.FC = () => {
                                             {/* File Info */}
                                             <div className="p-3">
                                                 <div className="flex justify-between items-start mb-1">
-                                                    <h3 className="font-medium text-sm truncate flex-1 pr-2" title={asset.name}>{asset.name}</h3>
-                                                    <button className="text-slate-400 hover:text-white">
+                                                    <h3 className="font-medium text-sm text-gray-800 truncate flex-1 pr-2" title={asset.name}>{asset.name}</h3>
+                                                    <button className="text-gray-400 hover:text-gray-600">
                                                         <MoreVertical size={14} />
                                                     </button>
                                                 </div>
-                                                <div className="flex justify-between items-center text-xs text-slate-500">
+                                                <div className="flex justify-between items-center text-xs text-gray-500">
                                                     <span>{formatSize(asset.file_size)}</span>
                                                     <span>{new Date(asset.created_at).toLocaleDateString()}</span>
                                                 </div>
@@ -297,11 +317,11 @@ export const AssetLibrary: React.FC = () => {
                         ) : (
                             assets.length === 0 && folders.length === 0 && !loading && (
                                 <div className="text-center py-20">
-                                    <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-600">
+                                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
                                         <Folder size={40} />
                                     </div>
-                                    <h3 className="text-lg font-medium text-slate-300 mb-2">Esta pasta está vazia</h3>
-                                    <p className="text-slate-500 max-w-sm mx-auto">
+                                    <h3 className="text-lg font-medium text-gray-900 mb-2">Esta pasta está vazia</h3>
+                                    <p className="text-gray-500 max-w-sm mx-auto">
                                         Organize seus arquivos criando pastas ou faça upload de novos documentos.
                                     </p>
                                 </div>
@@ -314,26 +334,26 @@ export const AssetLibrary: React.FC = () => {
             {/* New Folder Modal */}
             {showNewFolderModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 w-full max-w-sm shadow-2xl">
-                        <h3 className="text-lg font-bold mb-4">Nova Pasta</h3>
+                    <div className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-sm shadow-2xl">
+                        <h3 className="text-lg font-bold mb-4 text-gray-900">Nova Pasta</h3>
                         <input
                             type="text"
                             value={newFolderName}
                             onChange={(e) => setNewFolderName(e.target.value)}
                             placeholder="Nome da pasta"
                             autoFocus
-                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white mb-6 focus:outline-none focus:border-purple-500"
+                            className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 mb-6 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                         />
                         <div className="flex justify-end gap-3">
                             <button
                                 onClick={() => setShowNewFolderModal(false)}
-                                className="px-4 py-2 text-slate-400 hover:text-white transition-colors"
+                                className="px-4 py-2 text-gray-500 hover:text-gray-700 transition-colors"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={handleCreateFolder}
-                                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors"
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
                             >
                                 Criar
                             </button>

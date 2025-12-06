@@ -27,7 +27,9 @@ export enum ViewState {
   HELP_CENTER = 'HELP_CENTER',
   PROJECTS = 'PROJECTS',
   ASSETS = 'ASSETS',
-  APPROVALS = 'APPROVALS'
+  APPROVALS = 'APPROVALS',
+  SERVICE_CATALOG = 'SERVICE_CATALOG',
+  PROCESSES = 'PROCESSES'
 }
 
 export enum LeadStatus {
@@ -129,14 +131,32 @@ export interface Workflow {
   };
 }
 
-export interface WorkflowTemplate {
-  id: string;
+id: string;
+name: string;
+description: string;
+category: string;
+trigger: string;
+steps: Omit < WorkflowStep, 'id' > [];
+iconType: 'user-plus' | 'clock' | 'zap' | 'git-branch' | 'message-square' | 'alert-circle' | 'shopping-cart' | 'calendar';
+}
+
+// SOP Template Types
+export interface SOPTemplateItem {
+  id?: number;
+  template_id?: number;
+  title: string;
+  description: string;
+  duration_days: number;
+  order_index: number;
+}
+
+export interface SOPTemplate {
+  id: number;
   name: string;
   description: string;
   category: string;
-  trigger: string;
-  steps: Omit<WorkflowStep, 'id'>[];
-  iconType: 'user-plus' | 'clock' | 'zap' | 'git-branch' | 'message-square' | 'alert-circle' | 'shopping-cart' | 'calendar';
+  is_active: boolean;
+  items?: SOPTemplateItem[];
 }
 
 // Image Generation Types

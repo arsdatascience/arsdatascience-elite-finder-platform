@@ -35,6 +35,8 @@ export const ProjectCenter: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [showNewProjectModal, setShowNewProjectModal] = useState(false);
 
+    const [templates, setTemplates] = useState<any[]>([]); // Templates state
+
     // New Project State
     const [newProjectData, setNewProjectData] = useState({
         name: '',
@@ -44,7 +46,8 @@ export const ProjectCenter: React.FC = () => {
         start_date: '',
         end_date: '',
         budget: '',
-        status: 'planning'
+        status: 'planning',
+        template_id: '' // Added template_id
     });
 
     // Filters
@@ -53,7 +56,17 @@ export const ProjectCenter: React.FC = () => {
     useEffect(() => {
         fetchProjects();
         fetchClients();
+        fetchTemplates();
     }, []);
+
+    const fetchTemplates = async () => {
+        try {
+            const data = await apiClient.templates.list();
+            setTemplates(data);
+        } catch (error) {
+            console.error('Error fetching templates:', error);
+        }
+    };
 
     const fetchProjects = async () => {
         try {
@@ -80,11 +93,18 @@ export const ProjectCenter: React.FC = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await apiClient.projects.create({
+            // 1. Create Project
+            const project = await apiClient.projects.create({
                 ...newProjectData,
                 budget: newProjectData.budget ? parseFloat(newProjectData.budget) : 0,
                 client_id: newProjectData.client_id ? parseInt(newProjectData.client_id) : null
             });
+
+            // 2. Apply Template (if selected)
+            if (newProjectData.template_id) {
+                await apiClient.templates.applyToProject(project.id.toString(), parseInt(newProjectData.template_id));
+            }
+
             setShowNewProjectModal(false);
             setNewProjectData({
                 name: '',
@@ -94,7 +114,8 @@ export const ProjectCenter: React.FC = () => {
                 start_date: '',
                 end_date: '',
                 budget: '',
-                status: 'planning'
+                status: 'planning',
+                template_id: ''
             });
             fetchProjects();
         } catch (error) {
@@ -408,6 +429,30 @@ export const ProjectCenter: React.FC = () => {
                                         <option value="active">Ativo</option>
                                         <option value="on_hold">Em Espera</option>
                                     </select>
+                                </div>
+                            </div>
+
+                            {/* Template Section */}
+                            <div className="mt-6 pt-6 border-t border-gray-200">
+                                <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                    <Briefcase className="w-4 h-4 text-emerald-600" />
+                                    Aplicar Modelo (Opcional)
+                                </h3>
+                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Selecione um Processo Padrão (SOP)</label>
+                                    <select
+                                        value={newProjectData.template_id || ''}
+                                        onChange={e => setNewProjectData({ ...newProjectData, template_id: e.target.value })}
+                                        className="w-full bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                    >
+                                        <option value="">Nenhum (Começar em branco)</option>
+                                        {templates.map((t: any) => (
+                                            <option key={t.id} value={t.id}>{t.name} ({t.category})</option>
+                                        ))}
+                                    </select>
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Ao selecionar um modelo, as tarefas e prazos serão gerados automaticamente.
+                                    </p>
                                 </div>
                             </div>
 
