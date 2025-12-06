@@ -97,7 +97,8 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ project, onDeleteProject, 
                 await apiClient.tasks.update(taskData.id, taskData);
             } else {
                 // Create
-                await apiClient.tasks.create(project.id, {
+                await apiClient.tasks.create({
+                    project_id: project.id,
                     ...taskData,
                     column_order: tasks.filter(t => t.status === (taskData.status || 'todo')).length
                 });
