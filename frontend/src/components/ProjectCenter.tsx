@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Layout, Search, Filter, MoreHorizontal, ArrowRight, Folder } from 'lucide-react';
+import { Plus, Layout, Search, Filter, MoreHorizontal, ArrowRight, Folder, Trash2 } from 'lucide-react';
 import { apiClient } from '../services/apiClient';
 import { TaskBoard } from './TaskBoard';
 import ProjectModal from './ProjectModal';
@@ -225,16 +225,29 @@ export const ProjectCenter = () => {
                                 <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusColor(project.status || 'planning')}`}>
                                     {getStatusLabel(project.status || 'planning')}
                                 </span>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedProject(project);
-                                        setShowEditProjectModal(true);
-                                    }}
-                                    className="text-gray-400 hover:text-blue-600 p-1 rounded-md hover:bg-blue-50 transition-colors"
-                                >
-                                    <MoreHorizontal className="w-5 h-5" />
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteProject(project.id);
+                                        }}
+                                        className="text-gray-400 hover:text-red-600 p-1 rounded-md hover:bg-red-50 transition-colors"
+                                        title="Excluir Projeto"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedProject(project);
+                                            setShowEditProjectModal(true);
+                                        }}
+                                        className="text-gray-400 hover:text-blue-600 p-1 rounded-md hover:bg-blue-50 transition-colors"
+                                        title="Editar Projeto"
+                                    >
+                                        <MoreHorizontal className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
 
                             <h3 className="font-bold text-lg text-gray-900 mb-2 truncate group-hover:text-blue-600 transition-colors">

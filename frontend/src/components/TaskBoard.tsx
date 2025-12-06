@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DndContext, closestCorners, useSensor, useSensors, PointerSensor, KeyboardSensor, DragOverlay } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Layout, Search, Filter, MoreHorizontal, Calendar as CalendarIcon, Clock, Users, Trash2, User as UserIcon } from 'lucide-react';
+import { Plus, Layout, Search, Filter, MoreHorizontal, Calendar as CalendarIcon, Clock, Users, Trash2, User as UserIcon, List } from 'lucide-react';
 import { apiClient } from '../services/apiClient';
 import { Task } from '../types';
 import TaskModal from './TaskModal';
