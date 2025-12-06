@@ -57,7 +57,7 @@ export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading })
 
                     {/* Step 1 */}
                     <div className={`relative z-10 flex flex-col items-center gap-2 ${step >= 1 ? 'opacity-100' : 'opacity-50'}`}>
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white transition-all ${step >= 1 ? 'bg-purple-600 shadow-lg shadow-purple-200' : 'bg-slate-400'}`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white transition-all ${step >= 1 ? 'bg-slate-800 shadow-lg shadow-slate-300' : 'bg-slate-400'}`}>
                             1
                         </div>
                         <span className="text-xs font-bold text-slate-700 uppercase">Definir Dias</span>
@@ -65,7 +65,7 @@ export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading })
 
                     {/* Step 2 */}
                     <div className={`relative z-10 flex flex-col items-center gap-2 ${step >= 2 ? 'opacity-100' : 'opacity-50'}`}>
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white transition-all ${step >= 2 ? 'bg-purple-600 shadow-lg shadow-purple-200' : 'bg-slate-400'}`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white transition-all ${step >= 2 ? 'bg-slate-800 shadow-lg shadow-slate-300' : 'bg-slate-400'}`}>
                             2
                         </div>
                         <span className="text-xs font-bold text-slate-700 uppercase">Roteiro Diário</span>
@@ -73,7 +73,7 @@ export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading })
 
                     {/* Step 3 */}
                     <div className={`relative z-10 flex flex-col items-center gap-2 ${step >= 3 ? 'opacity-100' : 'opacity-50'}`}>
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white transition-all ${step >= 3 ? 'bg-purple-600 shadow-lg shadow-purple-200' : 'bg-slate-400'}`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white transition-all ${step >= 3 ? 'bg-slate-800 shadow-lg shadow-slate-300' : 'bg-slate-400'}`}>
                             3
                         </div>
                         <span className="text-xs font-bold text-slate-700 uppercase">Configuração</span>
@@ -98,11 +98,11 @@ export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading })
                                     key={val}
                                     onClick={() => handleDaysChange(val)}
                                     className={`p-6 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${days === val
-                                        ? 'border-purple-600 bg-purple-50 text-purple-700 shadow-md'
-                                        : 'border-slate-100 hover:border-purple-300 hover:bg-slate-50'
+                                        ? 'border-slate-800 bg-slate-100 text-slate-900 shadow-md'
+                                        : 'border-slate-100 hover:border-slate-400 hover:bg-slate-50'
                                         }`}
                                 >
-                                    <Calendar size={32} className={days === val ? 'text-purple-600' : 'text-slate-400'} />
+                                    <Calendar size={32} className={days === val ? 'text-slate-800' : 'text-slate-400'} />
                                     <span className="font-bold text-lg">{val} Dias</span>
                                 </button>
                             ))}
@@ -116,7 +116,7 @@ export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading })
                                 max="31"
                                 value={days}
                                 onChange={(e) => handleDaysChange(Number(e.target.value))}
-                                className="w-24 text-center text-xl font-bold text-purple-700 border-b-2 border-purple-200 focus:border-purple-600 outline-none p-2"
+                                className="w-24 text-center text-xl font-bold text-slate-800 border-b-2 border-slate-300 focus:border-slate-800 outline-none p-2"
                             />
                         </div>
                     </div>
@@ -127,7 +127,7 @@ export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading })
                     <div className="animate-fade-in h-96 overflow-y-auto pr-2 custom-scrollbar">
                         <div className="space-y-4">
                             <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                                <Layers className="text-purple-600" /> Defina os Temas Diários
+                                <Layers className="text-slate-800" /> Defina os Temas Diários
                             </h2>
 
                             {topics.map((topic, index) => (
@@ -158,7 +158,7 @@ export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading })
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-2">Plataforma</label>
                                 <select
-                                    className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-purple-500"
+                                    className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-slate-500"
                                     value={platform}
                                     onChange={(e) => setPlatform(e.target.value)}
                                 >
@@ -176,7 +176,7 @@ export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading })
                                         <button
                                             key={t}
                                             onClick={() => setTone(t)}
-                                            className={`p-2 rounded-lg border text-sm capitalize transition-all ${tone === t ? 'bg-purple-50 border-purple-500 text-purple-700 font-bold' : 'hover:bg-slate-50 border-slate-200'
+                                            className={`p-2 rounded-lg border text-sm capitalize transition-all ${tone === t ? 'bg-slate-100 border-slate-800 text-slate-900 font-bold' : 'hover:bg-slate-50 border-slate-200'
                                                 }`}
                                         >
                                             {t}
@@ -258,7 +258,7 @@ export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading })
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold hover:shadow-purple-200 shadow-xl transition-all scale-100 hover:scale-105"
+                        className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-slate-700 to-slate-900 text-white rounded-xl font-bold hover:shadow-slate-300 shadow-xl transition-all scale-100 hover:scale-105"
                     >
                         {loading ? 'Processando Lote...' : 'Gerar Lote Completo'} <Wand2 size={18} />
                     </button>

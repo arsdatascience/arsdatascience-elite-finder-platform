@@ -142,8 +142,8 @@ const Layout: React.FC = () => {
           </button>
         </div>
 
-        <main className="flex-1 overflow-auto relative z-10 w-full bg-gray-100">
-          <div className="min-h-full flex flex-col">
+        <main className={`flex-1 relative z-10 w-full bg-gray-100 ${location.pathname === '/automation' ? 'overflow-hidden' : 'overflow-auto'}`}>
+          <div className={`flex flex-col ${location.pathname === '/automation' ? 'h-full' : 'min-h-full'}`}>
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}

@@ -666,6 +666,7 @@ app.get('/api/auth/meta', (req, res) => {
 app.post('/api/integrations/whatsapp/setup', integrationsController.setupWhatsAppWebhook);
 app.get('/api/integrations/whatsapp', authenticateToken, integrationsController.getWhatsAppConfig);
 app.post('/api/integrations/whatsapp', authenticateToken, integrationsController.saveWhatsAppConfig);
+app.delete('/api/integrations/whatsapp', authenticateToken, integrationsController.deleteWhatsAppConfig);
 app.post('/api/integrations/n8n', authenticateToken, integrationsController.saveN8nConfig);
 
 // --- WEBHOOKS ---

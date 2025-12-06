@@ -122,14 +122,14 @@ export const Training: React.FC = () => {
             </div>
 
             {/* Hero Stats */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-xl p-6 text-white shadow-lg">
+            <div className="bg-gradient-to-r from-slate-700 to-slate-900 rounded-xl p-6 text-white shadow-lg">
                 <div className="flex items-center justify-between">
                     <div className="flex-1">
                         <h3 className="text-xl font-bold mb-1">Bem-vindo de volta!</h3>
-                        <p className="text-indigo-100 text-sm mb-4">
+                        <p className="text-slate-300 text-sm mb-4">
                             Você completou {completedModules} de {modules.length} módulos ({overallProgress}%). Continue assim!
                         </p>
-                        <div className="w-full max-w-md bg-indigo-900/50 rounded-full h-2">
+                        <div className="w-full max-w-md bg-slate-800/50 rounded-full h-2">
                             <div
                                 className="bg-yellow-400 h-2 rounded-full transition-all duration-500"
                                 style={{ width: `${overallProgress}%` }}
@@ -141,7 +141,7 @@ export const Training: React.FC = () => {
                             <Award size={32} className="text-yellow-400" />
                         </div>
                         <p className="font-bold">Elite Learner</p>
-                        <p className="text-xs text-indigo-200">Ranking Atual</p>
+                        <p className="text-xs text-slate-400">Ranking Atual</p>
                     </div>
                 </div>
             </div>
@@ -200,8 +200,8 @@ export const Training: React.FC = () => {
                 </div>
                 <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <TrendingUp className="text-purple-600" size={24} />
+                        <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
+                            <TrendingUp className="text-slate-600" size={24} />
                         </div>
                         <div>
                             <p className="text-2xl font-bold text-gray-900">{overallProgress}%</p>
@@ -256,7 +256,7 @@ export const Training: React.FC = () => {
                             className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden group hover:shadow-md transition-all cursor-pointer"
                             onClick={() => handleStartModule(module)}
                         >
-                            <div className="h-40 bg-gradient-to-br from-primary-500 to-purple-600 relative flex items-center justify-center">
+                            <div className="h-40 bg-gradient-to-br from-slate-600 to-slate-800 relative flex items-center justify-center">
                                 <Video size={48} className="text-white/80" />
                                 {isCompleted && (
                                     <div className="absolute top-3 right-3 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">

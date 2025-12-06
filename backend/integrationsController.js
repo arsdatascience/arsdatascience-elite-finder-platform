@@ -325,6 +325,25 @@ const saveWhatsAppConfig = async (req, res) => {
     }
 };
 
+// ============================================
+// WHATSAPP - Delete/Disconnect Configuration
+// ============================================
+const deleteWhatsAppConfig = async (req, res) => {
+    const userId = req.user ? req.user.id : 1;
+
+    try {
+        await pool.query(
+            "DELETE FROM integrations WHERE user_id = $1 AND platform IN ('whatsapp', 'evolution_api')",
+            [userId]
+        );
+
+        res.json({ success: true, message: 'WhatsApp disconnected successfully' });
+    } catch (error) {
+        console.error('Error disconnecting WhatsApp:', error);
+        res.status(500).json({ error: 'Failed to disconnect integration' });
+    }
+};
+
 module.exports = {
     getIntegrations,
     updateIntegrationStatus,
@@ -334,5 +353,6 @@ module.exports = {
     setupWhatsAppWebhook,
     saveN8nConfig,
     getWhatsAppConfig,
-    saveWhatsAppConfig
+    saveWhatsAppConfig,
+    deleteWhatsAppConfig
 };

@@ -108,6 +108,32 @@ export const WhatsAppConfigModal: React.FC<WhatsAppConfigModalProps> = ({ isOpen
         }
     };
 
+    const handleDisconnect = async () => {
+        if (!confirm('Tem certeza que deseja desconectar? Isso irá parar a integração.')) return;
+
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/whatsapp`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                setSuccess('Desconectado com sucesso!');
+                setEvolutionConfig({ baseUrl: '', instanceName: '', apiKey: '' });
+                setOfficialConfig({ phoneNumberId: '', accessToken: '', verifyToken: '' });
+                setTimeout(onClose, 1500);
+            } else {
+                setError('Erro ao desconectar.');
+            }
+        } catch (err) {
+            setError('Erro de conexão ao desconectar.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -225,21 +251,31 @@ export const WhatsAppConfigModal: React.FC<WhatsAppConfigModalProps> = ({ isOpen
                         </div>
                     )}
 
-                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                        <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors">
-                            Cancelar
-                        </button>
+                    <div className="flex justify-between items-center pt-4 border-t border-gray-100">
                         <button
-                            onClick={handleSave}
+                            onClick={handleDisconnect}
                             disabled={loading}
-                            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-green-200 disabled:opacity-70"
+                            className="text-red-500 hover:text-red-700 text-sm font-medium underline px-2 disabled:opacity-50"
                         >
-                            {loading ? 'Salvando...' : (
-                                <>
-                                    <Save size={18} /> Salvar Configuração
-                                </>
-                            )}
+                            Desconectar
                         </button>
+
+                        <div className="flex gap-3">
+                            <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors">
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleSave}
+                                disabled={loading}
+                                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-green-200 disabled:opacity-70"
+                            >
+                                {loading ? 'Salvando...' : (
+                                    <>
+                                        <Save size={18} /> Salvar Configuração
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
