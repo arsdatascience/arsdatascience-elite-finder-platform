@@ -142,21 +142,23 @@ const Layout: React.FC = () => {
           </button>
         </div>
 
-        <main className="flex-1 overflow-auto relative z-10 w-full flex flex-col">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              variants={pageVariants}
-              transition={{ duration: 0.2 }}
-              className="flex-1 p-4 md:p-8"
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
-          <Footer className="mt-0" />
+        <main className="flex-1 overflow-auto relative z-10 w-full bg-gray-100">
+          <div className="min-h-full flex flex-col">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                variants={pageVariants}
+                transition={{ duration: 0.2 }}
+                className="flex-1 p-4 md:p-8"
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
+            <Footer className="mt-auto" />
+          </div>
         </main>
       </div>
     </div>
