@@ -38,22 +38,24 @@ if (process.env.FRONTEND_URL) {
 }
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
-      callback(null, true);
-    } else {
-      console.log('Blocked by CORS:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   optionsSuccessStatus: 200
 };
+
+// Middleware para debug e garantia de headers
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  next();
+});
 
 app.use(compression());
 app.use(cors(corsOptions));
@@ -596,10 +598,10 @@ app.get('/api/health', async (req, res) => {
 app.get('/api/users', dbController.getUsers);
 
 // Team Management
-app.get('/api/team', userCtrl.getTeamMembers);
-app.post('/api/team', userCtrl.createTeamMember);
-app.put('/api/team/:id', userCtrl.updateTeamMember);
-app.delete('/api/team/:id', userCtrl.deleteTeamMember);
+app.get('/api/team', authenticateToken, userCtrl.getTeamMembers);
+app.post('/api/team', authenticateToken, userCtrl.createTeamMember);
+app.put('/api/team/:id', authenticateToken, userCtrl.updateTeamMember);
+app.delete('/api/team/:id', authenticateToken, userCtrl.deleteTeamMember);
 
 // Clients
 app.get('/api/clients', authenticateToken, dbController.getClients);
