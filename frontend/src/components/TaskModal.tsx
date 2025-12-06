@@ -1,16 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { X, Save, CheckSquare, Users, FileText, Flag, Calendar, Link as LinkIcon, AlertCircle, Zap, Layers } from 'lucide-react';
-import { Task } from '../types';
-
-interface TaskModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (taskData: Partial<Task>) => Promise<void>;
-    task?: Task; // If provided, Edit mode
-    initialStatus?: string;
-    projectId?: number;
-    users?: { id: number; name: string; avatar_url?: string }[];
-    projects?: { id: number; name: string }[];
+task ?: Task; // If provided, Edit mode
+initialStatus ?: string;
+projectId ?: number;
+users ?: { id: number; name: string; avatar_url?: string }[];
+projects ?: { id: number; name: string }[];
 }
 
 const TaskModal: React.FC<TaskModalProps> = ({
@@ -148,8 +140,8 @@ const TaskModal: React.FC<TaskModalProps> = ({
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
-                                        ? 'bg-blue-600 text-white shadow-md'
-                                        : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+                                    ? 'bg-blue-600 text-white shadow-md'
+                                    : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                                     }`}
                             >
                                 <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-white' : 'text-gray-500'}`} />

@@ -4,10 +4,9 @@ import {
   AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts';
 import {
-  Download, TrendingUp, DollarSign, MousePointer,
+  TrendingUp, DollarSign, MousePointer,
   Eye, Target, Layers, ArrowUpRight, ArrowDownRight, Loader2,
-  LayoutGrid, List as ListIcon, Table as TableIcon, FileText, FileSpreadsheet,
-  Filter, Search
+  LayoutGrid, List as ListIcon, Table as TableIcon, FileText, FileSpreadsheet
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/services/apiClient';
@@ -616,6 +615,8 @@ export const Campaigns: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         campaign={selectedCampaign}
+        mode={selectedCampaign ? 'edit' : 'create'}
+        onSave={(data) => console.log('Save campaign', data)}
       />
     </div>
   );

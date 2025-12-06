@@ -5,10 +5,7 @@ import {
     Clock,
     MessageSquare,
     ExternalLink,
-    FileText,
-    Image,
-    Video,
-    Send
+    FileText
 } from 'lucide-react';
 import { apiClient } from '../services/apiClient';
 

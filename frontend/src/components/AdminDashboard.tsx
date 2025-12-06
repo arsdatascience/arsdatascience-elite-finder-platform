@@ -106,7 +106,7 @@ const AdminDashboard: React.FC = () => {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [showPassword, setShowPassword] = useState(false);
 
-    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<UserFormData>({
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<UserFormData>({
         resolver: zodResolver(userSchema)
     });
 

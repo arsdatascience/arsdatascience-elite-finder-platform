@@ -1,5 +1,9 @@
+import React from 'react';
+import { useDroppable } from '@dnd-kit/core';
+import { Lead } from '@/types';
+
 // --- Droppable Column Component ---
-const DroppableColumn = ({ column, leads, children }: { column: any, leads: Lead[], children: React.ReactNode }) => {
+export const DroppableColumn = ({ column, leads, children }: { column: any, leads: Lead[], children: React.ReactNode }) => {
     const { setNodeRef } = useDroppable({
         id: column.id,
     });

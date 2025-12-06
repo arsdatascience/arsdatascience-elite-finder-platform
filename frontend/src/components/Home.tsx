@@ -1,6 +1,5 @@
 import React from 'react';
 import { NAV_ITEMS } from '@/constants';
-import { NAV_ITEMS } from '@/constants';
 
 interface HomeProps {
     onSelect: (id: string) => void;
