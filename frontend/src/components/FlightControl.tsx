@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import {
   DndContext,
-  closestCorners,
+  rectIntersection,
+  pointerWithin,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -11,12 +12,14 @@ import {
   DragOverEvent,
   DragEndEvent,
   useDroppable,
+  getFirstCollision,
 } from '@dnd-kit/core';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
+  arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
@@ -41,7 +44,7 @@ const COLUMNS = [
 ];
 
 // --- Droppable Column Component ---
-const DroppableColumn = ({ column, leads, children }: { column: any, leads: Lead[], children: React.ReactNode }) => {
+const DroppableColumn = memo(({ column, leads, children }: { column: any, leads: Lead[], children: React.ReactNode }) => {
   const { setNodeRef } = useDroppable({
     id: column.id,
   });
@@ -62,10 +65,12 @@ const DroppableColumn = ({ column, leads, children }: { column: any, leads: Lead
       </div>
     </div>
   );
-};
+});
+
+DroppableColumn.displayName = 'DroppableColumn';
 
 // --- Sortable Item Component ---
-const SortableItem = ({ lead, onClick, onQuickAction }: { lead: Lead, onClick: () => void, onQuickAction: (action: string, lead: Lead) => void }) => {
+const SortableItem = memo(({ lead, onClick, onQuickAction }: { lead: Lead, onClick: () => void, onQuickAction: (action: string, lead: Lead) => void }) => {
   const {
     attributes,
     listeners,
@@ -87,7 +92,7 @@ const SortableItem = ({ lead, onClick, onQuickAction }: { lead: Lead, onClick: (
       <div
         ref={setNodeRef}
         style={style}
-        className="bg-white p-4 rounded-lg shadow-lg border-2 border-blue-500 opacity-50 h-[150px]"
+        className="bg-white p-4 rounded-lg shadow-lg border-2 border-blue-500 opacity-50 h-[150px] z-50"
       />
     );
   }
@@ -99,7 +104,7 @@ const SortableItem = ({ lead, onClick, onQuickAction }: { lead: Lead, onClick: (
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-move transition-all relative"
+      className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-move transition-all relative hover:shadow-md"
     >
       <div className="flex justify-between items-start mb-2">
         <h4 className="font-bold text-gray-800 line-clamp-1 text-sm">{lead.name}</h4>
@@ -168,7 +173,9 @@ const SortableItem = ({ lead, onClick, onQuickAction }: { lead: Lead, onClick: (
       )}
     </div>
   );
-};
+});
+
+SortableItem.displayName = 'SortableItem';
 
 // --- Main Component ---
 export const FlightControl: React.FC = () => {
@@ -379,25 +386,27 @@ export const FlightControl: React.FC = () => {
   };
 
   // --- Filtering Logic ---
-  const filteredLeads = leads.filter(lead => {
-    const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesSource = selectedSource === 'all' || lead.source === selectedSource;
-    const matchesAssignee = selectedAssignee === 'all' || lead.assignedTo === selectedAssignee;
-    const matchesMin = !minValue || lead.value >= parseFloat(minValue);
-    const matchesMax = !maxValue || lead.value <= parseFloat(maxValue);
+  const filteredLeads = useMemo(() => {
+    return leads.filter(lead => {
+      const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesSource = selectedSource === 'all' || lead.source === selectedSource;
+      const matchesAssignee = selectedAssignee === 'all' || lead.assignedTo === selectedAssignee;
+      const matchesMin = !minValue || lead.value >= parseFloat(minValue);
+      const matchesMax = !maxValue || lead.value <= parseFloat(maxValue);
 
-    const leadDate = new Date(lead.lastContact || new Date().toISOString());
-    const matchesStart = !startDate || leadDate >= new Date(startDate);
-    const matchesEnd = !endDate || leadDate <= new Date(endDate + 'T23:59:59');
+      const leadDate = new Date(lead.lastContact || new Date().toISOString());
+      const matchesStart = !startDate || leadDate >= new Date(startDate);
+      const matchesEnd = !endDate || leadDate <= new Date(endDate + 'T23:59:59');
 
-    return matchesSearch && matchesSource && matchesAssignee && matchesMin && matchesMax && matchesStart && matchesEnd;
-  });
+      return matchesSearch && matchesSource && matchesAssignee && matchesMin && matchesMax && matchesStart && matchesEnd;
+    });
+  }, [leads, searchTerm, selectedSource, selectedAssignee, minValue, maxValue, startDate, endDate]);
 
-  const getLeadsByStatus = (status: string) => filteredLeads.filter(l => l.status === status);
+  const getLeadsByStatus = useCallback((status: string) => filteredLeads.filter(l => l.status === status), [filteredLeads]);
 
   // --- Metrics ---
-  const metrics = {
+  const metrics = useMemo(() => ({
     totalLeads: leads.length,
     totalValue: leads.reduce((acc, curr) => acc + curr.value, 0),
     conversionRate: leads.length > 0
@@ -406,7 +415,7 @@ export const FlightControl: React.FC = () => {
     avgDealSize: leads.length > 0
       ? leads.reduce((acc, curr) => acc + curr.value, 0) / leads.length
       : 0
-  };
+  }), [leads]);
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
@@ -416,9 +425,24 @@ export const FlightControl: React.FC = () => {
     'Indicação', 'Evento', 'Outbound', 'Parceria', 'Outros'
   ];
 
-  const uniqueSources = Array.from(new Set(leads.map(l => l.source).filter(Boolean)));
-  const sources = Array.from(new Set([...DEFAULT_SOURCES, ...uniqueSources])).sort();
-  const assignees = Array.from(new Set(leads.map(l => l.assignedTo).filter(Boolean)));
+  const uniqueSources = useMemo(() => Array.from(new Set(leads.map(l => l.source).filter(Boolean))), [leads]);
+  const sources = useMemo(() => Array.from(new Set([...DEFAULT_SOURCES, ...uniqueSources])).sort(), [uniqueSources]);
+  const assignees = useMemo(() => Array.from(new Set(leads.map(l => l.assignedTo).filter(Boolean))), [leads]);
+
+  // Optimize Collision Detection
+  // Prioriza o ponteiro (mouse) para colunas vazias ou movimentos rápidos
+  const customCollisionDetection = useCallback((args: any) => {
+    // First, look for pointer collisions (mouse cursor over element)
+    const pointerCollisions = pointerWithin(args);
+
+    // If we have pointer collisions, use them (great for dropping into columns)
+    if (pointerCollisions.length > 0) {
+      return pointerCollisions;
+    }
+
+    // Fallback to intersection (good for items)
+    return rectIntersection(args);
+  }, []);
 
   if (loading) {
     return (
@@ -631,7 +655,7 @@ export const FlightControl: React.FC = () => {
         {viewMode === 'kanban' && (
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCorners}
+            collisionDetection={customCollisionDetection}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
