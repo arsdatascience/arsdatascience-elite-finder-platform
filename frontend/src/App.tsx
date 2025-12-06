@@ -58,7 +58,6 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.AUTOMATION]: '/automation',
   [ViewState.TRAINING]: '/training',
   [ViewState.REPORTS]: '/reports',
-  [ViewState.AI_AGENT]: '/ai-agent',
   [ViewState.ELITE_ASSISTANT]: '/elite-assistant',
   [ViewState.SETTINGS]: '/settings',
   [ViewState.AGENT_BUILDER]: '/agent-builder',
@@ -207,7 +206,6 @@ const App: React.FC = () => {
           />
           <Route path="/training" element={<Training />} />
           <Route path="/reports" element={<Reports />} />
-          <Route path="/ai-agent" element={<ContentGenerator isOpen={true} onClose={() => { }} mode="page" />} />
           <Route path="/elite-assistant" element={<AIChatBot mode="page" />} />
           <Route path="/settings" element={<SettingsRoute><Settings /></SettingsRoute>} />
           <Route path="/agent-builder" element={<AgentBuilder />} />
