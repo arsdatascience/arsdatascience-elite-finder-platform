@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Clock, CheckSquare, Users, FileText, Flag, MessageSquare, Paperclip, ChevronDown, Plus, Trash2, Layout, ListChecks, Tag, CheckCircle2, Layers, Zap } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { X, Save, CheckSquare, Users, FileText, Flag, Layers, Zap } from 'lucide-react';
 import { Task } from '../types';
 
 interface TaskModalProps {
