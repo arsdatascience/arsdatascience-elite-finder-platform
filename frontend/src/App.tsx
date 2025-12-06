@@ -152,12 +152,12 @@ const Layout: React.FC = () => {
                 exit="exit"
                 variants={pageVariants}
                 transition={{ duration: 0.2 }}
-                className="flex-1 p-4 md:p-8"
+                className={`flex-1 ${location.pathname === '/automation' ? 'p-0' : 'p-4 md:p-8'}`}
               >
                 <Outlet />
               </motion.div>
             </AnimatePresence>
-            <Footer className="mt-auto" />
+            {location.pathname !== '/automation' && <Footer className="mt-auto" />}
           </div>
         </main>
       </div>
