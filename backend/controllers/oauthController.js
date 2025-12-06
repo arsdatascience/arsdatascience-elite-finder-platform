@@ -18,7 +18,7 @@ const CONFIG = {
         clientSecret: process.env.GOOGLE_OAUTH_SECRET,
         authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
         tokenUrl: 'https://oauth2.googleapis.com/token',
-        redirectUri: `${process.env.BACKEND_URL}/api/oauth/google/callback`,
+        redirectUri: 'https://marketinghub.aiiam.com.br/api/oauth/google/callback',
         scopes: ['https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/adwords']
     }
 };
