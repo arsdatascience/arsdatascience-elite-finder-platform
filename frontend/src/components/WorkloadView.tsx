@@ -54,7 +54,7 @@ export const WorkloadView: React.FC<WorkloadViewProps> = ({ tasks, users }) => {
     return (
         <div className="h-full bg-white p-6 rounded-lg border border-gray-200 flex flex-col">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Workload da Equipe</h3>
-            <div className="flex-1 min-h-[300px]">
+            <div className="flex-1 min-h-[300px]" style={{ minWidth: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={data}

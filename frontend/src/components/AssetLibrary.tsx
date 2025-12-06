@@ -50,12 +50,12 @@ export const AssetLibrary: React.FC = () => {
     const loadContent = async () => {
         setLoading(true);
         try {
-            const [foldersData, assetsData] = await Promise.all([
+            const [foldersResponse, assetsResponse] = await Promise.all([
                 apiClient.assets.listFolders({ parent_id: currentFolder?.id }),
                 apiClient.assets.list({ folder_id: currentFolder?.id, search: searchTerm })
             ]);
-            setFolders(foldersData);
-            setAssets(assetsData);
+            setFolders(foldersResponse.data || []);
+            setAssets(assetsResponse.data || []);
         } catch (error) {
             console.error('Error loading library content:', error);
         } finally {
