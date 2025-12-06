@@ -24,6 +24,8 @@ import { Menu, Loader2 } from 'lucide-react';
 import { ContentGenerator } from '@/components/ContentGenerator';
 import { Login } from '@/components/Login';
 import { Register } from '@/components/Register';
+import { PrivacyPolicy } from '@/components/PrivacyPolicy';
+import { TermsOfService } from '@/components/TermsOfService';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { ImageGenerationPage } from '@/components/ImageGenerationPage';
@@ -175,6 +177,8 @@ const App: React.FC = () => {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
 
       <Route element={<PrivateRoute />}>
         <Route element={<Layout />}>
