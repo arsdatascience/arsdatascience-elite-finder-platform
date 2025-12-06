@@ -57,12 +57,11 @@ const createPost = async (req, res) => {
         // Se for agendado, criar Job na fila (SaaS Queue)
         if ((status === 'scheduled' || status === 'published') && scheduled_at) {
             // Buscar Integration ID
-            // TODO: Usar req.user.id quando autenticação estiver habilitada nesta rota
-            const userId = req.user ? req.user.id : 1;
-
+            // Buscar Integration ID using new schema (client_id, provider)
+            // Use finalClientId determined above
             const intResult = await db.query(
-                'SELECT id FROM integrations WHERE user_id = $1 AND platform = $2 AND status = $3',
-                [userId, platform, 'connected']
+                'SELECT id FROM integrations WHERE client_id = $1 AND provider = $2',
+                [finalClientId, platform]
             );
 
             if (intResult.rows.length > 0) {
@@ -105,8 +104,16 @@ const createPost = async (req, res) => {
 // Get all posts
 const getPosts = async (req, res) => {
     try {
-        const query = 'SELECT * FROM social_posts ORDER BY created_at DESC';
-        const result = await db.query(query);
+        let query = 'SELECT * FROM social_posts';
+        const values = [];
+
+        if (req.query.client && req.query.client !== 'all') {
+            query += ' WHERE client_id = $1';
+            values.push(req.query.client);
+        }
+
+        query += ' ORDER BY created_at DESC';
+        const result = await db.query(query, values);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching posts:', error);

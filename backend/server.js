@@ -640,8 +640,8 @@ app.get('/api/export/campaigns/excel', authenticateToken, exportController.expor
 app.get('/api/export/clients/excel', authenticateToken, exportController.exportClientsExcel);
 
 // --- SOCIAL MEDIA ROUTES ---
-app.get('/api/social-posts', authenticateToken, socialMediaController.getPosts);
-app.post('/api/social-posts', authenticateToken, checkLimit('social_post'), socialMediaController.upload.single('media'), socialMediaController.createPost);
+app.get('/api/social/posts', authenticateToken, socialMediaController.getPosts);
+app.post('/api/social/posts', authenticateToken, checkLimit('social_post'), socialMediaController.upload.single('media'), socialMediaController.createPost);
 
 // Automation Workflows
 app.get('/api/workflows', dbController.getWorkflows);
