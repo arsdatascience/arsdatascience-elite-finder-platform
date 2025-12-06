@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, Loader2, ArrowRight, ArrowLeft, Key, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiClient } from '@/services/apiClient';
+import { Footer } from '@/components/Footer';
 
 export const Login: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -288,14 +289,7 @@ export const Login: React.FC = () => {
                         </button>
                     </div>
                 </div>
-                <div className="bg-gray-50 p-4 text-center text-xs text-gray-500 border-t border-gray-100 flex flex-col gap-2">
-                    <p>&copy; 2025 Elite Finder. Todos os direitos reservados.</p>
-                    <div className="flex justify-center gap-4">
-                        <a href="/privacy-policy" className="hover:text-primary-600 transition-colors">Política de Privacidade</a>
-                        <span className="text-gray-300">|</span>
-                        <a href="/terms-of-service" className="hover:text-primary-600 transition-colors">Termos de Serviço</a>
-                    </div>
-                </div>
+                <Footer />
             </motion.div>
         </div>
     );

@@ -4,7 +4,7 @@ import axios from 'axios';
 import { RefreshCw, Trash2, CheckCircle, AlertTriangle, Facebook, Calendar, Linkedin, Share2, Youtube, MonitorPlay, Target } from 'lucide-react';
 
 // You might need to adjust this URL based on your setup
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || 'https://marketinghub.aiiam.com.br/api';
 
 interface Integration {
     id: number;

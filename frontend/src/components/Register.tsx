@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, User, Loader2, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Footer } from '@/components/Footer';
 
 export const Register: React.FC = () => {
     const [name, setName] = useState('');
@@ -157,9 +158,7 @@ export const Register: React.FC = () => {
                         </p>
                     </div>
                 </div>
-                <div className="bg-gray-50 p-4 text-center text-xs text-gray-500 border-t border-gray-100">
-                    &copy; 2025 Elite Finder. Todos os direitos reservados.
-                </div>
+                <Footer />
             </motion.div>
         </div>
     );

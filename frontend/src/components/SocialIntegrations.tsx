@@ -34,7 +34,7 @@ export const SocialIntegrations: React.FC = () => {
     const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
     const [n8nUrl, setN8nUrl] = useState('');
 
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+    const API_URL = import.meta.env.VITE_API_URL || 'https://marketinghub.aiiam.com.br/api';
     // TODO: Get real client ID from auth context
     const CLIENT_ID = '1';
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Footer } from '@/components/Footer';
 
 export const PrivacyPolicy: React.FC = () => {
     const navigate = useNavigate();
@@ -59,6 +60,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </p>
                 </div>
             </div>
+            <Footer className="bg-transparent border-t-0 mt-8" />
         </div>
     );
 };

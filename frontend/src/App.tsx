@@ -26,6 +26,7 @@ import { Login } from '@/components/Login';
 import { Register } from '@/components/Register';
 import { PrivacyPolicy } from '@/components/PrivacyPolicy';
 import { TermsOfService } from '@/components/TermsOfService';
+import { Footer } from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { ImageGenerationPage } from '@/components/ImageGenerationPage';
@@ -157,9 +158,11 @@ const Layout: React.FC = () => {
               <Outlet />
             </motion.div>
           </AnimatePresence>
+          <Footer className="bg-transparent border-t-0 mt-8" />
         </main>
       </div>
     </div>
+
   );
 };
 

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Campaign, Workflow, WorkflowTemplate, Metric, Lead } from '../types';
 
-let API_URL = import.meta.env.VITE_API_URL || 'https://elite-finder.up.railway.app/api';
+let API_URL = import.meta.env.VITE_API_URL || 'https://marketinghub.aiiam.com.br/api';
 
 // Garantir que a URL da API termine com /api
 if (API_URL && !API_URL.endsWith('/api')) {
