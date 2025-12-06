@@ -1,4 +1,4 @@
-const { opsPool: db } = require('./database'); // Use Hybrid Ops DB
+const db = require('./database'); // Use Core DB (where assets live)
 const storageService = require('./services/storageService');
 const { getTenantScope } = require('./utils/tenantSecurity');
 
