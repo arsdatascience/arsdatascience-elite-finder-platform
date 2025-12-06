@@ -7,12 +7,12 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ className = '' }) => {
     return (
-        <footer className={`bg-gray-50 p-4 text-center text-xs text-gray-500 border-t border-gray-100 flex flex-col gap-2 mt-auto ${className}`}>
+        <footer className={`bg-[#575b5c] p-6 text-center text-xs text-slate-200 border-t border-slate-600 flex flex-col gap-3 mt-auto w-full z-10 ${className}`}>
             <p>&copy; {new Date().getFullYear()} Asr Data Science. Todos os direitos reservados.</p>
             <div className="flex justify-center gap-4">
-                <Link to="/privacy-policy" className="hover:text-primary-600 transition-colors">Política de Privacidade</Link>
-                <span className="text-gray-300">|</span>
-                <Link to="/terms-of-service" className="hover:text-primary-600 transition-colors">Termos de Serviço</Link>
+                <Link to="/privacy-policy" className="hover:text-white transition-colors">Política de Privacidade</Link>
+                <span className="text-slate-500">|</span>
+                <Link to="/terms-of-service" className="hover:text-white transition-colors">Termos de Serviço</Link>
             </div>
         </footer>
     );
