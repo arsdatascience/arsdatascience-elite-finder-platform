@@ -775,6 +775,7 @@ app.delete('/api/assets/:id', authenticateToken, assetCtrl.deleteAsset);
 
 app.get('/api/folders', authenticateToken, assetCtrl.listFolders);
 app.post('/api/folders', authenticateToken, assetCtrl.createFolder);
+app.delete('/api/folders/:id', authenticateToken, assetCtrl.deleteFolder);
 
 // --- APPROVAL WORKFLOW ROUTES (Phase 2) ---
 const approvalCtrl = require('./approvalController');
