@@ -416,7 +416,7 @@ export const apiClient = {
             const response = await axiosInstance.post('/templates', data);
             return response.data;
         },
-        get: async (id: number) => {
+        getDetails: async (id: number) => {
             const response = await axiosInstance.get(`/templates/${id}`);
             return response.data;
         },
