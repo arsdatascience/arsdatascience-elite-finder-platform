@@ -21,7 +21,6 @@ import { SocialCalendar } from '@/components/SocialCalendar';
 import { SocialIntegrations } from '@/components/SocialIntegrations';
 import { ViewState } from '@/types';
 import { Menu, Loader2 } from 'lucide-react';
-import { ContentGenerator } from '@/components/ContentGenerator';
 import { Login } from '@/components/Login';
 import { Register } from '@/components/Register';
 import { PrivacyPolicy } from '@/components/PrivacyPolicy';
