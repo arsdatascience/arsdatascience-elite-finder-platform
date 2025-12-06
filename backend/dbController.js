@@ -73,7 +73,7 @@ const getClients = async (req, res) => {
         return res.status(401).json({ error: 'Unauthorized' });
     }
     const { isSuperAdmin, tenantId } = getTenantScope(req);
-    console.log(`🔍 getClients: User=${req.user.email}, Role=${req.user.role}, Tenant=${tenantId}, IsSuper=${isSuperAdmin}`);
+    console.log(`🔍 getClients: User=${req.user.email || req.user.id}, Role=${req.user.role}, Tenant=${tenantId}, IsSuper=${isSuperAdmin}`);
 
     try {
         let query = 'SELECT * FROM clients';
