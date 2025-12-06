@@ -1,10 +1,22 @@
-// ... [Imports]
+import React, { useState, useEffect } from 'react';
+import { DndContext, closestCorners, useSensor, useSensors, PointerSensor, KeyboardSensor, DragOverlay } from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Plus, Layout, Search, Filter, MoreHorizontal, Calendar as CalendarIcon, Clock, Users, Trash2, User as UserIcon } from 'lucide-react';
+import { apiClient } from '../services/apiClient';
+import { Task } from '../types';
 import TaskModal from './TaskModal';
 
-// ... [Interfaces]
+const COLUMNS = [
+    { id: 'todo', title: 'A Fazer', color: 'bg-slate-500' },
+    { id: 'in_progress', title: 'Em Progresso', color: 'bg-blue-500' },
+    { id: 'review', title: 'Revisão', color: 'bg-amber-500' },
+    { id: 'done', title: 'Concluído', color: 'bg-emerald-500' }
+];
+
 interface TaskBoardProps {
     project: any;
-    users?: any[]; // Added users prop
+    users?: any[];
     onDeleteProject?: () => void;
     onAdd?: () => void;
 }
