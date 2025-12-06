@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, FileAudio, Mic, Loader2, Play, Pause, CheckCircle, AlertCircle, BarChart2, History, Trash2, Eye, Download, Plus } from 'lucide-react';
+import { Upload, FileAudio, Mic, Loader2, AlertCircle, BarChart2, History, Trash2, Eye, Download, Plus } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';

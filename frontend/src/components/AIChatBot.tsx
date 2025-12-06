@@ -140,6 +140,7 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
                     {/* Internet Access Toggle */}
                     <div className="flex items-center gap-2 mt-2">
                         <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" checked={internetAccess} onChange={(e) => setInternetAccess(e.target.checked)} />
                             <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-slate-600"></div>
                             <span className="ml-2 text-xs font-medium text-gray-700 flex items-center gap-1">
                                 🌍 Acesso à Internet {internetAccess ? '(Ativo)' : '(Offline)'}

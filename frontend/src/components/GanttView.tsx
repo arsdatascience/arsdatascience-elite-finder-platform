@@ -8,7 +8,7 @@ interface GanttViewProps {
 
 export const GanttView: React.FC<GanttViewProps> = ({ tasks, onTaskClick }) => {
     // 1. Determine Timeline Range
-    const { minDate, maxDate, totalDays } = useMemo(() => {
+    const { minDate, totalDays } = useMemo(() => {
         if (!tasks || !tasks.length) {
             const now = new Date();
             const next = new Date();

@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Printer, Layout, TrendingUp, Users, PieChart as PieIcon, Download, BarChart2, Activity, DollarSign, Calendar } from 'lucide-react';
 import { KPIS, COMPARATIVE_FUNNEL_DATA, CAMPAIGNS_DATA, LEADS_DATA, CLIENTS_LIST } from '../constants';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid, PieChart, Pie, Cell, LabelList, Legend } from 'recharts';
+import { AreaChart, Area, CartesianGrid, PieChart, Pie, Cell, LabelList, Legend, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -62,7 +62,7 @@ const AVAILABLE_WIDGETS: Widget[] = [
 const PAGE_HEIGHT_LIMIT = 850; // Altura útil estimada por página em pixels
 
 const WIDGET_HEIGHTS: Record<WidgetType, number> = {
-  kpis: 600, // Aumentado devido ao novo layout 2x2 e cards maiores
+  kpis: 600,
   finance_chart: 420,
   distribution: 380,
   funnel: 420,
@@ -145,61 +145,39 @@ export const Reports: React.FC = () => {
     const element = document.getElementById('printable-report');
     if (!element) return;
 
-    // Feedback visual temporário (opcional, mas bom para UX)
     const originalTitle = document.title;
     document.title = "Gerando Relatório...";
 
     try {
-      // Aguardar um momento para garantir que qualquer re-renderização terminou
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const canvas = await html2canvas(element, {
-        scale: 2, // Melhor qualidade
+        scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff'
       });
 
-      // Calcular altura da imagem mantendo proporção
-      // const imgWidth = pdfWidth;
-      // const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      // Adicionar imagem ao PDF
-      // Se a imagem for maior que uma página, o jsPDF não quebra automaticamente a imagem de forma inteligente
-      // Mas como nosso layout já é paginado visualmente (chunks), podemos tentar ajustar.
-      // A abordagem mais simples e robusta para "chunks" já paginados visualmente é capturar cada chunk separadamente.
-      // Mas para simplificar e manter o layout exato, vamos capturar tudo e cortar se necessário, 
-      // ou melhor: iterar sobre os elementos .page-break e capturar um por um.
-
-      const pages = document.querySelectorAll('.page-break');
-      const pdfMulti = new jsPDF('p', 'mm', 'a4');
-
-      for (let i = 0; i < pages.length; i++) {
-        if (i > 0) pdfMulti.addPage();
-
-        const pageCanvas = await html2canvas(pages[i] as HTMLElement, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff'
-        });
-
-        const pageImgData = pageCanvas.toDataURL('image/png');
-        const pWidth = pdfMulti.internal.pageSize.getWidth();
-        const pHeight = (pageCanvas.height * pWidth) / pageCanvas.width;
-
-        pdfMulti.addImage(pageImgData, 'PNG', 0, 0, pWidth, pHeight);
-      }
-
       if (type === 'print') {
-        pdfMulti.autoPrint();
-        window.open(pdfMulti.output('bloburl'), '_blank');
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write('<html><head><title>Relatório</title></head><body>');
+          printWindow.document.write('<img src="' + canvas.toDataURL() + '" style="width:100%;" />');
+          printWindow.document.write('</body></html>');
+          printWindow.document.close();
+          printWindow.print();
+        }
       } else {
-        pdfMulti.save(`${reportData.clientName} - Relatorio ${selectedYear}.pdf`);
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save('relatorio_elite.pdf');
       }
 
     } catch (error) {
       console.error("Erro ao gerar relatório:", error);
-      alert("Houve um erro ao gerar o relatório. Tente novamente.");
     } finally {
       document.title = originalTitle;
     }
@@ -397,7 +375,6 @@ export const Reports: React.FC = () => {
     selectedWidgets.forEach(widget => {
       const height = WIDGET_HEIGHTS[widget] || 300;
 
-      // Se o widget atual não cabe na página e a página não está vazia, cria nova página
       if (currentHeight + height > PAGE_HEIGHT_LIMIT && currentPage.length > 0) {
         chunks.push(currentPage);
         currentPage = [];
@@ -420,108 +397,123 @@ export const Reports: React.FC = () => {
       {/* CONTROLS */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8 mx-4 mt-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div>
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Elite Analytics Hub <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle font-normal">{COMPONENT_VERSIONS.Reports}</span></h2>
-            <p className="text-sm text-gray-500">Central de Inteligência e Relatórios Executivos</p>
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase">Título do Relatório</label>
-              <input
-                type="text"
-                value={reportTitle}
-                onChange={(e) => setReportTitle(e.target.value)}
-                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-slate-500"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase">Cliente</label>
-              <div className="relative">
-                <select value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-slate-500">
-                  {CLIENTS_LIST.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-                <Users size={16} className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+          <div className="flex-1 w-full">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Elite Analytics Hub <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle font-normal">{COMPONENT_VERSIONS.Reports}</span></h2>
+                <p className="text-sm text-gray-500">Central de Inteligência e Relatórios Executivos</p>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase">Período</label>
               <div className="flex gap-2">
-                <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="w-20 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
-                  <option value={2024}>2024</option>
-                  <option value={2025}>2025</option>
-                </select>
-                <select value={startMonth} onChange={(e) => setStartMonth(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
-                  {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
-                </select>
-                <span className="self-center text-gray-400">-</span>
-                <select value={endMonth} onChange={(e) => setEndMonth(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
-                  {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
-                </select>
+                <button onClick={() => handleAction('print')} className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors" title="Imprimir">
+                  <Printer size={20} />
+                </button>
+                <button onClick={() => handleAction('pdf')} className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors" title="Baixar PDF">
+                  <Download size={20} />
+                </button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-500 uppercase">Módulos</label>
-              <div className="flex flex-wrap gap-2">
-                {AVAILABLE_WIDGETS.map(w => (
-                  <button
-                    key={w.id}
-                    onClick={() => toggleWidget(w.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${selectedWidgets.includes(w.id) ? 'bg-slate-200 border-slate-500 text-slate-800' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
-                  >
-                    {w.label}
-                  </button>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase">Título do Relatório</label>
+                <input
+                  type="text"
+                  value={reportTitle}
+                  onChange={(e) => setReportTitle(e.target.value)}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-slate-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase">Cliente</label>
+                <div className="relative">
+                  <select value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-slate-500">
+                    {CLIENTS_LIST.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                  <Users size={16} className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase">Período</label>
+                <div className="flex gap-2">
+                  <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="w-20 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
+                    <option value={2024}>2024</option>
+                    <option value={2025}>2025</option>
+                  </select>
+                  <select value={startMonth} onChange={(e) => setStartMonth(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
+                    {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                  </select>
+                  <span className="self-center text-gray-400">-</span>
+                  <select value={endMonth} onChange={(e) => setEndMonth(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
+                    {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-500 uppercase">Módulos</label>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABLE_WIDGETS.map(w => (
+                    <button
+                      key={w.id}
+                      onClick={() => toggleWidget(w.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${selectedWidgets.includes(w.id) ? 'bg-slate-200 border-slate-500 text-slate-800' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                    >
+                      {w.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* REPORT PAGES - ID ADICIONADO AQUI */}
-        <div id="printable-report" className="flex flex-col items-center pb-10">
-          {widgetChunks.map((chunk, pageIndex) => (
-            <div key={pageIndex} className="bg-white shadow-2xl mx-auto w-full max-w-[210mm] min-h-[297mm] p-[15mm] mb-8 page-break">
+      {/* REPORT PAGES */}
+      <div id="printable-report" className="flex flex-col items-center pb-10">
+        {widgetChunks.map((chunk, pageIndex) => (
+          <div key={pageIndex} className="bg-white shadow-2xl mx-auto w-full max-w-[210mm] min-h-[297mm] p-[15mm] mb-8 page-break">
 
-              {/* Header */}
-              <header className="flex justify-between items-end border-b-2 border-gray-900 pb-6 mb-10">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-gray-900 text-white flex items-center justify-center rounded-xl shadow-lg">
-                    <Layout size={28} />
-                  </div>
-                  <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight leading-none mb-1">{reportTitle}</h1>
-                    <p className="text-sm text-gray-500 font-medium">Gerado em {new Date().toLocaleDateString()}</p>
-                  </div>
+            {/* Header */}
+            <header className="flex justify-between items-end border-b-2 border-gray-900 pb-6 mb-10">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-gray-900 text-white flex items-center justify-center rounded-xl shadow-lg">
+                  <Layout size={28} />
                 </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-gray-900">{reportData.clientName}</p>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full mt-1">
-                    <Calendar size={14} />
-                    {MONTHS[startMonth]}/{selectedYear} - {MONTHS[endMonth]}/{selectedYear}
-                  </div>
+                <div>
+                  <h1 className="text-3xl font-black text-gray-900 tracking-tight leading-none mb-1">{reportTitle}</h1>
+                  <p className="text-sm text-gray-500 font-medium">Gerado em {new Date().toLocaleDateString()}</p>
                 </div>
-              </header>
-
-              {/* Content */}
-              <div className="space-y-8">
-                {chunk.map(widgetId => (
-                  <div key={widgetId} className="break-inside-avoid">
-                    {renderWidgetContent(widgetId)}
-                  </div>
-                ))}
               </div>
-
-              {/* Footer */}
-              <footer className="mt-auto pt-8 border-t border-gray-100 text-center">
-                <div className="flex justify-between items-center text-[10px] text-gray-400 uppercase tracking-widest font-bold">
-                  <span>EliteFinder Intelligence</span>
-                  <span>Página {pageIndex + 1} de {widgetChunks.length}</span>
-                  <span>Confidencial</span>
+              <div className="text-right">
+                <p className="text-lg font-bold text-gray-900">{reportData.clientName}</p>
+                <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full mt-1">
+                  <Calendar size={14} />
+                  {MONTHS[startMonth]}/{selectedYear} - {MONTHS[endMonth]}/{selectedYear}
                 </div>
-              </footer>
+              </div>
+            </header>
+
+            {/* Content */}
+            <div className="space-y-8">
+              {chunk.map(widgetId => (
+                <div key={widgetId} className="break-inside-avoid">
+                  {renderWidgetContent(widgetId)}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+
+            {/* Footer */}
+            <footer className="mt-auto pt-8 border-t border-gray-100 text-center">
+              <div className="flex justify-between items-center text-[10px] text-gray-400 uppercase tracking-widest font-bold">
+                <span>EliteFinder Intelligence</span>
+                <span>Página {pageIndex + 1} de {widgetChunks.length}</span>
+                <span>Confidencial</span>
+              </div>
+            </footer>
+          </div>
+        ))}
       </div>
     </div>
   );

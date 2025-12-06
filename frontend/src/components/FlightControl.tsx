@@ -12,14 +12,12 @@ import {
   DragOverEvent,
   DragEndEvent,
   useDroppable,
-  getFirstCollision,
 } from '@dnd-kit/core';
 import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
-  arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {

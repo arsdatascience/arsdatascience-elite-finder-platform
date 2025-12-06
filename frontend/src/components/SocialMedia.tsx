@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Calendar, Image, ThumbsUp, MessageCircle, Share2, TrendingUp, Sparkles, Users } from 'lucide-react';
+import { Image, ThumbsUp, MessageCircle, Share2, TrendingUp, Sparkles, Users } from 'lucide-react';
 import { ContentGenerator } from './ContentGenerator';
-import { CLIENTS_LIST } from '../constants';
 import { ViewState } from '../types';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import { useQuery } from '@tanstack/react-query';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Folder, Clock, List, ArrowRight, Trash2, Save, X } from 'lucide-react';
+import { Plus, Folder, Clock, List, ArrowRight, Trash2, Save } from 'lucide-react';
 import { apiClient } from '../services/apiClient';
 import { SOPTemplate, SOPTemplateItem } from '../types';
 
@@ -89,6 +89,14 @@ const SOPManager: React.FC = () => {
         const newItems = items.filter((_, i) => i !== index);
         setItems(newItems);
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
+            </div>
+        );
+    }
 
     if (editingTemplate) {
         return (

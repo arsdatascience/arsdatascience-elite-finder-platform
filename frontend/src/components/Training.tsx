@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, CheckCircle, Award, Clock, Star, TrendingUp, Video, Users, Briefcase } from 'lucide-react';
+import { BookOpen, CheckCircle, Award, Clock, TrendingUp, Video, Users, Briefcase } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 
 interface TrainingModule {
@@ -27,7 +27,7 @@ export const Training: React.FC = () => {
     const [modules, setModules] = useState<TrainingModule[]>([]);
     const [progress, setProgress] = useState<UserProgress[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedModule, setSelectedModule] = useState<TrainingModule | null>(null);
+    // const [selectedModule, setSelectedModule] = useState<TrainingModule | null>(null);
     const [filter, setFilter] = useState<string>('all'); // 'all', 'completed', 'in_progress', 'not_started'
     const [audienceFilter, setAudienceFilter] = useState<'team' | 'client'>('team');
 
@@ -84,7 +84,7 @@ export const Training: React.FC = () => {
     };
 
     const handleStartModule = (module: TrainingModule) => {
-        setSelectedModule(module);
+        // setSelectedModule(module);
         // Here you would open a modal or navigate to the module page
         alert(`Iniciando módulo: ${module.title}\n\nEm uma implementação completa, isso abriria o player de vídeo ou documento.`);
     };

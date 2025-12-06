@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Package, MoreVertical, Edit, Trash2, Tag, DollarSign, X } from 'lucide-react';
+import { Plus, Search, Package, Edit, Trash2, DollarSign, X } from 'lucide-react';
 import { apiClient } from '../services/apiClient';
 
 interface Service {

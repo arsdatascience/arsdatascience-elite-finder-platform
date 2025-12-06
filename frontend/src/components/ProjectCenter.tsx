@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Layout, Search, Filter, MoreHorizontal, ArrowRight, Folder, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Layout, Search, MoreHorizontal, ArrowRight, Folder, Trash2 } from 'lucide-react';
 import { apiClient } from '../services/apiClient';
 import { TaskBoard } from './TaskBoard';
 import ProjectModal from './ProjectModal';
@@ -18,13 +18,11 @@ export const ProjectCenter = () => {
 
     // Metadata
     const [clients, setClients] = useState<any[]>([]);
-    const [templates, setTemplates] = useState<any[]>([]);
     const [users, setUsers] = useState<any[]>([]); // Users for TaskBoard
 
     useEffect(() => {
         fetchProjects();
         fetchClients();
-        fetchTemplates();
         fetchUsers();
     }, []);
 
@@ -43,19 +41,6 @@ export const ProjectCenter = () => {
             setClients(data);
         } catch (error) {
             console.error('Error fetching clients:', error);
-        }
-    };
-
-    const fetchTemplates = async () => {
-        try {
-            // Mock templates or fetch if endpoint exists
-            setTemplates([
-                { id: 1, name: 'Lançamento de Produto' },
-                { id: 2, name: 'Campanha de Tráfego' },
-                { id: 3, name: 'SEO Basic' }
-            ]);
-        } catch (error) {
-            console.error('Error fetching templates:', error);
         }
     };
 

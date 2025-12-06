@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Mic, User, Bot, Sparkles, AlertTriangle, CheckCircle, TrendingUp, BrainCircuit, MessageSquare, Smartphone, Settings, Users, MessageCircle, Download, UserPlus, X } from 'lucide-react';
+import { Send, Mic, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, MessageSquare, Smartphone, Settings, Users, MessageCircle, Download, UserPlus, X } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import socketService from '../services/socket';
 import { WhatsAppConfigModal } from './WhatsAppConfigModal';

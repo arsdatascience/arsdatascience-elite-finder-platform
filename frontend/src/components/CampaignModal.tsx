@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { X, Save, Target, DollarSign, BarChart2, MessageCircle, Calendar, Clock, Check, Layers, MousePointer, Eye } from 'lucide-react';
+import { X, Target, DollarSign, BarChart2, Calendar, Clock, Check, Layers, MousePointer, Eye } from 'lucide-react';
 import { apiClient } from '../services/apiClient';
 
 interface CampaignModalProps {
