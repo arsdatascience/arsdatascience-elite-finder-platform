@@ -22,9 +22,9 @@ import {
     Calendar as CalendarIcon,
     User as UserIcon,
     Trash2,
-    LayoutKanban,
+    Layout, // Replaced LayoutKanban
     List,
-    BarChart,
+    BarChart2, // Replaced BarChart (safer)
     Users,
     Clock
 } from 'lucide-react';
@@ -146,7 +146,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ project, onDeleteProject }
                     <h2 className="text-xl font-bold text-gray-900">{project.name}</h2>
                     <div className="flex items-center gap-4 mt-2">
                         {[
-                            { id: 'kanban', icon: LayoutKanban, label: 'Kanban' },
+                            { id: 'kanban', icon: Layout, label: 'Kanban' }, // Updated
                             { id: 'list', icon: List, label: 'Lista' },
                             { id: 'calendar', icon: CalendarIcon, label: 'Calendário' },
                             { id: 'gantt', icon: Clock, label: 'Gantt' },
