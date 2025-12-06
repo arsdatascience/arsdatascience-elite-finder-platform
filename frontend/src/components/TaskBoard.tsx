@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { DndContext, closestCorners, useSensor, useSensors, PointerSensor, KeyboardSensor, DragOverlay } from '@dnd-kit/core';
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Layout, Search, Filter, MoreHorizontal, Calendar as CalendarIcon, Clock, Users, Trash2, User as UserIcon, List } from 'lucide-react';
+import { Plus, Layout, Filter, MoreHorizontal, Calendar as CalendarIcon, Clock, Users, Trash2, User as UserIcon, List, Search } from 'lucide-react';
 import { apiClient } from '../services/apiClient';
 import { Task } from '../types';
 import { GanttView } from './GanttView';
 import { WorkloadView } from './WorkloadView';
+import TaskModal from './TaskModal';
 
 const COLUMNS = [
     { id: 'todo', title: 'A Fazer', color: 'bg-slate-500' },
@@ -128,9 +129,9 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ project, onDeleteProject, 
 
         if (activeTask && newStatus && activeTask.status !== newStatus) {
             setTasks(prev => prev.map(t =>
-                t.id === activeId ? { ...t, status: newStatus as string } : t
+                t.id === activeId ? { ...t, status: newStatus as Task['status'] } : t
             ));
-            await apiClient.tasks.update(activeId, { status: newStatus });
+            await apiClient.tasks.update(activeId, { status: newStatus as Task['status'] });
         }
     };
 
@@ -190,12 +191,15 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ project, onDeleteProject, 
                 {/* Filters Bar */}
                 {showFilters && (
                     <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                        <input
-                            placeholder="Buscar..."
-                            className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500"
-                            value={filters.search}
-                            onChange={e => setFilters({ ...filters, search: e.target.value })}
-                        />
+                        <div className="relative col-span-2">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                placeholder="Buscar..."
+                                className="w-full pl-9 pr-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500"
+                                value={filters.search}
+                                onChange={e => setFilters({ ...filters, search: e.target.value })}
+                            />
+                        </div>
                         <select
                             className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500"
                             value={filters.status}
