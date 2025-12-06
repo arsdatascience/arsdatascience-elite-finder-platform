@@ -420,12 +420,12 @@ export const Dashboard: React.FC = () => {
       {/* Insights & Churn Section (New Row) */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* AI Insight */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[300px] flex flex-col">
           <p className="text-sm text-primary-800 font-medium flex items-center gap-2 mb-3">
             <Users size={18} /> Insight Estratégico da IA
           </p>
-          <div className="p-4 bg-primary-50 rounded-lg border border-primary-100 h-full">
-            <p className="text-sm text-primary-600">
+          <div className="p-4 bg-primary-50 rounded-lg border border-primary-100 flex-1 overflow-y-auto max-h-[400px]">
+            <p className="text-sm text-primary-600 whitespace-pre-wrap">
               {isLoadingInsight ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="w-3 h-3 animate-spin" />
