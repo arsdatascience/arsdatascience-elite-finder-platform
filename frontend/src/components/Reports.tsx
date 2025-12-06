@@ -441,82 +441,173 @@ export const Reports: React.FC = () => {
   return (
     <div className="flex flex-col h-full animate-fade-in bg-gray-50/50">
       {/* CONTROLS */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8 mx-4 mt-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div className="flex-1 w-full">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Elite Analytics Hub <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle font-normal">{COMPONENT_VERSIONS.Reports}</span></h2>
-                <p className="text-sm text-gray-500">Central de Inteligência e Relatórios Executivos</p>
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8 mx-4 mt-4 animate-fade-in-up">
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Elite Analytics Hub <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle font-normal">{COMPONENT_VERSIONS.Reports}</span></h2>
+            <p className="text-sm text-gray-500">Central de Inteligência e Relatórios Executivos</p>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => handleAction('print')} className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors" title="Imprimir">
+              <Printer size={20} />
+            </button>
+            <button onClick={() => handleAction('pdf')} className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors" title="Baixar PDF">
+              <Download size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* 1. PLATFORM SELECTOR (TOP LEVEL) */}
+        <div className="mb-8">
+          <label className="text-xs font-bold text-gray-500 uppercase mb-3 block">1. Escolha a Plataforma</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button
+              onClick={() => { setActivePlatform('google'); setSelectedWidgets(['kpis', 'top_campaigns', 'keyword_performance']); }}
+              className={`p-4 rounded-xl border-2 transition-all flex items-center justify-center gap-3 ${activePlatform === 'google' ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-500 ring-offset-2' : 'border-gray-100 hover:border-blue-200 text-gray-600 bg-gray-50'}`}
+            >
+              <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center p-2">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" className="w-full" />
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => handleAction('print')} className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors" title="Imprimir">
-                  <Printer size={20} />
-                </button>
-                <button onClick={() => handleAction('pdf')} className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors" title="Baixar PDF">
-                  <Download size={20} />
-                </button>
+              <div className="text-left">
+                <span className="block font-bold">Google Ads</span>
+                <span className="text-xs opacity-75">Search, Display, Shopping</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => { setActivePlatform('meta'); setSelectedWidgets(['kpis', 'meta_campaigns_table', 'creative_performance']); }}
+              className={`p-4 rounded-xl border-2 transition-all flex items-center justify-center gap-3 ${activePlatform === 'meta' ? 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-500 ring-offset-2' : 'border-gray-100 hover:border-indigo-200 text-gray-600 bg-gray-50'}`}
+            >
+              <div className="w-10 h-10 rounded-full bg-[#0668E1] text-white flex items-center justify-center font-bold text-xs p-2">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M12 2.04c-5.5 0-10 4.49-10 10.02 0 5.01 3.69 9.12 8.52 9.88v-6.99H7.9V12.06h2.62V9.8c0-2.61 1.57-4.04 3.9-4.04 1.13 0 2.31.2 2.31.2v2.57h-1.3c-1.29 0-1.69.8-1.69 1.63v1.9h2.87l-.46 2.88h-2.41v6.99c4.83-.76 8.52-4.87 8.52-9.88 0-5.53-4.5-10.02-10-10.02Z" /></svg>
+              </div>
+              <div className="text-left">
+                <span className="block font-bold">Meta Ads</span>
+                <span className="text-xs opacity-75">FB, Insta, WhatsApp</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => { setActivePlatform(null); setSelectedWidgets(['kpis', 'finance_chart', 'distribution']); }}
+              className={`p-4 rounded-xl border-2 transition-all flex items-center justify-center gap-3 ${activePlatform === null ? 'border-gray-800 bg-gray-900 text-white ring-2 ring-gray-900 ring-offset-2' : 'border-gray-100 hover:border-gray-400 text-gray-600 bg-gray-50'}`}
+            >
+              <div className="w-10 h-10 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold text-xs">
+                <Layout size={20} />
+              </div>
+              <div className="text-left">
+                <span className="block font-bold">Visão Geral</span>
+                <span className="text-xs opacity-75">Relatório Executivo</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* 2. CONFIGURAÇÃO GERAL */}
+          <div className="space-y-4">
+            <label className="text-xs font-bold text-gray-500 uppercase border-b pb-2 block">2. Configurações</label>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-500">Título do Relatório</label>
+              <input
+                type="text"
+                value={reportTitle}
+                onChange={(e) => setReportTitle(e.target.value)}
+                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-slate-500 text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-500">Cliente</label>
+              <div className="relative">
+                <select value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-slate-500 text-sm appearance-none">
+                  {CLIENTS_LIST.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <Users size={16} className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase">Título do Relatório</label>
-                <input
-                  type="text"
-                  value={reportTitle}
-                  onChange={(e) => setReportTitle(e.target.value)}
-                  className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-slate-500"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase">Cliente</label>
-                <div className="relative">
-                  <select value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-slate-500">
-                    {CLIENTS_LIST.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                  <Users size={16} className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase">Período</label>
-                <div className="flex gap-2">
-                  <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="w-20 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
-                    <option value={2024}>2024</option>
-                    <option value={2025}>2025</option>
-                  </select>
-                  <select value={startMonth} onChange={(e) => setStartMonth(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-500">Período</label>
+              <div className="flex gap-2">
+                <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="w-20 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none text-sm">
+                  <option value={2024}>2024</option>
+                  <option value={2025}>2025</option>
+                </select>
+                <div className="flex-1 flex gap-1 items-center bg-gray-50 border border-gray-200 rounded-lg p-1">
+                  <select value={startMonth} onChange={(e) => setStartMonth(Number(e.target.value))} className="flex-1 bg-transparent border-none outline-none text-sm p-1">
                     {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
                   </select>
-                  <span className="self-center text-gray-400">-</span>
-                  <select value={endMonth} onChange={(e) => setEndMonth(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
+                  <span className="text-gray-400">-</span>
+                  <select value={endMonth} onChange={(e) => setEndMonth(Number(e.target.value))} className="flex-1 bg-transparent border-none outline-none text-sm p-1">
                     {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
                   </select>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase">Módulos</label>
-                <div className="flex flex-wrap gap-2">
-                  {AVAILABLE_WIDGETS.map(w => (
+          {/* 3. TEMPLATES (Visible only if Platform Selected) */}
+          <div className="space-y-4">
+            <label className="text-xs font-bold text-gray-500 uppercase border-b pb-2 block">3. Modelos Rápidos</label>
+            {!activePlatform ? (
+              <p className="text-sm text-gray-400 italic py-2">Selecione Google ou Meta para ver modelos específicos.</p>
+            ) : (
+              <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+                {REPORT_TEMPLATES.filter(t => t.platform === activePlatform).map(template => {
+                  const Icon = template.icon;
+                  return (
                     <button
-                      key={w.id}
-                      onClick={() => toggleWidget(w.id)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${selectedWidgets.includes(w.id) ? 'bg-slate-200 border-slate-500 text-slate-800' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                      key={template.id}
+                      onClick={() => handleTemplateSelect(template)}
+                      className={`text-left p-3 rounded-lg border transition-all hover:bg-gray-50 flex items-center gap-3 ${selectedTemplateId === template.id ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'border-gray-200'}`}
                     >
-                      {w.label}
+                      <div className={`p-1.5 rounded-md ${selectedTemplateId === template.id ? 'bg-white text-primary-600' : 'bg-gray-100 text-gray-500'}`}>
+                        <Icon size={16} />
+                      </div>
+                      <div>
+                        <span className={`block text-sm font-bold leading-tight ${selectedTemplateId === template.id ? 'text-primary-900' : 'text-gray-700'}`}>{template.title}</span>
+                        <span className="text-[10px] text-gray-500 leading-tight block mt-0.5">{template.description.slice(0, 40)}...</span>
+                      </div>
                     </button>
-                  ))}
-                </div>
+                  )
+                })}
               </div>
+            )}
+          </div>
+
+          {/* 4. MÓDULOS (Dynamic Filtering) */}
+          <div className="space-y-4">
+            <label className="text-xs font-bold text-gray-500 uppercase border-b pb-2 block">4. Conteúdo do Relatório</label>
+            <div className="flex flex-wrap gap-2 max-h-[220px] overflow-y-auto pr-1">
+              {['Financeiro', 'Marketing', 'Vendas', 'Geral', activePlatform === 'google' ? 'Google Ads' : null, activePlatform === 'meta' ? 'Meta Ads' : null].filter(Boolean).map(category => {
+                const widgets = AVAILABLE_WIDGETS.filter(w => w.category === category);
+                if (widgets.length === 0) return null;
+
+                return (
+                  <div key={category} className="w-full">
+                    <h4 className="text-[10px] font-bold text-gray-400 uppercase mb-1.5 mt-1">{category}</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {widgets.map(w => (
+                        <button
+                          key={w.id}
+                          onClick={() => toggleWidget(w.id)}
+                          className={`px-2.5 py-1 rounded-md text-[11px] font-medium border transition-all ${selectedWidgets.includes(w.id) ? 'bg-slate-800 border-slate-800 text-white shadow-sm' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                        >
+                          {w.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
       </div>
 
-      {/* REPORT PAGES */}
+      {/* REPORT PREVIEW */}
       <div id="printable-report" className="flex flex-col items-center pb-10">
         {widgetChunks.map((chunk, pageIndex) => (
           <div key={pageIndex} className="bg-white shadow-2xl mx-auto w-full max-w-[210mm] min-h-[297mm] p-[15mm] mb-8 page-break">
