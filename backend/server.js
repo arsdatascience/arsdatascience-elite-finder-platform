@@ -521,6 +521,12 @@ async function initializeDatabase() {
       await pool.query(taskDetailed);
       console.log('✅ Migração 028 aplicada.');
 
+      // Migração 030: Native OAuth Integrations
+      console.log('🔄 Verificando migrações de OAuth Integrations (030)...');
+      const oauthMigration = fs.readFileSync(path.join(__dirname, 'migrations', '030_create_oauth_integrations.sql'), 'utf8');
+      await pool.query(oauthMigration);
+      console.log('✅ Migração 030 aplicada.');
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
@@ -642,7 +648,11 @@ app.get('/api/workflows', dbController.getWorkflows);
 
 const integrationsController = require('./integrationsController');
 
-// OAuth callbacks (kept as app.get as per instruction)
+// OAuth Router (Native Integration)
+const oauthRoutes = require('./routes/oauthRoutes');
+app.use('/api/oauth', oauthRoutes);
+
+// Legacy OAuth callbacks (kept as app.get as per instruction)
 app.get('/auth/google-ads/callback', integrationsController.handleGoogleAdsCallback);
 app.get('/auth/meta-ads/callback', integrationsController.handleMetaAdsCallback);
 

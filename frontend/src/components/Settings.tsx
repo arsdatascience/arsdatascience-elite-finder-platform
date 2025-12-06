@@ -7,6 +7,7 @@ import { COMPONENT_VERSIONS } from '../componentVersions';
 import { useAuth } from '@/contexts/AuthContext';
 import { UsageStats } from './UsageStats';
 import { AdminPlans } from './AdminPlans';
+import IntegrationsManager from './IntegrationsManager';
 
 // Schema de Validação com Zod
 const memberSchema = z.object({
@@ -789,38 +790,15 @@ export const Settings: React.FC = () => {
               </div>
             </div>
 
-            {/* Lista de Integrações */}
-            <div className="grid grid-cols-1 gap-4">
-              <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mt-2">Plataformas Nativas</h4>
-              {integrations.map(integ => {
-                const Icon = integ.icon;
-                const isConnected = integ.status === 'connected';
-                return (
-                  <div key={integ.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-lg ${isConnected ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
-                        <Icon size={24} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-gray-900">{integ.name}</h4>
-                          {isConnected && (
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                              <Check size={10} /> Conectado
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-0.5">Última sincronização: {integ.lastSync}</p>
-                      </div>
-                    </div>
-                    <button className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${isConnected ? 'bg-white border-red-200 text-red-600 hover:bg-red-50' : 'bg-primary-600 border-transparent text-white hover:bg-primary-700 shadow-sm'}`}>
-                      {isConnected ? 'Desconectar' : 'Conectar Agora'}
-                    </button>
-                  </div>
-                );
-              })}
+            {/* Lista de Integrações Nativas */}
+            <div className="mt-8">
+              <IntegrationsManager />
             </div>
-          </div>
+
+            {/* Lista de Integrações Mock (Legado - Mantido se necessário) */}
+            {/* <div className="grid grid-cols-1 gap-4"> */}
+
+          </div >
         );
 
       case 'team':
