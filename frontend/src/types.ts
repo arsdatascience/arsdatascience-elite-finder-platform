@@ -131,13 +131,14 @@ export interface Workflow {
   };
 }
 
-id: string;
-name: string;
-description: string;
-category: string;
-trigger: string;
-steps: Omit < WorkflowStep, 'id' > [];
-iconType: 'user-plus' | 'clock' | 'zap' | 'git-branch' | 'message-square' | 'alert-circle' | 'shopping-cart' | 'calendar';
+export interface WorkflowTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  trigger: string;
+  steps: Omit<WorkflowStep, 'id'>[];
+  iconType: 'user-plus' | 'clock' | 'zap' | 'git-branch' | 'message-square' | 'alert-circle' | 'shopping-cart' | 'calendar';
 }
 
 // SOP Template Types
