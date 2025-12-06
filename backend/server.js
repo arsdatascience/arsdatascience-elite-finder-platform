@@ -491,6 +491,24 @@ async function initializeDatabase() {
       await pool.query(sopMigration);
       console.log('✅ Migração de SOP Templates verificada/aplicada.');
 
+      // Migração para Task Expansion (Task Management Phase)
+      console.log('🔄 Verificando migrações de Task Expansion...');
+      const taskMigration = fs.readFileSync(path.join(__dirname, 'migrations', '026_expand_tasks_table.sql'), 'utf8');
+      await pool.query(taskMigration);
+      console.log('✅ Migração de Task Expansion verificada/aplicada.');
+
+      // Migração 027: Detailed Project Fields
+      console.log('🔄 Verificando migrações de Projetos Detalhados (027)...');
+      const projectDetailed = fs.readFileSync(path.join(__dirname, 'migrations', '027_expand_projects_table.sql'), 'utf8');
+      await pool.query(projectDetailed);
+      console.log('✅ Migração 027 aplicada.');
+
+      // Migração 028: Detailed Task Fields
+      console.log('🔄 Verificando migrações de Tarefas Detalhadas (028)...');
+      const taskDetailed = fs.readFileSync(path.join(__dirname, 'migrations', '028_expand_tasks_detailed.sql'), 'utf8');
+      await pool.query(taskDetailed);
+      console.log('✅ Migração 028 aplicada.');
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }

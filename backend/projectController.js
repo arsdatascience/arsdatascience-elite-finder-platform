@@ -88,14 +88,53 @@ exports.getProjects = async (req, res) => {
 exports.createProject = async (req, res) => {
     try {
         const tenantId = req.user.tenant_id;
-        const { name, description, status, start_date, end_date, client_id, priority, budget, owner_id } = req.body;
+        const {
+            name, description, status, start_date, end_date, client_id, priority, budget, owner_id,
+            // New Fields
+            marketing_objectives, target_audience, value_proposition, brand_positioning,
+            marketing_channels, timeline_activities, dependencies, key_milestones,
+            team_structure, tools_platforms, external_suppliers, creative_assets,
+            kpis, goals, analysis_tools, reporting_frequency,
+            budget_media, budget_production, budget_contingency, budget_breakdown,
+            risks, mitigation_plan,
+            approval_status, creative_brief_link, assets_link
+        } = req.body;
 
         const result = await opsPool.query(
-            `INSERT INTO projects 
-            (tenant_id, name, description, status, start_date, end_date, client_id, priority, budget, owner_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            `INSERT INTO projects (
+                tenant_id, name, description, client_id, owner_id, status, priority, 
+                start_date, end_date, budget,
+                marketing_objectives, target_audience, value_proposition, brand_positioning,
+                marketing_channels, timeline_activities, dependencies, key_milestones,
+                team_structure, tools_platforms, external_suppliers, creative_assets,
+                kpis, goals, analysis_tools, reporting_frequency,
+                budget_media, budget_production, budget_contingency, budget_breakdown,
+                risks, mitigation_plan,
+                approval_status, creative_brief_link, assets_link
+            )
+            VALUES (
+                $1, $2, $3, $4, $5, $6, $7, 
+                $8, $9, $10,
+                $11, $12, $13, $14,
+                $15, $16, $17, $18,
+                $19, $20, $21, $22,
+                $23, $24, $25, $26,
+                $27, $28, $29, $30,
+                $31, $32,
+                $33, $34, $35
+            )
             RETURNING *`,
-            [tenantId, name, description, status || 'planning', start_date, end_date, client_id, priority, budget, owner_id || req.user.id]
+            [
+                tenantId, name, description, client_id || null, owner_id || req.user.id, status || 'planning', priority || 'medium',
+                start_date || null, end_date || null, budget || 0,
+                marketing_objectives, target_audience, value_proposition, brand_positioning,
+                JSON.stringify(marketing_channels || []), timeline_activities, dependencies, JSON.stringify(key_milestones || []),
+                JSON.stringify(team_structure || []), tools_platforms, external_suppliers, creative_assets,
+                kpis, goals, analysis_tools, reporting_frequency,
+                budget_media || 0, budget_production || 0, budget_contingency || 0, JSON.stringify(budget_breakdown || {}),
+                risks, mitigation_plan,
+                approval_status || 'pending', creative_brief_link, assets_link
+            ]
         );
 
         // Add creator as member automatically
@@ -166,9 +205,24 @@ exports.updateProject = async (req, res) => {
         let idx = 1;
 
         Object.keys(updates).forEach(key => {
-            if (['name', 'description', 'status', 'start_date', 'end_date', 'client_id', 'priority', 'budget', 'owner_id', 'settings'].includes(key)) {
+            if ([
+                'name', 'description', 'status', 'start_date', 'end_date', 'client_id', 'priority', 'budget', 'owner_id', 'settings',
+                // New Fields
+                'marketing_objectives', 'target_audience', 'value_proposition', 'brand_positioning',
+                'marketing_channels', 'timeline_activities', 'dependencies', 'key_milestones',
+                'team_structure', 'tools_platforms', 'external_suppliers', 'creative_assets',
+                'kpis', 'goals', 'analysis_tools', 'reporting_frequency',
+                'budget_media', 'budget_production', 'budget_contingency', 'budget_breakdown',
+                'risks', 'mitigation_plan',
+                'approval_status', 'creative_brief_link', 'assets_link'
+            ].includes(key)) {
                 fields.push(`${key} = $${idx}`);
-                values.push(updates[key]);
+                // Handle JSON fields if passed as object
+                if (['marketing_channels', 'key_milestones', 'team_structure', 'budget_breakdown'].includes(key)) {
+                    values.push(JSON.stringify(updates[key]));
+                } else {
+                    values.push(updates[key]);
+                }
                 idx++;
             }
         });

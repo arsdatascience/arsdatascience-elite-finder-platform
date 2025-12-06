@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS templates (
 );
 
 -- Trigger for updated_at on templates
+DROP TRIGGER IF EXISTS update_templates_updated_at ON templates;
 CREATE TRIGGER update_templates_updated_at
 BEFORE UPDATE ON templates
 FOR EACH ROW
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS template_items (
 );
 
 -- Trigger for updated_at on template_items
+DROP TRIGGER IF EXISTS update_template_items_updated_at ON template_items;
 CREATE TRIGGER update_template_items_updated_at
 BEFORE UPDATE ON template_items
 FOR EACH ROW
