@@ -798,7 +798,9 @@ app.get('/api/public/approvals/:token', approvalCtrl.getPublicApproval);
 app.post('/api/public/approvals/:token/review', approvalCtrl.publicReview);
 
 // --- QDRANT VECTOR DATABASE ---
-const qdrantController = require('./qdrantController');
+const qdrantController = require('./controllers/qdrantController');
+app.get('/api/qdrant/collections', qdrantController.getCollections);
+app.get('/api/qdrant/test', qdrantController.testConnection);
 
 // --- SERVICE CATALOG (Phase 2) ---
 const serviceCtrl = require('./controllers/serviceController');
