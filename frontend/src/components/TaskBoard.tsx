@@ -5,7 +5,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { Plus, Layout, Search, Filter, MoreHorizontal, Calendar as CalendarIcon, Clock, Users, Trash2, User as UserIcon, List } from 'lucide-react';
 import { apiClient } from '../services/apiClient';
 import { Task } from '../types';
-import TaskModal from './TaskModal';
+import { GanttView } from './GanttView';
+import { WorkloadView } from './WorkloadView';
 
 const COLUMNS = [
     { id: 'todo', title: 'A Fazer', color: 'bg-slate-500' },
@@ -300,8 +301,12 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ project, onDeleteProject, 
                         })}
                     </div>
                 )}
-                {view === 'gantt' && (<div className="p-10 text-center text-gray-400">Gantt Chart Simulated (Requires more complex Lib)</div>)}
-                {view === 'workload' && (<div className="p-10 text-center text-gray-400">Workload Chart Simulated</div>)}
+                {view === 'gantt' && (
+                    <GanttView tasks={tasks} onTaskClick={handleOpenEditModal} />
+                )}
+                {view === 'workload' && (
+                    <WorkloadView tasks={tasks} users={users || []} />
+                )}
             </div>
 
             {/* New Task Modal */}
