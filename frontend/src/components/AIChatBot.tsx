@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles, Info } from 'lucide-react';
 import { ChatMessage } from '@/types';
 import { askEliteAssistant } from '@/services/geminiService';
 import { AIProvider, AI_MODELS, OpenAIModel, GeminiModel, ClaudeModel } from '@/constants/aiModels';
@@ -146,6 +146,14 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
                                 🌍 Acesso à Internet {internetAccess ? '(Ativo)' : '(Offline)'}
                             </span>
                         </label>
+                        <div className="group relative flex items-center">
+                            <Info size={14} className="text-gray-400 hover:text-gray-600 cursor-help" />
+                            <div className="absolute left-full ml-2 w-64 p-2 bg-slate-800 text-white text-[10px] rounded shadow-lg opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 pointer-events-none border border-slate-700">
+                                <p className="font-semibold mb-1">Acesso Global vs. Interno:</p>
+                                <p><strong>Online:</strong> O agente pesquisa informações globais na web.</p>
+                                <p><strong>Offline:</strong> Acessa exclusivamente a base de dados interna do sistema.</p>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="mt-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
@@ -155,19 +163,19 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
                             <div className="flex flex-col">
                                 <span className="font-semibold text-gray-900">🧠 Raciocínio & Estratégia</span>
-                                <span className="text-gray-700">Claude 3.5 Sonnet ou GPT-4o</span>
+                                <span className="text-gray-700">Claude 4.5 Opus ou GPT-5</span>
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-semibold text-gray-900">🎨 Criatividade & Copy</span>
-                                <span className="text-gray-700">Claude 3.5 Sonnet</span>
+                                <span className="text-gray-700">Claude 4.5 Sonnet</span>
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-semibold text-gray-900">📊 Análise de Dados</span>
-                                <span className="text-gray-700">Gemini 1.5 Pro (Contexto Longo)</span>
+                                <span className="text-gray-700">Gemini 3 Pro ou 2.5 Pro</span>
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-semibold text-gray-900">⚡ Respostas Rápidas</span>
-                                <span className="text-gray-700">Gemini Flash ou GPT-4o Mini</span>
+                                <span className="text-gray-700">Gemini 2.5 Flash ou GPT-5 Mini</span>
                             </div>
                         </div>
                     </div>

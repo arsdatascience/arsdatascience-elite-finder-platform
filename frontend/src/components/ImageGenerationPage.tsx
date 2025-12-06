@@ -333,7 +333,7 @@ export const ImageGenerationPage: React.FC = () => {
                                                 onChange={(e) => setBatchSize(Number(e.target.value))}
                                                 className="flex-1 accent-slate-600"
                                             />
-                                            <span className="text-sm font-bold text-purple-600 w-6 text-center">{batchSize}</span>
+                                            <span className="text-sm font-bold text-slate-800 w-6 text-center">{batchSize}</span>
                                         </div>
                                         <p className="text-[10px] text-gray-400 mt-1">Gera múltiplas imagens de uma vez (Max 4).</p>
                                     </div>

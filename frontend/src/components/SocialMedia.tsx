@@ -41,7 +41,8 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
         platform: post.platform,
         status: post.status === 'published' ? 'publicado' : post.status === 'scheduled' ? 'agendado' : 'rascunho',
         likes: post.likes || 0,
-        comments: post.comments || 0
+        comments: post.comments || 0,
+        image: post.media_url || post.imageUrl || post.image_url
     })).slice(0, 5); // Mostrar apenas os 5 mais recentes/próximos
 
     // Simulate stats based on client (mocked logic remains for now, could be API driven later)
@@ -149,8 +150,12 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                                 </div>
                             ) : displayPosts.length > 0 ? displayPosts.map((post: any) => (
                                 <div key={post.id} className="p-4 flex items-start gap-4 hover:bg-gray-50 transition-colors">
-                                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 shrink-0">
-                                        <Image size={24} />
+                                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 shrink-0 overflow-hidden">
+                                        {post.image ? (
+                                            <img src={post.image} alt="Post media" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Image size={24} />
+                                        )}
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex justify-between items-start">

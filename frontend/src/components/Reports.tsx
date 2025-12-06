@@ -279,7 +279,7 @@ export const Reports: React.FC = () => {
           <section className="mb-8">
             <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Funil de Conversão</h3>
             <div className="h-80 border border-gray-100 rounded-xl p-4 bg-white shadow-sm" style={{ minHeight: '320px' }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <BarChart layout="vertical" data={reportData.funnel} margin={{ top: 5, right: 30, left: 20, bottom: 5 }} barGap={4}>
                   <XAxis type="number" hide />
                   <YAxis dataKey="stage" type="category" width={80} tick={{ fontSize: 11, fontWeight: 'bold', fill: '#475569' }} axisLine={false} tickLine={false} />

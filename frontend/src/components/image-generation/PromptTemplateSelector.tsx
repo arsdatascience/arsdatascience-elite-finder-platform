@@ -99,7 +99,7 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
             <button
                 type="button"
                 onClick={() => setIsOpen(true)}
-                className="text-xs flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium"
+                className="text-xs flex items-center gap-1 text-gray-700 hover:text-gray-900 font-medium"
             >
                 <BookTemplate size={14} />
                 Usar Template
@@ -112,14 +112,14 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
             <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
                     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <BookTemplate className="text-purple-600" />
+                        <BookTemplate className="text-gray-700" />
                         Templates de Prompt
                     </h3>
                     <div className="flex gap-2">
                         {!showCreateForm && (
                             <button
                                 onClick={() => setShowCreateForm(true)}
-                                className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                                className="flex items-center gap-1 px-3 py-1.5 bg-gray-800 text-white text-xs font-medium rounded-lg hover:bg-gray-900 transition-colors"
                             >
                                 <Plus size={14} /> Novo Template
                             </button>
@@ -140,7 +140,7 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
                                     key={cat}
                                     onClick={() => setSelectedCategory(cat)}
                                     className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors ${selectedCategory === cat
-                                        ? 'bg-purple-100 text-purple-700'
+                                        ? 'bg-gray-200 text-gray-900'
                                         : 'text-gray-600 hover:bg-gray-100'
                                         }`}
                                 >
@@ -159,7 +159,7 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
                                     <button
                                         key={cat}
                                         onClick={() => setSelectedCategory(cat)}
-                                        className={`px-3 py-1.5 rounded-full text-xs font-medium ${selectedCategory === cat ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}
+                                        className={`px-3 py-1.5 rounded-full text-xs font-medium ${selectedCategory === cat ? 'bg-gray-200 text-gray-900' : 'bg-gray-100 text-gray-600'}`}
                                     >
                                         {categoryLabels[cat] || cat.replace(/-/g, ' ')}
                                     </button>
@@ -182,7 +182,7 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
                                                 required
                                                 value={newTemplate.name}
                                                 onChange={e => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 outline-none transition-all"
                                                 placeholder="Ex: Retrato Cyberpunk"
                                             />
                                         </div>
@@ -191,7 +191,7 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
                                             <select
                                                 value={newTemplate.category}
                                                 onChange={e => setNewTemplate({ ...newTemplate, category: e.target.value })}
-                                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+                                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 outline-none bg-white"
                                             >
                                                 <option value="custom">Personalizado</option>
                                                 {Object.entries(categoryLabels).filter(([k]) => k !== 'all' && k !== 'custom').map(([k, v]) => (
@@ -205,7 +205,7 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
                                                 type="text"
                                                 value={newTemplate.description}
                                                 onChange={e => setNewTemplate({ ...newTemplate, description: e.target.value })}
-                                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+                                                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 outline-none transition-all"
                                                 placeholder="Breve descrição do estilo"
                                             />
                                         </div>
@@ -215,7 +215,7 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
                                                 required
                                                 value={newTemplate.prompt}
                                                 onChange={e => setNewTemplate({ ...newTemplate, prompt: e.target.value })}
-                                                className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-none transition-all"
+                                                className="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 outline-none resize-none transition-all"
                                                 placeholder="O prompt base. Use [SUBJECT] para onde o usuário irá inserir o tema."
                                             />
                                             <p className="text-xs text-gray-400 mt-1">Dica: Use [SUBJECT] como placeholder.</p>
@@ -225,14 +225,14 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
                                             <textarea
                                                 value={newTemplate.negativePrompt}
                                                 onChange={e => setNewTemplate({ ...newTemplate, negativePrompt: e.target.value })}
-                                                className="w-full h-20 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-none transition-all"
+                                                className="w-full h-20 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 outline-none resize-none transition-all"
                                                 placeholder="O que evitar na imagem..."
                                             />
                                         </div>
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex justify-center items-center gap-2 transition-colors shadow-sm"
+                                            className="w-full py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium flex justify-center items-center gap-2 transition-colors shadow-sm"
                                         >
                                             {loading ? <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div> : <Save size={18} />}
                                             Salvar Template
@@ -248,7 +248,7 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
                                                 onSelect(template);
                                                 setIsOpen(false);
                                             }}
-                                            className="bg-white border border-gray-200 rounded-xl p-4 hover:border-purple-300 hover:shadow-md cursor-pointer transition-all group relative flex flex-col h-full"
+                                            className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-400 hover:shadow-md cursor-pointer transition-all group relative flex flex-col h-full"
                                         >
                                             {customTemplates.some(ct => ct.id === template.id) && (
                                                 <button
@@ -261,7 +261,7 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
                                             )}
 
                                             <div className="flex justify-between items-start mb-2 pr-6">
-                                                <h4 className="font-semibold text-gray-800 group-hover:text-purple-700 text-sm line-clamp-1" title={template.name}>{template.name}</h4>
+                                                <h4 className="font-semibold text-gray-800 group-hover:text-gray-900 text-sm line-clamp-1" title={template.name}>{template.name}</h4>
                                             </div>
 
                                             <div className="mb-3">
@@ -273,7 +273,7 @@ export const PromptTemplateSelector: React.FC<PromptTemplateSelectorProps> = ({ 
                                             <p className="text-xs text-gray-500 mb-3 line-clamp-2 min-h-[2.5em]">{template.description}</p>
 
                                             <div
-                                                className="bg-gray-50 p-2.5 rounded-lg text-[11px] text-gray-600 font-mono border border-gray-100 group-hover:border-purple-100 flex-1 overflow-hidden relative"
+                                                className="bg-gray-50 p-2.5 rounded-lg text-[11px] text-gray-600 font-mono border border-gray-100 group-hover:border-gray-300 flex-1 overflow-hidden relative"
                                                 title={template.prompt}
                                             >
                                                 <div className="line-clamp-4 group-hover:line-clamp-none transition-all">

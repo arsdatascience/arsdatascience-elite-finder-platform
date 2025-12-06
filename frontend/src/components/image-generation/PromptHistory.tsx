@@ -32,7 +32,7 @@ const PromptHistory: React.FC<PromptHistoryProps> = ({ onSelect, onClose }) => {
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200">
                 <div className="p-6 border-b flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-purple-600" />
+                        <Clock className="w-5 h-5 text-gray-700" />
                         <h2 className="text-xl font-bold text-gray-800">Histórico de Prompts</h2>
                     </div>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
@@ -43,7 +43,7 @@ const PromptHistory: React.FC<PromptHistoryProps> = ({ onSelect, onClose }) => {
                 <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
                     {loading ? (
                         <div className="flex justify-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600"></div>
                         </div>
                     ) : prompts.length === 0 ? (
                         <div className="text-center py-12">
@@ -56,15 +56,15 @@ const PromptHistory: React.FC<PromptHistoryProps> = ({ onSelect, onClose }) => {
                                 <button
                                     key={index}
                                     onClick={() => onSelect(prompt)}
-                                    className="w-full text-left p-4 rounded-lg border border-gray-100 hover:border-purple-300 hover:bg-purple-50 transition-all group flex items-start gap-3"
+                                    className="w-full text-left p-4 rounded-lg border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all group flex items-start gap-3"
                                 >
-                                    <div className="mt-1 bg-purple-100 p-1.5 rounded-md group-hover:bg-purple-200 transition-colors">
-                                        <Clock className="w-3 h-3 text-purple-600" />
+                                    <div className="mt-1 bg-gray-100 p-1.5 rounded-md group-hover:bg-gray-200 transition-colors">
+                                        <Clock className="w-3 h-3 text-gray-700" />
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-gray-700 text-sm line-clamp-2 group-hover:text-purple-900 font-medium">{prompt}</p>
+                                        <p className="text-gray-700 text-sm line-clamp-2 group-hover:text-gray-900 font-medium">{prompt}</p>
                                     </div>
-                                    <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-500 mt-1" />
+                                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 mt-1" />
                                 </button>
                             ))}
                         </div>
