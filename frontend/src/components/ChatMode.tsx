@@ -91,9 +91,9 @@ export const ChatMode: React.FC = () => {
             {/* Chat Area */}
             <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 {/* Header */}
-                <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-blue-100 flex justify-between items-center">
+                <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-primary-50 to-primary-100 flex justify-between items-center">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white">
+                        <div className="w-12 h-12 rounded-full bg-primary-600 flex items-center justify-center text-white">
                             <Bot size={24} />
                         </div>
                         <div>
@@ -101,7 +101,7 @@ export const ChatMode: React.FC = () => {
                             <p className="text-xs text-gray-600">Especialista em Ads, Social Media e Funis</p>
                         </div>
                     </div>
-                    <div className="flex gap-3 bg-white p-1.5 rounded-lg shadow-sm border border-blue-100">
+                    <div className="flex gap-3 bg-white p-1.5 rounded-lg shadow-sm border border-primary-100">
                         <div className="flex flex-col">
                             <label className="text-[10px] font-bold text-gray-500 uppercase px-1">Provedor</label>
                             <select
@@ -143,13 +143,13 @@ export const ChatMode: React.FC = () => {
                     {messages.map((msg) => (
                         <div key={msg.id} className={`flex ${msg.sender === 'agent' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 ${msg.sender === 'agent'
-                                ? 'bg-blue-600 text-white rounded-tr-none shadow-md shadow-blue-200'
+                                ? 'bg-primary-600 text-white rounded-tr-none shadow-md shadow-primary-200'
                                 : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none shadow-sm'
                                 }`}>
                                 <p className="text-sm whitespace-pre-wrap">
                                     {typeof msg.text === 'object' ? JSON.stringify(msg.text) : msg.text}
                                 </p>
-                                <p className={`text-[10px] mt-1 text-right ${msg.sender === 'agent' ? 'text-blue-100' : 'text-gray-400'}`}>
+                                <p className={`text-[10px] mt-1 text-right ${msg.sender === 'agent' ? 'text-primary-100' : 'text-gray-400'}`}>
                                     {msg.timestamp}
                                 </p>
                             </div>
@@ -159,7 +159,7 @@ export const ChatMode: React.FC = () => {
                     {/* Typing Indicator */}
                     {isTyping && (
                         <div className="flex justify-end">
-                            <div className="max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 bg-blue-600 text-white rounded-tr-none shadow-md shadow-blue-200">
+                            <div className="max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 bg-primary-600 text-white rounded-tr-none shadow-md shadow-primary-200">
                                 <div className="flex gap-1">
                                     <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                                     <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -179,13 +179,13 @@ export const ChatMode: React.FC = () => {
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                             placeholder="Digite sua mensagem..."
-                            className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
                             disabled={isTyping}
                         />
                         <button
                             onClick={handleSendMessage}
                             disabled={isTyping || !input.trim()}
-                            className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="bg-primary-600 text-white p-3 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isTyping ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
                         </button>
@@ -239,7 +239,7 @@ export const ChatMode: React.FC = () => {
                         {/* Intent */}
                         <div>
                             <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Intenção</h4>
-                            <p className="text-xs text-gray-800 bg-blue-50 px-3 py-2 rounded-lg font-medium">{analysis.intent}</p>
+                            <p className="text-xs text-gray-800 bg-primary-50 px-3 py-2 rounded-lg font-medium">{analysis.intent}</p>
                         </div>
 
                         {/* Summary */}

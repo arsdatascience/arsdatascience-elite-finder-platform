@@ -256,7 +256,7 @@ export const AudioAnalysis: React.FC = () => {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-                        <Mic className="text-blue-600" /> Análise de Áudio Inteligente
+                        <Mic className="text-primary-600" /> Análise de Áudio Inteligente
                     </h1>
                     <p className="text-slate-500 mt-2">Transcreva áudios e analise sentimentos com IA (Whisper + GPT-4o)</p>
                 </div>
@@ -268,13 +268,13 @@ export const AudioAnalysis: React.FC = () => {
                             setResult(null);
                             setError(null);
                         }}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'new' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'new' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         <Plus size={16} /> Nova Análise
                     </button>
                     <button
                         onClick={() => setActiveTab('history')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'history' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'history' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         <History size={16} /> Histórico
                     </button>
@@ -300,8 +300,8 @@ export const AudioAnalysis: React.FC = () => {
                                 onDrop={handleDrop}
                                 className="cursor-pointer border-2 border-dashed border-slate-300 rounded-xl p-10 hover:bg-slate-50 transition-colors group"
                             >
-                                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                                    <Upload className="text-blue-600" size={32} />
+                                <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                                    <Upload className="text-primary-600" size={32} />
                                 </div>
                                 <h3 className="text-lg font-semibold text-slate-700">Arraste e solte ou clique para selecionar</h3>
                                 <p className="text-slate-400 text-sm mt-1">MP3, WAV, OGG, M4A, FLAC (Máx. 20MB)</p>
@@ -311,7 +311,7 @@ export const AudioAnalysis: React.FC = () => {
                         {file && !result && (
                             <div className="space-y-4">
                                 <div className="flex items-center justify-center gap-3 text-slate-700 bg-slate-50 p-4 rounded-lg inline-block">
-                                    <FileAudio className="text-blue-600" />
+                                    <FileAudio className="text-primary-600" />
                                     <span className="font-medium">{file.name}</span>
                                     <span className="text-xs text-slate-400">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
                                     <button onClick={() => setFile(null)} className="text-slate-400 hover:text-red-500 ml-2"><AlertCircle size={16} /></button>
@@ -321,7 +321,7 @@ export const AudioAnalysis: React.FC = () => {
                                     <button
                                         onClick={handleUpload}
                                         disabled={isUploading}
-                                        className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto shadow-lg shadow-blue-200"
+                                        className="px-8 py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto shadow-lg shadow-primary-200"
                                     >
                                         {isUploading ? (
                                             <>
@@ -420,7 +420,7 @@ export const AudioAnalysis: React.FC = () => {
                                                 <div className="text-xs font-mono text-slate-400 mb-1">
                                                     {formatTime(segment.timestampStart)} - {formatTime(segment.timestampEnd)}
                                                 </div>
-                                                <div className={`text-xs font-bold px-2 py-1 rounded inline-block ${segment.speaker.includes('A') || segment.speaker.includes('1') ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                                <div className={`text-xs font-bold px-2 py-1 rounded inline-block ${segment.speaker.includes('A') || segment.speaker.includes('1') ? 'bg-primary-100 text-primary-700' : 'bg-purple-100 text-purple-700'
                                                     }`}>
                                                     {segment.speaker}
                                                 </div>
@@ -444,7 +444,7 @@ export const AudioAnalysis: React.FC = () => {
                             <div className="text-center">
                                 <button
                                     onClick={() => { setFile(null); setResult(null); setError(null); }}
-                                    className="text-blue-600 hover:text-blue-800 font-medium"
+                                    className="text-primary-600 hover:text-primary-800 font-medium"
                                 >
                                     Analisar outro arquivo
                                 </button>
@@ -495,7 +495,7 @@ export const AudioAnalysis: React.FC = () => {
                                             <td className="p-4 text-right space-x-2">
                                                 <button
                                                     onClick={() => handleView(item.id)}
-                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                    className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                                                     title="Ver Detalhes"
                                                 >
                                                     <Eye size={18} />

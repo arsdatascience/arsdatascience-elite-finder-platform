@@ -567,7 +567,7 @@ export const AgentBuilder: React.FC = () => {
                 <div>
                     <div className="flex items-center gap-3">
                         <h2 className="text-2xl font-bold text-gray-800">Construtor de Agentes IA</h2>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase">Enterprise Edition</span>
+                        <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full uppercase">Enterprise Edition</span>
                     </div>
                     <p className="text-sm text-gray-500">Configure agentes especializados com parâmetros avançados de RAG e Engenharia de Prompt.</p>
                 </div>
@@ -586,7 +586,7 @@ export const AgentBuilder: React.FC = () => {
                     </button>
                     <button
                         onClick={fetchTemplates}
-                        className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium flex items-center gap-2 border border-blue-200"
+                        className="px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg font-medium flex items-center gap-2 border border-primary-200"
                     >
                         <LayoutTemplate size={18} /> Carregar Template
                     </button>
@@ -599,7 +599,7 @@ export const AgentBuilder: React.FC = () => {
                     <button
                         onClick={handleSaveAgent}
                         disabled={saveAgentMutation.isPending}
-                        className={`px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-200 ${saveAgentMutation.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        className={`px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 flex items-center gap-2 shadow-lg shadow-primary-200 ${saveAgentMutation.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
                         <Save size={18} /> {saveAgentMutation.isPending ? 'Salvando...' : 'Salvar Agente'}
                     </button>
@@ -613,7 +613,7 @@ export const AgentBuilder: React.FC = () => {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-600 hover:bg-gray-50 border border-transparent'
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-primary-50 text-primary-700 border border-primary-200' : 'text-gray-600 hover:bg-gray-50 border border-transparent'
                                     }`}
                             >
                                 <tab.icon size={16} />
@@ -630,7 +630,7 @@ export const AgentBuilder: React.FC = () => {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
-                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
+                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
                                 <tab.icon size={18} />
@@ -647,16 +647,16 @@ export const AgentBuilder: React.FC = () => {
                             <div className="space-y-6 animate-fade-in">
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <Fingerprint className="text-blue-500" /> Identidade do Agente
+                                        <Fingerprint className="text-primary-500" /> Identidade do Agente
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label htmlFor="agent-name" className="block text-sm font-medium text-gray-700 mb-1">Nome do Agente</label>
-                                            <input id="agent-name" type="text" value={config.identity.name} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, name: e.target.value } })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+                                            <input id="agent-name" type="text" value={config.identity.name} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, name: e.target.value } })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500" />
                                         </div>
                                         <div>
                                             <label htmlFor="agent-category" className="block text-sm font-medium text-gray-700 mb-1">Categoria Jurídica</label>
-                                            <select id="agent-category" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white">
+                                            <select id="agent-category" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white">
                                                 <option value="service">Atendimento ao Cliente</option>
                                                 <option value="sales">Vendas & Comercial</option>
                                                 <option value="specialist">Especialista Técnico</option>
@@ -665,7 +665,7 @@ export const AgentBuilder: React.FC = () => {
                                         </div>
                                         <div className="md:col-span-2">
                                             <label htmlFor="agent-description" className="block text-sm font-medium text-gray-700 mb-1">Descrição do Agente</label>
-                                            <textarea id="agent-description" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" rows={2} value={config.identity.description} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, description: e.target.value } })} />
+                                            <textarea id="agent-description" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500" rows={2} value={config.identity.description} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, description: e.target.value } })} />
                                         </div>
                                         <div>
                                             <label htmlFor="agent-class" className="block text-sm font-medium text-gray-700 mb-1">Classe do Agente</label>
@@ -673,7 +673,7 @@ export const AgentBuilder: React.FC = () => {
                                                 id="agent-class"
                                                 value={config.identity.class}
                                                 onChange={(e) => setConfig({ ...config, identity: { ...config.identity, class: e.target.value } })}
-                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
                                             >
                                                 <option value="StandardAgent">Standard Agent (Padrão)</option>
                                                 <option value="SalesAgent">Vendedor / Comercial</option>
@@ -699,7 +699,7 @@ export const AgentBuilder: React.FC = () => {
                                                     })}
                                                     className="flex-1"
                                                 />
-                                                <span className="font-bold text-blue-600">
+                                                <span className="font-bold text-primary-600">
                                                     {config.identity.specializationLevel} - {
                                                         config.identity.specializationLevel === 1 ? 'Iniciante' :
                                                             config.identity.specializationLevel === 2 ? 'Básico' :
@@ -717,19 +717,19 @@ export const AgentBuilder: React.FC = () => {
                         {activeTab === 'ai' && (
                             <div className="space-y-6 animate-fade-in">
                                 {/* Presets de Comportamento */}
-                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-center justify-between">
+                                <div className="bg-primary-50 p-4 rounded-xl border border-primary-100 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Wand2 className="text-blue-600" size={20} />
+                                        <Wand2 className="text-primary-600" size={20} />
                                         <div>
-                                            <h4 className="text-sm font-bold text-blue-900">Configuração Rápida</h4>
-                                            <p className="text-xs text-blue-700">Aplique as melhores práticas para seu caso de uso.</p>
+                                            <h4 className="text-sm font-bold text-primary-900">Configuração Rápida</h4>
+                                            <p className="text-xs text-primary-700">Aplique as melhores práticas para seu caso de uso.</p>
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => applyAiPreset('precise')} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">Preciso</button>
-                                        <button onClick={() => applyAiPreset('balanced')} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">Equilibrado</button>
-                                        <button onClick={() => applyAiPreset('creative')} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">Criativo</button>
-                                        <button onClick={() => applyAiPreset('coding')} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">Técnico/Code</button>
+                                        <button onClick={() => applyAiPreset('precise')} className="px-3 py-1.5 bg-white text-primary-700 text-xs font-bold rounded-lg border border-primary-200 hover:bg-primary-50 transition-colors">Preciso</button>
+                                        <button onClick={() => applyAiPreset('balanced')} className="px-3 py-1.5 bg-white text-primary-700 text-xs font-bold rounded-lg border border-primary-200 hover:bg-primary-50 transition-colors">Equilibrado</button>
+                                        <button onClick={() => applyAiPreset('creative')} className="px-3 py-1.5 bg-white text-primary-700 text-xs font-bold rounded-lg border border-primary-200 hover:bg-primary-50 transition-colors">Criativo</button>
+                                        <button onClick={() => applyAiPreset('coding')} className="px-3 py-1.5 bg-white text-primary-700 text-xs font-bold rounded-lg border border-primary-200 hover:bg-primary-50 transition-colors">Técnico/Code</button>
                                     </div>
                                 </div>
 
@@ -743,7 +743,7 @@ export const AgentBuilder: React.FC = () => {
                                             <select
                                                 value={config.aiConfig.provider}
                                                 onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, provider: e.target.value } })}
-                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
                                             >
                                                 <option value="openai">OpenAI (GPT-5 / GPT-4.1)</option>
                                                 <option value="google">Google (Gemini 3 / 2.5)</option>
@@ -755,7 +755,7 @@ export const AgentBuilder: React.FC = () => {
                                             <select
                                                 value={config.aiConfig.model}
                                                 onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, model: e.target.value } })}
-                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
                                             >
                                                 {config.aiConfig.provider === 'openai' && (
                                                     <>
@@ -916,7 +916,7 @@ export const AgentBuilder: React.FC = () => {
                                                     <select
                                                         value={config.aiConfig.responseMode || 'balanced'}
                                                         onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, responseMode: e.target.value } })}
-                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
                                                     >
                                                         <option value="concise">Conciso</option>
                                                         <option value="balanced">Balanceado</option>
@@ -966,7 +966,7 @@ export const AgentBuilder: React.FC = () => {
                                                                 onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, jsonMode: e.target.checked } })}
                                                                 className="sr-only peer"
                                                             />
-                                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
                                                             <span className="ml-3 text-sm font-medium text-gray-700">Forçar saída JSON</span>
                                                         </label>
                                                     </div>
@@ -998,7 +998,7 @@ export const AgentBuilder: React.FC = () => {
                         {activeTab === 'vector' && (
                             <div className="space-y-6 animate-fade-in">
                                 {/* Qdrant Connection Section */}
-                                <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border border-purple-200 shadow-sm">
+                                <div className="bg-gradient-to-r from-purple-50 to-primary-50 p-6 rounded-xl border border-purple-200 shadow-sm">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                                             <Database className="text-purple-600" /> Qdrant Vector Database
@@ -1347,7 +1347,7 @@ export const AgentBuilder: React.FC = () => {
                                                             ...config,
                                                             whatsappConfig: { ...config.whatsappConfig, provider: 'official' }
                                                         })}
-                                                        className={`p-4 border rounded-lg text-left transition-all ${config.whatsappConfig.provider === 'official' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'hover:border-gray-300'}`}
+                                                        className={`p-4 border rounded-lg text-left transition-all ${config.whatsappConfig.provider === 'official' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'hover:border-gray-300'}`}
                                                     >
                                                         <div className="font-bold text-gray-800 mb-1">WhatsApp Cloud API (Meta)</div>
                                                         <div className="text-xs text-gray-500">API Oficial da Meta. Alta estabilidade, mas requer verificação de negócio.</div>
@@ -1424,7 +1424,7 @@ export const AgentBuilder: React.FC = () => {
                                                                         official: { ...config.whatsappConfig.official, phoneNumberId: e.target.value }
                                                                     }
                                                                 })}
-                                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
                                                             />
                                                         </div>
                                                         <div>
@@ -1439,7 +1439,7 @@ export const AgentBuilder: React.FC = () => {
                                                                         official: { ...config.whatsappConfig.official, accessToken: e.target.value }
                                                                     }
                                                                 })}
-                                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
                                                             />
                                                         </div>
                                                         <div>
@@ -1454,7 +1454,7 @@ export const AgentBuilder: React.FC = () => {
                                                                         official: { ...config.whatsappConfig.official, verifyToken: e.target.value }
                                                                     }
                                                                 })}
-                                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
                                                             />
                                                         </div>
                                                     </div>
@@ -1484,7 +1484,7 @@ export const AgentBuilder: React.FC = () => {
                                 {/* Chunking Otimizado */}
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <Database className="text-blue-600" /> Configuração de Fragmentação (Chunking)
+                                        <Database className="text-primary-600" /> Configuração de Fragmentação (Chunking)
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
@@ -1574,7 +1574,7 @@ export const AgentBuilder: React.FC = () => {
                                                         type="range" min="0.5" max="1" step="0.05"
                                                         value={config.advancedConfig?.multiModelValidation.minConsensus ?? 0.75}
                                                         onChange={(e) => setConfig({ ...config, advancedConfig: { ...(config.advancedConfig || INITIAL_CONFIG.advancedConfig!), multiModelValidation: { ...(config.advancedConfig?.multiModelValidation || INITIAL_CONFIG.advancedConfig!.multiModelValidation), minConsensus: parseFloat(e.target.value) } } })}
-                                                        className="w-full accent-blue-600"
+                                                        className="w-full accent-primary-600"
                                                     />
                                                 </div>
                                                 <div>
@@ -1667,7 +1667,7 @@ export const AgentBuilder: React.FC = () => {
                                                 const newKpis = [...(config.advancedConfig?.kpis || []), { name: '', target: '' }];
                                                 setConfig({ ...config, advancedConfig: { ...(config.advancedConfig || INITIAL_CONFIG.advancedConfig!), kpis: newKpis } });
                                             }}
-                                            className="text-sm text-blue-600 font-medium hover:text-blue-800 flex items-center gap-1"
+                                            className="text-sm text-primary-600 font-medium hover:text-blue-800 flex items-center gap-1"
                                         >
                                             + Adicionar KPI
                                         </button>
@@ -1680,7 +1680,7 @@ export const AgentBuilder: React.FC = () => {
                             <div className="space-y-6 animate-fade-in">
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <LayoutTemplate className="text-blue-600" /> Widget & Deploy
+                                        <LayoutTemplate className="text-primary-600" /> Widget & Deploy
                                     </h3>
                                     <p className="text-gray-600 mb-6">
                                         Incorpore seu agente em qualquer site usando o código abaixo.
@@ -1727,9 +1727,9 @@ export const AgentBuilder: React.FC = () => {
                                     </div>
 
                                     <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                                        <div className="p-4 bg-primary-50 rounded-lg border border-primary-100">
                                             <h4 className="font-bold text-blue-800 mb-2">1. Copie o Código</h4>
-                                            <p className="text-sm text-blue-600">Copie o snippet acima e substitua 'SEU_AGENT_ID_AQUI' pelo ID do seu agente após salvar.</p>
+                                            <p className="text-sm text-primary-600">Copie o snippet acima e substitua 'SEU_AGENT_ID_AQUI' pelo ID do seu agente após salvar.</p>
                                         </div>
                                         <div className="p-4 bg-purple-50 rounded-lg border border-purple-100">
                                             <h4 className="font-bold text-purple-800 mb-2">2. Cole no Site</h4>
@@ -1849,7 +1849,7 @@ export const AgentBuilder: React.FC = () => {
                         <div className="bg-white rounded-xl p-6 w-full max-w-3xl shadow-2xl animate-fade-in max-h-[80vh] overflow-y-auto">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                                    <LayoutTemplate className="text-blue-600" /> Carregar Template
+                                    <LayoutTemplate className="text-primary-600" /> Carregar Template
                                 </h3>
                                 <button onClick={() => setShowLoadTemplateModal(false)} className="text-gray-400 hover:text-gray-600">
                                     <X size={24} />
@@ -1859,7 +1859,7 @@ export const AgentBuilder: React.FC = () => {
                                 <div className="mb-4 flex justify-end">
                                     <button
                                         onClick={handleSetupTemplates}
-                                        className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                                        className="text-xs text-primary-600 hover:text-blue-800 flex items-center gap-1 bg-primary-50 px-2 py-1 rounded hover:bg-primary-100 transition-colors"
                                         title="Recarregar templates do sistema"
                                     >
                                         <RefreshCw size={12} /> Atualizar Lista
@@ -1868,14 +1868,14 @@ export const AgentBuilder: React.FC = () => {
                             )}
                             {loadingTemplates ? (
                                 <div className="flex justify-center py-12">
-                                    <Loader2 className="animate-spin text-blue-600" size={32} />
+                                    <Loader2 className="animate-spin text-primary-600" size={32} />
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {availableTemplates.map(template => (
-                                        <div key={template.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer group" onClick={() => handleSelectTemplate(template.template_id)}>
+                                        <div key={template.id} className="border border-gray-200 rounded-lg p-4 hover:border-primary-500 hover:bg-primary-50 transition-all cursor-pointer group" onClick={() => handleSelectTemplate(template.template_id)}>
                                             <div className="flex justify-between items-start mb-2">
-                                                <h4 className="font-bold text-gray-800 group-hover:text-blue-700">{template.template_name}</h4>
+                                                <h4 className="font-bold text-gray-800 group-hover:text-primary-700">{template.template_name}</h4>
                                                 <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{template.category}</span>
                                             </div>
                                             <p className="text-sm text-gray-500 line-clamp-2">{template.template_description || 'Sem descrição.'}</p>
@@ -1887,7 +1887,7 @@ export const AgentBuilder: React.FC = () => {
                                             {showSetupButton && (
                                                 <button
                                                     onClick={handleSetupTemplates}
-                                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                                                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
                                                 >
                                                     <Database size={18} /> Inicializar Templates Padrão
                                                 </button>

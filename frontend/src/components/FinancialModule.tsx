@@ -517,7 +517,7 @@ const FinancialModule: React.FC = () => {
     if (loading && !dashboardData && transactions.length === 0) {
         return (
             <div className="flex items-center justify-center h-screen bg-slate-50">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
             </div>
         );
     }
@@ -528,7 +528,7 @@ const FinancialModule: React.FC = () => {
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                        <Wallet className="text-blue-600" /> Gestão Financeira <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">v3.1 (ECharts)</span>
+                        <Wallet className="text-primary-600" /> Gestão Financeira <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">v3.1 (ECharts)</span>
                     </h1>
                     <p className="text-slate-500">Controle completo de receitas, despesas e fluxo de caixa.</p>
                 </div>
@@ -588,19 +588,19 @@ const FinancialModule: React.FC = () => {
                     <div className="flex gap-1 bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
                         <button
                             onClick={() => setActiveTab('dashboard')}
-                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'dashboard' ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
                             <BarChart3 size={14} className="inline mr-1" /> Visão Geral
                         </button>
                         <button
                             onClick={() => setActiveTab('transactions')}
-                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'transactions' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'transactions' ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
                             <DollarSign size={14} className="inline mr-1" /> Transações
                         </button>
                         <button
                             onClick={() => setActiveTab('settings')}
-                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'settings' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'settings' ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
                             <Tag size={14} className="inline mr-1" /> Categorias
                         </button>
@@ -649,11 +649,11 @@ const FinancialModule: React.FC = () => {
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <p className="text-sm font-medium text-slate-500">Saldo (Caixa)</p>
-                                    <h3 className={`text-2xl font-bold ${dashboardData.summary.total_income - dashboardData.summary.total_expense >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                    <h3 className={`text-2xl font-bold ${dashboardData.summary.total_income - dashboardData.summary.total_expense >= 0 ? 'text-primary-600' : 'text-red-600'}`}>
                                         {formatCurrency(dashboardData.summary.total_income - dashboardData.summary.total_expense)}
                                     </h3>
                                 </div>
-                                <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Wallet size={24} /></div>
+                                <div className="p-2 bg-primary-50 rounded-lg text-primary-600"><Wallet size={24} /></div>
                             </div>
                             <p className="text-xs text-slate-400">Lucratividade: {dashboardData.summary.total_income > 0 ? ((dashboardData.summary.total_income - dashboardData.summary.total_expense) / dashboardData.summary.total_income * 100).toFixed(1) : 0}%</p>
                         </div>
@@ -703,7 +703,7 @@ const FinancialModule: React.FC = () => {
                                     });
                                     setIsModalOpen(true);
                                 }}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
                             >
                                 <Plus size={18} /> Nova Transação
                             </button>
@@ -753,7 +753,7 @@ const FinancialModule: React.FC = () => {
                                         <td className="p-4 text-right">
                                             <button
                                                 onClick={() => handleEditTransaction(t)}
-                                                className="text-slate-400 hover:text-blue-600 p-1"
+                                                className="text-slate-400 hover:text-primary-600 p-1"
                                             >
                                                 <Edit2 size={16} />
                                             </button>
@@ -787,7 +787,7 @@ const FinancialModule: React.FC = () => {
                                 setNewCategory({ name: '', type: 'expense', color: '#ef4444' });
                                 setIsCategoryModalOpen(true);
                             }}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
                         >
                             <Plus size={18} /> Nova Categoria
                         </button>
@@ -808,7 +808,7 @@ const FinancialModule: React.FC = () => {
                                         </div>
                                         <button
                                             onClick={() => handleEditCategory(c)}
-                                            className="text-slate-400 hover:text-blue-600"
+                                            className="text-slate-400 hover:text-primary-600"
                                         >
                                             <Edit2 size={16} />
                                         </button>
@@ -834,7 +834,7 @@ const FinancialModule: React.FC = () => {
                                         </div>
                                         <button
                                             onClick={() => handleEditCategory(c)}
-                                            className="text-slate-400 hover:text-blue-600"
+                                            className="text-slate-400 hover:text-primary-600"
                                         >
                                             <Edit2 size={16} />
                                         </button>
@@ -888,7 +888,7 @@ const FinancialModule: React.FC = () => {
                                     type="text"
                                     value={newTransaction.description}
                                     onChange={e => setNewTransaction({ ...newTransaction, description: e.target.value })}
-                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                     placeholder="Ex: Consultoria de Marketing"
                                 />
                             </div>
@@ -901,7 +901,7 @@ const FinancialModule: React.FC = () => {
                                         step="0.01"
                                         value={newTransaction.amount}
                                         onChange={e => setNewTransaction({ ...newTransaction, amount: parseFloat(e.target.value) })}
-                                        className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                        className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                     />
                                 </div>
                                 <div>
@@ -910,7 +910,7 @@ const FinancialModule: React.FC = () => {
                                         type="date"
                                         value={newTransaction.date}
                                         onChange={e => setNewTransaction({ ...newTransaction, date: e.target.value })}
-                                        className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                        className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                     />
                                 </div>
                             </div>
@@ -920,7 +920,7 @@ const FinancialModule: React.FC = () => {
                                 <select
                                     value={newTransaction.category_id}
                                     onChange={e => setNewTransaction({ ...newTransaction, category_id: e.target.value })}
-                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                 >
                                     <option value="">Selecione...</option>
                                     {categories.filter(c => c.type === newTransaction.type).map(c => (
@@ -934,7 +934,7 @@ const FinancialModule: React.FC = () => {
                                 <select
                                     value={newTransaction.client_id}
                                     onChange={e => setNewTransaction({ ...newTransaction, client_id: e.target.value })}
-                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                 >
                                     <option value="">Selecione...</option>
                                     {clients.map(c => (
@@ -948,7 +948,7 @@ const FinancialModule: React.FC = () => {
                                 <select
                                     value={newTransaction.status}
                                     onChange={e => setNewTransaction({ ...newTransaction, status: e.target.value as any })}
-                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                 >
                                     <option value="paid">Pago</option>
                                     <option value="pending">Pendente</option>
@@ -957,7 +957,7 @@ const FinancialModule: React.FC = () => {
 
                             <button
                                 onClick={handleSaveTransaction}
-                                className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors mt-2"
+                                className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 transition-colors mt-2"
                             >
                                 Salvar Transação
                             </button>
@@ -1005,7 +1005,7 @@ const FinancialModule: React.FC = () => {
                                     type="text"
                                     value={newCategory.name}
                                     onChange={e => setNewCategory({ ...newCategory, name: e.target.value })}
-                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                     placeholder="Ex: Marketing, Vendas, etc."
                                 />
                             </div>
@@ -1027,7 +1027,7 @@ const FinancialModule: React.FC = () => {
 
                             <button
                                 onClick={handleSaveCategory}
-                                className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors mt-2"
+                                className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 transition-colors mt-2"
                             >
                                 Salvar Categoria
                             </button>

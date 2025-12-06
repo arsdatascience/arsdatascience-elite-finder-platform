@@ -74,7 +74,7 @@ export const BackgroundRemover: React.FC<BackgroundRemoverProps> = ({ image, onR
                         download={`nobg-${Date.now()}.png`}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-3 w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 gap-2"
+                        className="mt-3 w-full inline-flex items-center justify-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 gap-2"
                     >
                         <Download className="w-4 h-4" />
                         Download PNG

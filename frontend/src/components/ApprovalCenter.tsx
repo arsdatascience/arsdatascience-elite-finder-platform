@@ -65,7 +65,7 @@ export const ApprovalCenter: React.FC = () => {
             case 'approved': return 'text-green-500 bg-green-500/10 border-green-500/20';
             case 'rejected': return 'text-red-500 bg-red-500/10 border-red-500/20';
             case 'changes_requested': return 'text-orange-500 bg-orange-500/10 border-orange-500/20';
-            default: return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
+            default: return 'text-primary-500 bg-primary-500/10 border-primary-500/20';
         }
     };
 
@@ -86,19 +86,19 @@ export const ApprovalCenter: React.FC = () => {
             <div className="flex space-x-4 mb-6 border-b border-gray-200">
                 <button
                     onClick={() => setActiveTab('pending')}
-                    className={`pb-2 px-4 font-medium transition-colors border-b-2 ${activeTab === 'pending' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+                    className={`pb-2 px-4 font-medium transition-colors border-b-2 ${activeTab === 'pending' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
                 >
                     Pendentes
                 </button>
                 <button
                     onClick={() => setActiveTab('sent')}
-                    className={`pb-2 px-4 font-medium transition-colors border-b-2 ${activeTab === 'sent' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+                    className={`pb-2 px-4 font-medium transition-colors border-b-2 ${activeTab === 'sent' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
                 >
                     Enviados
                 </button>
                 <button
                     onClick={() => setActiveTab('history')}
-                    className={`pb-2 px-4 font-medium transition-colors border-b-2 ${activeTab === 'history' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+                    className={`pb-2 px-4 font-medium transition-colors border-b-2 ${activeTab === 'history' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
                 >
                     Histórico
                 </button>
@@ -118,7 +118,7 @@ export const ApprovalCenter: React.FC = () => {
                             <div
                                 key={req.id}
                                 onClick={() => setSelectedRequest(req)}
-                                className="bg-white rounded-xl border border-gray-200 p-4 hover:border-blue-500 hover:shadow-md cursor-pointer transition-all"
+                                className="bg-white rounded-xl border border-gray-200 p-4 hover:border-primary-500 hover:shadow-md cursor-pointer transition-all"
                             >
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="flex items-center gap-3">
@@ -156,7 +156,7 @@ export const ApprovalCenter: React.FC = () => {
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                                                className="text-xs text-primary-600 hover:underline flex items-center gap-1"
                                             >
                                                 Ver Arquivo <ExternalLink size={10} />
                                             </a>
@@ -206,7 +206,7 @@ export const ApprovalCenter: React.FC = () => {
                                                 href={selectedRequest.asset_url}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2 shadow-sm"
+                                                className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2 shadow-sm"
                                             >
                                                 Download / Visualizar <ExternalLink size={16} />
                                             </a>
@@ -242,7 +242,7 @@ export const ApprovalCenter: React.FC = () => {
                                         <div className="mb-6">
                                             <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Seu Feedback</h3>
                                             <textarea
-                                                className="w-full bg-white border border-gray-200 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[100px]"
+                                                className="w-full bg-white border border-gray-200 rounded-lg p-3 text-gray-900 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 min-h-[100px]"
                                                 placeholder="Digite seus comentários aqui..."
                                                 value={reviewComment}
                                                 onChange={(e) => setReviewComment(e.target.value)}
@@ -251,15 +251,15 @@ export const ApprovalCenter: React.FC = () => {
                                     )}
 
                                     {/* Magic Link for Sharing */}
-                                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                                        <p className="text-xs text-blue-600 mb-2 font-medium">Link Público para Cliente:</p>
-                                        <div className="flex items-center gap-2 bg-white p-2 rounded border border-blue-200">
+                                    <div className="mt-4 p-4 bg-primary-50 rounded-lg border border-primary-100">
+                                        <p className="text-xs text-primary-600 mb-2 font-medium">Link Público para Cliente:</p>
+                                        <div className="flex items-center gap-2 bg-white p-2 rounded border border-primary-200">
                                             <code className="text-xs truncate flex-1 text-gray-600">
                                                 {`${window.location.origin}/review/${selectedRequest.review_token}`}
                                             </code>
                                             <button
                                                 onClick={() => navigator.clipboard.writeText(`${window.location.origin}/review/${selectedRequest.review_token}`)}
-                                                className="text-gray-400 hover:text-blue-600"
+                                                className="text-gray-400 hover:text-primary-600"
                                                 title="Copiar Link"
                                             >
                                                 <ExternalLink size={14} />

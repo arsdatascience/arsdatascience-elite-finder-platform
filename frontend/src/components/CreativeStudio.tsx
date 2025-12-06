@@ -158,8 +158,8 @@ const CreativeStudio: React.FC = () => {
                                             >
                                                 <div className="flex justify-between items-start mb-1">
                                                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${copy.platform === 'instagram' ? 'bg-pink-100 text-pink-700' :
-                                                            copy.platform === 'linkedin' ? 'bg-blue-100 text-blue-700' :
-                                                                'bg-gray-100 text-gray-700'
+                                                        copy.platform === 'linkedin' ? 'bg-blue-100 text-blue-700' :
+                                                            'bg-gray-100 text-gray-700'
                                                         }`}>
                                                         {copy.platform}
                                                     </span>
@@ -267,7 +267,7 @@ const CreativeStudio: React.FC = () => {
                                     {generatedContent && (
                                         <button
                                             onClick={handleSave}
-                                            className="text-sm text-slate-600 hover:text-blue-600 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors border border-transparent hover:border-slate-200"
+                                            className="text-sm text-slate-600 hover:text-primary-600 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors border border-transparent hover:border-slate-200"
                                         >
                                             <Save size={16} /> Salvar
                                         </button>
@@ -327,7 +327,7 @@ const CreativeStudio: React.FC = () => {
                                             {generatedContent.hashtags && (
                                                 <div>
                                                     <h4 className="text-xs font-bold text-slate-500 uppercase mb-1">Hashtags</h4>
-                                                    <p className="text-blue-600 text-sm">{generatedContent.hashtags.join(' ')}</p>
+                                                    <p className="text-primary-600 text-sm">{generatedContent.hashtags.join(' ')}</p>
                                                 </div>
                                             )}
                                             {generatedContent.imageIdea && (

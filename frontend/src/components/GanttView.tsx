@@ -156,7 +156,7 @@ export const GanttView: React.FC<GanttViewProps> = ({ tasks, onTaskClick }) => {
                                                 className={`absolute top-2 h-6 rounded-full shadow-sm cursor-pointer hover:scale-105 transition-transform flex items-center px-2 text-xs text-white truncate
                                                     ${task.status === 'done' ? 'bg-emerald-500' :
                                                         task.status === 'review' ? 'bg-amber-500' :
-                                                            task.status === 'in_progress' ? 'bg-blue-500' : 'bg-slate-400'}
+                                                            task.status === 'in_progress' ? 'bg-primary-500' : 'bg-slate-400'}
                                                 `}
                                                 style={{
                                                     left: `${startPos * COL_WIDTH}px`,

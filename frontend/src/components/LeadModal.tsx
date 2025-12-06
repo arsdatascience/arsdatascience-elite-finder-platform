@@ -168,7 +168,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                             <button onClick={() => handleQuickAction('whatsapp')} className="flex-1 py-2 px-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center gap-2 font-medium text-sm">
                                 <MessageCircle size={16} /> WhatsApp
                             </button>
-                            <button onClick={() => handleQuickAction('email')} className="flex-1 py-2 px-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center gap-2 font-medium text-sm">
+                            <button onClick={() => handleQuickAction('email')} className="flex-1 py-2 px-3 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors flex items-center justify-center gap-2 font-medium text-sm">
                                 <Mail size={16} /> Email
                             </button>
                             <button onClick={() => handleQuickAction('call')} className="flex-1 py-2 px-3 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 font-medium text-sm">
@@ -240,34 +240,34 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                    <User size={16} className="text-blue-500" /> Nome Completo
+                                    <User size={16} className="text-primary-500" /> Nome Completo
                                 </label>
                                 <input
                                     {...register('name', { required: true })}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     placeholder="Ex: João Silva"
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                    <Mail size={16} className="text-blue-500" /> Email
+                                    <Mail size={16} className="text-primary-500" /> Email
                                 </label>
                                 <input
                                     {...register('email', { required: true })}
                                     type="email"
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     placeholder="joao@exemplo.com"
                                 />
                             </div>
 
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                    <Phone size={16} className="text-blue-500" /> Telefone
+                                    <Phone size={16} className="text-primary-500" /> Telefone
                                 </label>
                                 <input
                                     {...register('phone')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     placeholder="(11) 99999-9999"
                                 />
                             </div>
@@ -278,7 +278,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                 </label>
                                 <select
                                     {...register('clientId')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all bg-white"
                                 >
                                     <option value="">Sem Cliente</option>
                                     {clients.map(client => (
@@ -295,7 +295,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                     {...register('value')}
                                     type="number"
                                     step="0.01"
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     placeholder="0.00"
                                 />
                             </div>
@@ -304,7 +304,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                 <label className="text-sm font-medium text-gray-700">Status</label>
                                 <select
                                     {...register('status')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all bg-white"
                                 >
                                     {Object.values(LeadStatus).map(status => (
                                         <option key={status} value={status}>{status}</option>
@@ -316,7 +316,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                 <label className="text-sm font-medium text-gray-700">Origem</label>
                                 <select
                                     {...register('source')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all bg-white"
                                 >
                                     <option value="Manual">Manual</option>
                                     <option value="Google Ads">Google Ads</option>
@@ -335,7 +335,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                 </label>
                                 <input
                                     {...register('productInterest')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     placeholder="Ex: Consultoria SEO"
                                 />
                             </div>
@@ -346,7 +346,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                 </label>
                                 <input
                                     {...register('assignedTo')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     placeholder="Nome do responsável"
                                 />
                             </div>
@@ -358,7 +358,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                             </label>
                             <input
                                 {...register('tags')}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                 placeholder="quente, urgente, corporativo"
                             />
                             <div className="flex flex-wrap gap-2 mt-2">
@@ -371,7 +371,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                             const newTags = currentTags ? `${currentTags}, ${tag}` : tag;
                                             setValue('tags', newTags);
                                         }}
-                                        className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-200"
+                                        className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full hover:bg-primary-50 hover:text-primary-600 transition-colors border border-gray-200"
                                     >
                                         + {tag}
                                     </button>
@@ -386,7 +386,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                             <textarea
                                 {...register('notes')}
                                 rows={4}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
+                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all resize-none"
                                 placeholder="Observações importantes sobre o lead..."
                             />
                         </div>
@@ -399,10 +399,10 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                     id="addToCalendar"
                                     checked={addToCalendar}
                                     onChange={(e) => setAddToCalendar(e.target.checked)}
-                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                    className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
                                 />
                                 <label htmlFor="addToCalendar" className="text-sm font-bold text-gray-700 flex items-center gap-2 cursor-pointer">
-                                    <Calendar size={16} className="text-blue-500" /> Incluir no Calendário
+                                    <Calendar size={16} className="text-primary-500" /> Incluir no Calendário
                                 </label>
                             </div>
 
@@ -412,7 +412,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                         <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">Data</label>
                                         <input
                                             type="date"
-                                            className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
                                             value={scheduleDate}
                                             onChange={(e) => setScheduleDate(e.target.value)}
                                         />
@@ -420,7 +420,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                     <div>
                                         <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">Horário (15 min)</label>
                                         <select
-                                            className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
                                             value={scheduleTime}
                                             onChange={(e) => setScheduleTime(e.target.value)}
                                         >
@@ -433,7 +433,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                                     <div>
                                         <label className="text-xs font-bold text-gray-600 uppercase mb-1 block">Tipo</label>
                                         <select
-                                            className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 outline-none"
                                             value={scheduleType}
                                             onChange={(e) => setScheduleType(e.target.value as any)}
                                         >
@@ -464,7 +464,7 @@ export const LeadModal: React.FC<LeadModalProps> = ({ lead, isOpen, onClose, onS
                     </button>
                     <button
                         onClick={handleSubmit(onSubmit)}
-                        className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all flex items-center gap-2"
+                        className="px-6 py-2 bg-primary-600 text-white font-bold rounded-lg hover:bg-primary-700 shadow-lg shadow-primary-200 transition-all flex items-center gap-2"
                     >
                         <Save size={18} />
                         Salvar Lead

@@ -107,7 +107,7 @@ export const Training: React.FC = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-96">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             </div>
         );
     }
@@ -152,8 +152,8 @@ export const Training: React.FC = () => {
                     <button
                         onClick={() => setAudienceFilter('team')}
                         className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-medium transition-all ${audienceFilter === 'team'
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
+                            ? 'bg-white text-primary-600 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700'
                             }`}
                     >
                         <Users size={18} />
@@ -162,8 +162,8 @@ export const Training: React.FC = () => {
                     <button
                         onClick={() => setAudienceFilter('client')}
                         className={`flex items-center gap-2 px-6 py-2 rounded-md text-sm font-medium transition-all ${audienceFilter === 'client'
-                                ? 'bg-white text-blue-600 shadow-sm'
-                                : 'text-gray-500 hover:text-gray-700'
+                            ? 'bg-white text-primary-600 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700'
                             }`}
                     >
                         <Briefcase size={18} />
@@ -187,8 +187,8 @@ export const Training: React.FC = () => {
                 </div>
                 <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <Clock className="text-blue-600" size={24} />
+                        <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                            <Clock className="text-primary-600" size={24} />
                         </div>
                         <div>
                             <p className="text-2xl font-bold text-gray-900">
@@ -215,28 +215,28 @@ export const Training: React.FC = () => {
             <div className="flex gap-2 border-b border-gray-200">
                 <button
                     onClick={() => setFilter('all')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'all' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                 >
                     Todos
                 </button>
                 <button
                     onClick={() => setFilter('not_started')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'not_started' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'not_started' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                 >
                     Não Iniciados
                 </button>
                 <button
                     onClick={() => setFilter('in_progress')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'in_progress' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'in_progress' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                 >
                     Em Progresso
                 </button>
                 <button
                     onClick={() => setFilter('completed')}
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'completed' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'completed' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                 >
                     Concluídos
@@ -256,7 +256,7 @@ export const Training: React.FC = () => {
                             className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden group hover:shadow-md transition-all cursor-pointer"
                             onClick={() => handleStartModule(module)}
                         >
-                            <div className="h-40 bg-gradient-to-br from-blue-500 to-purple-600 relative flex items-center justify-center">
+                            <div className="h-40 bg-gradient-to-br from-primary-500 to-purple-600 relative flex items-center justify-center">
                                 <Video size={48} className="text-white/80" />
                                 {isCompleted && (
                                     <div className="absolute top-3 right-3 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
@@ -265,7 +265,7 @@ export const Training: React.FC = () => {
                                     </div>
                                 )}
                                 {!isCompleted && progressPercent > 0 && (
-                                    <div className="absolute top-3 right-3 bg-blue-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                                    <div className="absolute top-3 right-3 bg-primary-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
                                         {progressPercent}%
                                     </div>
                                 )}
@@ -291,7 +291,7 @@ export const Training: React.FC = () => {
                                     <div className="mb-3">
                                         <div className="w-full bg-gray-200 rounded-full h-1.5">
                                             <div
-                                                className="bg-blue-600 h-1.5 rounded-full transition-all"
+                                                className="bg-primary-600 h-1.5 rounded-full transition-all"
                                                 style={{ width: `${progressPercent}%` }}
                                             ></div>
                                         </div>
@@ -299,7 +299,7 @@ export const Training: React.FC = () => {
                                 )}
 
                                 <button
-                                    className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-lg transition-colors"
+                                    className="w-full mt-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium py-2 rounded-lg transition-colors"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleStartModule(module);

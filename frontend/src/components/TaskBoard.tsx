@@ -11,7 +11,7 @@ import TaskModal from './TaskModal';
 
 const COLUMNS = [
     { id: 'todo', title: 'A Fazer', color: 'bg-slate-500' },
-    { id: 'in_progress', title: 'Em Progresso', color: 'bg-blue-500' },
+    { id: 'in_progress', title: 'Em Progresso', color: 'bg-primary-500' },
     { id: 'review', title: 'Revisão', color: 'bg-amber-500' },
     { id: 'done', title: 'Concluído', color: 'bg-emerald-500' }
 ];
@@ -141,7 +141,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ project, onDeleteProject, 
         switch (p) {
             case 'urgent': return 'bg-red-50 text-red-600';
             case 'high': return 'bg-orange-50 text-orange-600';
-            default: return 'bg-blue-50 text-blue-600';
+            default: return 'bg-primary-50 text-primary-600';
         }
     };
 
@@ -162,7 +162,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ project, onDeleteProject, 
                                 <button
                                     key={v.id}
                                     onClick={() => setView(v.id as any)}
-                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${view === v.id ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${view === v.id ? 'bg-white text-primary-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'
                                         }`}
                                 >
                                     <v.icon className="w-4 h-4" />
@@ -174,11 +174,11 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ project, onDeleteProject, 
                     <div className="flex gap-2">
                         <button
                             onClick={() => setShowFilters(!showFilters)}
-                            className={`px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors border ${showFilters ? 'bg-blue-50 border-blue-200 text-blue-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                            className={`px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors border ${showFilters ? 'bg-primary-50 border-primary-200 text-primary-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                         >
                             <Filter className="w-4 h-4" /> Filtros
                         </button>
-                        <button onClick={handleOpenCreateModal} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm">
+                        <button onClick={handleOpenCreateModal} className="bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors shadow-sm">
                             <Plus className="w-4 h-4" /> Nova Tarefa
                         </button>
                         {onDeleteProject && (
@@ -196,24 +196,24 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ project, onDeleteProject, 
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
                                 placeholder="Buscar..."
-                                className="w-full pl-9 pr-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500"
+                                className="w-full pl-9 pr-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-primary-500"
                                 value={filters.search}
                                 onChange={e => setFilters({ ...filters, search: e.target.value })}
                             />
                         </div>
                         <select
-                            className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500"
+                            className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-primary-500"
                             value={filters.status}
                             onChange={e => setFilters({ ...filters, status: e.target.value })}
                         >
                             <option value="">Status: Todos</option>
                             {COLUMNS.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
                         </select>
-                        <input placeholder="Workspace" className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500" value={filters.workspace} onChange={e => setFilters({ ...filters, workspace: e.target.value })} />
-                        <input placeholder="Squad" className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500" value={filters.squad} onChange={e => setFilters({ ...filters, squad: e.target.value })} />
-                        <input placeholder="Etapa" className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500" value={filters.stage} onChange={e => setFilters({ ...filters, stage: e.target.value })} />
-                        <input placeholder="Tags" className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500" value={filters.tags} onChange={e => setFilters({ ...filters, tags: e.target.value })} />
-                        <input placeholder="Tipo Tarefa" className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-blue-500" value={filters.task_type} onChange={e => setFilters({ ...filters, task_type: e.target.value })} />
+                        <input placeholder="Workspace" className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-primary-500" value={filters.workspace} onChange={e => setFilters({ ...filters, workspace: e.target.value })} />
+                        <input placeholder="Squad" className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-primary-500" value={filters.squad} onChange={e => setFilters({ ...filters, squad: e.target.value })} />
+                        <input placeholder="Etapa" className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-primary-500" value={filters.stage} onChange={e => setFilters({ ...filters, stage: e.target.value })} />
+                        <input placeholder="Tags" className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-primary-500" value={filters.tags} onChange={e => setFilters({ ...filters, tags: e.target.value })} />
+                        <input placeholder="Tipo Tarefa" className="px-3 py-1.5 text-sm border rounded-lg bg-gray-50 focus:outline-none focus:border-primary-500" value={filters.task_type} onChange={e => setFilters({ ...filters, task_type: e.target.value })} />
                     </div>
                 )}
             </div>
@@ -297,7 +297,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ project, onDeleteProject, 
                                 <div key={i} className="bg-white border border-gray-200 p-3 rounded-lg min-h-[120px]">
                                     <div className="text-xs text-gray-500 mb-2 font-medium">{date.toLocaleDateString()}</div>
                                     {dayTasks.map(t => (
-                                        <div key={t.id} onClick={() => handleOpenEditModal(t)} className="bg-blue-50 text-blue-700 text-xs p-1.5 rounded mb-1 truncate cursor-pointer hover:bg-blue-100">
+                                        <div key={t.id} onClick={() => handleOpenEditModal(t)} className="bg-primary-50 text-primary-700 text-xs p-1.5 rounded mb-1 truncate cursor-pointer hover:bg-primary-100">
                                             {t.title}
                                         </div>
                                     ))}
@@ -339,10 +339,10 @@ const SortableTask = ({ task, onClick }: { task: Task, onClick?: () => void }) =
             {...attributes}
             {...listeners}
             onClick={onClick}
-            className="bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-400 cursor-grab active:cursor-grabbing group shadow-sm hover:shadow-md transition-all"
+            className="bg-white p-4 rounded-lg border border-gray-200 hover:border-primary-400 cursor-grab active:cursor-grabbing group shadow-sm hover:shadow-md transition-all"
         >
             <div className="flex justify-between items-start mb-2">
-                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide ${task.priority === 'urgent' ? 'bg-red-50 text-red-600' : task.priority === 'high' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>{task.priority}</span>
+                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide ${task.priority === 'urgent' ? 'bg-red-50 text-red-600' : task.priority === 'high' ? 'bg-orange-50 text-orange-600' : 'bg-primary-50 text-primary-600'}`}>{task.priority}</span>
                 <button className="text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"><MoreHorizontal className="w-4 h-4" /></button>
             </div>
             <h4 className="text-sm font-medium text-gray-800 mb-2">{task.title}</h4>

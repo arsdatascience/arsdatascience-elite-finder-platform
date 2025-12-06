@@ -142,7 +142,7 @@ export const AssetLibrary: React.FC = () => {
         if (mimeType.startsWith('image/')) return <Image className="w-8 h-8 text-purple-500" />;
         if (mimeType.startsWith('video/')) return <Video className="w-8 h-8 text-red-500" />;
         if (mimeType.includes('pdf')) return <FileText className="w-8 h-8 text-orange-500" />;
-        return <FileIcon className="w-8 h-8 text-blue-500" />;
+        return <FileIcon className="w-8 h-8 text-primary-500" />;
     };
 
     const formatSize = (bytes: number) => {
@@ -162,7 +162,7 @@ export const AssetLibrary: React.FC = () => {
                     <div className="flex items-center space-x-2 text-gray-500 text-sm">
                         <button
                             onClick={() => navigateUp(-1)}
-                            className="hover:text-blue-600 flex items-center transition-colors"
+                            className="hover:text-primary-600 flex items-center transition-colors"
                         >
                             <Home size={16} />
                         </button>
@@ -171,7 +171,7 @@ export const AssetLibrary: React.FC = () => {
                                 <ChevronRight size={14} />
                                 <button
                                     onClick={() => navigateUp(idx)}
-                                    className="hover:text-blue-600 transition-colors"
+                                    className="hover:text-primary-600 transition-colors"
                                 >
                                     {folder.name}
                                 </button>
@@ -189,7 +189,7 @@ export const AssetLibrary: React.FC = () => {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && loadContent()}
-                            className="bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500 w-64 shadow-sm"
+                            className="bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-primary-500 w-64 shadow-sm"
                         />
                     </div>
 
@@ -202,7 +202,7 @@ export const AssetLibrary: React.FC = () => {
                     </button>
 
                     <label className={`
-                        bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer shadow-sm font-medium
+                        bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer shadow-sm font-medium
                         ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
                     `}>
                         <Upload size={18} />
@@ -234,9 +234,9 @@ export const AssetLibrary: React.FC = () => {
                                         <div
                                             key={folder.id}
                                             onClick={() => navigateToFolder(folder)}
-                                            className="group bg-white p-4 rounded-xl border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer flex flex-col items-center text-center gap-3"
+                                            className="group bg-white p-4 rounded-xl border border-gray-200 hover:border-primary-500 hover:shadow-md transition-all cursor-pointer flex flex-col items-center text-center gap-3"
                                         >
-                                            <div className="p-3 bg-blue-50 rounded-full text-blue-500 group-hover:bg-blue-100 group-hover:scale-110 transition-transform">
+                                            <div className="p-3 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-100 group-hover:scale-110 transition-transform">
                                                 <Folder size={32} fill="currentColor" fillOpacity={0.2} />
                                             </div>
                                             <div className="flex justify-between w-full items-center">
@@ -263,7 +263,7 @@ export const AssetLibrary: React.FC = () => {
                                     {assets.map(asset => (
                                         <div
                                             key={asset.id}
-                                            className="group bg-white rounded-xl border border-gray-200 hover:border-blue-400 hover:shadow-md overflow-hidden transition-all flex flex-col"
+                                            className="group bg-white rounded-xl border border-gray-200 hover:border-primary-400 hover:shadow-md overflow-hidden transition-all flex flex-col"
                                         >
                                             {/* Preview / Icon Area */}
                                             <div className="h-32 bg-gray-50 flex items-center justify-center relative border-b border-gray-100">
@@ -282,7 +282,7 @@ export const AssetLibrary: React.FC = () => {
                                                         download
                                                         target="_blank"
                                                         rel="noreferrer"
-                                                        className="p-2 bg-white/90 rounded-full hover:bg-blue-600 hover:text-white text-gray-700 transition-colors shadow-sm"
+                                                        className="p-2 bg-white/90 rounded-full hover:bg-primary-600 hover:text-white text-gray-700 transition-colors shadow-sm"
                                                         title="Download"
                                                     >
                                                         <Download size={16} />
@@ -342,7 +342,7 @@ export const AssetLibrary: React.FC = () => {
                             onChange={(e) => setNewFolderName(e.target.value)}
                             placeholder="Nome da pasta"
                             autoFocus
-                            className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 mb-6 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 mb-6 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                         />
                         <div className="flex justify-end gap-3">
                             <button
@@ -353,7 +353,7 @@ export const AssetLibrary: React.FC = () => {
                             </button>
                             <button
                                 onClick={handleCreateFolder}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors font-medium"
                             >
                                 Criar
                             </button>

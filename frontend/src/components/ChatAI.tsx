@@ -13,8 +13,8 @@ export const ChatAI: React.FC = () => {
         <button
           onClick={() => setActiveTab('chat')}
           className={`flex-1 px-6 py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'chat'
-              ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-200'
-              : 'bg-white text-gray-600 hover:bg-gray-50'
+            ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-200'
+            : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
         >
           <MessageSquare size={20} />
@@ -23,8 +23,8 @@ export const ChatAI: React.FC = () => {
         <button
           onClick={() => setActiveTab('analysis')}
           className={`flex-1 px-6 py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'analysis'
-              ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-200'
-              : 'bg-white text-gray-600 hover:bg-gray-50'
+            ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg shadow-purple-200'
+            : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
         >
           <BrainCircuit size={20} />

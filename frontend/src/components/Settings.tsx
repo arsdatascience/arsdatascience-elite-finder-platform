@@ -494,7 +494,7 @@ export const Settings: React.FC = () => {
                 <img
                   src={currentUser.avatarUrl || "https://github.com/shadcn.png"}
                   alt="Avatar"
-                  className="w-24 h-24 rounded-full border-4 border-blue-100 object-cover group-hover:opacity-80 transition-opacity"
+                  className="w-24 h-24 rounded-full border-4 border-primary-100 object-cover group-hover:opacity-80 transition-opacity"
                 />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="bg-black/50 text-white p-1 rounded-full">
@@ -514,7 +514,7 @@ export const Settings: React.FC = () => {
                 <p className="text-sm text-gray-500">{currentUser.role}</p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="mt-2 text-sm text-primary-600 hover:text-primary-700 font-medium"
                 >
                   Alterar foto
                 </button>
@@ -535,7 +535,7 @@ export const Settings: React.FC = () => {
                     const lastName = parts.slice(1).join(' ');
                     setTeamMembers(prev => prev.map(m => m.id === currentUser.id ? { ...m, firstName, lastName } : m));
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -544,7 +544,7 @@ export const Settings: React.FC = () => {
                   type="email"
                   value={currentUser.email}
                   onChange={(e) => setTeamMembers(prev => prev.map(m => m.id === currentUser.id ? { ...m, email: e.target.value } : m))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -557,7 +557,7 @@ export const Settings: React.FC = () => {
                     setTeamMembers(prev => prev.map(m => m.id === currentUser.id ? { ...m, phone: masked } : m));
                   }}
                   maxLength={15}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -572,7 +572,7 @@ export const Settings: React.FC = () => {
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+              <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2">
                 <Save size={16} />
                 Salvar Alterações
               </button>
@@ -590,12 +590,12 @@ export const Settings: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg flex items-start gap-3">
-              <Shield className="text-blue-600 mt-0.5" size={20} />
+            <div className="p-4 bg-blue-50 border border-primary-100 rounded-lg flex items-start gap-3">
+              <Shield className="text-primary-600 mt-0.5" size={20} />
               <div>
-                <h4 className="font-bold text-blue-900 text-sm">Autenticação de Dois Fatores (2FA)</h4>
-                <p className="text-xs text-blue-700 mt-1">Adicione uma camada extra de segurança à sua conta.</p>
-                <button className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-800 uppercase tracking-wide">Ativar 2FA</button>
+                <h4 className="font-bold text-primary-900 text-sm">Autenticação de Dois Fatores (2FA)</h4>
+                <p className="text-xs text-primary-700 mt-1">Adicione uma camada extra de segurança à sua conta.</p>
+                <button className="mt-2 text-xs font-bold text-primary-600 hover:text-blue-800 uppercase tracking-wide">Ativar 2FA</button>
               </div>
             </div>
 
@@ -605,7 +605,7 @@ export const Settings: React.FC = () => {
                 <div className="relative">
                   <input
                     type="password"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     placeholder="••••••••"
                   />
                   <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -616,7 +616,7 @@ export const Settings: React.FC = () => {
                 <div className="relative">
                   <input
                     type="password"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     placeholder="••••••••"
                   />
                   <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -627,7 +627,7 @@ export const Settings: React.FC = () => {
                 <div className="relative">
                   <input
                     type="password"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     placeholder="••••••••"
                   />
                   <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -662,7 +662,7 @@ export const Settings: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setIsEditingOpenAi(!isEditingOpenAi)}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                 >
                   {isEditingOpenAi ? 'Cancelar' : 'Editar'}
                 </button>
@@ -709,7 +709,7 @@ export const Settings: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setIsEditingGemini(!isEditingGemini)}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                 >
                   {isEditingGemini ? 'Cancelar' : 'Editar'}
                 </button>
@@ -756,7 +756,7 @@ export const Settings: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setIsEditingAnthropic(!isEditingAnthropic)}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                 >
                   {isEditingAnthropic ? 'Cancelar' : 'Editar'}
                 </button>
@@ -813,7 +813,7 @@ export const Settings: React.FC = () => {
                         <p className="text-xs text-gray-500 mt-0.5">Última sincronização: {integ.lastSync}</p>
                       </div>
                     </div>
-                    <button className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${isConnected ? 'bg-white border-red-200 text-red-600 hover:bg-red-50' : 'bg-blue-600 border-transparent text-white hover:bg-blue-700 shadow-sm'}`}>
+                    <button className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${isConnected ? 'bg-white border-red-200 text-red-600 hover:bg-red-50' : 'bg-primary-600 border-transparent text-white hover:bg-primary-700 shadow-sm'}`}>
                       {isConnected ? 'Desconectar' : 'Conectar Agora'}
                     </button>
                   </div>
@@ -834,7 +834,7 @@ export const Settings: React.FC = () => {
               <div className="flex gap-2">
                 <button
                   onClick={handleOpenAddMember}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
                 >
                   <Plus size={18} />
                   Adicionar Membro
@@ -874,7 +874,7 @@ export const Settings: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-primary-100 text-primary-800">
                             {member.role}
                           </span>
                         </td>
@@ -886,7 +886,7 @@ export const Settings: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button
                             onClick={() => handleEditMember(member)}
-                            className="text-blue-600 hover:text-blue-900 mr-3"
+                            className="text-primary-600 hover:text-primary-900 mr-3"
                           >
                             <Edit2 size={18} />
                           </button>
@@ -914,14 +914,14 @@ export const Settings: React.FC = () => {
               <p className="text-sm text-gray-500">Gerencie seu plano, pagamentos e histórico de faturas.</p>
             </div>
             {/* Conteúdo de Billing mantido simplificado para focar nas mudanças solicitadas */}
-            <div className="border-2 border-blue-200 bg-blue-50 rounded-xl p-6">
+            <div className="border-2 border-primary-200 bg-primary-50 rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h4 className="text-xl font-bold text-gray-900">Plano Pro</h4>
                   <p className="text-sm text-gray-600">Renovação automática em 15 de Dezembro de 2025</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-bold text-blue-600">R$ 997</div>
+                  <div className="text-3xl font-bold text-primary-600">R$ 997</div>
                   <div className="text-sm text-gray-600">/mês</div>
                 </div>
               </div>
@@ -981,7 +981,7 @@ export const Settings: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm border border-blue-100' : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-primary-600 shadow-sm border border-primary-100' : 'text-gray-600 hover:bg-gray-100 border border-transparent'
                 }`}
             >
               <tab.icon size={16} />
@@ -991,7 +991,7 @@ export const Settings: React.FC = () => {
           {user?.role === 'Admin' && (
             <button
               onClick={() => setActiveTab('admin')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'admin' ? 'bg-white text-blue-600 shadow-sm border border-blue-100' : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'admin' ? 'bg-white text-primary-600 shadow-sm border border-primary-100' : 'text-gray-600 hover:bg-gray-100 border border-transparent'
                 }`}
             >
               <Shield size={16} className="text-purple-600" />
@@ -1012,7 +1012,7 @@ export const Settings: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === tab.id ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <tab.icon size={18} /> {tab.label}
             </button>
@@ -1021,7 +1021,7 @@ export const Settings: React.FC = () => {
           {user?.role === 'Admin' && (
             <button
               onClick={() => setActiveTab('admin')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'admin' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'admin' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <Shield size={18} className="text-purple-600" /> Admin
             </button>
@@ -1082,29 +1082,29 @@ export const Settings: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
-                  <input {...register('firstName')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="João" />
+                  <input {...register('firstName')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="João" />
                   {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sobrenome *</label>
-                  <input {...register('lastName')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Silva" />
+                  <input {...register('lastName')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Silva" />
                   {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Username *</label>
-                  <input {...register('username')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="joaosilva" />
+                  <input {...register('username')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="joaosilva" />
                   {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                  <input {...register('email')} type="email" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="joao@exemplo.com" />
+                  <input {...register('email')} type="email" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="joao@exemplo.com" />
                   {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Telefone *</label>
                   <input
                     {...register('phone')}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="(11) 99999-9999"
                     onChange={(e) => {
                       e.target.value = maskPhone(e.target.value);
@@ -1117,7 +1117,7 @@ export const Settings: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">CPF *</label>
                   <input
                     {...register('cpf')}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="000.000.000-00"
                     onChange={(e) => {
                       e.target.value = maskCPF(e.target.value);
@@ -1128,7 +1128,7 @@ export const Settings: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
-                  <select {...register('role')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  <select {...register('role')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
                     <option value="Vendedor">Vendedor</option>
                     <option value="Gerente">Gerente</option>
                     <option value="Suporte">Suporte</option>
@@ -1137,14 +1137,14 @@ export const Settings: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Data de Registro</label>
-                  <input {...register('registrationDate')} type="date" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <input {...register('registrationDate')} type="date" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
                 </div>
               </div>
 
               {/* Endereço */}
               <section>
                 <h4 className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
-                  <MapPin size={16} className="text-blue-600" /> Endereço
+                  <MapPin size={16} className="text-primary-600" /> Endereço
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="md:col-span-3">
@@ -1194,7 +1194,7 @@ export const Settings: React.FC = () => {
               {/* Permissões */}
               <section>
                 <h4 className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
-                  <Lock size={16} className="text-blue-600" /> Permissões e Acesso
+                  <Lock size={16} className="text-primary-600" /> Permissões e Acesso
                 </h4>
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <div className="mb-4">
@@ -1212,7 +1212,7 @@ export const Settings: React.FC = () => {
                     <div className="grid grid-cols-2 gap-2">
                       {['Visualizar Dashboard', 'Gerenciar Campanhas', 'Gerenciar Leads', 'Exportar Relatórios', 'Configurações do Sistema', 'Gerenciar Equipe'].map((perm, idx) => (
                         <label key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                          <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-500" defaultChecked={currentMember.role === 'Admin'} />
+                          <input type="checkbox" className="rounded text-primary-600 focus:ring-primary-500" defaultChecked={currentMember.role === 'Admin'} />
                           {perm}
                         </label>
                       ))}
@@ -1224,12 +1224,12 @@ export const Settings: React.FC = () => {
               {/* Senha e Segurança */}
               <section className="border-t pt-4 mt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-sm uppercase tracking-wider"><Lock size={16} className="text-blue-600" /> Segurança</h4>
+                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-sm uppercase tracking-wider"><Lock size={16} className="text-primary-600" /> Segurança</h4>
                   {isEditingMember && (
                     <button
                       type="button"
                       onClick={() => setWantsToChangePassword(!wantsToChangePassword)}
-                      className="text-xs text-blue-600 font-medium hover:underline"
+                      className="text-xs text-primary-600 font-medium hover:underline"
                     >
                       {wantsToChangePassword ? 'Cancelar alteração de senha' : 'Alterar senha'}
                     </button>
@@ -1244,7 +1244,7 @@ export const Settings: React.FC = () => {
                         <input
                           type="password"
                           {...register('oldPassword')}
-                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                           placeholder="Sua senha atual"
                         />
                       </div>
@@ -1269,7 +1269,7 @@ export const Settings: React.FC = () => {
                         <input
                           type={showPassword ? "text" : "password"}
                           {...register(isEditingMember ? 'newPassword' : 'password')}
-                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none pr-10"
                           placeholder="Mínimo de 8 caracteres"
                         />
                         <button
@@ -1291,7 +1291,7 @@ export const Settings: React.FC = () => {
                 <button type="button" onClick={() => setIsMemberModalOpen(false)} className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50">
                   Cancelar
                 </button>
-                <button type="submit" className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-lg shadow-blue-200">
+                <button type="submit" className="px-6 py-2.5 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 shadow-lg shadow-primary-200">
                   {isEditingMember ? 'Salvar Alterações' : 'Adicionar Membro'}
                 </button>
               </div>

@@ -95,12 +95,12 @@ const SOPManager: React.FC = () => {
             <div className="p-6 text-gray-900 max-w-4xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-900">
-                        <List className="text-emerald-600" />
+                        <List className="text-slate-600" />
                         {editingTemplate.id === 0 ? 'Create Process' : 'Edit Process'}
                     </h2>
                     <div className="flex gap-2">
                         <button onClick={() => setEditingTemplate(null)} className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors">Cancel</button>
-                        <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2 transition-colors shadow-sm">
+                        <button onClick={handleSave} className="px-4 py-2 rounded-lg bg-slate-600 hover:bg-slate-700 text-white flex items-center gap-2 transition-colors shadow-sm">
                             <Save size={18} /> Save Template
                         </button>
                     </div>
@@ -114,7 +114,7 @@ const SOPManager: React.FC = () => {
                                 type="text"
                                 value={editingTemplate.name}
                                 onChange={(e) => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-gray-900 transition-all"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 focus:border-slate-500 focus:ring-slate-500 outline-none text-gray-900 transition-all"
                             />
                         </div>
                         <div>
@@ -123,7 +123,7 @@ const SOPManager: React.FC = () => {
                                 type="text"
                                 value={editingTemplate.category}
                                 onChange={(e) => setEditingTemplate({ ...editingTemplate, category: e.target.value })}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-gray-900 transition-all"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 focus:border-slate-500 focus:ring-slate-500 outline-none text-gray-900 transition-all"
                             />
                         </div>
                     </div>
@@ -132,7 +132,7 @@ const SOPManager: React.FC = () => {
                         <textarea
                             value={editingTemplate.description}
                             onChange={(e) => setEditingTemplate({ ...editingTemplate, description: e.target.value })}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 h-20 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none text-gray-900 transition-all"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 h-20 focus:border-slate-500 focus:ring-slate-500 outline-none text-gray-900 transition-all"
                         />
                     </div>
                 </div>
@@ -140,14 +140,14 @@ const SOPManager: React.FC = () => {
                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold text-gray-900">Process Steps</h3>
-                        <button onClick={addItem} className="text-emerald-600 hover:text-emerald-700 text-sm flex items-center gap-1 font-medium">
+                        <button onClick={addItem} className="text-slate-600 hover:text-emerald-700 text-sm flex items-center gap-1 font-medium">
                             <Plus size={16} /> Add Step
                         </button>
                     </div>
 
                     <div className="space-y-3">
                         {items.map((item, index) => (
-                            <div key={index} className="flex gap-3 items-start bg-gray-50 p-3 rounded-lg border border-gray-200 group hover:border-emerald-200 transition-colors">
+                            <div key={index} className="flex gap-3 items-start bg-gray-50 p-3 rounded-lg border border-gray-200 group hover:border-slate-300 transition-colors">
                                 <div className="pt-2 text-gray-400 text-sm font-medium">#{index + 1}</div>
                                 <div className="flex-1 space-y-2">
                                     <div className="flex gap-2">
@@ -202,7 +202,7 @@ const SOPManager: React.FC = () => {
                 </div>
                 <button
                     onClick={handleCreate}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-md hover:shadow-lg shadow-emerald-600/20"
+                    className="bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-md hover:shadow-lg shadow-emerald-600/20"
                 >
                     <Plus size={20} /> New Template
                 </button>
@@ -217,7 +217,7 @@ const SOPManager: React.FC = () => {
                             </button>
                         </div>
 
-                        <div className="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 mb-4 group-hover:scale-105 transition-transform">
+                        <div className="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center text-slate-600 mb-4 group-hover:scale-105 transition-transform">
                             <Folder size={24} />
                         </div>
 

@@ -18,14 +18,12 @@ import {
     AlertTriangle,
     Building,
     LogOut,
-    Lock,
     Shield,
     Eye,
     EyeOff,
     Save,
     X,
-    MapPin,
-    Upload
+    MapPin
 } from 'lucide-react';
 
 // Schema de Validação
@@ -269,7 +267,7 @@ const AdminDashboard: React.FC = () => {
             <StatCard
                 title="Total Usuários"
                 value={users.length.toString()}
-                icon={<Users className="w-6 h-6 text-blue-400" />}
+                icon={<Users className="w-6 h-6 text-primary-400" />}
                 trend="+12% este mês"
             />
             <StatCard
@@ -302,7 +300,7 @@ const AdminDashboard: React.FC = () => {
                         <input
                             type="text"
                             placeholder="Buscar usuário..."
-                            className="bg-[#0f172a] border border-slate-600 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+                            className="bg-[#0f172a] border border-slate-600 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-primary-500"
                         />
                     </div>
                     <button
@@ -311,7 +309,7 @@ const AdminDashboard: React.FC = () => {
                             reset({ role: 'Vendedor', status: 'active' });
                             setIsUserModalOpen(true);
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                     >
                         + Novo Usuário
                     </button>
@@ -341,7 +339,7 @@ const AdminDashboard: React.FC = () => {
                                     {user.tenant_name || '-'}
                                 </td>
                                 <td className="px-6 py-4">
-                                    <span className={`px-2 py-1 rounded-full text-xs ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                    <span className={`px-2 py-1 rounded-full text-xs ${user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-primary-500/20 text-primary-400'}`}>
                                         {user.role}
                                     </span>
                                 </td>
@@ -353,7 +351,7 @@ const AdminDashboard: React.FC = () => {
                                 <td className="px-6 py-4">{user.plan || 'Free'}</td>
                                 <td className="px-6 py-4">{new Date(user.created_at).toLocaleDateString()}</td>
                                 <td className="px-6 py-4 text-right">
-                                    <button onClick={() => handleEditUser(user)} className="text-blue-400 hover:text-blue-300 mr-3">
+                                    <button onClick={() => handleEditUser(user)} className="text-primary-400 hover:text-primary-300 mr-3">
                                         <Edit className="w-4 h-4" />
                                     </button>
                                     <button onClick={() => handleDeleteUser(user.id)} className="text-red-400 hover:text-red-300">
@@ -379,7 +377,7 @@ const AdminDashboard: React.FC = () => {
                             href={`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/admin/queues`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
+                            className="bg-primary-600 hover:bg-primary-700 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
                         >
                             Ver Painel <Activity size={12} />
                         </a>
@@ -391,7 +389,7 @@ const AdminDashboard: React.FC = () => {
                         </div>
                         <div className="bg-[#0f172a] p-4 rounded-lg">
                             <div className="text-slate-400 text-sm">Processing</div>
-                            <div className="text-2xl font-bold text-blue-400">{queueStats?.stats?.processing || 0}</div>
+                            <div className="text-2xl font-bold text-primary-400">{queueStats?.stats?.processing || 0}</div>
                         </div>
                     </div>
                 </div>
@@ -481,7 +479,7 @@ const AdminDashboard: React.FC = () => {
             {/* Mobile Nav */}
             <div className="md:hidden w-full bg-[#1e293b] border-b border-slate-700 overflow-x-auto shrink-0">
                 <div className="p-4 border-b border-slate-700">
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-primary-400 to-purple-500 bg-clip-text text-transparent">
                         Admin Panel
                     </h1>
                 </div>
@@ -490,7 +488,7 @@ const AdminDashboard: React.FC = () => {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-primary-600 text-white' : 'text-slate-400 hover:bg-slate-800'
                                 }`}
                         >
                             <tab.icon size={16} />
@@ -503,7 +501,7 @@ const AdminDashboard: React.FC = () => {
             {/* Sidebar Admin (Desktop) */}
             <div className="hidden md:flex w-64 bg-[#1e293b] border-r border-slate-700 flex-col shrink-0">
                 <div className="p-6 border-b border-slate-700">
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-primary-400 to-purple-500 bg-clip-text text-transparent">
                         Admin Panel
                     </h1>
                     <p className="text-xs text-slate-500 mt-1">SaaS Management</p>
@@ -535,7 +533,7 @@ const AdminDashboard: React.FC = () => {
                         <div className="text-sm text-slate-400">
                             Logado como <span className="text-white font-medium">{user?.name}</span>
                         </div>
-                        <img src={user?.avatar_url || "https://github.com/shadcn.png"} alt="Admin" className="w-10 h-10 rounded-full border-2 border-blue-500" />
+                        <img src={user?.avatar_url || "https://github.com/shadcn.png"} alt="Admin" className="w-10 h-10 rounded-full border-2 border-primary-500" />
                         <button
                             onClick={logout}
                             className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
@@ -577,7 +575,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
                                         <input
                                             {...register('firstName')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                             placeholder="Primeiro nome"
                                         />
                                         {errors.firstName && <span className="text-red-500 text-xs">{errors.firstName.message}</span>}
@@ -586,7 +584,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Sobrenome *</label>
                                         <input
                                             {...register('lastName')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                             placeholder="Sobrenome"
                                         />
                                         {errors.lastName && <span className="text-red-500 text-xs">{errors.lastName.message}</span>}
@@ -596,7 +594,7 @@ const AdminDashboard: React.FC = () => {
                                         <input
                                             {...register('email')}
                                             type="email"
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                             placeholder="email@empresa.com"
                                         />
                                         {errors.email && <span className="text-red-500 text-xs">{errors.email.message}</span>}
@@ -605,7 +603,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
                                         <input
                                             {...register('phone')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                             placeholder="(00) 00000-0000"
                                         />
                                     </div>
@@ -613,7 +611,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
                                         <input
                                             {...register('cpf')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                             placeholder="000.000.000-00"
                                         />
                                     </div>
@@ -630,7 +628,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
                                         <input
                                             {...register('address.zip')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                             placeholder="00000-000"
                                         />
                                     </div>
@@ -638,7 +636,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Rua</label>
                                         <input
                                             {...register('address.street')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                             placeholder="Nome da rua"
                                         />
                                     </div>
@@ -646,7 +644,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
                                         <input
                                             {...register('address.number')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                             placeholder="123"
                                         />
                                     </div>
@@ -654,7 +652,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
                                         <input
                                             {...register('address.complement')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                             placeholder="Apto 101"
                                         />
                                     </div>
@@ -662,7 +660,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
                                         <input
                                             {...register('address.district')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                             placeholder="Bairro"
                                         />
                                     </div>
@@ -670,7 +668,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
                                         <input
                                             {...register('address.city')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                             placeholder="Cidade"
                                         />
                                     </div>
@@ -678,7 +676,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                                         <input
                                             {...register('address.state')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                             placeholder="UF"
                                             maxLength={2}
                                         />
@@ -694,7 +692,7 @@ const AdminDashboard: React.FC = () => {
                                 <div>
                                     <select
                                         {...register('tenant_id')}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white text-gray-900"
                                     >
                                         <option value="">Sem empresa (Global)</option>
                                         {tenants.map(tenant => (
@@ -714,7 +712,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Função (Role)</label>
                                         <select
                                             {...register('role')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white text-gray-900"
                                         >
                                             <option value="Vendedor">Vendedor</option>
                                             <option value="Gerente">Gerente</option>
@@ -726,7 +724,7 @@ const AdminDashboard: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                                         <select
                                             {...register('status')}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white text-gray-900"
                                         >
                                             <option value="active">Ativo</option>
                                             <option value="inactive">Inativo</option>
@@ -742,7 +740,7 @@ const AdminDashboard: React.FC = () => {
                                             <input
                                                 {...register('newPassword')}
                                                 type={showPassword ? 'text' : 'password'}
-                                                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none pr-10 text-gray-900"
+                                                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none pr-10 text-gray-900"
                                                 placeholder={editingUser ? '••••••••' : 'Senha segura'}
                                             />
                                             <button
@@ -767,7 +765,7 @@ const AdminDashboard: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                    className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center gap-2"
                                 >
                                     <Save size={18} />
                                     Salvar Usuário
@@ -783,7 +781,7 @@ const AdminDashboard: React.FC = () => {
 
 // Helper Components
 const StatCard = ({ title, value, icon, subValue, trend, isAlert }: any) => (
-    <div className={`bg-[#1e293b] p-6 rounded-xl border ${isAlert ? 'border-red-500/50' : 'border-slate-700'} hover:border-blue-500/50 transition-colors`}>
+    <div className={`bg-[#1e293b] p-6 rounded-xl border ${isAlert ? 'border-red-500/50' : 'border-slate-700'} hover:border-primary-500/50 transition-colors`}>
         <div className="flex justify-between items-start mb-4">
             <div>
                 <div className="text-slate-400 text-sm font-medium mb-1">{title}</div>
@@ -806,7 +804,7 @@ const NavItem = ({ active, onClick, icon, label }: any) => (
     <button
         onClick={onClick}
         className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${active
-            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+            ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20'
             : 'text-slate-400 hover:bg-slate-800 hover:text-white'
             }`}
     >

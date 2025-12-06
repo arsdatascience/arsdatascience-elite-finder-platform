@@ -101,7 +101,7 @@ export const ServiceCatalog: React.FC = () => {
                 </div>
                 <button
                     onClick={() => handleOpenModal()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+                    className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
                 >
                     <Plus size={20} />
                     Novo Serviço
@@ -117,7 +117,7 @@ export const ServiceCatalog: React.FC = () => {
                             placeholder="Buscar serviços..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                         />
                     </div>
                 </div>
@@ -140,7 +140,7 @@ export const ServiceCatalog: React.FC = () => {
                                     <tr key={service.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                                                <div className="p-2 bg-primary-50 text-primary-600 rounded-lg">
                                                     <Package size={20} />
                                                 </div>
                                                 <div>
@@ -161,7 +161,7 @@ export const ServiceCatalog: React.FC = () => {
                                             <div className="flex justify-end gap-2">
                                                 <button
                                                     onClick={() => handleOpenModal(service)}
-                                                    className="p-1.5 text-gray-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+                                                    className="p-1.5 text-gray-400 hover:text-primary-600 rounded-md hover:bg-primary-50 transition-colors"
                                                 >
                                                     <Edit size={18} />
                                                 </button>
@@ -206,7 +206,7 @@ export const ServiceCatalog: React.FC = () => {
                                     required
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                                 />
                             </div>
 
@@ -222,7 +222,7 @@ export const ServiceCatalog: React.FC = () => {
                                             step="0.01"
                                             value={formData.price}
                                             onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                                            className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                            className="w-full border border-gray-300 rounded-lg pl-9 pr-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                                         />
                                     </div>
                                 </div>
@@ -231,7 +231,7 @@ export const ServiceCatalog: React.FC = () => {
                                     <select
                                         value={formData.category}
                                         onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
                                     >
                                         <option value="Consultoria">Consultoria</option>
                                         <option value="Gestão de Mídias">Gestão de Mídias</option>
@@ -245,7 +245,7 @@ export const ServiceCatalog: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
                                 <textarea
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none h-24 resize-none"
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none h-24 resize-none"
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
                                     placeholder="Descreva o que está incluso no serviço..."
@@ -262,7 +262,7 @@ export const ServiceCatalog: React.FC = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
                                 >
                                     {currentService ? 'Salvar Alterações' : 'Criar Serviço'}
                                 </button>

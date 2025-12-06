@@ -39,7 +39,7 @@ const RAW_FINANCE_DATA = [
   { name: 'Dez/25', monthIndex: 11, year: 2025, revenue: 200000, spend: 70000 },
 ];
 
-const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'];
+const COLORS = ['#1e293b', '#475569', '#64748b', '#94a3b8'];
 
 type WidgetType = 'kpis' | 'finance_chart' | 'funnel' | 'distribution' | 'top_campaigns' | 'recent_leads' | 'notes';
 
@@ -214,7 +214,7 @@ export const Reports: React.FC = () => {
         return (
           <section className="mb-8">
             <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-b border-gray-200 pb-2">
-              <Activity size={20} className="text-blue-600" /> Resumo de Performance
+              <Activity size={20} className="text-slate-700" /> Resumo de Performance
             </h3>
             <div className="grid grid-cols-2 gap-6">
               {reportData.kpis.map((kpi, i) => (
@@ -237,15 +237,15 @@ export const Reports: React.FC = () => {
         return (
           <section className="mb-8">
             <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2 flex items-center gap-2">
-              <BarChart2 size={20} className="text-indigo-600" /> Evolução Financeira
+              <BarChart2 size={20} className="text-slate-700" /> Evolução Financeira
             </h3>
             <div className="h-80 border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={reportData.finance} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#64748b" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#64748b" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -255,8 +255,8 @@ export const Reports: React.FC = () => {
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
                     formatter={(value: any) => [formatCurrency(value), '']}
                   />
-                  <Area type="monotone" dataKey="revenue" name="Receita" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" isAnimationActive={false}>
-                    <LabelList dataKey="revenue" position="top" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#3b82f6', fontWeight: 'bold' }} />
+                  <Area type="monotone" dataKey="revenue" name="Receita" stroke="#64748b" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" isAnimationActive={false}>
+                    <LabelList dataKey="revenue" position="top" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#64748b', fontWeight: 'bold' }} />
                   </Area>
                   <Area type="monotone" dataKey="spend" name="Investimento" stroke="#f43f5e" strokeWidth={2} fill="none" strokeDasharray="5 5" isAnimationActive={false} />
                   <Legend verticalAlign="top" height={36} iconType="circle" />
@@ -269,7 +269,7 @@ export const Reports: React.FC = () => {
         return (
           <section className="mb-8">
             <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2 flex items-center gap-2">
-              <PieIcon size={20} className="text-purple-600" /> Distribuição de Verba
+              <PieIcon size={20} className="text-slate-700" /> Distribuição de Verba
             </h3>
             <div className="h-64 border border-gray-100 rounded-xl p-4 bg-white shadow-sm flex items-center justify-center" style={{ minHeight: '256px' }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -307,7 +307,7 @@ export const Reports: React.FC = () => {
                   <YAxis dataKey="stage" type="category" width={80} tick={{ fontSize: 11, fontWeight: 'bold', fill: '#475569' }} axisLine={false} tickLine={false} />
                   <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
                   <Bar dataKey="google" name="Google Ads" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} isAnimationActive={false}>
-                    <LabelList dataKey="google" position="right" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#3b82f6', fontWeight: 'bold' }} />
+                    <LabelList dataKey="google" position="right" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#64748b', fontWeight: 'bold' }} />
                   </Bar>
                   <Bar dataKey="meta" name="Meta Ads" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={20} isAnimationActive={false}>
                     <LabelList dataKey="meta" position="right" formatter={(val: any) => formatK(val)} style={{ fontSize: '10px', fill: '#8b5cf6', fontWeight: 'bold' }} />
@@ -337,7 +337,7 @@ export const Reports: React.FC = () => {
                     <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                       <td className="p-3 font-medium text-gray-900">{c.name}</td>
                       <td className="p-3">
-                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${c.platform === 'google' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                        <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${c.platform === 'google' ? 'bg-gray-100 text-gray-700' : 'bg-gray-100 text-gray-700'}`}>
                           {c.platform.toUpperCase()}
                         </span>
                       </td>
@@ -368,7 +368,7 @@ export const Reports: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <p className="font-bold text-sm text-gray-900">{formatCurrency(lead.value)}</p>
-                    <span className="text-[10px] text-blue-600 font-medium">{lead.status}</span>
+                    <span className="text-[10px] text-slate-700 font-medium">{lead.status}</span>
                   </div>
                 </div>
               ))}
@@ -423,116 +423,105 @@ export const Reports: React.FC = () => {
           <div>
             <h2 className="text-2xl font-black text-gray-900 tracking-tight">Elite Analytics Hub <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle font-normal">{COMPONENT_VERSIONS.Reports}</span></h2>
             <p className="text-sm text-gray-500">Central de Inteligência e Relatórios Executivos</p>
-          </div>
-          <div className="flex gap-3">
-            <button onClick={() => handleAction('print')} className="px-4 py-2 rounded-lg border border-gray-300 font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-all">
-              <Printer size={18} /> Imprimir
-            </button>
-            <button onClick={() => handleAction('pdf')} className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700 flex items-center gap-2 shadow-lg shadow-indigo-200 transition-all">
-              <Download size={18} /> Exportar PDF
-            </button>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 uppercase">Título do Relatório</label>
+              <input
+                type="text"
+                value={reportTitle}
+                onChange={(e) => setReportTitle(e.target.value)}
+                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-slate-500"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 uppercase">Cliente</label>
+              <div className="relative">
+                <select value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-slate-500">
+                  {CLIENTS_LIST.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <Users size={16} className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 uppercase">Período</label>
+              <div className="flex gap-2">
+                <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="w-20 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
+                  <option value={2024}>2024</option>
+                  <option value={2025}>2025</option>
+                </select>
+                <select value={startMonth} onChange={(e) => setStartMonth(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
+                  {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                </select>
+                <span className="self-center text-gray-400">-</span>
+                <select value={endMonth} onChange={(e) => setEndMonth(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
+                  {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 uppercase">Módulos</label>
+              <div className="flex flex-wrap gap-2">
+                {AVAILABLE_WIDGETS.map(w => (
+                  <button
+                    key={w.id}
+                    onClick={() => toggleWidget(w.id)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${selectedWidgets.includes(w.id) ? 'bg-slate-200 border-slate-500 text-slate-800' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                  >
+                    {w.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase">Título do Relatório</label>
-            <input
-              type="text"
-              value={reportTitle}
-              onChange={(e) => setReportTitle(e.target.value)}
-              className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
+        {/* REPORT PAGES - ID ADICIONADO AQUI */}
+        <div id="printable-report" className="flex flex-col items-center pb-10">
+          {widgetChunks.map((chunk, pageIndex) => (
+            <div key={pageIndex} className="bg-white shadow-2xl mx-auto w-full max-w-[210mm] min-h-[297mm] p-[15mm] mb-8 page-break">
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase">Cliente</label>
-            <div className="relative">
-              <select value={selectedClientId} onChange={(e) => setSelectedClientId(e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none focus:ring-2 focus:ring-indigo-500">
-                {CLIENTS_LIST.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <Users size={16} className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
+              {/* Header */}
+              <header className="flex justify-between items-end border-b-2 border-gray-900 pb-6 mb-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-gray-900 text-white flex items-center justify-center rounded-xl shadow-lg">
+                    <Layout size={28} />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight leading-none mb-1">{reportTitle}</h1>
+                    <p className="text-sm text-gray-500 font-medium">Gerado em {new Date().toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-gray-900">{reportData.clientName}</p>
+                  <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full mt-1">
+                    <Calendar size={14} />
+                    {MONTHS[startMonth]}/{selectedYear} - {MONTHS[endMonth]}/{selectedYear}
+                  </div>
+                </div>
+              </header>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase">Período</label>
-            <div className="flex gap-2">
-              <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))} className="w-20 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
-                <option value={2024}>2024</option>
-                <option value={2025}>2025</option>
-              </select>
-              <select value={startMonth} onChange={(e) => setStartMonth(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
-                {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
-              </select>
-              <span className="self-center text-gray-400">-</span>
-              <select value={endMonth} onChange={(e) => setEndMonth(Number(e.target.value))} className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg font-medium outline-none">
-                {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
-              </select>
-            </div>
-          </div>
+              {/* Content */}
+              <div className="space-y-8">
+                {chunk.map(widgetId => (
+                  <div key={widgetId} className="break-inside-avoid">
+                    {renderWidgetContent(widgetId)}
+                  </div>
+                ))}
+              </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-gray-500 uppercase">Módulos</label>
-            <div className="flex flex-wrap gap-2">
-              {AVAILABLE_WIDGETS.map(w => (
-                <button
-                  key={w.id}
-                  onClick={() => toggleWidget(w.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${selectedWidgets.includes(w.id) ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'}`}
-                >
-                  {w.label}
-                </button>
-              ))}
+              {/* Footer */}
+              <footer className="mt-auto pt-8 border-t border-gray-100 text-center">
+                <div className="flex justify-between items-center text-[10px] text-gray-400 uppercase tracking-widest font-bold">
+                  <span>EliteFinder Intelligence</span>
+                  <span>Página {pageIndex + 1} de {widgetChunks.length}</span>
+                  <span>Confidencial</span>
+                </div>
+              </footer>
             </div>
-          </div>
+          ))}
         </div>
-      </div>
-
-      {/* REPORT PAGES - ID ADICIONADO AQUI */}
-      <div id="printable-report" className="flex flex-col items-center pb-10">
-        {widgetChunks.map((chunk, pageIndex) => (
-          <div key={pageIndex} className="bg-white shadow-2xl mx-auto w-full max-w-[210mm] min-h-[297mm] p-[15mm] mb-8 page-break">
-
-            {/* Header */}
-            <header className="flex justify-between items-end border-b-2 border-gray-900 pb-6 mb-10">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-gray-900 text-white flex items-center justify-center rounded-xl shadow-lg">
-                  <Layout size={28} />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-black text-gray-900 tracking-tight leading-none mb-1">{reportTitle}</h1>
-                  <p className="text-sm text-gray-500 font-medium">Gerado em {new Date().toLocaleDateString()}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-bold text-gray-900">{reportData.clientName}</p>
-                <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full mt-1">
-                  <Calendar size={14} />
-                  {MONTHS[startMonth]}/{selectedYear} - {MONTHS[endMonth]}/{selectedYear}
-                </div>
-              </div>
-            </header>
-
-            {/* Content */}
-            <div className="space-y-8">
-              {chunk.map(widgetId => (
-                <div key={widgetId} className="break-inside-avoid">
-                  {renderWidgetContent(widgetId)}
-                </div>
-              ))}
-            </div>
-
-            {/* Footer */}
-            <footer className="mt-auto pt-8 border-t border-gray-100 text-center">
-              <div className="flex justify-between items-center text-[10px] text-gray-400 uppercase tracking-widest font-bold">
-                <span>EliteFinder Intelligence</span>
-                <span>Página {pageIndex + 1} de {widgetChunks.length}</span>
-                <span>Confidencial</span>
-              </div>
-            </footer>
-          </div>
-        ))}
       </div>
     </div>
   );

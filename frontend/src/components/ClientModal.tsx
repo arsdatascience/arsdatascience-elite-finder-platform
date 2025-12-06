@@ -215,7 +215,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                                 <button type="button" onClick={() => window.open(`https://wa.me/55${client?.whatsapp?.replace(/\D/g, '')}`, '_blank')} className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm" title="WhatsApp">
                                     <MessageCircle size={16} />
                                 </button>
-                                <button type="button" onClick={() => window.location.href = `mailto:${client?.email}`} className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm" title="Email">
+                                <button type="button" onClick={() => window.location.href = `mailto:${client?.email}`} className="p-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors shadow-sm" title="Email">
                                     <Mail size={16} />
                                 </button>
                                 <button type="button" onClick={() => window.location.href = `tel:${client?.phone}`} className="p-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors shadow-sm" title="Ligar">
@@ -240,7 +240,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors whitespace-nowrap border-b-2 ${activeTab === tab.id ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+                                className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors whitespace-nowrap border-b-2 ${activeTab === tab.id ? 'border-primary-600 text-primary-600 bg-primary-50/50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
                             >
                                 <Icon size={16} />
                                 {tab.label}
@@ -259,18 +259,18 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                                     <label className="text-xs font-bold text-gray-700 uppercase">Tipo de Cadastro</label>
                                     <div className="flex items-center gap-4 bg-white p-2 rounded-lg border border-gray-200">
                                         <label className="flex items-center gap-2 cursor-pointer">
-                                            <input type="radio" value="PF" {...register('type')} className="text-blue-600 focus:ring-blue-500" />
+                                            <input type="radio" value="PF" {...register('type')} className="text-primary-600 focus:ring-primary-500" />
                                             <span className="text-sm">Pessoa Física</span>
                                         </label>
                                         <label className="flex items-center gap-2 cursor-pointer">
-                                            <input type="radio" value="PJ" {...register('type')} className="text-blue-600 focus:ring-blue-500" />
+                                            <input type="radio" value="PJ" {...register('type')} className="text-primary-600 focus:ring-primary-500" />
                                             <span className="text-sm">Pessoa Jurídica</span>
                                         </label>
                                     </div>
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-700 uppercase">Status</label>
-                                    <select {...register('status')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                                    <select {...register('status')} className="w-full p-2.5 rounded-lg border border-gray-200 bg-white focus:ring-2 focus:ring-primary-500 outline-none text-sm">
                                         <option value="active">Ativo</option>
                                         <option value="inactive">Inativo</option>
                                         <option value="lead">Lead</option>
@@ -278,12 +278,12 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                                 </div>
                                 <div className="space-y-1 md:col-span-2">
                                     <label className="text-xs font-bold text-gray-700 uppercase">Nome Completo / Razão Social <span className="text-red-500">*</span></label>
-                                    <input {...register('name')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                    <input {...register('name')} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all" />
                                     {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message as string}</p>}
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-bold text-gray-700 uppercase">Email <span className="text-red-500">*</span></label>
-                                    <input {...register('email')} type="email" className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                    <input {...register('email')} type="email" className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all" />
                                     {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message as string}</p>}
                                 </div>
                                 <div className="space-y-1">
@@ -292,7 +292,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                                         name="document"
                                         control={control}
                                         render={({ field }) => (
-                                            <input {...field} onChange={(e) => field.onChange(clientType === 'PF' ? maskCPF(e.target.value) : maskCNPJ(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                            <input {...field} onChange={(e) => field.onChange(clientType === 'PF' ? maskCPF(e.target.value) : maskCNPJ(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all" />
                                         )}
                                     />
                                     {errors.document && <p className="text-red-500 text-xs mt-1">{errors.document.message as string}</p>}
@@ -303,7 +303,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                                         name="phone"
                                         control={control}
                                         render={({ field }) => (
-                                            <input {...field} onChange={(e) => field.onChange(maskPhone(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                            <input {...field} onChange={(e) => field.onChange(maskPhone(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all" />
                                         )}
                                     />
                                     {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message as string}</p>}
@@ -314,7 +314,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                                         name="whatsapp"
                                         control={control}
                                         render={({ field }) => (
-                                            <input {...field} onChange={(e) => field.onChange(maskPhone(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                            <input {...field} onChange={(e) => field.onChange(maskPhone(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all" />
                                         )}
                                     />
                                 </div>
@@ -332,7 +332,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                                         name="cep"
                                         control={control}
                                         render={({ field }) => (
-                                            <input {...field} onChange={(e) => field.onChange(maskCEP(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                            <input {...field} onChange={(e) => field.onChange(maskCEP(e.target.value))} className="w-full p-2.5 rounded-lg border border-gray-200 focus:ring-2 focus:ring-primary-500 outline-none transition-all" />
                                         )}
                                     />
                                 </div>
@@ -392,7 +392,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                             {/* Tags */}
                             <div className="space-y-4">
                                 <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
-                                    <Tag className="text-blue-600" size={18} />
+                                    <Tag className="text-primary-600" size={18} />
                                     <h3 className="font-bold text-gray-800">Tags e Segmentação</h3>
                                 </div>
                                 <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
@@ -403,7 +403,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
                                                 type="button"
                                                 onClick={() => toggleTag(tag)}
                                                 className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${(Array.isArray(currentTags) ? currentTags : []).includes(tag)
-                                                    ? 'bg-blue-100 text-blue-700 border-blue-200 shadow-sm'
+                                                    ? 'bg-primary-100 text-primary-700 border-primary-200 shadow-sm'
                                                     : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                                                     }`}
                                             >
@@ -484,7 +484,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, isOpen, onClos
 
                 <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 shrink-0">
                     <button onClick={onClose} className="px-6 py-2 text-gray-700 font-medium hover:bg-gray-200 rounded-lg transition-colors">Cancelar</button>
-                    <button onClick={handleSubmit(onSubmit)} className="px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all flex items-center gap-2">
+                    <button onClick={handleSubmit(onSubmit)} className="px-6 py-2 bg-primary-600 text-white font-bold rounded-lg hover:bg-primary-700 shadow-lg shadow-primary-200 transition-all flex items-center gap-2">
                         <Save size={18} /> Salvar Cliente
                     </button>
                 </div>

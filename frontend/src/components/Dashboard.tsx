@@ -117,7 +117,7 @@ export const Dashboard: React.FC = () => {
               <select
                 value={selectedClient}
                 onChange={(e) => setSelectedClient(e.target.value)}
-                className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-64 pl-10 p-2.5 shadow-sm"
+                className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full sm:w-64 pl-10 p-2.5 shadow-sm"
               >
                 <option value="all">Todos os Clientes (Visão Global)</option>
                 {clients.filter((c: any) => c.id !== 'all').map((client: any) => (
@@ -148,19 +148,19 @@ export const Dashboard: React.FC = () => {
           <div className="bg-gray-100 p-1 rounded-lg flex self-start sm:self-end">
             <button
               onClick={() => setSelectedPlatform('all')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${selectedPlatform === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${selectedPlatform === 'all' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Unificado
             </button>
             <button
               onClick={() => setSelectedPlatform('google')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${selectedPlatform === 'google' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${selectedPlatform === 'google' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               <div className="w-2 h-2 rounded-full bg-blue-500"></div> Google Ads
             </button>
             <button
               onClick={() => setSelectedPlatform('meta')}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${selectedPlatform === 'meta' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${selectedPlatform === 'meta' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               <div className="w-2 h-2 rounded-full bg-purple-500"></div> Meta Ads
             </button>
@@ -173,7 +173,7 @@ export const Dashboard: React.FC = () => {
         {isLoadingKPIs ? (
           Array(4).fill(0).map((_, idx) => (
             <div key={idx} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-32 flex items-center justify-center">
-              <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+              <Loader2 className="w-6 h-6 text-primary-500 animate-spin" />
             </div>
           ))
         ) : (
@@ -207,7 +207,7 @@ export const Dashboard: React.FC = () => {
         <motion.div variants={itemVariants} className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative min-h-[400px]">
           {isLoadingChart && (
             <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center rounded-xl">
-              <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+              <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
             </div>
           )}
           <div className="flex items-center justify-between mb-6">
@@ -215,7 +215,7 @@ export const Dashboard: React.FC = () => {
               {selectedPlatform === 'all' ? 'Evolução: Google vs Meta vs Receita' :
                 selectedPlatform === 'google' ? 'Performance Google Ads' : 'Performance Meta Ads'}
             </h3>
-            <Info className="w-5 h-5 text-gray-400 cursor-pointer hover:text-blue-500" />
+            <Info className="w-5 h-5 text-gray-400 cursor-pointer hover:text-primary-500" />
           </div>
           <div className="h-80" style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer width="100%" height="100%" minWidth={0}>
@@ -421,11 +421,11 @@ export const Dashboard: React.FC = () => {
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* AI Insight */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <p className="text-sm text-blue-800 font-medium flex items-center gap-2 mb-3">
+          <p className="text-sm text-primary-800 font-medium flex items-center gap-2 mb-3">
             <Users size={18} /> Insight Estratégico da IA
           </p>
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 h-full">
-            <p className="text-sm text-blue-600">
+          <div className="p-4 bg-primary-50 rounded-lg border border-primary-100 h-full">
+            <p className="text-sm text-primary-600">
               {isLoadingInsight ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="w-3 h-3 animate-spin" />

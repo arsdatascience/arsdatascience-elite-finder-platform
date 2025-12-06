@@ -22,7 +22,7 @@ const SortableClientCard = ({ client, onClick }: { client: any, onClick: () => v
         <div ref={setNodeRef} style={style} {...attributes} {...listeners} onClick={onClick} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-pointer mb-3">
             <div className="flex justify-between items-start mb-2">
                 <h4 className="font-bold text-gray-800">{client.name}</h4>
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${client.type === 'PJ' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>{client.type}</span>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${client.type === 'PJ' ? 'bg-purple-100 text-purple-700' : 'bg-primary-100 text-primary-700'}`}>{client.type}</span>
             </div>
             <div className="text-xs text-gray-500 space-y-1">
                 <div className="flex items-center gap-1"><Building2 size={12} /> {client.company || '-'}</div>
@@ -169,7 +169,7 @@ export const ClientRegistration: React.FC = () => {
                 <div>
                     <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                         Gestão de Clientes
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{clients.length}</span>
+                        <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">{clients.length}</span>
                     </h2>
                     <p className="text-sm text-gray-500">Gerencie sua base de clientes e leads</p>
                 </div>
@@ -181,18 +181,18 @@ export const ClientRegistration: React.FC = () => {
                             placeholder="Buscar clientes..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-64"
+                            className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none w-64"
                         />
                     </div>
                     <div className="flex bg-gray-100 p-1 rounded-lg">
-                        <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}><LayoutGrid size={18} /></button>
-                        <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}><ListIcon size={18} /></button>
-                        <button onClick={() => setViewMode('table')} className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}><TableIcon size={18} /></button>
+                        <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500 hover:text-gray-700'}`}><LayoutGrid size={18} /></button>
+                        <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500 hover:text-gray-700'}`}><ListIcon size={18} /></button>
+                        <button onClick={() => setViewMode('table')} className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-white shadow-sm text-primary-600' : 'text-gray-500 hover:text-gray-700'}`}><TableIcon size={18} /></button>
                     </div>
                     <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
                         <Download size={18} /> Exportar Excel
                     </button>
-                    <button onClick={handleNewClient} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium shadow-lg shadow-blue-200">
+                    <button onClick={handleNewClient} className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium shadow-lg shadow-primary-200">
                         <User size={18} /> Novo Cliente
                     </button>
                 </div>
@@ -234,11 +234,11 @@ export const ClientRegistration: React.FC = () => {
                                                 </div>
                                             )}
                                             <div className="flex items-center gap-4 mb-4">
-                                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-200">
+                                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-primary-200">
                                                     {client.name.substring(0, 2).toUpperCase()}
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-bold text-gray-800 group-hover:text-blue-600 transition-colors line-clamp-1">{client.name}</h3>
+                                                    <h3 className="font-bold text-gray-800 group-hover:text-primary-600 transition-colors line-clamp-1">{client.name}</h3>
                                                     <p className="text-xs text-gray-500">{client.company || 'Sem empresa'}</p>
                                                 </div>
                                             </div>
@@ -286,7 +286,7 @@ export const ClientRegistration: React.FC = () => {
                                                         </span>
                                                     </td>
                                                     <td className="p-4 text-right">
-                                                        <button onClick={() => handleEdit(client)} className="text-blue-600 hover:text-blue-800 font-medium text-sm mr-3">Editar</button>
+                                                        <button onClick={() => handleEdit(client)} className="text-primary-600 hover:text-primary-800 font-medium text-sm mr-3">Editar</button>
                                                         <button onClick={() => handleDelete(client.id)} className="text-red-600 hover:text-red-800 font-medium text-sm">Excluir</button>
                                                     </td>
                                                 </tr>

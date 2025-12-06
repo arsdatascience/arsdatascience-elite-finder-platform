@@ -257,7 +257,7 @@ export const WhatsAppSimulator: React.FC = () => {
                                     <div className="flex items-center justify-end gap-1 mt-1">
                                         <span className="text-[10px] text-gray-500">{msg.timestamp}</span>
                                         {msg.role === 'user' && (
-                                            <span className="text-blue-500">
+                                            <span className="text-primary-500">
                                                 {msg.status === 'read' ? <CheckCheck size={14} /> : <Check size={14} />}
                                             </span>
                                         )}
@@ -395,11 +395,11 @@ export const WhatsAppSimulator: React.FC = () => {
                             </div>
 
                             {/* Suggested Next Steps */}
-                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                                <h4 className="text-sm font-bold text-blue-800 mb-2">Próximos Passos Sugeridos</h4>
+                            <div className="bg-primary-50 p-4 rounded-xl border border-primary-100">
+                                <h4 className="text-sm font-bold text-primary-800 mb-2">Próximos Passos Sugeridos</h4>
                                 <ul className="space-y-2">
                                     {analysis.suggested_next_steps.map((step, idx) => (
-                                        <li key={idx} className="text-xs text-blue-700 flex items-center gap-2">
+                                        <li key={idx} className="text-xs text-primary-700 flex items-center gap-2">
                                             <CheckCheck size={14} />
                                             {step}
                                         </li>

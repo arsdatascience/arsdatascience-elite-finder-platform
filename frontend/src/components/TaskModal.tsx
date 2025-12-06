@@ -129,7 +129,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                     <div>
                         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                            <CheckSquare className="w-5 h-5 text-blue-600" />
+                            <CheckSquare className="w-5 h-5 text-primary-600" />
                             {task ? `Editar Tarefa ${task.reference_code ? `(${task.reference_code})` : ''}` : 'Nova Tarefa'}
                         </h2>
                         <p className="text-xs text-gray-500 mt-1">Gerencie detalhes, responsáveis e entregáveis.</p>
@@ -148,7 +148,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
-                                    ? 'bg-blue-600 text-white shadow-md'
+                                    ? 'bg-primary-600 text-white shadow-md'
                                     : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
                                     }`}
                             >
@@ -167,7 +167,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                                 <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Título da Tarefa</label>
-                                        <input type="text" name="title" value={formData.title || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Ex: Criar Post Carrossel" required />
+                                        <input type="text" name="title" value={formData.title || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500" placeholder="Ex: Criar Post Carrossel" required />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
@@ -225,7 +225,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                                 <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Responsável Principal (Assignee)</label>
-                                        <select name="assignee_id" value={formData.assignee_id || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg bg-blue-50/50 border-blue-200">
+                                        <select name="assignee_id" value={formData.assignee_id || ''} onChange={handleChange} className="w-full px-4 py-2 border rounded-lg bg-primary-50/50 border-primary-200">
                                             <option value="">Selecione...</option>
                                             {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                         </select>
@@ -246,7 +246,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                                                                 : current.filter(id => id !== u.id);
                                                             handleArrayChange('collaborators_ids', updated);
                                                         }}
-                                                        className="rounded text-blue-600"
+                                                        className="rounded text-primary-600"
                                                     />
                                                     <span>{u.name}</span>
                                                 </label>
@@ -321,7 +321,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                                                         type="checkbox"
                                                         checked={item.completed}
                                                         onChange={() => toggleChecklist(item.id)}
-                                                        className="rounded text-blue-600"
+                                                        className="rounded text-primary-600"
                                                     />
                                                     <span className={item.completed ? 'line-through text-gray-400' : 'text-gray-700'}>{item.text}</span>
                                                 </div>
@@ -336,7 +336,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                                                 placeholder="Adicionar sub-tarefa..."
                                                 className="flex-1 px-3 py-1.5 border rounded-lg text-sm"
                                             />
-                                            <button type="button" onClick={addChecklistItem} className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200">+</button>
+                                            <button type="button" onClick={addChecklistItem} className="px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg text-sm font-medium hover:bg-primary-200">+</button>
                                         </div>
                                     </div>
 
@@ -370,7 +370,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                     <button onClick={onClose} className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors">
                         Cancelar
                     </button>
-                    <button onClick={handleSubmit} disabled={loading} className="px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg">
+                    <button onClick={handleSubmit} disabled={loading} className="px-5 py-2 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors flex items-center gap-2 shadow-lg">
                         {loading ? 'Salvando...' : (
                             <>
                                 <Save className="w-4 h-4" />

@@ -71,7 +71,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                         <select
                             value={selectedClient}
                             onChange={(e) => setSelectedClient(e.target.value)}
-                            className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
+                            className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-slate-500 focus:border-slate-500 block pl-10 p-2.5 shadow-sm outline-none"
                         >
                             {clients.map((client: any) => (
                                 <option key={client.id} value={client.id}>{client.name}</option>
@@ -81,7 +81,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
 
                     <button
                         onClick={() => setShowGenerator(true)}
-                        className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-2 shadow-lg shadow-purple-200 whitespace-nowrap"
+                        className="bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 flex items-center gap-2 shadow-lg shadow-slate-200 whitespace-nowrap"
                     >
                         <Sparkles size={16} />
                         Criar Post IA
@@ -133,7 +133,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                             <h3 className="font-bold text-gray-800">Calendário de Conteúdo</h3>
                             <button
                                 onClick={() => onNavigate(ViewState.SOCIAL_CALENDAR)}
-                                className="text-sm text-blue-600 font-medium cursor-pointer hover:underline"
+                                className="text-sm text-slate-700 font-medium cursor-pointer hover:underline"
                             >
                                 Ver Calendário Completo
                             </button>
@@ -141,7 +141,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                         <div className="divide-y divide-gray-100">
                             {isLoading ? (
                                 <div className="p-8 text-center text-gray-500">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-2"></div>
                                     <p>Carregando posts...</p>
                                 </div>
                             ) : isError ? (
@@ -160,7 +160,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                                                 <p className="text-sm font-medium text-gray-900 line-clamp-1">{post.content}</p>
                                             </div>
                                             <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${post.status === 'publicado' ? 'bg-green-100 text-green-700' :
-                                                post.status === 'agendado' ? 'bg-blue-100 text-blue-700' :
+                                                post.status === 'agendado' ? 'bg-gray-100 text-gray-700' :
                                                     'bg-gray-100 text-gray-600'
                                                 }`}>
                                                 {post.status}
@@ -215,7 +215,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                                 : 'Inovação e tecnologia para escalar sua operação. Conheça nossa nova suite de APIs.'}
                         </p>
                     </div>
-                    <div className="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
+                    <div className="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-700">
                         <strong>Sugestão da IA:</strong> Postar às 18:00 aumenta o engajamento em aprox. 15%.
                     </div>
                 </div>

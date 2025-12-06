@@ -78,7 +78,7 @@ const PrivateRoute: React.FC = () => {
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-100">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
       </div>
     );
   }

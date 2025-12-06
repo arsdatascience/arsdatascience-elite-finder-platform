@@ -281,7 +281,7 @@ export const HelpCenter: React.FC = () => {
     return (
         <div className="p-8 max-w-5xl mx-auto animate-fade-in pb-20">
             <div className="text-center mb-12">
-                <div className="inline-flex items-center justify-center p-3 bg-blue-100 text-blue-600 rounded-full mb-4">
+                <div className="inline-flex items-center justify-center p-3 bg-primary-100 text-primary-600 rounded-full mb-4">
                     <Book size={32} />
                 </div>
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">Manual de Uso Elite Finder</h1>
@@ -295,7 +295,7 @@ export const HelpCenter: React.FC = () => {
                     </div>
                     <input
                         type="text"
-                        className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all"
+                        className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent shadow-sm transition-all"
                         placeholder="Buscar funcionalidade ou dúvida..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -311,24 +311,24 @@ export const HelpCenter: React.FC = () => {
                     return (
                         <div
                             key={section.id}
-                            className={`bg-white rounded-xl border transition-all duration-200 overflow-hidden ${isExpanded ? 'border-blue-500 shadow-md ring-1 ring-blue-500' : 'border-gray-200 hover:border-blue-300'}`}
+                            className={`bg-white rounded-xl border transition-all duration-200 overflow-hidden ${isExpanded ? 'border-primary-500 shadow-md ring-1 ring-primary-500' : 'border-gray-200 hover:border-primary-300'}`}
                         >
                             <button
                                 onClick={() => toggleSection(section.id)}
                                 className="w-full flex items-center justify-between p-5 text-left focus:outline-none"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className={`p-2 rounded-lg ${isExpanded ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                    <div className={`p-2 rounded-lg ${isExpanded ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
                                         <Icon size={24} />
                                     </div>
                                     <div>
-                                        <h3 className={`font-bold text-lg ${isExpanded ? 'text-blue-700' : 'text-gray-800'}`}>
+                                        <h3 className={`font-bold text-lg ${isExpanded ? 'text-primary-700' : 'text-gray-800'}`}>
                                             {section.title}
                                         </h3>
                                         <p className="text-sm text-gray-500">{section.description}</p>
                                     </div>
                                 </div>
-                                <div className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180 text-blue-600' : 'text-gray-400'}`}>
+                                <div className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180 text-primary-600' : 'text-gray-400'}`}>
                                     <ChevronDown size={20} />
                                 </div>
                             </button>
@@ -340,7 +340,7 @@ export const HelpCenter: React.FC = () => {
                                         {section.steps.map((step, index) => (
                                             <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                                                 <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                                                    <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                                    <span className="w-6 h-6 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center text-xs font-bold">
                                                         {index + 1}
                                                     </span>
                                                     {step.title}

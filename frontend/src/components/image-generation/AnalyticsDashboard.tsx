@@ -112,7 +112,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ onClose 
                                     <p className="text-sm text-gray-500 font-medium">Total de Imagens</p>
                                     <h3 className="text-3xl font-bold text-gray-800 mt-1">{data.totalImages}</h3>
                                 </div>
-                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                                <div className="p-2 bg-primary-50 text-primary-600 rounded-lg">
                                     <ImageIcon size={20} />
                                 </div>
                             </div>

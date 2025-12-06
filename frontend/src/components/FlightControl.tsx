@@ -36,7 +36,7 @@ import { LeadModal } from './LeadModal';
 
 // --- Configuration ---
 const COLUMNS = [
-  { id: LeadStatus.NEW, label: 'Novos Leads', color: 'border-blue-500', bgColor: 'bg-blue-50' },
+  { id: LeadStatus.NEW, label: 'Novos Leads', color: 'border-primary-500', bgColor: 'bg-primary-50' },
   { id: LeadStatus.IN_PROGRESS, label: 'Em Atendimento', color: 'border-yellow-500', bgColor: 'bg-yellow-50' },
   { id: LeadStatus.WAITING, label: 'Aguardando', color: 'border-orange-500', bgColor: 'bg-orange-50' },
   { id: LeadStatus.CLOSED_WON, label: 'Fechado', color: 'border-green-500', bgColor: 'bg-green-50' },
@@ -92,7 +92,7 @@ const SortableItem = memo(({ lead, onClick, onQuickAction }: { lead: Lead, onCli
       <div
         ref={setNodeRef}
         style={style}
-        className="bg-white p-4 rounded-lg shadow-lg border-2 border-blue-500 opacity-50 h-[150px] z-50"
+        className="bg-white p-4 rounded-lg shadow-lg border-2 border-primary-500 opacity-50 h-[150px] z-50"
       />
     );
   }
@@ -113,7 +113,7 @@ const SortableItem = memo(({ lead, onClick, onQuickAction }: { lead: Lead, onCli
             e.stopPropagation();
             onClick();
           }}
-          className="text-gray-400 hover:text-blue-600 transition-all p-1 hover:bg-blue-50 rounded"
+          className="text-gray-400 hover:text-primary-600 transition-all p-1 hover:bg-primary-50 rounded"
           title="Editar Lead"
         >
           <MoreVertical size={16} />
@@ -142,7 +142,7 @@ const SortableItem = memo(({ lead, onClick, onQuickAction }: { lead: Lead, onCli
         <button onClick={(e) => { e.stopPropagation(); onQuickAction('whatsapp', lead); }} className="p-1.5 bg-green-100 text-green-600 rounded-full hover:bg-green-200" title="WhatsApp">
           <MessageCircle size={14} />
         </button>
-        <button onClick={(e) => { e.stopPropagation(); onQuickAction('email', lead); }} className="p-1.5 bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200" title="Email">
+        <button onClick={(e) => { e.stopPropagation(); onQuickAction('email', lead); }} className="p-1.5 bg-primary-100 text-primary-600 rounded-full hover:bg-primary-200" title="Email">
           <Mail size={14} />
         </button>
         <button onClick={(e) => { e.stopPropagation(); onQuickAction('call', lead); }} className="p-1.5 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200" title="Ligar">
@@ -162,7 +162,7 @@ const SortableItem = memo(({ lead, onClick, onQuickAction }: { lead: Lead, onCli
       {lead.tags && lead.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-2">
           {lead.tags.slice(0, 3).map(tag => (
-            <span key={tag} className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">
+            <span key={tag} className="text-[10px] bg-primary-50 text-primary-600 px-1.5 py-0.5 rounded border border-primary-100">
               {tag}
             </span>
           ))}
@@ -447,7 +447,7 @@ export const FlightControl: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin text-blue-600" size={48} />
+        <Loader2 className="animate-spin text-primary-600" size={48} />
       </div>
     );
   }
@@ -459,7 +459,7 @@ export const FlightControl: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-              <Users className="text-blue-600" /> Controle de Voo
+              <Users className="text-primary-600" /> Controle de Voo
               <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.FlightControl}</span>
             </h1>
             <p className="text-gray-500 mt-1">Gestão operacional de leads em tempo real</p>
@@ -467,13 +467,13 @@ export const FlightControl: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
             <div className="flex bg-gray-100 rounded-lg p-1">
-              <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Kanban">
+              <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow text-primary-600' : 'text-gray-500 hover:text-gray-700'}`} title="Kanban">
                 <LayoutGrid size={18} />
               </button>
-              <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Lista">
+              <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-primary-600' : 'text-gray-500 hover:text-gray-700'}`} title="Lista">
                 <ListIcon size={18} />
               </button>
-              <button onClick={() => setViewMode('table')} className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Tabela">
+              <button onClick={() => setViewMode('table')} className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-white shadow text-primary-600' : 'text-gray-500 hover:text-gray-700'}`} title="Tabela">
                 <TableIcon size={18} />
               </button>
             </div>
@@ -483,7 +483,7 @@ export const FlightControl: React.FC = () => {
             <select
               value={selectedClient}
               onChange={(e) => setSelectedClient(e.target.value)}
-              className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+              className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary-500 outline-none"
             >
               <option value="all">Todos os Clientes</option>
               {clients.map(client => (
@@ -493,7 +493,7 @@ export const FlightControl: React.FC = () => {
 
             <button
               onClick={() => setShowNewLeadModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 transition-all text-sm"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-bold shadow-lg shadow-primary-200 transition-all text-sm"
             >
               <Plus size={16} /> Novo Lead
             </button>
@@ -519,9 +519,9 @@ export const FlightControl: React.FC = () => {
 
         {/* Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-blue-500">
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-primary-500">
             <div className="flex items-center justify-between mb-2">
-              <div className="p-2 rounded-lg bg-blue-50"><Target size={20} className="text-blue-600" /></div>
+              <div className="p-2 rounded-lg bg-primary-50"><Target size={20} className="text-primary-600" /></div>
               <TrendingUp size={16} className="text-green-500" />
             </div>
             <p className="text-sm text-gray-500">Total de Leads</p>
@@ -561,14 +561,14 @@ export const FlightControl: React.FC = () => {
               <input
                 type="text"
                 placeholder="Buscar por nome ou email..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             <select
-              className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
               value={selectedSource}
               onChange={(e) => setSelectedSource(e.target.value)}
             >
@@ -579,7 +579,7 @@ export const FlightControl: React.FC = () => {
             </select>
 
             <select
-              className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
               value={selectedAssignee}
               onChange={(e) => setSelectedAssignee(e.target.value)}
             >
@@ -595,14 +595,14 @@ export const FlightControl: React.FC = () => {
             <div className="flex items-center gap-2">
               <input
                 type="date"
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
               <span className="text-gray-400">-</span>
               <input
                 type="date"
-                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
@@ -613,7 +613,7 @@ export const FlightControl: React.FC = () => {
                 <input
                   type="number"
                   placeholder="Min"
-                  className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   value={minValue}
                   onChange={(e) => setMinValue(e.target.value)}
                 />
@@ -624,7 +624,7 @@ export const FlightControl: React.FC = () => {
                 <input
                   type="number"
                   placeholder="Max"
-                  className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   value={maxValue}
                   onChange={(e) => setMaxValue(e.target.value)}
                 />
@@ -661,7 +661,7 @@ export const FlightControl: React.FC = () => {
             onDragEnd={handleDragEnd}
           >
             <div className="px-4 md:px-8 mb-4">
-              <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg border border-blue-100 text-sm">
+              <div className="flex items-center gap-2 bg-primary-50 text-primary-700 px-4 py-2 rounded-lg border border-primary-100 text-sm">
                 <Info size={16} />
                 <span className="font-medium">Dica:</span> Para trocar o status, basta arrastar e soltar o card na coluna desejada.
               </div>
@@ -693,7 +693,7 @@ export const FlightControl: React.FC = () => {
 
             <DragOverlay>
               {activeDragId ? (
-                <div className="bg-white p-4 rounded-lg shadow-xl border-2 border-blue-500 rotate-2 scale-105 w-[300px]">
+                <div className="bg-white p-4 rounded-lg shadow-xl border-2 border-primary-500 rotate-2 scale-105 w-[300px]">
                   <h4 className="font-bold text-gray-800">{leads.find(l => l.id === activeDragId)?.name}</h4>
                 </div>
               ) : null}
@@ -707,7 +707,7 @@ export const FlightControl: React.FC = () => {
               {filteredLeads.map(lead => (
                 <div key={lead.id} onClick={() => setSelectedLead(lead)} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className={`w-2 h-12 rounded-full ${lead.status === LeadStatus.NEW ? 'bg-blue-500' :
+                    <div className={`w-2 h-12 rounded-full ${lead.status === LeadStatus.NEW ? 'bg-primary-500' :
                       lead.status === LeadStatus.CLOSED_WON ? 'bg-green-500' :
                         lead.status === LeadStatus.CLOSED_LOST ? 'bg-red-500' : 'bg-gray-300'
                       }`}></div>
@@ -756,7 +756,7 @@ export const FlightControl: React.FC = () => {
                       <td className="p-4 text-gray-600 text-sm">{lead.source}</td>
                       <td className="p-4 text-gray-600 text-sm">{lead.assignedTo || '-'}</td>
                       <td className="p-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${lead.status === LeadStatus.NEW ? 'bg-blue-100 text-blue-700' :
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${lead.status === LeadStatus.NEW ? 'bg-primary-100 text-primary-700' :
                           lead.status === LeadStatus.CLOSED_WON ? 'bg-green-100 text-green-700' :
                             'bg-gray-100 text-gray-700'
                           }`}>
@@ -765,7 +765,7 @@ export const FlightControl: React.FC = () => {
                       </td>
                       <td className="p-4 font-bold text-green-600">{formatCurrency(lead.value)}</td>
                       <td className="p-4">
-                        <button onClick={() => setSelectedLead(lead)} className="text-blue-600 hover:text-blue-800 font-medium text-sm">Editar</button>
+                        <button onClick={() => setSelectedLead(lead)} className="text-primary-600 hover:text-primary-800 font-medium text-sm">Editar</button>
                       </td>
                     </tr>
                   ))}

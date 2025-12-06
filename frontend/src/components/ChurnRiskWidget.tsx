@@ -70,7 +70,7 @@ export const ChurnRiskWidget: React.FC = () => {
                                 <p className="text-xs text-red-600 font-medium">{client.riskLevel} RISK ({client.riskScore}%)</p>
                             </div>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button className="p-1.5 bg-white text-gray-600 rounded hover:text-blue-600 shadow-sm" title="Enviar Email">
+                                <button className="p-1.5 bg-white text-gray-600 rounded hover:text-primary-600 shadow-sm" title="Enviar Email">
                                     <Mail size={14} />
                                 </button>
                                 <button className="p-1.5 bg-white text-gray-600 rounded hover:text-green-600 shadow-sm" title="Ligar">

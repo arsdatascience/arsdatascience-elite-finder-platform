@@ -93,7 +93,7 @@ export const SocialIntegrations: React.FC = () => {
             case 'instagram':
                 return { name: 'Instagram', icon: Instagram, color: 'from-pink-500 to-purple-600', bgColor: 'bg-pink-50', textColor: 'text-pink-600', borderColor: 'border-pink-200' };
             case 'facebook':
-                return { name: 'Facebook', icon: Facebook, color: 'from-blue-500 to-blue-700', bgColor: 'bg-blue-50', textColor: 'text-blue-600', borderColor: 'border-blue-200' };
+                return { name: 'Facebook', icon: Facebook, color: 'from-blue-500 to-blue-700', bgColor: 'bg-primary-50', textColor: 'text-primary-600', borderColor: 'border-blue-200' };
             case 'linkedin':
                 return { name: 'LinkedIn', icon: Linkedin, color: 'from-indigo-500 to-blue-600', bgColor: 'bg-indigo-50', textColor: 'text-indigo-600', borderColor: 'border-indigo-200' };
             case 'twitter':
@@ -190,7 +190,7 @@ export const SocialIntegrations: React.FC = () => {
             {/* Add New Account Section */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <Plus className="w-5 h-5 text-blue-600" />
+                    <Plus className="w-5 h-5 text-primary-600" />
                     Adicionar Nova Conta
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -204,12 +204,12 @@ export const SocialIntegrations: React.FC = () => {
                                 key={platform}
                                 onClick={() => handleConnectNew(platform)}
                                 disabled={isConnecting}
-                                className={`flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all group ${isConnecting ? 'opacity-70 cursor-wait' : ''}`}
+                                className={`flex flex-col items-center justify-center p-4 rounded-xl border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition-all group ${isConnecting ? 'opacity-70 cursor-wait' : ''}`}
                             >
                                 <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${info.color} flex items-center justify-center text-white mb-2 group-hover:scale-110 transition-transform`}>
                                     {isConnecting ? <Loader2 className="animate-spin" size={20} /> : <Icon size={20} />}
                                 </div>
-                                <span className="font-medium text-gray-700 group-hover:text-blue-700">{info.name}</span>
+                                <span className="font-medium text-gray-700 group-hover:text-primary-700">{info.name}</span>
                             </button>
                         );
                     })}
@@ -225,7 +225,7 @@ export const SocialIntegrations: React.FC = () => {
 
                 {loading ? (
                     <div className="flex justify-center py-8">
-                        <Loader2 className="animate-spin text-blue-500" size={32} />
+                        <Loader2 className="animate-spin text-primary-500" size={32} />
                     </div>
                 ) : accounts.length === 0 ? (
                     <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
@@ -308,11 +308,11 @@ export const SocialIntegrations: React.FC = () => {
                         value={n8nUrl}
                         onChange={(e) => setN8nUrl(e.target.value)}
                         placeholder="https://seu-n8n.com/webhook/..."
-                        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                     />
                     <button
                         onClick={handleSaveN8n}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium transition-colors"
                     >
                         Salvar
                     </button>
@@ -321,8 +321,8 @@ export const SocialIntegrations: React.FC = () => {
 
             {/* Info Box */}
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3 items-start">
-                <AlertCircle className="text-blue-600 shrink-0 mt-0.5" size={20} />
-                <div className="text-sm text-blue-800">
+                <AlertCircle className="text-primary-600 shrink-0 mt-0.5" size={20} />
+                <div className="text-sm text-primary-800">
                     <p className="font-bold mb-1">Sobre a conexão segura (OAuth)</p>
                     <p>
                         Para garantir a segurança dos seus dados e evitar bloqueios, utilizamos a conexão oficial de cada plataforma.

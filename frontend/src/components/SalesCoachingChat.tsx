@@ -219,7 +219,7 @@ export const SalesCoachingChat: React.FC = () => {
             case 'positive': return 'text-green-500 bg-green-50 border-green-200';
             case 'skeptical': return 'text-orange-500 bg-orange-50 border-orange-200';
             case 'negative': return 'text-red-500 bg-red-50 border-red-200';
-            default: return 'text-blue-500 bg-blue-50 border-blue-200';
+            default: return 'text-primary-500 bg-primary-50 border-primary-200';
         }
     };
 
@@ -299,7 +299,7 @@ export const SalesCoachingChat: React.FC = () => {
                     <h3 className="font-bold text-gray-700 flex items-center gap-2">
                         <Users size={18} /> Conversas
                     </h3>
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{sessions.length}</span>
+                    <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">{sessions.length}</span>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                     {sessions.length === 0 ? (
@@ -311,7 +311,7 @@ export const SalesCoachingChat: React.FC = () => {
                             <div
                                 key={session.id}
                                 onClick={() => selectSession(session)}
-                                className={`p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${activeSessionId === session.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`}
+                                className={`p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${activeSessionId === session.id ? 'bg-primary-50 border-l-4 border-l-primary-500' : ''}`}
                             >
                                 <div className="flex justify-between items-start mb-1">
                                     <span className="font-bold text-gray-800 text-sm truncate">{session.name}</span>
@@ -390,7 +390,7 @@ export const SalesCoachingChat: React.FC = () => {
                         messages.map((msg) => (
                             <div key={msg.id} className={`flex ${msg.role === 'agent' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[70%] rounded-2xl p-4 shadow-sm relative ${msg.role === 'agent'
-                                    ? 'bg-blue-600 text-white rounded-tr-none'
+                                    ? 'bg-primary-600 text-white rounded-tr-none'
                                     : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
                                     }`}>
                                     {msg.source === 'whatsapp' && (
@@ -399,7 +399,7 @@ export const SalesCoachingChat: React.FC = () => {
                                         </span>
                                     )}
                                     <p className="text-sm leading-relaxed">{msg.content}</p>
-                                    <span className={`text-[10px] block mt-2 ${msg.role === 'agent' ? 'text-blue-100' : 'text-gray-400'}`}>
+                                    <span className={`text-[10px] block mt-2 ${msg.role === 'agent' ? 'text-primary-100' : 'text-gray-400'}`}>
                                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
                                 </div>
@@ -411,8 +411,8 @@ export const SalesCoachingChat: React.FC = () => {
 
                 {/* Input Area */}
                 <div className="p-4 bg-white border-t border-gray-100">
-                    <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all">
-                        <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                    <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent transition-all">
+                        <button className="p-2 text-gray-400 hover:text-primary-600 transition-colors">
                             <Mic size={20} />
                         </button>
                         <input
@@ -427,7 +427,7 @@ export const SalesCoachingChat: React.FC = () => {
                         <button
                             onClick={handleSendMessage}
                             disabled={!input.trim() || isAnalyzing || !activeSessionId}
-                            className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-2 bg-primary-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Send size={18} />
                         </button>
@@ -445,7 +445,7 @@ export const SalesCoachingChat: React.FC = () => {
 
                     {isAnalyzing ? (
                         <div className="flex flex-col items-center justify-center py-10 text-gray-400 gap-3">
-                            <Sparkles className="animate-spin text-blue-500" size={32} />
+                            <Sparkles className="animate-spin text-primary-500" size={32} />
                             <p className="text-sm animate-pulse">Analisando intenção...</p>
                         </div>
                     ) : analysis ? (
@@ -487,9 +487,9 @@ export const SalesCoachingChat: React.FC = () => {
 
                 {/* THE TELEPROMPTER (Actionable Advice) */}
                 <div className="flex-1 bg-gradient-to-b from-slate-900 to-slate-800 rounded-2xl shadow-lg border border-slate-700 p-6 text-white relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500"></div>
 
-                    <h4 className="text-sm font-bold text-blue-300 uppercase tracking-wider mb-6 flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-primary-300 uppercase tracking-wider mb-6 flex items-center gap-2">
                         <Sparkles size={16} /> Elite Sales Coach
                     </h4>
 
@@ -498,7 +498,7 @@ export const SalesCoachingChat: React.FC = () => {
                             {/* The Whisper (Main Tip) */}
                             <div>
                                 <p className="text-xs text-slate-400 mb-1">DICA ESTRATÉGICA (WHISPER)</p>
-                                <p className="text-lg font-medium leading-relaxed text-blue-50">
+                                <p className="text-lg font-medium leading-relaxed text-primary-50">
                                     "{analysis.coach_whisper}"
                                 </p>
                             </div>
@@ -510,7 +510,7 @@ export const SalesCoachingChat: React.FC = () => {
                                 <p className="text-xs text-slate-400 mb-2 flex items-center gap-1">
                                     <TrendingUp size={12} /> PRÓXIMA AÇÃO RECOMENDADA
                                 </p>
-                                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-600 hover:border-blue-500/50 transition-colors cursor-pointer group">
+                                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-600 hover:border-primary-500/50 transition-colors cursor-pointer group">
                                     <p className="text-sm text-slate-200 group-hover:text-white transition-colors">
                                         {analysis.next_best_action}
                                     </p>
@@ -518,7 +518,7 @@ export const SalesCoachingChat: React.FC = () => {
                             </div>
 
                             {/* Strategy Tag */}
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/20 text-blue-300 text-xs font-medium border border-blue-500/30">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/20 text-primary-300 text-xs font-medium border border-blue-500/30">
                                 <BrainCircuit size={12} />
                                 Estratégia: {analysis.suggested_strategy}
                             </div>
@@ -543,7 +543,7 @@ export const SalesCoachingChat: React.FC = () => {
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                                <UserPlus size={24} className="text-blue-600" /> Salvar Cliente
+                                <UserPlus size={24} className="text-primary-600" /> Salvar Cliente
                             </h3>
                             <button onClick={() => setShowSaveClientModal(false)} className="text-gray-400 hover:text-gray-600">
                                 <X size={24} />
@@ -557,7 +557,7 @@ export const SalesCoachingChat: React.FC = () => {
                                     type="text"
                                     value={clientName}
                                     onChange={(e) => setClientName(e.target.value)}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                                     placeholder="Ex: João Silva"
                                 />
                             </div>
@@ -583,7 +583,7 @@ export const SalesCoachingChat: React.FC = () => {
                             <button
                                 onClick={handleSaveClient}
                                 disabled={!clientName.trim()}
-                                className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                className="px-6 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                             >
                                 <UserPlus size={18} /> Salvar Cliente
                             </button>

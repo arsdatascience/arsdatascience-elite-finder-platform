@@ -149,11 +149,11 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ campaign, isOpen, 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                    <Target size={16} className="text-blue-500" /> Nome da Campanha
+                                    <Target size={16} className="text-primary-500" /> Nome da Campanha
                                 </label>
                                 <input
                                     {...register('name', { required: true })}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     placeholder="Ex: Campanha Black Friday"
                                     readOnly={mode === 'edit'} // Usually campaigns are synced, not edited manually here
                                 />
@@ -165,7 +165,7 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ campaign, isOpen, 
                                 </label>
                                 <select
                                     {...register('platform')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all bg-white"
                                     disabled={mode === 'edit'}
                                 >
                                     <option value="google">Google Ads</option>
@@ -181,7 +181,7 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ campaign, isOpen, 
                                 </label>
                                 <input
                                     {...register('spend')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     readOnly
                                 />
                             </div>
@@ -192,7 +192,7 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ campaign, isOpen, 
                                 </label>
                                 <input
                                     {...register('revenue')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     readOnly
                                 />
                             </div>
@@ -203,7 +203,7 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ campaign, isOpen, 
                                 </label>
                                 <input
                                     {...register('impressions')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     readOnly
                                 />
                             </div>
@@ -214,7 +214,7 @@ export const CampaignModal: React.FC<CampaignModalProps> = ({ campaign, isOpen, 
                                 </label>
                                 <input
                                     {...register('clicks')}
-                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     readOnly
                                 />
                             </div>

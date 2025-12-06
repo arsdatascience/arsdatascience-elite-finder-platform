@@ -68,11 +68,11 @@ export const UsageStats: React.FC = () => {
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <Activity className="text-blue-600" size={20} />
+                    <Activity className="text-primary-600" size={20} />
                     Consumo do Plano
                 </h3>
                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase flex items-center gap-1 ${data.plan === 'Enterprise' ? 'bg-purple-100 text-purple-700' :
-                    data.plan === 'Pro' ? 'bg-blue-100 text-blue-700' :
+                    data.plan === 'Pro' ? 'bg-primary-100 text-primary-700' :
                         'bg-gray-100 text-gray-600'
                     }`}>
                     <Crown size={14} />
@@ -90,7 +90,7 @@ export const UsageStats: React.FC = () => {
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div
                             className={`h-full rounded-full transition-all duration-500 ${postPercentage > 90 ? 'bg-red-500' :
-                                postPercentage > 70 ? 'bg-yellow-500' : 'bg-blue-500'
+                                postPercentage > 70 ? 'bg-yellow-500' : 'bg-primary-500'
                                 }`}
                             style={{ width: `${postPercentage}%` }}
                         />
@@ -119,7 +119,7 @@ export const UsageStats: React.FC = () => {
                     {data.plan === 'Free' && (
                         <button
                             onClick={() => handleUpgrade('Pro')}
-                            className="w-full py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 flex items-center justify-center gap-2 transition-colors"
+                            className="w-full py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 flex items-center justify-center gap-2 transition-colors"
                         >
                             <Zap size={16} />
                             Upgrade para Pro (R$ 997/mês)

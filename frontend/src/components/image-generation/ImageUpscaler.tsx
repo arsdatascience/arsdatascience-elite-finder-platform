@@ -46,8 +46,8 @@ export const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ image, onUpscaled,
                 <button
                     onClick={() => setScale(2)}
                     className={`flex-1 px-4 py-2 rounded-lg transition-colors ${scale === 2
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                 >
                     2x ({image.width * 2}x{image.height * 2})
@@ -55,8 +55,8 @@ export const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ image, onUpscaled,
                 <button
                     onClick={() => setScale(4)}
                     className={`flex-1 px-4 py-2 rounded-lg transition-colors ${scale === 4
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                 >
                     4x ({image.width * 4}x{image.height * 4})
@@ -97,7 +97,7 @@ export const ImageUpscaler: React.FC<ImageUpscalerProps> = ({ image, onUpscaled,
                         download={`upscaled-${Date.now()}.png`}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-3 w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 gap-2"
+                        className="mt-3 w-full inline-flex items-center justify-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-blue-700 gap-2"
                     >
                         <Download className="w-4 h-4" />
                         Download

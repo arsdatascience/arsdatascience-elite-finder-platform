@@ -179,7 +179,7 @@ export const Campaigns: React.FC = () => {
   if (loading && !kpis) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -198,7 +198,7 @@ export const Campaigns: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-              <Target className="text-blue-600" /> Gestão de Campanhas
+              <Target className="text-primary-600" /> Gestão de Campanhas
             </h1>
             <p className="text-gray-500 mt-1">Acompanhe o desempenho de suas campanhas em tempo real.</p>
           </div>
@@ -206,13 +206,13 @@ export const Campaigns: React.FC = () => {
           <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
             {/* View Switcher */}
             <div className="flex bg-gray-100 rounded-lg p-1">
-              <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Kanban">
+              <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow text-primary-600' : 'text-gray-500 hover:text-gray-700'}`} title="Kanban">
                 <LayoutGrid size={18} />
               </button>
-              <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Lista">
+              <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-primary-600' : 'text-gray-500 hover:text-gray-700'}`} title="Lista">
                 <ListIcon size={18} />
               </button>
-              <button onClick={() => setViewMode('table')} className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} title="Tabela">
+              <button onClick={() => setViewMode('table')} className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-white shadow text-primary-600' : 'text-gray-500 hover:text-gray-700'}`} title="Tabela">
                 <TableIcon size={18} />
               </button>
             </div>
@@ -222,7 +222,7 @@ export const Campaigns: React.FC = () => {
             <select
               value={selectedClient}
               onChange={(e) => setSelectedClient(e.target.value)}
-              className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+              className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary-500 outline-none"
             >
               <option value="">Todos os Clientes</option>
               {clients.map(client => (
@@ -237,14 +237,14 @@ export const Campaigns: React.FC = () => {
                 type="date"
                 value={dateRange.start}
                 onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                className="px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                className="px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none"
               />
               <span className="text-gray-400">-</span>
               <input
                 type="date"
                 value={dateRange.end}
                 onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                className="px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                className="px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium focus:ring-2 focus:ring-primary-500 outline-none"
               />
             </div>
 
@@ -274,7 +274,7 @@ export const Campaigns: React.FC = () => {
               key={platform}
               onClick={() => togglePlatform(platform)}
               className={`px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${selectedPlatforms.includes(platform)
-                ? platform === 'google' ? 'bg-blue-100 text-blue-700 border-blue-200 border' :
+                ? platform === 'google' ? 'bg-primary-100 text-primary-700 border-primary-200 border' :
                   platform === 'meta' ? 'bg-indigo-100 text-indigo-700 border-indigo-200 border' :
                     platform === 'youtube' ? 'bg-red-100 text-red-700 border-red-200 border' :
                       'bg-cyan-100 text-cyan-700 border-cyan-200 border'
@@ -292,7 +292,7 @@ export const Campaigns: React.FC = () => {
           <KpiCard
             title="Investimento Total"
             value={formatCurrency(kpis?.total_spend || 0)}
-            icon={<DollarSign size={20} className="text-blue-600" />}
+            icon={<DollarSign size={20} className="text-primary-600" />}
             trend="+12.5%"
             trendUp={true}
             color="blue"
@@ -332,15 +332,15 @@ export const Campaigns: React.FC = () => {
         </div>
 
         {/* AI Insight Section */}
-        <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100 shadow-sm relative overflow-hidden">
+        <div className="mb-8 bg-gradient-to-r from-primary-50 to-indigo-50 p-6 rounded-xl border border-primary-100 shadow-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10">
-            <Layers size={100} className="text-blue-600" />
+            <Layers size={100} className="text-primary-600" />
           </div>
           <div className="relative z-10">
-            <h3 className="text-lg font-bold text-blue-900 mb-2 flex items-center gap-2">
-              <TrendingUp size={20} className="text-blue-600" /> Análise Estratégica da IA
+            <h3 className="text-lg font-bold text-primary-900 mb-2 flex items-center gap-2">
+              <TrendingUp size={20} className="text-primary-600" /> Análise Estratégica da IA
             </h3>
-            <div className="text-sm text-blue-800 leading-relaxed">
+            <div className="text-sm text-primary-800 leading-relaxed">
               {isLoadingInsight ? (
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -577,7 +577,7 @@ export const Campaigns: React.FC = () => {
                       <div className="text-xs text-gray-400">ID: {camp.id}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${camp.platform === 'google' ? 'bg-blue-50 text-blue-700' :
+                      <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${camp.platform === 'google' ? 'bg-primary-50 text-primary-700' :
                         camp.platform === 'meta' ? 'bg-indigo-50 text-indigo-700' :
                           camp.platform === 'youtube' ? 'bg-red-50 text-red-700' :
                             'bg-cyan-50 text-cyan-700'
@@ -597,7 +597,7 @@ export const Campaigns: React.FC = () => {
                     <td className="px-6 py-4 text-right font-medium text-gray-900">{formatCurrency(camp.spend)}</td>
                     <td className="px-6 py-4 text-right text-gray-600">{formatNumber(camp.impressions)}</td>
                     <td className="px-6 py-4 text-right text-gray-600">{formatNumber(camp.clicks)}</td>
-                    <td className="px-6 py-4 text-right font-medium text-blue-600">{formatNumber(camp.conversions)}</td>
+                    <td className="px-6 py-4 text-right font-medium text-primary-600">{formatNumber(camp.conversions)}</td>
                     <td className="px-6 py-4 text-right">
                       <span className={`font-bold ${Number(camp.revenue) / Number(camp.spend) >= 4 ? 'text-green-600' : 'text-yellow-600'}`}>
                         {(Number(camp.revenue) / (Number(camp.spend) || 1)).toFixed(2)}x
@@ -645,7 +645,7 @@ const CampaignCard = ({ camp, formatCurrency, formatNumber, onClick }: any) => (
   >
     <div className="flex justify-between items-start mb-2">
       <h4 className="font-bold text-gray-800 text-sm line-clamp-2">{camp.name}</h4>
-      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${camp.platform === 'google' ? 'bg-blue-50 text-blue-700' :
+      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${camp.platform === 'google' ? 'bg-primary-50 text-primary-700' :
         camp.platform === 'meta' ? 'bg-indigo-50 text-indigo-700' :
           'bg-gray-50 text-gray-700'
         }`}>{camp.platform}</span>
