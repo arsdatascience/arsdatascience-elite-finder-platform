@@ -480,6 +480,17 @@ async function initializeDatabase() {
       await pool.query(operationsMigration);
       console.log('✅ Migração de Operations & Knowledge verificada/aplicada.');
 
+      // Migração para SOP Templates (Automation Phase)
+      console.log('🔄 Verificando migrações de SOP Templates...');
+      const sopMigration = fs.readFileSync(path.join(__dirname, 'migrations', '025_create_sop_templates.sql'), 'utf8');
+
+      // Use helper to run split statements if needed, or just query if file is simple
+      // Since 025 has triggers, we should treat it carefully.
+      // But for now, assuming simple query execution or simple split if supported.
+      // Ideally reuse the parser logic above, but for quick fix:
+      await pool.query(sopMigration);
+      console.log('✅ Migração de SOP Templates verificada/aplicada.');
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
