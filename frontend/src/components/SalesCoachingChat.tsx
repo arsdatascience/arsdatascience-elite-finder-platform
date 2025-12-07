@@ -216,12 +216,50 @@ export const SalesCoachingChat: React.FC = () => {
             }
         };
 
+        // ML Agent Analysis Complete Handler
+        const handleMLAnalysisComplete = (data: any) => {
+            console.log('🤖 ML Analysis Complete:', data);
+            if (activeSessionIdRef.current === data.sessionId) {
+                // Add ML response as a message
+                const mlMessage: Message = {
+                    id: `ml-${Date.now()}`,
+                    role: 'agent',
+                    content: data.response,
+                    timestamp: new Date(),
+                    source: 'web'
+                };
+                setMessages(prev => [...prev, mlMessage]);
+                setIsAnalyzing(false);
+            }
+        };
+
+        // ML Agent Analysis Error Handler
+        const handleMLAnalysisError = (data: any) => {
+            console.error('❌ ML Analysis Error:', data);
+            if (activeSessionIdRef.current === data.sessionId) {
+                // Add error message
+                const errorMessage: Message = {
+                    id: `ml-error-${Date.now()}`,
+                    role: 'agent',
+                    content: `⚠️ Erro na análise: ${data.error}`,
+                    timestamp: new Date(),
+                    source: 'web'
+                };
+                setMessages(prev => [...prev, errorMessage]);
+                setIsAnalyzing(false);
+            }
+        };
+
         socket.on('whatsapp_message', handleNewMessage);
         socket.on('sales_coaching_update', handleCoachingUpdate);
+        socket.on('ml-analysis-complete', handleMLAnalysisComplete);
+        socket.on('ml-analysis-error', handleMLAnalysisError);
 
         return () => {
             socket.off('whatsapp_message', handleNewMessage);
             socket.off('sales_coaching_update', handleCoachingUpdate);
+            socket.off('ml-analysis-complete', handleMLAnalysisComplete);
+            socket.off('ml-analysis-error', handleMLAnalysisError);
         };
     }, []);
 
