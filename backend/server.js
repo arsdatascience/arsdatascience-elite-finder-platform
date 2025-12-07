@@ -896,7 +896,7 @@ app.get('/api/churn/predict', authenticateToken, churnController.predictChurn);
 // SOP Templates
 app.get('/api/sop-templates', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.opsPool.query('SELECT * FROM sop_templates ORDER BY created_at DESC');
+    const result = await pool.opsPool.query('SELECT * FROM templates ORDER BY created_at DESC');
     res.json({ success: true, templates: result.rows });
   } catch (err) {
     console.error('Error fetching SOP templates:', err);
