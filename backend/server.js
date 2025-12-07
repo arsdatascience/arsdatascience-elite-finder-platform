@@ -1,12 +1,13 @@
 
 
+const path = require('path');
+const fs = require('fs');
 console.log('🚀 STARTING SERVER INITIALIZATION...');
+
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
-const fs = require('fs');
-const path = require('path');
 
 const app = express();
 app.set('trust proxy', 1); // Necessário para Railway/Vercel e rate-limiter
