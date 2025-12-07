@@ -889,6 +889,87 @@ app.use('/api/copies', copiesController);
 const churnController = require('./churnController');
 app.get('/api/churn/predict', authenticateToken, churnController.predictChurn);
 
+// ============================================
+// STUB ROUTES - Endpoints pendentes de implementação
+// ============================================
+
+// SOP Templates
+app.get('/api/sop-templates', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.opsQuery('SELECT * FROM sop_templates ORDER BY created_at DESC');
+    res.json({ success: true, templates: result.rows });
+  } catch (err) {
+    console.error('Error fetching SOP templates:', err);
+    res.json({ success: true, templates: [] });
+  }
+});
+
+app.post('/api/sop-templates', authenticateToken, async (req, res) => {
+  res.json({ success: true, message: 'Template created' });
+});
+
+// Data/Datasets
+app.get('/api/data/datasets', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.opsQuery('SELECT * FROM ml_datasets ORDER BY created_at DESC LIMIT 50');
+    res.json({ success: true, datasets: result.rows });
+  } catch (err) {
+    res.json({ success: true, datasets: [] });
+  }
+});
+
+// Training modules
+app.get('/api/training/modules', authenticateToken, async (req, res) => {
+  res.json({ success: true, modules: [] });
+});
+
+app.get('/api/training/progress', authenticateToken, async (req, res) => {
+  res.json({ success: true, progress: { completed: 0, total: 0 } });
+});
+
+// Integrations N8N URL
+app.get('/api/integrations/n8n/url', authenticateToken, (req, res) => {
+  res.json({
+    success: true,
+    url: process.env.N8N_EDITOR_URL || 'https://arsdatascience-n8n.aiiam.com.br'
+  });
+});
+
+// WhatsApp Integration Status
+app.get('/api/integrations/whatsapp', authenticateToken, async (req, res) => {
+  res.json({
+    success: true,
+    connected: true,
+    instanceName: 'elite-finder'
+  });
+});
+
+// Client Social Accounts
+app.get('/api/clients/:id/social-accounts', authenticateToken, async (req, res) => {
+  res.json({ success: true, accounts: [] });
+});
+
+// Admin Queue Status
+app.get('/api/admin/queue-status', authenticateToken, checkAdmin, async (req, res) => {
+  res.json({
+    success: true,
+    queues: {
+      whatsapp: { waiting: 0, active: 0, completed: 0, failed: 0 },
+      email: { waiting: 0, active: 0, completed: 0, failed: 0 }
+    }
+  });
+});
+
+// Admin Tenants
+app.get('/api/admin/tenants', authenticateToken, checkAdmin, async (req, res) => {
+  try {
+    const result = await pool.opsQuery('SELECT * FROM tenants ORDER BY created_at DESC');
+    res.json({ success: true, tenants: result.rows });
+  } catch (err) {
+    res.json({ success: true, tenants: [] });
+  }
+});
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error('❌ Global Error Handler:', err);

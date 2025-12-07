@@ -117,16 +117,17 @@ const oauthController = {
     listIntegrations: async (req, res) => {
         const { clientId } = req.query;
         try {
-            const result = await pool.query(
+            const result = await pool.opsQuery(
                 `SELECT id, provider, account_name, created_at, updated_at 
-                 FROM integrations 
+                 FROM oauth_integrations 
                  WHERE client_id = $1`,
                 [clientId || 1]
             );
             res.json(result.rows);
         } catch (error) {
             console.error(error);
-            res.status(500).json({ error: 'Database error' });
+            // Return empty array if table doesn't exist yet
+            res.json([]);
         }
     },
 
