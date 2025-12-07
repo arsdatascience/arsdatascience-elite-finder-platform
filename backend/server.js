@@ -578,9 +578,6 @@ async function initializeDatabase() {
     // Don't crash the app if schema already exists
   }
 }
-app.put('/api/social/posts/:id', socialCtrl.updatePost);
-app.delete('/api/social/posts/:id', socialCtrl.deletePost);
-app.get('/api/social/holidays', socialCtrl.getHolidays);
 
 // --- ROTAS ---
 
