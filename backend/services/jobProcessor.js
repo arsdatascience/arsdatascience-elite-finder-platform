@@ -4,6 +4,11 @@ const pool = require('../database');
 const aiController = require('../aiController');
 const whatsappController = require('../whatsappController');
 
+// ML Agent Services
+const mlIntentDetector = require('./mlIntentDetector');
+const mlAnalysisService = require('./mlAnalysisService');
+const mlResponseFormatter = require('./mlResponseFormatter');
+
 // Função principal de processamento de jobs
 const processJob = async (job) => {
     const { type, payload } = job.data;
@@ -80,14 +85,159 @@ async function handleRoiAnalysis(payload) {
     // await aiController.generateDashboardInsights(tenant_id);
 }
 
+// --- ML INTENT HANDLER ---
+async function handleMLIntent(intent, message, clientId, sessionId, phone, io) {
+    try {
+        console.log(`🤖 [ML] Processing ${intent} for client ${clientId}`);
+
+        // Extract parameters from message
+        const params = mlIntentDetector.extractParameters(message, intent);
+
+        // Get client name
+        let clientName = 'Cliente';
+        try {
+            const clientResult = await pool.query('SELECT name FROM clients WHERE id = $1', [clientId]);
+            if (clientResult.rows[0]) {
+                clientName = clientResult.rows[0].name;
+            }
+        } catch (e) {
+            console.warn('Could not fetch client name:', e.message);
+        }
+
+        // Execute analysis based on intent
+        let result;
+        let formattedResponse;
+
+        switch (intent) {
+            case 'sales_forecast':
+                result = await mlAnalysisService.salesForecast(clientId, params);
+                formattedResponse = mlResponseFormatter.formatSalesForecast(result, clientName);
+                break;
+
+            case 'instagram_analysis':
+                result = await mlAnalysisService.instagramAnalysis(clientId, params);
+                formattedResponse = mlResponseFormatter.formatInstagramAnalysis(result, clientName);
+                break;
+
+            case 'tiktok_analysis':
+                result = await mlAnalysisService.tiktokAnalysis(clientId, params);
+                formattedResponse = mlResponseFormatter.formatTiktokAnalysis(result, clientName);
+                break;
+
+            case 'anomaly_detection':
+                result = await mlAnalysisService.anomalyDetection(clientId, params);
+                formattedResponse = mlResponseFormatter.formatAnomalyDetection(result, clientName);
+                break;
+
+            case 'dashboard_summary':
+                result = await mlAnalysisService.dashboardSummary(clientId);
+                formattedResponse = mlResponseFormatter.formatDashboardSummary(result, clientName);
+                break;
+
+            case 'marketing_roi':
+                result = await mlAnalysisService.marketingROI(clientId, params);
+                formattedResponse = mlResponseFormatter.formatMarketingROI(result, clientName);
+                break;
+
+            case 'customer_segmentation':
+                result = await mlAnalysisService.customerSegmentation(clientId);
+                formattedResponse = mlResponseFormatter.formatCustomerSegmentation(result, clientName);
+                break;
+
+            case 'churn_prediction':
+                result = await mlAnalysisService.churnPrediction(clientId, params);
+                formattedResponse = mlResponseFormatter.formatChurnPrediction(result, clientName);
+                break;
+
+            default:
+                formattedResponse = mlResponseFormatter.formatUnsupportedIntent(intent);
+                result = { success: false };
+        }
+
+        // Save response to chat_messages (Ops DB)
+        try {
+            await pool.opsQuery(`
+                INSERT INTO chat_messages (session_id, role, sender_type, content, metadata, created_at)
+                VALUES ($1, 'assistant', 'system', $2, $3, NOW())
+            `, [
+                sessionId,
+                formattedResponse,
+                JSON.stringify({
+                    ml_intent: intent,
+                    analysis_id: result.analysis_id || null,
+                    confidence: result.confidence || null
+                })
+            ]);
+        } catch (dbErr) {
+            console.warn('Could not save ML response to chat_messages:', dbErr.message);
+        }
+
+        // Emit via Socket.io
+        if (io) {
+            io.to(sessionId).emit('ml-analysis-complete', {
+                intent,
+                intentDescription: mlIntentDetector.getIntentDescription(intent),
+                response: formattedResponse,
+                data: result,
+                phone,
+                sessionId
+            });
+
+            console.log(`✅ [ML] Analysis complete: ${intent} - emitted to session ${sessionId}`);
+        }
+
+    } catch (error) {
+        console.error(`❌ [ML] Error in handleMLIntent:`, error);
+
+        const errorMessage = mlResponseFormatter.formatError(error, intent);
+
+        // Save error to chat
+        try {
+            await pool.opsQuery(`
+                INSERT INTO chat_messages (session_id, role, sender_type, content, created_at)
+                VALUES ($1, 'assistant', 'system', $2, NOW())
+            `, [sessionId, errorMessage]);
+        } catch (e) { }
+
+        // Emit error via Socket.io
+        if (io) {
+            io.to(sessionId).emit('ml-analysis-error', {
+                intent,
+                error: errorMessage,
+                phone,
+                sessionId
+            });
+        }
+    }
+}
+
 // --- WHATSAPP ASYNC PROCESSING ---
 async function handleWhatsAppMessage(payload) {
-    const { sessionId, phone, messageContent, tenantId } = payload;
+    const { sessionId, phone, messageContent, tenantId, clientId } = payload;
     const io = global.io; // Access global socket instance
 
     console.log(`📨 [Job] Processing WhatsApp Message for ${phone} (Session: ${sessionId})`);
 
     try {
+        // ========================================
+        // ML INTENT DETECTION (Feature Flag)
+        // ========================================
+        if (process.env.ENABLE_ML_AGENT === 'true' && messageContent) {
+            const intentResult = mlIntentDetector.detectIntent(messageContent);
+
+            if (intentResult.matched) {
+                console.log(`🤖 [ML] Intent detected: ${intentResult.intent} (confidence: ${intentResult.confidence})`);
+
+                // Process ML intent and return (skip normal processing)
+                await handleMLIntent(intentResult.intent, messageContent, clientId, sessionId, phone, io);
+                return; // Exit early - ML handled this message
+            }
+        }
+
+        // ========================================
+        // NORMAL PROCESSING (existing logic)
+        // ========================================
+
         // 1. Update Lead Score
         try {
             const leadRes = await pool.query("SELECT id FROM leads WHERE phone LIKE $1 OR phone LIKE $2 LIMIT 1", [`%${phone}%`, phone]);
