@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Brain, Eye, EyeOff, Cpu, Check, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock } from 'lucide-react';
+import { Save, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Brain, Eye, EyeOff, Cpu, Check, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock, Mail, Send, TestTube, AlertCircle, CheckCircle } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import { useAuth } from '@/contexts/AuthContext';
 import { UsageStats } from './UsageStats';
@@ -45,7 +45,7 @@ const memberSchema = z.object({
 
 type MemberFormData = z.infer<typeof memberSchema>;
 
-type SettingsTab = 'profile' | 'integrations' | 'team' | 'billing' | 'notifications' | 'security' | 'subscription' | 'admin';
+type SettingsTab = 'profile' | 'integrations' | 'team' | 'billing' | 'notifications' | 'security' | 'subscription' | 'admin' | 'email';
 
 interface TeamMember {
   id: number;
@@ -159,6 +159,21 @@ export const Settings: React.FC = () => {
   const [anthropicKey, setAnthropicKey] = useState('');
   const [showAnthropicKey, setShowAnthropicKey] = useState(false);
   const [isEditingAnthropic, setIsEditingAnthropic] = useState(false);
+
+  // Estados para Email SMTP
+  const [emailConfig, setEmailConfig] = useState({
+    smtpHost: '',
+    smtpPort: '587',
+    smtpUser: '',
+    smtpPassword: '',
+    smtpFrom: '',
+    smtpFromName: '',
+    smtpSecure: true
+  });
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
+  const [emailTestStatus, setEmailTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [emailTestMessage, setEmailTestMessage] = useState('');
 
   // Estados para Perfil
   // Estados para Perfil (Removido profileData pois usamos currentUser)
@@ -465,6 +480,7 @@ export const Settings: React.FC = () => {
     { id: 'profile', label: 'Perfil', icon: User },
     { id: 'subscription', label: 'Planos e Limites', icon: CreditCard },
     { id: 'integrations', label: 'Integrações', icon: LinkIcon },
+    { id: 'email', label: 'Email', icon: Mail },
     { id: 'team', label: 'Equipe', icon: User },
     { id: 'security', label: 'Segurança', icon: Shield },
   ];
@@ -638,6 +654,221 @@ export const Settings: React.FC = () => {
                 Atualizar Senha
               </button>
             </form>
+          </div>
+        );
+
+      case 'email':
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Configurações de Email</h3>
+              <p className="text-sm text-gray-500">Configure o servidor SMTP para envio de emails e notificações.</p>
+            </div>
+
+            {/* Status Card */}
+            {emailTestStatus !== 'idle' && (
+              <div className={`p-4 rounded-lg flex items-start gap-3 ${emailTestStatus === 'success' ? 'bg-green-50 border border-green-200' :
+                  emailTestStatus === 'error' ? 'bg-red-50 border border-red-200' :
+                    'bg-blue-50 border border-blue-200'
+                }`}>
+                {emailTestStatus === 'testing' && <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600" />}
+                {emailTestStatus === 'success' && <CheckCircle className="text-green-600" size={20} />}
+                {emailTestStatus === 'error' && <AlertCircle className="text-red-600" size={20} />}
+                <div>
+                  <h4 className={`font-bold text-sm ${emailTestStatus === 'success' ? 'text-green-800' :
+                      emailTestStatus === 'error' ? 'text-red-800' :
+                        'text-blue-800'
+                    }`}>
+                    {emailTestStatus === 'testing' ? 'Testando conexão...' :
+                      emailTestStatus === 'success' ? 'Conexão estabelecida!' :
+                        'Erro na conexão'}
+                  </h4>
+                  <p className="text-xs mt-1">{emailTestMessage}</p>
+                </div>
+              </div>
+            )}
+
+            {/* SMTP Configuration Form */}
+            <div className="border border-gray-200 rounded-xl p-5 space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                    <Mail size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900">Servidor SMTP</h4>
+                    <p className="text-xs text-gray-500">Configure para envio de emails transacionais</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsEditingEmail(!isEditingEmail)}
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                >
+                  {isEditingEmail ? 'Cancelar' : 'Editar'}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Host SMTP</label>
+                  <input
+                    type="text"
+                    value={emailConfig.smtpHost}
+                    onChange={(e) => setEmailConfig(prev => ({ ...prev, smtpHost: e.target.value }))}
+                    disabled={!isEditingEmail}
+                    placeholder="smtp.gmail.com"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Porta</label>
+                  <input
+                    type="text"
+                    value={emailConfig.smtpPort}
+                    onChange={(e) => setEmailConfig(prev => ({ ...prev, smtpPort: e.target.value }))}
+                    disabled={!isEditingEmail}
+                    placeholder="587"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Usuário/Email</label>
+                  <input
+                    type="email"
+                    value={emailConfig.smtpUser}
+                    onChange={(e) => setEmailConfig(prev => ({ ...prev, smtpUser: e.target.value }))}
+                    disabled={!isEditingEmail}
+                    placeholder="seu-email@gmail.com"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Senha/App Password</label>
+                  <div className="relative">
+                    <input
+                      type={showSmtpPassword ? 'text' : 'password'}
+                      value={emailConfig.smtpPassword}
+                      onChange={(e) => setEmailConfig(prev => ({ ...prev, smtpPassword: e.target.value }))}
+                      disabled={!isEditingEmail}
+                      placeholder="••••••••••••••••"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSmtpPassword(!showSmtpPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showSmtpPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Email Remetente</label>
+                  <input
+                    type="email"
+                    value={emailConfig.smtpFrom}
+                    onChange={(e) => setEmailConfig(prev => ({ ...prev, smtpFrom: e.target.value }))}
+                    disabled={!isEditingEmail}
+                    placeholder="noreply@suaempresa.com"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nome Remetente</label>
+                  <input
+                    type="text"
+                    value={emailConfig.smtpFromName}
+                    onChange={(e) => setEmailConfig(prev => ({ ...prev, smtpFromName: e.target.value }))}
+                    disabled={!isEditingEmail}
+                    placeholder="Elite Finder"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <input
+                  type="checkbox"
+                  id="smtpSecure"
+                  checked={emailConfig.smtpSecure}
+                  onChange={(e) => setEmailConfig(prev => ({ ...prev, smtpSecure: e.target.checked }))}
+                  disabled={!isEditingEmail}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <label htmlFor="smtpSecure" className="text-sm text-gray-700">
+                  Usar conexão segura (TLS/SSL)
+                </label>
+              </div>
+
+              {isEditingEmail && (
+                <div className="flex gap-3 pt-4 border-t">
+                  <button
+                    onClick={async () => {
+                      setEmailTestStatus('testing');
+                      setEmailTestMessage('Enviando email de teste...');
+                      try {
+                        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/email/test`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(emailConfig)
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                          setEmailTestStatus('success');
+                          setEmailTestMessage('Email de teste enviado com sucesso! Verifique sua caixa de entrada.');
+                        } else {
+                          setEmailTestStatus('error');
+                          setEmailTestMessage(data.error || 'Falha ao enviar email de teste.');
+                        }
+                      } catch (err: any) {
+                        setEmailTestStatus('error');
+                        setEmailTestMessage(err.message || 'Erro de conexão com o servidor.');
+                      }
+                    }}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2"
+                  >
+                    <TestTube size={16} />
+                    Testar Conexão
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/email/config`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ ...emailConfig, userId: user?.id })
+                        });
+                        if (res.ok) {
+                          alert('Configurações de email salvas com sucesso!');
+                          setIsEditingEmail(false);
+                        } else {
+                          const data = await res.json();
+                          alert('Erro: ' + (data.error || 'Falha ao salvar'));
+                        }
+                      } catch (err) {
+                        alert('Erro ao salvar configurações.');
+                      }
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <Save size={16} />
+                    Salvar Configurações
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Info Card */}
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h4 className="font-bold text-amber-800 text-sm flex items-center gap-2">
+                <AlertCircle size={16} />
+                Dica para Gmail
+              </h4>
+              <p className="text-xs text-amber-700 mt-1">
+                Para usar o Gmail como SMTP, você precisa criar uma "Senha de App" nas configurações de segurança da sua conta Google.
+                Use smtp.gmail.com, porta 587, e a senha de app gerada (não sua senha normal).
+              </p>
+            </div>
           </div>
         );
 
