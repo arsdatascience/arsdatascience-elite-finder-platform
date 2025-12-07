@@ -51,6 +51,7 @@ const corsOptions = {
 
 // ============ CORS MUST COME FIRST ============
 // Handle preflight OPTIONS for all routes BEFORE any other middleware
+console.log('🌐 CORS configured for origins:', allowedOrigins);
 app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
 
