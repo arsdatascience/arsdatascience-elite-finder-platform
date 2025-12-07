@@ -38,8 +38,58 @@ export const SalesCoachingChat: React.FC = () => {
     const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
     const [activePhone, setActivePhone] = useState<string | null>(null);
     const [showSettings, setShowSettings] = useState(false);
+    const [integrationStatus, setIntegrationStatus] = useState<{ connected: boolean; platform: string; phone?: string }>({ connected: false, platform: '' });
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const activeSessionIdRef = useRef(activeSessionId);
+
+    const formatPhoneNumber = (phone: string | null) => {
+        if (!phone) return '';
+        const clean = phone.replace('@s.whatsapp.net', '').replace('@g.us', '');
+        // Format as +55 (XX) XXXXX-XXXX for Brazil numbers
+        if (clean.length >= 10 && (clean.startsWith('55') || clean.startsWith('1'))) {
+            // Basic formatting attempt
+            if (clean.startsWith('55') && clean.length > 4) {
+                const ddd = clean.substring(2, 4);
+                const rest = clean.substring(4);
+                if (rest.length === 9) {
+                    return `+55 (${ddd}) ${rest.substring(0, 5)}-${rest.substring(5)}`;
+                } else if (rest.length === 8) {
+                    return `+55 (${ddd}) ${rest.substring(0, 4)}-${rest.substring(4)}`;
+                }
+            }
+        }
+        return clean;
+    };
+
+    const fetchIntegrationStatus = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/whatsapp`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (data.status === 'connected') {
+                    setIntegrationStatus({
+                        connected: true,
+                        platform: data.platform === 'evolution_api' ? 'EvolutionAPI' : 'API Oficial',
+                        phone: data.phone // Assuming backend returns connected phone if available
+                    });
+                } else {
+                    setIntegrationStatus({ connected: false, platform: '' });
+                }
+            } else {
+                setIntegrationStatus({ connected: false, platform: '' });
+            }
+        } catch (error) {
+            console.error('Error fetching integration status:', error);
+            setIntegrationStatus({ connected: false, platform: '' });
+        }
+    };
+
+    useEffect(() => {
+        fetchIntegrationStatus();
+    }, []);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -321,7 +371,7 @@ export const SalesCoachingChat: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-1 text-xs text-gray-500">
                                     <Smartphone size={10} />
-                                    <span>{session.phone}</span>
+                                    <span>{formatPhoneNumber(session.phone)}</span>
                                 </div>
                             </div>
                         ))
@@ -340,10 +390,11 @@ export const SalesCoachingChat: React.FC = () => {
                         </div>
                         <div>
                             <h3 className="font-bold text-gray-800">
-                                {activePhone ? `WhatsApp: ${activePhone}` : 'Selecione uma conversa'}
+                                {activePhone ? `WhatsApp: ${formatPhoneNumber(activePhone)}` : 'Selecione uma conversa'}
                             </h3>
                             <p className="text-xs text-gray-500 flex items-center gap-1">
-                                <span className="w-2 h-2 rounded-full bg-green-500"></span> Conectado via EvolutionAPI
+                                <span className={`w-2 h-2 rounded-full ${integrationStatus.connected ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                {integrationStatus.connected ? `Conectado via ${integrationStatus.platform}` : 'Desconectado'}
                             </p>
                         </div>
                     </div>
@@ -535,6 +586,7 @@ export const SalesCoachingChat: React.FC = () => {
             <WhatsAppConfigModal
                 isOpen={showSettings}
                 onClose={() => setShowSettings(false)}
+                onConfigUpdate={fetchIntegrationStatus}
             />
 
             {/* Save Client Modal */}

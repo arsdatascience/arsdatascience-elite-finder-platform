@@ -4,9 +4,10 @@ import { X, Save, CheckCircle, AlertCircle, Smartphone, Globe } from 'lucide-rea
 interface WhatsAppConfigModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onConfigUpdate?: () => void;
 }
 
-export const WhatsAppConfigModal: React.FC<WhatsAppConfigModalProps> = ({ isOpen, onClose }) => {
+export const WhatsAppConfigModal: React.FC<WhatsAppConfigModalProps> = ({ isOpen, onClose, onConfigUpdate }) => {
     const [activeTab, setActiveTab] = useState<'evolution' | 'official'>('evolution');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
@@ -97,6 +98,7 @@ export const WhatsAppConfigModal: React.FC<WhatsAppConfigModalProps> = ({ isOpen
 
             if (res.ok) {
                 setSuccess('Configuração salva com sucesso!');
+                if (onConfigUpdate) onConfigUpdate();
                 setTimeout(onClose, 1500);
             } else {
                 setError('Erro ao salvar configuração.');
@@ -123,6 +125,7 @@ export const WhatsAppConfigModal: React.FC<WhatsAppConfigModalProps> = ({ isOpen
                 setSuccess('Desconectado com sucesso!');
                 setEvolutionConfig({ baseUrl: '', instanceName: '', apiKey: '' });
                 setOfficialConfig({ phoneNumberId: '', accessToken: '', verifyToken: '' });
+                if (onConfigUpdate) onConfigUpdate();
                 setTimeout(onClose, 1500);
             } else {
                 setError('Erro ao desconectar.');
