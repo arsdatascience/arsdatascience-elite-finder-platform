@@ -3,14 +3,13 @@ import {
     Wallet, Calendar, Download, Filter,
     Plus, Edit2, X,
     ArrowUpCircle, ArrowDownCircle, DollarSign, BarChart3, Tag, Users,
-    Loader2, ShoppingBag, List
+    Loader2, ShoppingBag
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 import { ServiceCatalog } from './ServiceCatalog';
-import SOPManager from './SOPManager';
 
 interface Transaction {
     id: string;
@@ -52,7 +51,7 @@ interface DashboardData {
 }
 
 const FinancialModule: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'settings' | 'services' | 'processes'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'settings' | 'services'>('dashboard');
     const [loading, setLoading] = useState(true);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -607,12 +606,7 @@ const FinancialModule: React.FC = () => {
                         >
                             <ShoppingBag size={14} className="inline mr-1" /> Serviços
                         </button>
-                        <button
-                            onClick={() => setActiveTab('processes')}
-                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'processes' ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
-                        >
-                            <List size={14} className="inline mr-1" /> Processos
-                        </button>
+
                         <button
                             onClick={() => setActiveTab('settings')}
                             className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'settings' ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
@@ -795,12 +789,7 @@ const FinancialModule: React.FC = () => {
                 </div>
             )}
 
-            {/* SOP/Processes Tab */}
-            {activeTab === 'processes' && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <SOPManager />
-                </div>
-            )}
+
 
             {/* Settings Tab - Gerenciar Categorias */}
             {activeTab === 'settings' && (
