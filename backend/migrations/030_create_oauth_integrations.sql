@@ -1,6 +1,7 @@
+-- NOTE: client_id references clients.id in crossover database (no FK possible across DBs)
 CREATE TABLE IF NOT EXISTS integrations (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    client_id INTEGER NOT NULL, -- References clients(id) in crossover DB
     provider VARCHAR(50) NOT NULL, -- 'facebook', 'google', 'linkedin'
     access_token TEXT NOT NULL, -- Encrypted
     refresh_token TEXT, -- Encrypted

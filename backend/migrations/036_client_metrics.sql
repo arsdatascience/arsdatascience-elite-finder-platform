@@ -1,11 +1,12 @@
 -- =====================================================
 -- CLIENT METRICS TABLE
 -- Daily metrics tracking for clients
+-- NOTE: client_id references clients.id in crossover database (no FK possible across DBs)
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS client_metrics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+    client_id INTEGER NOT NULL, -- References clients(id) in crossover DB
     
     -- ============================================
     -- TEMPORAL

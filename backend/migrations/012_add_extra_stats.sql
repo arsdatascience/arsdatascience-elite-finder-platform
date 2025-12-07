@@ -1,16 +1,17 @@
+-- NOTE: client_id references clients.id in crossover database (no FK possible across DBs)
 
 -- Adicionar client_id em device_stats se não existir
 DO $$ 
 BEGIN 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='device_stats' AND column_name='client_id') THEN 
-        ALTER TABLE device_stats ADD COLUMN client_id INTEGER REFERENCES clients(id);
+        ALTER TABLE device_stats ADD COLUMN client_id INTEGER; -- References clients(id) in crossover DB
     END IF;
 END $$;
 
 -- Criar tabela conversion_sources se não existir
 CREATE TABLE IF NOT EXISTS conversion_sources (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id),
+    client_id INTEGER, -- References clients(id) in crossover DB
     source_name VARCHAR(50),
     percentage NUMERIC(5,2),
     created_at TIMESTAMP DEFAULT NOW()

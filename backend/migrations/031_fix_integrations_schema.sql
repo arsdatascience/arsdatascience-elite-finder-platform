@@ -1,8 +1,9 @@
 DROP TABLE IF EXISTS integrations;
 
+-- NOTE: client_id references clients.id in crossover database (no FK possible across DBs)
 CREATE TABLE integrations (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    client_id INTEGER NOT NULL, -- References clients(id) in crossover DB
     provider VARCHAR(50) NOT NULL,
     access_token TEXT NOT NULL,
     refresh_token TEXT,

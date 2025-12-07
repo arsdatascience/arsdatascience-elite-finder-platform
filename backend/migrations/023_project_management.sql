@@ -1,11 +1,12 @@
 -- Migration: Project Management Module
 -- Description: Adds tables for Projects, Tasks, Members, and Comments with strict Tenant isolation.
+-- NOTE: client_id references clients.id in crossover database (no FK possible across DBs)
 
 -- 1. PROJECTS TABLE
 CREATE TABLE IF NOT EXISTS projects (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
-    client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL, -- Optional link to Client
+    client_id INTEGER, -- References clients(id) in crossover DB - Optional link to Client
     owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,    -- Project Manager
     
     name VARCHAR(255) NOT NULL,

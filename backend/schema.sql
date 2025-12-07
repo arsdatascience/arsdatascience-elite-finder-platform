@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS clients (
 -- ============================================
 CREATE TABLE IF NOT EXISTS automation_workflows (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    client_id INTEGER, -- References clients(id) in crossover DB
     tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     trigger_type VARCHAR(50),
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS automation_workflow_steps (
 CREATE TABLE IF NOT EXISTS leads (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    client_id INTEGER, -- References clients(id) in crossover DB
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255),
     phone VARCHAR(50),
@@ -179,7 +179,7 @@ CREATE TABLE IF NOT EXISTS leads (
 -- ============================================
 CREATE TABLE IF NOT EXISTS social_posts (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    client_id INTEGER, -- References clients(id) in crossover DB
     content TEXT,
     media_url TEXT,
     platform VARCHAR(50),
@@ -190,7 +190,7 @@ CREATE TABLE IF NOT EXISTS social_posts (
 
 CREATE TABLE IF NOT EXISTS device_stats (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    client_id INTEGER, -- References clients(id) in crossover DB
     device_type VARCHAR(50),
     percentage DECIMAL(5, 2),
     conversions INTEGER,
@@ -258,7 +258,7 @@ CREATE TABLE IF NOT EXISTS financial_transactions (
     amount DECIMAL(12, 2) NOT NULL,
     type VARCHAR(20) NOT NULL CHECK (type IN ('income', 'expense')),
     category_id INTEGER REFERENCES financial_categories(id) ON DELETE SET NULL,
-    client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
+    client_id INTEGER, -- References clients(id) in crossover DB
     date DATE DEFAULT CURRENT_DATE,
     status VARCHAR(20) DEFAULT 'paid' CHECK (status IN ('pending', 'paid', 'overdue', 'cancelled')),
     notes TEXT,
