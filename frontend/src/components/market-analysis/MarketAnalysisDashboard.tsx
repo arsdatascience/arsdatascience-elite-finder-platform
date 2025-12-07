@@ -8,6 +8,7 @@ import { TrainingWizard } from './TrainingWizard';
 import { ExperimentDetails } from './ExperimentDetails';
 import { ModelComparison } from './ModelComparison';
 import { AnalyticsResults } from './AnalyticsResults';
+import { PredictionInterface } from './PredictionInterface';
 import { apiClient } from '../../services/apiClient';
 
 type TabType = 'data' | 'training' | 'experiments' | 'results' | 'comparison' | 'predictions';
@@ -214,42 +215,7 @@ const MarketAnalysisDashboard: React.FC = () => {
                     <ModelComparison onSelectExperiment={(id) => setSelectedExperiment(id)} />
                 )}
 
-                {activeTab === 'predictions' && (
-                    <div className="p-6">
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-                            <Target className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                            <h3 className="text-lg font-medium text-slate-700 mb-2">Predições em Produção</h3>
-                            <p className="text-slate-500 mb-4">
-                                Após treinar e fazer deploy de um modelo, você poderá usá-lo aqui para fazer predições em novos dados.
-                            </p>
-                            <div className="max-w-md mx-auto text-left mt-8">
-                                <h4 className="font-medium text-slate-700 mb-3">Como funciona:</h4>
-                                <ol className="space-y-2 text-sm text-slate-600">
-                                    <li className="flex items-start gap-2">
-                                        <span className="flex-shrink-0 w-5 h-5 bg-[#597996] text-white rounded-full flex items-center justify-center text-xs">1</span>
-                                        Faça upload de um dataset na aba "Dados"
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="flex-shrink-0 w-5 h-5 bg-[#597996] text-white rounded-full flex items-center justify-center text-xs">2</span>
-                                        Configure e treine um modelo na aba "Treinamento"
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="flex-shrink-0 w-5 h-5 bg-[#597996] text-white rounded-full flex items-center justify-center text-xs">3</span>
-                                        Avalie os resultados em "Experimentos"
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="flex-shrink-0 w-5 h-5 bg-[#2c6a6b] text-white rounded-full flex items-center justify-center text-xs">4</span>
-                                        Faça deploy do modelo para produção
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <span className="flex-shrink-0 w-5 h-5 bg-[#2c6a6b] text-white rounded-full flex items-center justify-center text-xs">5</span>
-                                        Use o modelo aqui para predições!
-                                    </li>
-                                </ol>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {activeTab === 'predictions' && <PredictionInterface />}
             </div>
         </div>
     );

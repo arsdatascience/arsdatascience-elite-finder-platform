@@ -871,6 +871,30 @@ app.get('/api/financial/suppliers', authenticateToken, financialCtrl.getSupplier
 app.post('/api/financial/suppliers', authenticateToken, financialCtrl.createSupplier);
 app.get('/api/financial/clients', authenticateToken, financialCtrl.getClients);
 
+// --- ML DATA & ANALYTICS ROUTES ---
+const dataController = require('./controllers/dataController');
+const trainingController = require('./controllers/trainingController');
+
+// Dataset Management
+app.post('/api/data/upload', authenticateToken, dataController.upload.single('file'), dataController.uploadDataset);
+app.get('/api/data/datasets', authenticateToken, dataController.getDatasets);
+
+// Model Training & Experiments
+app.get('/api/models/experiments', authenticateToken, trainingController.getExperiments);
+app.post('/api/models/experiments', authenticateToken, trainingController.createExperiment);
+app.get('/api/models/experiments/:id', authenticateToken, trainingController.getExperimentDetails);
+app.post('/api/models/experiments/:id/deploy', authenticateToken, trainingController.deployModel);
+
+// Model Predictions
+app.post('/api/predictions/custom', authenticateToken, trainingController.runPrediction);
+app.get('/api/predictions/history', authenticateToken, trainingController.getPredictionHistory);
+
+// Analytics Results & Segments
+app.get('/api/analytics/results', authenticateToken, dataController.getAnalyticsResults);
+app.get('/api/analytics/segments', authenticateToken, dataController.getSegments);
+app.get('/api/analytics/segments/:code', authenticateToken, dataController.getSegmentData);
+app.get('/api/analytics/algorithms', authenticateToken, dataController.getAlgorithms);
+
 // --- BULLMQ DASHBOARD ---
 const serverAdapter = require('./queueBoard');
 // Note: router need to be used as a middleware

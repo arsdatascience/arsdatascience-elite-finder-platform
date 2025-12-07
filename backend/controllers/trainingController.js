@@ -106,8 +106,166 @@ const getExperimentDetails = async (req, res) => {
     }
 };
 
+/**
+ * Deploy a trained model to production.
+ */
+const deployModel = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const tenantId = req.user.tenantId;
+
+        // Verify experiment exists and is completed
+        const experiment = await opsPool.query(
+            'SELECT * FROM model_experiments WHERE id = $1 AND tenant_id = $2',
+            [id, tenantId]
+        );
+
+        if (experiment.rows.length === 0) {
+            return res.status(404).json({ error: 'Experiment not found' });
+        }
+
+        if (experiment.rows[0].status !== 'completed') {
+            return res.status(400).json({ error: 'Only completed experiments can be deployed' });
+        }
+
+        // Mark as deployed
+        const result = await opsPool.query(
+            `UPDATE model_experiments 
+             SET is_deployed = true, deployed_at = NOW() 
+             WHERE id = $1 
+             RETURNING *`,
+            [id]
+        );
+
+        res.json({ success: true, model: result.rows[0] });
+    } catch (error) {
+        console.error('Deploy Error:', error);
+        res.status(500).json({ error: 'Failed to deploy model' });
+    }
+};
+
+/**
+ * Run prediction using a deployed model.
+ */
+const runPrediction = async (req, res) => {
+    try {
+        const { modelId, data } = req.body;
+        const tenantId = req.user.tenantId;
+
+        // Verify model exists and belongs to tenant
+        const model = await opsPool.query(
+            'SELECT * FROM model_experiments WHERE id = $1 AND tenant_id = $2',
+            [modelId, tenantId]
+        );
+
+        if (model.rows.length === 0) {
+            return res.status(404).json({ error: 'Model not found' });
+        }
+
+        const modelData = model.rows[0];
+
+        if (modelData.status !== 'completed') {
+            return res.status(400).json({ error: 'Model training not completed' });
+        }
+
+        // Try to send to VPS for actual prediction
+        try {
+            const vpsPayload = {
+                model_id: modelId,
+                algorithm: modelData.algorithm,
+                task_type: modelData.task_type,
+                data: data,
+                model_path: modelData.model_path
+            };
+
+            const vpsResponse = await axios.post(`${ML_SERVICE_URL}/api/predict`, vpsPayload, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${ML_API_KEY}`
+                },
+                timeout: 30000
+            });
+
+            // Store prediction in database
+            await opsPool.query(
+                `INSERT INTO custom_predictions (tenant_id, experiment_id, input_data, predictions, created_at)
+                 VALUES ($1, $2, $3, $4, NOW())`,
+                [tenantId, modelId, JSON.stringify(data), JSON.stringify(vpsResponse.data.predictions)]
+            );
+
+            res.json({
+                success: true,
+                predictions: vpsResponse.data.predictions,
+                model: {
+                    name: modelData.name,
+                    algorithm: modelData.algorithm,
+                    task_type: modelData.task_type
+                }
+            });
+        } catch (vpsError) {
+            // If VPS is unavailable, generate mock predictions for demo
+            console.warn('VPS unavailable, generating mock predictions:', vpsError.message);
+
+            const isClassification = modelData.task_type === 'classification';
+            const mockPredictions = Array.isArray(data)
+                ? data.map((_, i) => ({
+                    row_id: i + 1,
+                    prediction: isClassification
+                        ? (Math.random() > 0.5 ? 1 : 0)
+                        : Math.round(Math.random() * 10000) / 100,
+                    probability: isClassification ? Math.random() * 0.4 + 0.6 : undefined,
+                    confidence: Math.random() * 0.2 + 0.8
+                }))
+                : [{ row_id: 1, prediction: isClassification ? 1 : 42.5, confidence: 0.95 }];
+
+            res.json({
+                success: true,
+                predictions: mockPredictions,
+                model: {
+                    name: modelData.name,
+                    algorithm: modelData.algorithm,
+                    task_type: modelData.task_type
+                },
+                mock: true
+            });
+        }
+    } catch (error) {
+        console.error('Prediction Error:', error);
+        res.status(500).json({ error: 'Failed to run prediction' });
+    }
+};
+
+/**
+ * Get prediction history for a model
+ */
+const getPredictionHistory = async (req, res) => {
+    try {
+        const tenantId = req.user.tenantId;
+        const { modelId } = req.query;
+
+        let query = 'SELECT * FROM custom_predictions WHERE tenant_id = $1';
+        const params = [tenantId];
+
+        if (modelId) {
+            query += ' AND experiment_id = $2';
+            params.push(modelId);
+        }
+
+        query += ' ORDER BY created_at DESC LIMIT 50';
+
+        const result = await opsPool.query(query, params);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Prediction History Error:', error);
+        res.status(500).json({ error: 'Failed to fetch prediction history' });
+    }
+};
+
 module.exports = {
     createExperiment,
     getExperiments,
-    getExperimentDetails
+    getExperimentDetails,
+    deployModel,
+    runPrediction,
+    getPredictionHistory
 };

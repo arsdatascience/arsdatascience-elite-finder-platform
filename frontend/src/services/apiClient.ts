@@ -465,6 +465,42 @@ export const apiClient = {
         getExperimentDetails: async (id: string) => {
             const response = await axiosInstance.get(`/models/experiments/${id}`);
             return response.data;
+        },
+        deployModel: async (id: string) => {
+            const response = await axiosInstance.post(`/models/experiments/${id}/deploy`);
+            return response.data;
+        },
+
+        // Predictions
+        runPrediction: async (modelId: string, data: any[]) => {
+            const response = await axiosInstance.post('/predictions/custom', { modelId, data });
+            return response.data;
+        },
+        getPredictionHistory: async (modelId?: string) => {
+            const response = await axiosInstance.get('/predictions/history', { params: { modelId } });
+            return response.data;
+        },
+
+        // Analytics Results & Visualization
+        getAnalyticsResults: async (params?: { segment?: string; algorithm?: string; analysis_type?: string }) => {
+            const response = await axiosInstance.get('/analytics/results', { params });
+            return response.data;
+        },
+
+        // Industry Segments
+        getSegments: async () => {
+            const response = await axiosInstance.get('/analytics/segments');
+            return response.data;
+        },
+        getSegmentData: async (code: string) => {
+            const response = await axiosInstance.get(`/analytics/segments/${code}`);
+            return response.data;
+        },
+
+        // Algorithm Configurations
+        getAlgorithms: async (taskType?: string) => {
+            const response = await axiosInstance.get('/analytics/algorithms', { params: { task_type: taskType } });
+            return response.data;
         }
     }
 };

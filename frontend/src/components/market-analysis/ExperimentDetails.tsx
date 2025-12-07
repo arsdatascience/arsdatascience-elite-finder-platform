@@ -30,6 +30,7 @@ interface Experiment {
     training_duration?: number;
     created_at: string;
     completed_at?: string;
+    is_deployed?: boolean;
 }
 
 interface ExperimentDetailsProps {
@@ -254,8 +255,23 @@ export const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment
                         <button className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50">
                             Comparar com Outros
                         </button>
-                        <button className="px-4 py-2 bg-[#2c6a6b] text-white rounded-lg hover:bg-[#245858]">
-                            Deploy para Produção
+                        <button
+                            onClick={async () => {
+                                try {
+                                    await apiClient.marketAnalysis.deployModel(experiment.id);
+                                    alert('Modelo deployado com sucesso!');
+                                    loadExperiment();
+                                } catch (err) {
+                                    alert('Erro ao fazer deploy do modelo');
+                                }
+                            }}
+                            className={`px-4 py-2 rounded-lg text-white ${experiment.is_deployed
+                                ? 'bg-emerald-600 cursor-default'
+                                : 'bg-[#2c6a6b] hover:bg-[#245858]'
+                                }`}
+                            disabled={experiment.is_deployed}
+                        >
+                            {experiment.is_deployed ? '✓ Em Produção' : 'Deploy para Produção'}
                         </button>
                     </div>
                 )}
