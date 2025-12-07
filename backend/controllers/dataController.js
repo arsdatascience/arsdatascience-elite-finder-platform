@@ -45,10 +45,11 @@ const uploadDataset = async (req, res) => {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
-        // Parse CSV to get column info and row count
+        // Parse CSV to get column info, row count, and statistics
         let columns = [];
         let rowCount = 0;
         let preview = [];
+        let columnStats = {};
 
         if (file.originalname.endsWith('.csv')) {
             const fileContent = fs.readFileSync(file.path, 'utf8');
@@ -56,15 +57,24 @@ const uploadDataset = async (req, res) => {
             rowCount = records.length;
 
             if (records.length > 0) {
-                columns = Object.keys(records[0]).map(name => ({
-                    name,
-                    type: inferColumnType(records.slice(0, 100).map(r => r[name]))
-                }));
-                preview = records.slice(0, 10);
+                const columnNames = Object.keys(records[0]);
+
+                columns = columnNames.map(name => {
+                    const values = records.map(r => r[name]);
+                    const type = inferColumnType(values.slice(0, 100));
+
+                    // Calculate statistics for this column
+                    const stats = calculateColumnStats(values, type);
+                    columnStats[name] = stats;
+
+                    return { name, type };
+                });
+
+                preview = records.slice(0, 100);
             }
         }
 
-        // Insert dataset metadata
+        // Insert dataset metadata with statistics
         const result = await opsPool.query(`
             INSERT INTO ml_datasets (tenant_id, name, original_filename, file_path, file_size, row_count, column_count, columns, statistics)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -78,15 +88,97 @@ const uploadDataset = async (req, res) => {
             rowCount,
             columns.length,
             JSON.stringify(columns),
-            JSON.stringify({ preview })
+            JSON.stringify({ preview: preview.slice(0, 10), columnStats })
         ]);
 
-        res.status(201).json(result.rows[0]);
+        // Add statistics to response
+        const response = {
+            ...result.rows[0],
+            preview: preview.slice(0, 20),
+            columnStats
+        };
+
+        res.status(201).json(response);
     } catch (error) {
         console.error('Dataset Upload Error:', error);
         res.status(500).json({ error: 'Failed to upload dataset' });
     }
 };
+
+/**
+ * Calculate statistics for a column
+ */
+function calculateColumnStats(values, type) {
+    const nonNullValues = values.filter(v => v !== null && v !== '' && v !== undefined);
+    const nullCount = values.length - nonNullValues.length;
+    const uniqueCount = new Set(nonNullValues).size;
+
+    const stats = {
+        totalCount: values.length,
+        nullCount,
+        nullPercentage: ((nullCount / values.length) * 100).toFixed(2),
+        uniqueCount
+    };
+
+    // Numeric statistics
+    if (type === 'integer' || type === 'float') {
+        const numericValues = nonNullValues.map(v => parseFloat(v)).filter(v => !isNaN(v));
+
+        if (numericValues.length > 0) {
+            // Min, Max
+            stats.min = Math.min(...numericValues);
+            stats.max = Math.max(...numericValues);
+
+            // Mean
+            const sum = numericValues.reduce((a, b) => a + b, 0);
+            stats.mean = sum / numericValues.length;
+
+            // Median
+            const sorted = [...numericValues].sort((a, b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            stats.median = sorted.length % 2 !== 0
+                ? sorted[mid]
+                : (sorted[mid - 1] + sorted[mid]) / 2;
+
+            // Standard Deviation
+            const variance = numericValues.reduce((acc, val) => acc + Math.pow(val - stats.mean, 2), 0) / numericValues.length;
+            stats.std = Math.sqrt(variance);
+
+            // Quartiles
+            const q1Idx = Math.floor(sorted.length * 0.25);
+            const q3Idx = Math.floor(sorted.length * 0.75);
+            stats.q1 = sorted[q1Idx];
+            stats.q3 = sorted[q3Idx];
+
+            // Round values for display
+            stats.mean = parseFloat(stats.mean.toFixed(4));
+            stats.median = parseFloat(stats.median.toFixed(4));
+            stats.std = parseFloat(stats.std.toFixed(4));
+        }
+    }
+
+    // String statistics
+    if (type === 'string') {
+        const lengths = nonNullValues.map(v => String(v).length);
+        if (lengths.length > 0) {
+            stats.minLength = Math.min(...lengths);
+            stats.maxLength = Math.max(...lengths);
+            stats.avgLength = parseFloat((lengths.reduce((a, b) => a + b, 0) / lengths.length).toFixed(2));
+        }
+
+        // Most common values (top 5)
+        const valueCounts = {};
+        nonNullValues.forEach(v => {
+            valueCounts[v] = (valueCounts[v] || 0) + 1;
+        });
+        stats.topValues = Object.entries(valueCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([value, count]) => ({ value, count }));
+    }
+
+    return stats;
+}
 
 /**
  * Get all datasets for tenant
