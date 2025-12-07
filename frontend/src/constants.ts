@@ -20,7 +20,7 @@ export const NAV_ITEMS = [
   { id: 'CREATIVE_STUDIO', label: 'Estúdio Criativo IA', icon: Sparkles },
   { id: 'SALES_COACHING', label: 'Coaching de Vendas', icon: Mic },
   { id: 'PROJECTS', label: 'Gestão de Projetos', icon: Briefcase },
-  { id: 'FINANCIAL', label: 'Gestão Financeira', icon: Wallet },
+  { id: 'FINANCIAL_MODULE', label: 'Gestão Financeira', icon: Wallet },
   { id: 'ASSETS', label: 'Biblioteca Digital', icon: Folder },
   { id: 'APPROVALS', label: 'Central de Aprovações', icon: CheckCircle2 },
   { id: 'HELP_CENTER', label: 'Manual de Uso', icon: HelpCircle },
