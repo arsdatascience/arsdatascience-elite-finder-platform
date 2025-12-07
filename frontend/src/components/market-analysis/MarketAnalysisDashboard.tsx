@@ -8,10 +8,11 @@ import { TrainingWizard } from './TrainingWizard';
 import { ExperimentDetails } from './ExperimentDetails';
 import { ModelComparison } from './ModelComparison';
 import { AnalyticsResults } from './AnalyticsResults';
+import { AnalysisHub } from './AnalysisHub';
 import { PredictionInterface } from './PredictionInterface';
 import { apiClient } from '../../services/apiClient';
 
-type TabType = 'data' | 'training' | 'experiments' | 'results' | 'comparison' | 'predictions';
+type TabType = 'data' | 'training' | 'experiments' | 'results' | 'comparison' | 'predictions' | 'hub';
 
 interface Experiment {
     id: string;
@@ -54,6 +55,7 @@ const MarketAnalysisDashboard: React.FC = () => {
         { id: 'results' as TabType, label: 'Resultados', icon: PieChart },
         { id: 'comparison' as TabType, label: 'Comparação', icon: Trophy },
         { id: 'predictions' as TabType, label: 'Predições', icon: Target },
+        { id: 'hub' as TabType, label: 'Analysis Hub', icon: BarChart3 },
     ];
 
     const getStatusIcon = (status: string) => {
@@ -216,6 +218,8 @@ const MarketAnalysisDashboard: React.FC = () => {
                 )}
 
                 {activeTab === 'predictions' && <PredictionInterface />}
+
+                {activeTab === 'hub' && <AnalysisHub />}
             </div>
         </div>
     );
