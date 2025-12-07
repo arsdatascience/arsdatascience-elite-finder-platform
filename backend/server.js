@@ -912,9 +912,9 @@ app.post('/api/sop-templates', authenticateToken, async (req, res) => {
 app.get('/api/data/datasets', authenticateToken, async (req, res) => {
   try {
     const result = await pool.opsPool.query('SELECT * FROM ml_datasets ORDER BY created_at DESC LIMIT 50');
-    res.json({ success: true, datasets: result.rows });
+    res.json(result.rows); // Frontend expects array directly
   } catch (err) {
-    res.json({ success: true, datasets: [] });
+    res.json([]); // Return empty array on error
   }
 });
 
