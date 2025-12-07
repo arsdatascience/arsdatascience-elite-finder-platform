@@ -631,6 +631,334 @@ function calculateEngagementLift(metrics) {
     return (((avgEngagementWithSpend - avgEngagementWithoutSpend) / avgEngagementWithoutSpend) * 100).toFixed(1);
 }
 
+// ============================================
+// FASE 3 - FINANCIAL ANALYSES
+// ============================================
+
+/**
+ * 11. Cashflow Forecast
+ * POST /api/analysis/cashflow-forecast
+ */
+const cashflowForecast = async (req, res) => {
+    try {
+        const clientId = req.body.client_id || req.user?.clientId;
+        const { forecast_days = 90, historical_days = 180 } = req.body;
+
+        if (!clientId) {
+            return res.status(400).json({ error: 'client_id is required' });
+        }
+
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - historical_days);
+
+        const metrics = await dataPrep.getClientMetrics(
+            clientId,
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0],
+            'date, revenue, operational_cost, marketing_spend, cost_of_goods_sold, refund_amount'
+        );
+
+        if (metrics.length < 30) {
+            return res.status(400).json({ error: 'Insufficient data', message: 'At least 30 days required' });
+        }
+
+        // Calculate cashflow history
+        const cashflowHistory = metrics.map(m => ({
+            date: m.date,
+            inflow: parseFloat(m.revenue) || 0,
+            outflow: (parseFloat(m.operational_cost) || 0) +
+                (parseFloat(m.marketing_spend) || 0) +
+                (parseFloat(m.cost_of_goods_sold) || 0) +
+                (parseFloat(m.refund_amount) || 0),
+            net: (parseFloat(m.revenue) || 0) -
+                (parseFloat(m.operational_cost) || 0) -
+                (parseFloat(m.marketing_spend) || 0) -
+                (parseFloat(m.cost_of_goods_sold) || 0) -
+                (parseFloat(m.refund_amount) || 0)
+        }));
+
+        // Generate forecast
+        const avgDailyNet = cashflowHistory.reduce((sum, d) => sum + d.net, 0) / cashflowHistory.length;
+        const trend = calculateTrend(cashflowHistory.map(d => d.net));
+
+        const forecast = [];
+        let cumulativeCashflow = cashflowHistory.reduce((sum, d) => sum + d.net, 0);
+
+        for (let i = 1; i <= forecast_days; i++) {
+            const date = new Date();
+            date.setDate(date.getDate() + i);
+            const projected = avgDailyNet * (1 + trend * i * 0.01);
+            cumulativeCashflow += projected;
+
+            forecast.push({
+                date: date.toISOString().split('T')[0],
+                projected_net: Math.round(projected),
+                cumulative: Math.round(cumulativeCashflow),
+                lower_bound: Math.round(projected * 0.85),
+                upper_bound: Math.round(projected * 1.15)
+            });
+        }
+
+        const result = await mlService.cashflowForecast(cashflowHistory, forecast_days);
+
+        const analysis = {
+            historical_summary: {
+                total_inflow: cashflowHistory.reduce((sum, d) => sum + d.inflow, 0),
+                total_outflow: cashflowHistory.reduce((sum, d) => sum + d.outflow, 0),
+                net_cashflow: cashflowHistory.reduce((sum, d) => sum + d.net, 0),
+                avg_daily_net: avgDailyNet.toFixed(2),
+                trend: trend > 0 ? 'increasing' : trend < 0 ? 'decreasing' : 'stable'
+            },
+            forecast,
+            alerts: generateCashflowAlerts(forecast)
+        };
+
+        await storeAnalysisResult(clientId, 'cashflow_forecast', analysis, { forecast_days, historical_days });
+
+        res.json({
+            success: true,
+            analysis_type: 'cashflow_forecast',
+            client_id: clientId,
+            ...analysis,
+            ml_insights: result.data
+        });
+
+    } catch (error) {
+        console.error('Cashflow Forecast Error:', error);
+        res.status(500).json({ error: 'Failed to forecast cashflow', details: error.message });
+    }
+};
+
+/**
+ * 12. Profitability Analysis
+ * POST /api/analysis/profitability
+ */
+const profitability = async (req, res) => {
+    try {
+        const clientId = req.body.client_id || req.user?.clientId;
+        const { historical_days = 90 } = req.body;
+
+        if (!clientId) {
+            return res.status(400).json({ error: 'client_id is required' });
+        }
+
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - historical_days);
+
+        const metrics = await dataPrep.getClientMetrics(
+            clientId,
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0],
+            `date, revenue, gross_revenue, net_revenue, gross_profit, net_profit,
+             gross_margin, net_margin, cost_of_goods_sold, operational_cost, marketing_spend`
+        );
+
+        if (!metrics.length) {
+            return res.status(400).json({ error: 'No financial data available' });
+        }
+
+        // Calculate profitability metrics
+        const totals = {
+            revenue: metrics.reduce((sum, m) => sum + (parseFloat(m.revenue) || 0), 0),
+            gross_profit: metrics.reduce((sum, m) => sum + (parseFloat(m.gross_profit) || 0), 0),
+            net_profit: metrics.reduce((sum, m) => sum + (parseFloat(m.net_profit) || 0), 0),
+            cogs: metrics.reduce((sum, m) => sum + (parseFloat(m.cost_of_goods_sold) || 0), 0),
+            operational_cost: metrics.reduce((sum, m) => sum + (parseFloat(m.operational_cost) || 0), 0),
+            marketing_spend: metrics.reduce((sum, m) => sum + (parseFloat(m.marketing_spend) || 0), 0)
+        };
+
+        const analysis = {
+            period_days: historical_days,
+            totals,
+            margins: {
+                gross_margin: totals.revenue > 0 ? ((totals.gross_profit / totals.revenue) * 100).toFixed(2) : 0,
+                net_margin: totals.revenue > 0 ? ((totals.net_profit / totals.revenue) * 100).toFixed(2) : 0,
+                operating_margin: totals.revenue > 0 ? (((totals.revenue - totals.cogs - totals.operational_cost) / totals.revenue) * 100).toFixed(2) : 0
+            },
+            breakeven: {
+                daily_revenue_needed: totals.operational_cost > 0 ? (totals.operational_cost / historical_days).toFixed(2) : 0,
+                current_daily_revenue: (totals.revenue / historical_days).toFixed(2),
+                status: totals.net_profit > 0 ? 'above_breakeven' : 'below_breakeven'
+            },
+            trends: {
+                revenue_trend: calculateTrendFromMetrics(metrics, 'revenue'),
+                profit_trend: calculateTrendFromMetrics(metrics, 'net_profit'),
+                margin_trend: calculateTrendFromMetrics(metrics, 'net_margin')
+            },
+            recommendations: generateProfitabilityRecommendations(totals)
+        };
+
+        await storeAnalysisResult(clientId, 'profitability', analysis, { historical_days });
+
+        res.json({
+            success: true,
+            analysis_type: 'profitability',
+            client_id: clientId,
+            ...analysis
+        });
+
+    } catch (error) {
+        console.error('Profitability Error:', error);
+        res.status(500).json({ error: 'Failed to analyze profitability', details: error.message });
+    }
+};
+
+/**
+ * 13. Revenue Scenarios
+ * POST /api/analysis/revenue-scenarios
+ */
+const revenueScenarios = async (req, res) => {
+    try {
+        const clientId = req.body.client_id || req.user?.clientId;
+        const { forecast_days = 90, historical_days = 180 } = req.body;
+
+        if (!clientId) {
+            return res.status(400).json({ error: 'client_id is required' });
+        }
+
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - historical_days);
+
+        const metrics = await dataPrep.getClientMetrics(
+            clientId,
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0],
+            'date, revenue, orders, marketing_spend'
+        );
+
+        if (metrics.length < 30) {
+            return res.status(400).json({ error: 'Insufficient data' });
+        }
+
+        // Calculate base stats
+        const avgRevenue = metrics.reduce((sum, m) => sum + (parseFloat(m.revenue) || 0), 0) / metrics.length;
+        const stdDev = calculateStdDev(metrics.map(m => parseFloat(m.revenue) || 0));
+        const trend = calculateTrend(metrics.map(m => parseFloat(m.revenue) || 0));
+
+        // Generate 3 scenarios
+        const scenarios = {
+            pessimistic: generateScenario('pessimistic', avgRevenue, stdDev, trend, forecast_days),
+            realistic: generateScenario('realistic', avgRevenue, stdDev, trend, forecast_days),
+            optimistic: generateScenario('optimistic', avgRevenue, stdDev, trend, forecast_days)
+        };
+
+        const analysis = {
+            historical_summary: {
+                avg_daily_revenue: avgRevenue.toFixed(2),
+                std_deviation: stdDev.toFixed(2),
+                trend: trend > 0.02 ? 'growing' : trend < -0.02 ? 'declining' : 'stable',
+                growth_rate: (trend * 100).toFixed(2) + '%'
+            },
+            scenarios,
+            comparison: {
+                pessimistic_total: scenarios.pessimistic.total_revenue,
+                realistic_total: scenarios.realistic.total_revenue,
+                optimistic_total: scenarios.optimistic.total_revenue,
+                range: scenarios.optimistic.total_revenue - scenarios.pessimistic.total_revenue
+            }
+        };
+
+        await storeAnalysisResult(clientId, 'revenue_scenarios', analysis, { forecast_days, historical_days });
+
+        res.json({
+            success: true,
+            analysis_type: 'revenue_scenarios',
+            client_id: clientId,
+            ...analysis
+        });
+
+    } catch (error) {
+        console.error('Revenue Scenarios Error:', error);
+        res.status(500).json({ error: 'Failed to generate revenue scenarios', details: error.message });
+    }
+};
+
+// Financial helper functions
+function calculateTrend(values) {
+    if (values.length < 2) return 0;
+    const n = values.length;
+    const sumX = (n * (n - 1)) / 2;
+    const sumY = values.reduce((a, b) => a + b, 0);
+    const sumXY = values.reduce((sum, v, i) => sum + i * v, 0);
+    const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    return slope / (sumY / n); // Normalized trend
+}
+
+function calculateStdDev(values) {
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    const variance = values.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / values.length;
+    return Math.sqrt(variance);
+}
+
+function calculateTrendFromMetrics(metrics, field) {
+    const values = metrics.map(m => parseFloat(m[field]) || 0);
+    const trend = calculateTrend(values);
+    return trend > 0.02 ? 'increasing' : trend < -0.02 ? 'decreasing' : 'stable';
+}
+
+function generateCashflowAlerts(forecast) {
+    const alerts = [];
+    const negativeDay = forecast.find(d => d.cumulative < 0);
+    if (negativeDay) {
+        alerts.push({ type: 'warning', message: `Negative cashflow projected by ${negativeDay.date}` });
+    }
+    const lowDays = forecast.filter(d => d.projected_net < 0).length;
+    if (lowDays > 10) {
+        alerts.push({ type: 'caution', message: `${lowDays} days with negative cashflow expected` });
+    }
+    return alerts;
+}
+
+function generateProfitabilityRecommendations(totals) {
+    const recs = [];
+    const grossMargin = totals.revenue > 0 ? (totals.gross_profit / totals.revenue) : 0;
+    const netMargin = totals.revenue > 0 ? (totals.net_profit / totals.revenue) : 0;
+
+    if (grossMargin < 0.3) {
+        recs.push({ type: 'pricing', message: 'Gross margin below 30%. Consider price optimization or cost reduction.' });
+    }
+    if (netMargin < 0.1) {
+        recs.push({ type: 'costs', message: 'Net margin below 10%. Review operational costs.' });
+    }
+    if (totals.marketing_spend > totals.revenue * 0.3) {
+        recs.push({ type: 'marketing', message: 'Marketing spend exceeds 30% of revenue. Optimize campaigns.' });
+    }
+    return recs;
+}
+
+function generateScenario(type, avgRevenue, stdDev, trend, days) {
+    const multipliers = { pessimistic: 0.7, realistic: 1.0, optimistic: 1.3 };
+    const trendMultipliers = { pessimistic: 0.5, realistic: 1.0, optimistic: 1.5 };
+
+    const dailyForecast = [];
+    let total = 0;
+
+    for (let i = 1; i <= days; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() + i);
+        const base = avgRevenue * multipliers[type];
+        const trendEffect = base * trend * trendMultipliers[type] * i * 0.01;
+        const value = Math.max(0, base + trendEffect);
+        total += value;
+
+        dailyForecast.push({
+            date: date.toISOString().split('T')[0],
+            revenue: Math.round(value)
+        });
+    }
+
+    return {
+        scenario: type,
+        total_revenue: Math.round(total),
+        avg_daily: Math.round(total / days),
+        forecast: dailyForecast.slice(0, 30) // Only first 30 days in response
+    };
+}
+
 module.exports = {
     // Fase 1 MVP
     salesForecast,
@@ -643,5 +971,9 @@ module.exports = {
     instagramPerformance,
     tiktokPerformance,
     socialComparison,
-    influencerROI
+    influencerROI,
+    // Fase 3 Financial
+    cashflowForecast,
+    profitability,
+    revenueScenarios
 };

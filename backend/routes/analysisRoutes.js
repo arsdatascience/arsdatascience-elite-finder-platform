@@ -46,4 +46,17 @@ router.post('/social-comparison', authenticateToken, analysisController.socialCo
 // 10. Influencer ROI
 router.post('/influencer-roi', authenticateToken, analysisController.influencerROI);
 
+// ============================================
+// FASE 3 FINANCIAL - 3 Analyses
+// ============================================
+
+// 11. Cashflow Forecast
+router.post('/cashflow-forecast', authenticateToken, analysisController.cashflowForecast);
+
+// 12. Profitability Analysis
+router.post('/profitability', authenticateToken, analysisController.profitability);
+
+// 13. Revenue Scenarios
+router.post('/revenue-scenarios', authenticateToken, analysisController.revenueScenarios);
+
 module.exports = router;
