@@ -75,4 +75,45 @@ router.post('/train/clustering', authenticateToken, analysisController.trainClus
 // 17. Train Time Series Model
 router.post('/train/timeseries', authenticateToken, analysisController.trainTimeseries);
 
+// ============================================
+// FASE 5 ADVANCED - 18 Analyses
+// ============================================
+
+// 18. Lead Forecast
+router.post('/lead-forecast', authenticateToken, analysisController.leadForecast);
+// 19. Budget Optimization
+router.post('/budget-optimization', authenticateToken, analysisController.budgetOptimization);
+// 20. Inventory Optimization
+router.post('/inventory-optimization', authenticateToken, analysisController.inventoryOptimization);
+// 21. Demand Forecast
+router.post('/demand-forecast', authenticateToken, analysisController.demandForecast);
+// 22. Return Analysis
+router.post('/return-analysis', authenticateToken, analysisController.returnAnalysis);
+// 23. LTV Prediction
+router.post('/ltv-prediction', authenticateToken, analysisController.ltvPrediction);
+// 24. RFM Analysis
+router.post('/rfm-analysis', authenticateToken, analysisController.rfmAnalysis);
+// 25. Purchase Propensity
+router.post('/purchase-propensity', authenticateToken, analysisController.purchasePropensity);
+// 26. Satisfaction Trends
+router.post('/satisfaction-trends', authenticateToken, analysisController.satisfactionTrends);
+// 27. Funnel Optimization
+router.post('/funnel-optimization', authenticateToken, analysisController.funnelOptimization);
+// 28. Cart Abandonment
+router.post('/cart-abandonment', authenticateToken, analysisController.cartAbandonment);
+// 29. A/B Test
+router.post('/ab-test', authenticateToken, analysisController.abTestAnalysis);
+// 30. Market Benchmark
+router.post('/market-benchmark', authenticateToken, analysisController.marketBenchmark);
+// 31. Competitor Analysis
+router.post('/competitor-analysis', authenticateToken, analysisController.competitorAnalysis);
+// 32. Seasonality Forecast
+router.post('/seasonality-forecast', authenticateToken, analysisController.seasonalityForecast);
+// 33. Event Impact
+router.post('/event-impact', authenticateToken, analysisController.eventImpact);
+// 34. Scenario Simulator
+router.post('/scenario-simulator', authenticateToken, analysisController.scenarioSimulator);
+// 35. Time Series Prophet
+router.post('/time-series-prophet', authenticateToken, analysisController.timeSeriesProphet);
+
 module.exports = router;
