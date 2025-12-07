@@ -2,7 +2,8 @@
 import React, { useState, useMemo } from 'react';
 import { Printer, Layout, TrendingUp, Users, PieChart as PieIcon, Download, BarChart2, Activity, DollarSign, Calendar } from 'lucide-react';
 import { KPIS, COMPARATIVE_FUNNEL_DATA, CAMPAIGNS_DATA, LEADS_DATA, CLIENTS_LIST } from '../constants';
-import { AreaChart, Area, CartesianGrid, PieChart, Pie, Cell, LabelList, Legend, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { GOOGLE_SEARCH_TERMS, GOOGLE_AUCTION_INSIGHTS, GOOGLE_TOP_ADS, GOOGLE_KEYWORDS, GOOGLE_DEMOGRAPHICS, GOOGLE_DEVICES, META_CAMPAIGNS, META_CREATIVES, META_PLACEMENTS, META_DEMOGRAPHICS, META_REACH_FREQUENCY, CONVERSION_FUNNEL_DETAILED } from '../mocks/reportData';
+import { AreaChart, Area, CartesianGrid, PieChart, Pie, Cell, LabelList, Legend, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -69,12 +70,25 @@ const AVAILABLE_WIDGETS: Widget[] = [
   { id: 'top_ads', label: 'Top Anúncios', category: 'Google Ads' },
   { id: 'keyword_performance', label: 'Palavras-chave', category: 'Google Ads' },
   { id: 'demographics_chart', label: 'Demografia', category: 'Google Ads' },
+  { id: 'ad_extensions', label: 'Extensões de Anúncio', category: 'Google Ads' },
+  { id: 'geo_heatmap', label: 'Geolocalização', category: 'Google Ads' },
+  { id: 'device_breakdown', label: 'Dispositivos', category: 'Google Ads' },
+  { id: 'shopping_performance', label: 'Shopping', category: 'Google Ads' },
+  { id: 'ga4_behavior', label: 'Comportamento (GA4)', category: 'Google Ads' },
+  { id: 'conversion_attribution', label: 'Atribuição', category: 'Google Ads' },
 
   // Meta
-  { id: 'meta_campaigns_table', label: 'Tabela Campanhas Meta', category: 'Meta Ads' },
-  { id: 'creative_performance', label: 'Performance de Criativos', category: 'Meta Ads' },
+  { id: 'meta_campaigns_table', label: 'Campanhas Meta', category: 'Meta Ads' },
+  { id: 'creative_performance', label: 'Criativos', category: 'Meta Ads' },
   { id: 'reach_frequency', label: 'Alcance & Frequência', category: 'Meta Ads' },
   { id: 'placements_chart', label: 'Posicionamentos', category: 'Meta Ads' },
+  { id: 'custom_audiences', label: 'Públicos Personal.', category: 'Meta Ads' },
+  { id: 'format_breakdown', label: 'Formatos', category: 'Meta Ads' },
+  { id: 'top_creatives', label: 'Top Criativos', category: 'Meta Ads' },
+  { id: 'pixel_events', label: 'Eventos Pixel', category: 'Meta Ads' },
+  { id: 'catalog_sales', label: 'Vendas Catálogo', category: 'Meta Ads' },
+  { id: 'attribution_model', label: 'Modelo Atribuição', category: 'Meta Ads' },
+  { id: 'engagement_chart', label: 'Engajamento', category: 'Meta Ads' },
 ];
 
 const PAGE_HEIGHT_LIMIT = 850; // Altura útil estimada por página em pixels
@@ -84,9 +98,34 @@ const WIDGET_HEIGHTS: Record<WidgetType, number> = {
   finance_chart: 420,
   distribution: 380,
   funnel: 420,
+  conversion_funnel: 400,
   top_campaigns: 400,
   recent_leads: 400,
-  notes: 250
+  notes: 250,
+  // Google
+  search_terms_table: 500,
+  auction_insights: 350,
+  top_ads: 400,
+  ad_extensions: 300,
+  keyword_performance: 450,
+  demographics_chart: 350,
+  geo_heatmap: 350,
+  device_breakdown: 300,
+  shopping_performance: 400,
+  ga4_behavior: 400,
+  conversion_attribution: 350,
+  // Meta
+  meta_campaigns_table: 450,
+  reach_frequency: 350,
+  engagement_chart: 350,
+  placements_chart: 350,
+  custom_audiences: 500,
+  creative_performance: 500,
+  top_creatives: 500,
+  format_breakdown: 350,
+  pixel_events: 400,
+  catalog_sales: 400,
+  attribution_model: 350
 };
 
 import { REPORT_TEMPLATES, ReportTemplate } from '../constants/reportTemplates';
@@ -295,7 +334,7 @@ export const Reports: React.FC = () => {
             <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2 flex items-center gap-2">
               <PieIcon size={20} className="text-slate-700" /> Distribuição de Verba
             </h3>
-            <div className="h-64 border border-gray-100 rounded-xl p-4 bg-white shadow-sm flex items-center justify-center" style={{ minHeight: '256px' }}>
+            <div className="h-64 border border-gray-100 rounded-xl p-4 bg-white shadow-sm" style={{ minHeight: '256px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -409,6 +448,307 @@ export const Reports: React.FC = () => {
             </div>
           </section>
         );
+
+      // --- CROSS-PLATFORM ---
+      case 'conversion_funnel':
+        return (
+          <section className="mb-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2 flex items-center gap-2">
+              <TrendingUp size={20} className="text-slate-700" /> Funil Detalhado Cross-Channel
+            </h3>
+            <div className="h-80 border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={CONVERSION_FUNNEL_DETAILED} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }} barSize={30}>
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="stage" type="category" width={100} tick={{ fontSize: 11, fontWeight: 'bold' }} axisLine={false} tickLine={false} />
+                  <Tooltip cursor={{ fill: '#f8fafc' }} />
+                  <Legend />
+                  <Bar dataKey="google" stackId="a" fill="#4285F4" name="Google Ads" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="meta" stackId="a" fill="#C13584" name="Meta Ads" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+        );
+
+      // --- GOOGLE ADS WIDGETS ---
+      case 'search_terms_table':
+        return (
+          <section className="mb-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Termos de Pesquisa (Top 5)</h3>
+            <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+              <table className="w-full text-left text-sm bg-white">
+                <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                  <tr>
+                    <th className="p-3">Termo</th>
+                    <th className="p-3 text-right">Impr.</th>
+                    <th className="p-3 text-right">Cliques</th>
+                    <th className="p-3 text-right">CTR</th>
+                    <th className="p-3 text-right">Conv.</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {GOOGLE_SEARCH_TERMS.map((term, i) => (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="p-3 font-medium text-gray-900">{term.term}</td>
+                      <td className="p-3 text-right text-gray-600">{term.impressions}</td>
+                      <td className="p-3 text-right text-gray-600">{term.clicks}</td>
+                      <td className="p-3 text-right font-bold text-blue-600">{term.ctr}</td>
+                      <td className="p-3 text-right text-green-600 font-bold">{term.conversions}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        );
+      case 'auction_insights':
+        return (
+          <section className="mb-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Informações de Leilão</h3>
+            <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+              <table className="w-full text-left text-sm bg-white">
+                <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                  <tr>
+                    <th className="p-3">Domínio</th>
+                    <th className="p-3 text-right">Parc. Impr.</th>
+                    <th className="p-3 text-right">Sobreposição</th>
+                    <th className="p-3 text-right">Pos. Acima</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {GOOGLE_AUCTION_INSIGHTS.map((row, i) => (
+                    <tr key={i} className={i === 0 ? "bg-blue-50/50" : "hover:bg-gray-50"}>
+                      <td className={`p-3 font-bold ${i === 0 ? 'text-blue-700' : 'text-gray-700'}`}>{row.domain}</td>
+                      <td className="p-3 text-right">{row.impressionShare}</td>
+                      <td className="p-3 text-right text-gray-500">{row.overlapRate}</td>
+                      <td className="p-3 text-right text-gray-500">{row.topOfPageRate}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        );
+      case 'keyword_performance':
+        return (
+          <section className="mb-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Performance de Palavras-chave</h3>
+            <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+              <table className="w-full text-left text-sm bg-white">
+                <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                  <tr>
+                    <th className="p-3">Palavra-chave</th>
+                    <th className="p-3">Corresp.</th>
+                    <th className="p-3 text-right">Cliques</th>
+                    <th className="p-3 text-right">Custo</th>
+                    <th className="p-3 text-right">Conv.</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {GOOGLE_KEYWORDS.map((kw, i) => (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="p-3 font-medium text-gray-900">{kw.keyword}</td>
+                      <td className="p-3 text-xs text-gray-500">{kw.matchType}</td>
+                      <td className="p-3 text-right">{kw.clicks}</td>
+                      <td className="p-3 text-right text-gray-600">{formatCurrency(kw.cost)}</td>
+                      <td className="p-3 text-right text-green-600 font-bold">{kw.conversions}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        );
+      case 'demographics_chart':
+        return (
+          <section className="mb-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Perfil Demográfico (Idade)</h3>
+            <div className="h-64 border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={GOOGLE_DEMOGRAPHICS} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="ageGroup" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip cursor={{ fill: '#f8fafc' }} />
+                  <Bar dataKey="percentage" name="% Impressões" fill="#4285F4" radius={[4, 4, 0, 0]} barSize={40}>
+                    <LabelList dataKey="percentage" position="top" formatter={(val: any) => val + '%'} style={{ fontSize: '10px', fill: '#64748b' }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+        );
+      case 'device_breakdown':
+        return (
+          <section className="mb-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Dispositivos</h3>
+            <div className="h-64 border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={GOOGLE_DEVICES}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="clicks"
+                  >
+                    {GOOGLE_DEVICES.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index === 0 ? '#4285F4' : index === 1 ? '#34A853' : '#FBBC05'} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend verticalAlign="middle" align="right" layout="vertical" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+        );
+      // Placeholders for other Google Widgets to avoid crash
+      case 'top_ads':
+      case 'ad_extensions':
+      case 'geo_heatmap':
+      case 'shopping_performance':
+      case 'ga4_behavior':
+      case 'conversion_attribution':
+        return (
+          <section className="mb-8 opacity-75">
+            <h3 className="text-lg font-bold text-gray-800 mb-2 border-b border-gray-200 pb-2">{AVAILABLE_WIDGETS.find(w => w.id === id)?.label}</h3>
+            <div className="bg-gray-50 border border-gray-200 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-gray-400">
+              <BarChart2 size={32} className="mb-2" />
+              <p className="text-sm">Dados simulados indisponíveis para este widget no momento.</p>
+            </div>
+          </section>
+        );
+
+      // --- META ADS WIDGETS ---
+      case 'meta_campaigns_table':
+        return (
+          <section className="mb-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Campanhas Meta Ads</h3>
+            <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm">
+              <table className="w-full text-left text-sm bg-white">
+                <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                  <tr>
+                    <th className="p-3">Campanha</th>
+                    <th className="p-3 text-right">Alcance</th>
+                    <th className="p-3 text-right">Freq.</th>
+                    <th className="p-3 text-right">Compras</th>
+                    <th className="p-3 text-right">ROAS</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {META_CAMPAIGNS.map((camp, i) => (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="p-3 font-medium text-gray-900 text-xs">{camp.name}</td>
+                      <td className="p-3 text-right text-gray-600">{camp.reach.toLocaleString()}</td>
+                      <td className="p-3 text-right text-gray-500">{camp.frequency}</td>
+                      <td className="p-3 text-right text-green-600 font-bold">{camp.purchases}</td>
+                      <td className="p-3 text-right font-bold text-blue-600">{camp.roas}x</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        );
+      case 'creative_performance':
+      case 'top_creatives':
+        return (
+          <section className="mb-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Top Criativos</h3>
+            <div className="grid grid-cols-1 gap-4">
+              {META_CREATIVES.map((creative, i) => (
+                <div key={i} className="flex items-center gap-4 bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                  <div className="w-16 h-16 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
+                    <img src={creative.thumb} alt={creative.name} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-900 text-sm truncate">{creative.name}</p>
+                    <p className="text-xs text-gray-500">{creative.type}</p>
+                  </div>
+                  <div className="flex gap-4 text-right">
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase font-bold">CTR</p>
+                      <p className="text-sm font-bold text-blue-600">{creative.ctr}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase font-bold">ROAS</p>
+                      <p className="text-sm font-bold text-green-600">{creative.roas}x</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        );
+      case 'placements_chart':
+        return (
+          <section className="mb-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Posicionamentos</h3>
+            <div className="h-64 border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={META_PLACEMENTS}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="percentage"
+                  >
+                    {META_PLACEMENTS.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend verticalAlign="middle" align="right" layout="vertical" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+        );
+      case 'reach_frequency':
+        return (
+          <section className="mb-8">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Alcance & Frequência (7 Dias)</h3>
+            <div className="h-64 border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={META_REACH_FREQUENCY} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="day" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis yAxisId="left" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip cursor={{ fill: '#f8fafc' }} />
+                  <Line yAxisId="left" type="monotone" dataKey="reach" name="Alcance" stroke="#8884d8" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 8 }} />
+                  <Line yAxisId="right" type="monotone" dataKey="frequency" name="Frequência" stroke="#82ca9d" strokeWidth={3} dot={false} />
+                  <Legend />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+        );
+
+      // Placeholders for other Meta Widgets
+      case 'engagement_chart':
+      case 'custom_audiences':
+      case 'format_breakdown':
+      case 'pixel_events':
+      case 'catalog_sales':
+      case 'attribution_model':
+        return (
+          <section className="mb-8 opacity-75">
+            <h3 className="text-lg font-bold text-gray-800 mb-2 border-b border-gray-200 pb-2">{AVAILABLE_WIDGETS.find(w => w.id === id)?.label}</h3>
+            <div className="bg-gray-50 border border-gray-200 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-gray-400">
+              <BarChart2 size={32} className="mb-2" />
+              <p className="text-sm">Dados simulados indisponíveis para este widget no momento.</p>
+            </div>
+          </section>
+        );
+
       default: return null;
     }
   };

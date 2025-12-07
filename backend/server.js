@@ -486,6 +486,31 @@ async function initializeDatabase() {
       `);
       console.log('✅ Migração de Project Management verificada/aplicada.');
 
+      // Migração para Produção em Lote (Content Batches)
+      console.log('🔄 Verificando migrações de Content Batches (Batch Generator)...');
+      await pool.query(`
+            CREATE TABLE IF NOT EXISTS content_batches (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                user_id TEXT DEFAULT 'admin',
+                topic TEXT NOT NULL,
+                total_days INTEGER NOT NULL,
+                platform TEXT NOT NULL,
+                tone TEXT NOT NULL,
+                status TEXT DEFAULT 'processing', 
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                settings JSONB DEFAULT '{}'
+            );
+
+            -- Add batch_id to social_posts if not exists
+            DO $$ 
+            BEGIN 
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'social_posts' AND column_name = 'batch_id') THEN
+                    ALTER TABLE social_posts ADD COLUMN batch_id UUID REFERENCES content_batches(id);
+                END IF;
+            END $$;
+      `);
+      console.log('✅ Migração de Content Batches verificada/aplicada.');
+
       // Migração para Operations & Knowledge (Digital Maturity Phase 2)
       console.log('🔄 Verificando migrações de Operations & Knowledge...');
       const operationsMigration = fs.readFileSync(path.join(__dirname, 'migrations', '024_phase2_operations.sql'), 'utf8');
