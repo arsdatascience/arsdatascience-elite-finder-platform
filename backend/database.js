@@ -8,8 +8,9 @@ const pool = new Pool({
 });
 
 // Create Operations connection pool (New Modules: Projects, Tasks, SOPs, Finance)
+// Railway uses DATA_BASE_URL2 for Maglev (Operations DB)
 const opsPool = new Pool({
-    connectionString: process.env.OPERATIONS_DB_URL || process.env.DATABASE_URL, // Fallback to main if not set
+    connectionString: process.env.DATA_BASE_URL2 || process.env.OPERATIONS_DB_URL || process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 

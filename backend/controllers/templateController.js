@@ -42,14 +42,15 @@ const templateController = {
 
     getAllTemplates: async (req, res) => {
         try {
+            console.log('[Templates] Fetching all templates from opsPool...');
             // Fetch templates
             const templates = await pool.query('SELECT * FROM templates WHERE is_active = true ORDER BY name');
-
+            console.log(`[Templates] Found ${templates.rows.length} templates`);
             // Fetch item counts (optional optimization)
             // For now, just return templates. We can fetch items on detail view.
             res.json(templates.rows);
         } catch (err) {
-            console.error(err);
+            console.error('[Templates] ERROR:', err);
             res.status(500).json({ error: 'Failed to fetch templates' });
         }
     },
