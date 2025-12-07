@@ -18,13 +18,7 @@ app.set('trust proxy', 1); // Necessário para Railway/Vercel e rate-limiter
 const authenticateToken = require('./middleware/auth');
 const helmet = require('helmet');
 
-// Configuração de Segurança (Helmet)
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }, // Permitir carregar imagens/assets de outros domínios
-  contentSecurityPolicy: false // Desabilitar CSP estrito por enquanto para evitar bloqueios de scripts externos
-}));
-
-// Configuração de Origens Permitidas
+// Configuração de Origens Permitidas (MOVED UP - Must be before any other middleware)
 const allowedOrigins = [
   'https://marketinghub.aiiam.com.br',
   'https://elitefinder.vercel.app',
@@ -46,7 +40,11 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// Middleware para debug e garantia de headers
+// CORS FIRST - Before anything else
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Enable Pre-Flight for all routes
+
+// Manual CORS backup for edge cases
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -55,12 +53,21 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+
+  // Handle preflight immediately
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
   next();
 });
 
+// Configuração de Segurança (Helmet) - AFTER CORS
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Permitir carregar imagens/assets de outros domínios
+  contentSecurityPolicy: false // Desabilitar CSP estrito por enquanto para evitar bloqueios de scripts externos
+}));
+
 app.use(compression());
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Enable Pre-Flight for all routes
 const stripeController = require('./stripeController');
 
 // Webhook Stripe (Precisa ser antes do express.json() global para validar assinatura)
