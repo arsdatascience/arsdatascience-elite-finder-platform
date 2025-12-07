@@ -763,8 +763,9 @@ app.post('/api/users', authenticateToken, checkAdmin, userCtrl.createUser);
 app.put('/api/users/:id', authenticateToken, checkAdmin, userCtrl.updateTeamMember);
 app.delete('/api/users/:id', authenticateToken, checkAdmin, userCtrl.deleteTeamMember);
 
-// Login
+// Login & Registration (Public - No Auth)
 app.post('/api/auth/login', userCtrl.login);
+app.post('/api/auth/register', userCtrl.register);
 app.post('/api/auth/forgot-password', userCtrl.forgotPassword);
 app.post('/api/auth/reset-password', userCtrl.resetPasswordConfirm);
 

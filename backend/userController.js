@@ -79,6 +79,85 @@ const login = async (req, res) => {
     }
 };
 
+/**
+ * Self-registration endpoint
+ * POST /api/auth/register
+ * Creates new user with 'user' role (not admin)
+ */
+const register = async (req, res) => {
+    const { name, email, password, phone } = req.body;
+
+    // Validation
+    if (!name || !email || !password) {
+        return res.status(400).json({
+            error: 'Nome, email e senha são obrigatórios',
+            fields: { name: !name, email: !email, password: !password }
+        });
+    }
+
+    if (password.length < 6) {
+        return res.status(400).json({ error: 'Senha deve ter no mínimo 6 caracteres' });
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Email inválido' });
+    }
+
+    try {
+        // Check if email already exists
+        const existingUser = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+        if (existingUser.rows.length > 0) {
+            return res.status(400).json({ error: 'Email já cadastrado' });
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(password, salt);
+
+        // Generate username from email
+        const username = email.split('@')[0] + '_' + Date.now().toString(36).slice(-4);
+
+        // Insert user with role 'user' (NOT admin)
+        const result = await db.query(`
+            INSERT INTO users (name, email, password_hash, username, phone, role, status, created_at)
+            VALUES ($1, $2, $3, $4, $5, 'user', 'active', NOW())
+            RETURNING id, name, email, role, created_at
+        `, [name, email, passwordHash, username, phone || null]);
+
+        const newUser = result.rows[0];
+
+        // Generate JWT token so user is logged in immediately
+        const token = jwt.sign({
+            id: newUser.id,
+            role: newUser.role,
+            tenant_id: null // New users don't have tenant yet
+        }, JWT_SECRET, { expiresIn: '1d' });
+
+        console.log(`✅ New user registered: ${email} (ID: ${newUser.id})`);
+
+        res.status(201).json({
+            success: true,
+            message: 'Cadastro realizado com sucesso!',
+            token,
+            user: {
+                id: newUser.id,
+                name: newUser.name,
+                email: newUser.email,
+                role: newUser.role
+            }
+        });
+
+    } catch (err) {
+        console.error('Registration Error:', err);
+        if (err.code === '23505') {
+            return res.status(400).json({ error: 'Email ou username já cadastrado' });
+        }
+        res.status(500).json({ error: 'Erro ao criar conta' });
+    }
+};
+
 const getTeamMembers = async (req, res) => {
     const userId = req.user.id;
     try {
@@ -491,6 +570,7 @@ module.exports = {
     updateAvatar,
     createUser,
     login,
+    register,
     getTeamMembers,
     createTeamMember,
     updateTeamMember,
