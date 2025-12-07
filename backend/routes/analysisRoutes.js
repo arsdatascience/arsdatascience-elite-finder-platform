@@ -30,4 +30,20 @@ router.post('/anomaly-detection', authenticateToken, analysisController.anomalyD
 // 6. Marketing ROI
 router.post('/marketing-roi', authenticateToken, analysisController.marketingROI);
 
+// ============================================
+// FASE 2 SOCIAL - 4 Analyses
+// ============================================
+
+// 7. Instagram Performance
+router.post('/instagram-performance', authenticateToken, analysisController.instagramPerformance);
+
+// 8. TikTok Performance
+router.post('/tiktok-performance', authenticateToken, analysisController.tiktokPerformance);
+
+// 9. Social Comparison
+router.post('/social-comparison', authenticateToken, analysisController.socialComparison);
+
+// 10. Influencer ROI
+router.post('/influencer-roi', authenticateToken, analysisController.influencerROI);
+
 module.exports = router;

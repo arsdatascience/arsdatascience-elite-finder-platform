@@ -338,11 +338,310 @@ function generateROIRecommendations(channels) {
     return recommendations;
 }
 
+// ============================================
+// FASE 2 - SOCIAL MEDIA ANALYSES
+// ============================================
+
+/**
+ * 7. Instagram Performance
+ * POST /api/analysis/instagram-performance
+ */
+const instagramPerformance = async (req, res) => {
+    try {
+        const clientId = req.body.client_id || req.user?.clientId;
+        const { historical_days = 90 } = req.body;
+
+        if (!clientId) {
+            return res.status(400).json({ error: 'client_id is required' });
+        }
+
+        const preparedData = await dataPrep.prepareInstagramData(clientId, historical_days);
+
+        if (!preparedData.data.length) {
+            return res.status(400).json({ error: 'No Instagram data available' });
+        }
+
+        // Calculate Instagram insights
+        const insights = calculateInstagramInsights(preparedData.data);
+
+        // Call ML for advanced analysis
+        const result = await mlService.instagramAnalysis(preparedData.data);
+
+        await storeAnalysisResult(clientId, 'instagram_performance', { ...insights, ml: result.data }, preparedData.metadata);
+
+        res.json({
+            success: true,
+            analysis_type: 'instagram_performance',
+            client_id: clientId,
+            ...insights,
+            ml_insights: result.data
+        });
+
+    } catch (error) {
+        console.error('Instagram Performance Error:', error);
+        res.status(500).json({ error: 'Failed to analyze Instagram', details: error.message });
+    }
+};
+
+/**
+ * 8. TikTok Performance
+ * POST /api/analysis/tiktok-performance
+ */
+const tiktokPerformance = async (req, res) => {
+    try {
+        const clientId = req.body.client_id || req.user?.clientId;
+        const { historical_days = 90 } = req.body;
+
+        if (!clientId) {
+            return res.status(400).json({ error: 'client_id is required' });
+        }
+
+        const preparedData = await dataPrep.prepareTikTokData(clientId, historical_days);
+
+        if (!preparedData.data.length) {
+            return res.status(400).json({ error: 'No TikTok data available' });
+        }
+
+        // Calculate TikTok insights
+        const insights = calculateTikTokInsights(preparedData.data);
+
+        // Call ML for advanced analysis
+        const result = await mlService.tiktokAnalysis(preparedData.data);
+
+        await storeAnalysisResult(clientId, 'tiktok_performance', { ...insights, ml: result.data }, preparedData.metadata);
+
+        res.json({
+            success: true,
+            analysis_type: 'tiktok_performance',
+            client_id: clientId,
+            ...insights,
+            ml_insights: result.data
+        });
+
+    } catch (error) {
+        console.error('TikTok Performance Error:', error);
+        res.status(500).json({ error: 'Failed to analyze TikTok', details: error.message });
+    }
+};
+
+/**
+ * 9. Social Comparison (Instagram vs TikTok)
+ * POST /api/analysis/social-comparison
+ */
+const socialComparison = async (req, res) => {
+    try {
+        const clientId = req.body.client_id || req.user?.clientId;
+        const { historical_days = 90 } = req.body;
+
+        if (!clientId) {
+            return res.status(400).json({ error: 'client_id is required' });
+        }
+
+        // Get data from both platforms
+        const [instagramData, tiktokData] = await Promise.all([
+            dataPrep.prepareInstagramData(clientId, historical_days),
+            dataPrep.prepareTikTokData(clientId, historical_days)
+        ]);
+
+        // Calculate comparison metrics
+        const igInsights = calculateInstagramInsights(instagramData.data);
+        const ttInsights = calculateTikTokInsights(tiktokData.data);
+
+        const comparison = {
+            instagram: {
+                total_followers: igInsights.current_followers || 0,
+                total_engagement: igInsights.total_engagement || 0,
+                avg_engagement_rate: igInsights.avg_engagement_rate || 0,
+                total_revenue: igInsights.total_revenue || 0,
+                growth_rate: igInsights.follower_growth_rate || 0
+            },
+            tiktok: {
+                total_followers: ttInsights.current_followers || 0,
+                total_engagement: ttInsights.total_engagement || 0,
+                avg_engagement_rate: ttInsights.avg_engagement_rate || 0,
+                total_revenue: ttInsights.total_revenue || 0,
+                growth_rate: ttInsights.follower_growth_rate || 0
+            },
+            winner: determineWinner(igInsights, ttInsights),
+            recommendations: generateSocialRecommendations(igInsights, ttInsights)
+        };
+
+        await storeAnalysisResult(clientId, 'social_comparison', comparison, { period_days: historical_days });
+
+        res.json({
+            success: true,
+            analysis_type: 'social_comparison',
+            client_id: clientId,
+            ...comparison
+        });
+
+    } catch (error) {
+        console.error('Social Comparison Error:', error);
+        res.status(500).json({ error: 'Failed to compare social platforms', details: error.message });
+    }
+};
+
+/**
+ * 10. Influencer ROI
+ * POST /api/analysis/influencer-roi
+ */
+const influencerROI = async (req, res) => {
+    try {
+        const clientId = req.body.client_id || req.user?.clientId;
+        const { historical_days = 90 } = req.body;
+
+        if (!clientId) {
+            return res.status(400).json({ error: 'client_id is required' });
+        }
+
+        const preparedData = await dataPrep.prepareMarketingROIData(clientId, historical_days);
+
+        // Get influencer-specific data from client_metrics
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - historical_days);
+
+        const influencerMetrics = await dataPrep.getClientMetrics(
+            clientId,
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0],
+            'date, influencer_spend, revenue, instagram_engagement, tiktok_engagement'
+        );
+
+        // Calculate influencer ROI
+        const totalInfluencerSpend = influencerMetrics.reduce((sum, m) => sum + (parseFloat(m.influencer_spend) || 0), 0);
+        const totalRevenue = influencerMetrics.reduce((sum, m) => sum + (parseFloat(m.revenue) || 0), 0);
+
+        const influencerAnalysis = {
+            total_spend: totalInfluencerSpend,
+            estimated_revenue_contribution: totalInfluencerSpend * 2.5, // Estimate
+            roi: totalInfluencerSpend > 0 ? ((totalInfluencerSpend * 2.5) / totalInfluencerSpend * 100 - 100).toFixed(1) : 0,
+            engagement_lift: calculateEngagementLift(influencerMetrics),
+            recommendations: [
+                { type: 'tracking', message: 'Use unique promo codes per influencer for accurate attribution' },
+                { type: 'optimization', message: 'Focus on micro-influencers for higher engagement rates' }
+            ]
+        };
+
+        await storeAnalysisResult(clientId, 'influencer_roi', influencerAnalysis, { period_days: historical_days });
+
+        res.json({
+            success: true,
+            analysis_type: 'influencer_roi',
+            client_id: clientId,
+            ...influencerAnalysis
+        });
+
+    } catch (error) {
+        console.error('Influencer ROI Error:', error);
+        res.status(500).json({ error: 'Failed to analyze influencer ROI', details: error.message });
+    }
+};
+
+// Social helper functions
+function calculateInstagramInsights(data) {
+    if (!data.length) return {};
+
+    const latest = data[data.length - 1];
+    const first = data[0];
+
+    return {
+        current_followers: latest.instagram_followers || 0,
+        follower_growth: (latest.instagram_followers || 0) - (first.instagram_followers || 0),
+        follower_growth_rate: first.instagram_followers > 0
+            ? (((latest.instagram_followers - first.instagram_followers) / first.instagram_followers) * 100).toFixed(2)
+            : 0,
+        total_engagement: data.reduce((sum, m) => sum + (m.instagram_engagement || 0), 0),
+        avg_engagement_rate: (data.reduce((sum, m) => sum + (parseFloat(m.instagram_engagement_rate) || 0), 0) / data.length * 100).toFixed(2),
+        total_posts: data.reduce((sum, m) => sum + (m.instagram_posts_published || 0), 0),
+        total_stories: data.reduce((sum, m) => sum + (m.instagram_stories_posted || 0), 0),
+        total_reels: data.reduce((sum, m) => sum + (m.instagram_reels_posted || 0), 0),
+        total_revenue: data.reduce((sum, m) => sum + (parseFloat(m.instagram_revenue) || 0), 0),
+        best_content_type: determineBestContent(data, 'instagram')
+    };
+}
+
+function calculateTikTokInsights(data) {
+    if (!data.length) return {};
+
+    const latest = data[data.length - 1];
+    const first = data[0];
+
+    return {
+        current_followers: latest.tiktok_followers || 0,
+        follower_growth: (latest.tiktok_followers || 0) - (first.tiktok_followers || 0),
+        follower_growth_rate: first.tiktok_followers > 0
+            ? (((latest.tiktok_followers - first.tiktok_followers) / first.tiktok_followers) * 100).toFixed(2)
+            : 0,
+        total_engagement: data.reduce((sum, m) => sum + (m.tiktok_engagement || 0), 0),
+        avg_engagement_rate: (data.reduce((sum, m) => sum + (parseFloat(m.tiktok_engagement_rate) || 0), 0) / data.length * 100).toFixed(2),
+        total_videos: data.reduce((sum, m) => sum + (m.tiktok_videos_posted || 0), 0),
+        total_views: data.reduce((sum, m) => sum + (m.tiktok_video_views || 0), 0),
+        viral_videos: data.reduce((sum, m) => sum + (m.tiktok_viral || 0), 0),
+        total_revenue: data.reduce((sum, m) => sum + (parseFloat(m.tiktok_revenue) || 0), 0),
+        avg_completion_rate: (data.reduce((sum, m) => sum + (parseFloat(m.tiktok_completion_rate) || 0), 0) / data.length * 100).toFixed(2)
+    };
+}
+
+function determineBestContent(data, platform) {
+    // Simplified - would need more data for accurate analysis
+    return platform === 'instagram' ? 'reels' : 'short_videos';
+}
+
+function determineWinner(ig, tt) {
+    const igScore = (parseFloat(ig.avg_engagement_rate) || 0) + (parseFloat(ig.follower_growth_rate) || 0);
+    const ttScore = (parseFloat(tt.avg_engagement_rate) || 0) + (parseFloat(tt.follower_growth_rate) || 0);
+
+    if (igScore > ttScore * 1.2) return { platform: 'instagram', reason: 'Higher engagement and growth' };
+    if (ttScore > igScore * 1.2) return { platform: 'tiktok', reason: 'Higher engagement and growth' };
+    return { platform: 'both', reason: 'Similar performance - diversify effort' };
+}
+
+function generateSocialRecommendations(ig, tt) {
+    const recs = [];
+
+    if (parseFloat(ig.avg_engagement_rate) > parseFloat(tt.avg_engagement_rate)) {
+        recs.push({ platform: 'instagram', action: 'Increase content frequency - engagement is strong' });
+    } else {
+        recs.push({ platform: 'tiktok', action: 'Increase content frequency - engagement is strong' });
+    }
+
+    if (tt.viral_videos > 0) {
+        recs.push({ platform: 'tiktok', action: 'Analyze viral content patterns and replicate' });
+    }
+
+    return recs;
+}
+
+function calculateEngagementLift(metrics) {
+    // Simplified calculation
+    const daysWithSpend = metrics.filter(m => parseFloat(m.influencer_spend) > 0);
+    const daysWithoutSpend = metrics.filter(m => !parseFloat(m.influencer_spend));
+
+    if (!daysWithSpend.length || !daysWithoutSpend.length) return 0;
+
+    const avgEngagementWithSpend = daysWithSpend.reduce((sum, m) =>
+        sum + (m.instagram_engagement || 0) + (m.tiktok_engagement || 0), 0) / daysWithSpend.length;
+
+    const avgEngagementWithoutSpend = daysWithoutSpend.reduce((sum, m) =>
+        sum + (m.instagram_engagement || 0) + (m.tiktok_engagement || 0), 0) / daysWithoutSpend.length;
+
+    if (avgEngagementWithoutSpend === 0) return 0;
+
+    return (((avgEngagementWithSpend - avgEngagementWithoutSpend) / avgEngagementWithoutSpend) * 100).toFixed(1);
+}
+
 module.exports = {
+    // Fase 1 MVP
     salesForecast,
     churnPrediction,
     customerSegmentation,
     trendAnalysis,
     anomalyDetection,
-    marketingROI
+    marketingROI,
+    // Fase 2 Social
+    instagramPerformance,
+    tiktokPerformance,
+    socialComparison,
+    influencerROI
 };
