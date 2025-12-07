@@ -895,6 +895,10 @@ app.get('/api/analytics/segments', authenticateToken, dataController.getSegments
 app.get('/api/analytics/segments/:code', authenticateToken, dataController.getSegmentData);
 app.get('/api/analytics/algorithms', authenticateToken, dataController.getAlgorithms);
 
+// --- ML ANALYSIS ENDPOINTS (Fase 1 MVP) ---
+const analysisRoutes = require('./routes/analysisRoutes');
+app.use('/api/analysis', analysisRoutes);
+
 // --- BULLMQ DASHBOARD ---
 const serverAdapter = require('./queueBoard');
 // Note: router need to be used as a middleware
