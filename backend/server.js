@@ -1,13 +1,12 @@
 
 
-const path = require('path');
-const fs = require('fs');
 console.log('🚀 STARTING SERVER INITIALIZATION...');
-
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.set('trust proxy', 1); // Necessário para Railway/Vercel e rate-limiter
@@ -18,7 +17,13 @@ app.set('trust proxy', 1); // Necessário para Railway/Vercel e rate-limiter
 const authenticateToken = require('./middleware/auth');
 const helmet = require('helmet');
 
-// Configuração de Origens Permitidas - MUST BE DEFINED BEFORE CORS
+// Configuração de Segurança (Helmet)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // Permitir carregar imagens/assets de outros domínios
+  contentSecurityPolicy: false // Desabilitar CSP estrito por enquanto para evitar bloqueios de scripts externos
+}));
+
+// Configuração de Origens Permitidas
 const allowedOrigins = [
   'https://marketinghub.aiiam.com.br',
   'https://elitefinder.vercel.app',
@@ -33,40 +38,18 @@ if (process.env.FRONTEND_URL) {
 }
 
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(null, false);
-    }
-  },
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   optionsSuccessStatus: 200
 };
 
-// ============ CORS MUST COME FIRST ============
-// Handle preflight OPTIONS for all routes BEFORE any other middleware
-console.log('🌐 CORS configured for origins:', allowedOrigins);
-
-// Log ALL incoming requests (even before CORS processing)
-app.use((req, res, next) => {
-  console.log(`📨 [${new Date().toISOString()}] ${req.method} ${req.path} from ${req.headers.origin || 'no-origin'}`);
-  next();
-});
-
-app.options('*', cors(corsOptions));
-app.use(cors(corsOptions));
-
-// Manual CORS headers backup (in case cors package fails)
+// Middleware para debug e garantia de headers
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
   }
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
@@ -74,13 +57,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// ============ HELMET AFTER CORS ============
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: false
-}));
-
 app.use(compression());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Enable Pre-Flight for all routes
 const stripeController = require('./stripeController');
 
 // Webhook Stripe (Precisa ser antes do express.json() global para validar assinatura)
@@ -404,21 +383,14 @@ async function initializeDatabase() {
       console.log('✅ Permissões de Super Admin atualizadas.');
 
       // Migração para Project Management (Digital Maturity Phase 1)
-      console.log('🔄 Verificando migrações de Project Management (Ops DB)...');
-
-      // FIX: Ensure columns exist BEFORE running the main migration block
-      // Migração para Project Management (Digital Maturity Phase 1)
-      console.log('🔄 Verificando migrações de Project Management (Ops DB)...');
-
-      // NOTE: Using pool.opsPool (Maglev)
-      // Removed Cross-DB Foreign Keys for Microservices Architecture
-      await pool.opsPool.query(`
+      console.log('🔄 Verificando migrações de Project Management...');
+      await pool.query(`
           -- 1. PROJECTS TABLE
           CREATE TABLE IF NOT EXISTS projects (
               id SERIAL PRIMARY KEY,
-              tenant_id INTEGER, -- Ref Core DB
-              client_id INTEGER, -- Ref Core DB
-              owner_id INTEGER,  -- Ref Core DB
+              tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+              client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
+              owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
               
               name VARCHAR(255) NOT NULL,
               description TEXT,
@@ -435,14 +407,14 @@ async function initializeDatabase() {
               updated_at TIMESTAMP DEFAULT NOW()
           );
 
-          CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
           CREATE INDEX IF NOT EXISTS idx_projects_tenant ON projects(tenant_id);
           CREATE INDEX IF NOT EXISTS idx_projects_client ON projects(client_id);
+          CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 
           -- 2. PROJECT MEMBERS
           CREATE TABLE IF NOT EXISTS project_members (
-              project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE, -- Local FK OK
-              user_id INTEGER, -- Ref Core DB
+              project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+              user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
               role VARCHAR(50) DEFAULT 'member',
               joined_at TIMESTAMP DEFAULT NOW(),
               PRIMARY KEY (project_id, user_id)
@@ -451,9 +423,9 @@ async function initializeDatabase() {
           -- 3. TASKS TABLE
           CREATE TABLE IF NOT EXISTS tasks (
               id SERIAL PRIMARY KEY,
-              tenant_id INTEGER, -- Ref Core DB
-              project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE, -- Local FK OK
-              parent_task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL, -- Local FK OK
+              tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+              project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+              parent_task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
               
               title VARCHAR(255) NOT NULL,
               description TEXT,
@@ -461,8 +433,8 @@ async function initializeDatabase() {
               status VARCHAR(50) DEFAULT 'todo',
               priority VARCHAR(20) DEFAULT 'medium',
               
-              assignee_id INTEGER, -- Ref Core DB
-              reporter_id INTEGER, -- Ref Core DB
+              assignee_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+              reporter_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
               
               due_date TIMESTAMP,
               start_date TIMESTAMP,
@@ -488,8 +460,8 @@ async function initializeDatabase() {
           -- 4. TASK COMMENTS
           CREATE TABLE IF NOT EXISTS task_comments (
               id SERIAL PRIMARY KEY,
-              task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE, -- Local FK OK
-              user_id INTEGER, -- Ref Core DB
+              task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+              user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
               
               content TEXT NOT NULL,
               is_internal BOOLEAN DEFAULT false,
@@ -501,10 +473,10 @@ async function initializeDatabase() {
           -- 5. PROJECT ACTIVITY LOG
           CREATE TABLE IF NOT EXISTS project_activity_log (
               id SERIAL PRIMARY KEY,
-              tenant_id INTEGER, -- Ref Core DB
-              project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE, -- Local FK OK
-              task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL, -- Local FK OK
-              user_id INTEGER, -- Ref Core DB
+              tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+              project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+              task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
+              user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
               
               action_type VARCHAR(50) NOT NULL,
               details JSONB,
@@ -512,82 +484,47 @@ async function initializeDatabase() {
               created_at TIMESTAMP DEFAULT NOW()
           );
       `);
-      console.log('✅ Migração de Project Management verificada/aplicada no Ops DB.');
+      console.log('✅ Migração de Project Management verificada/aplicada.');
 
-      // Migração para Produção em Lote (Content Batches) - Assuming Ops DB due to Tasks relation
-      console.log('🔄 Verificando migrações de Content Batches (Ops DB)...');
-      await pool.opsPool.query(`
-            CREATE TABLE IF NOT EXISTS content_batches (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                user_id TEXT DEFAULT 'admin',
-                topic TEXT NOT NULL,
-                total_days INTEGER NOT NULL,
-                platform TEXT NOT NULL,
-                tone TEXT NOT NULL,
-                status TEXT DEFAULT 'processing', 
-                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                settings JSONB DEFAULT '{}'
-            );
-            -- No FKs to users/content here in schema normally
-      `);
-
-      // Handle the cross-db column on Core DB separately
-      await pool.query(`
-            DO $$ 
-            BEGIN 
-                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'social_posts' AND column_name = 'batch_id') THEN
-                    ALTER TABLE social_posts ADD COLUMN batch_id UUID; -- No FK to Ops DB
-                END IF;
-            END $$;
-      `);
-      console.log('✅ Migração de Content Batches verificada/aplicada.');
-
-      // Migração para Operations & Knowledge
-      console.log('🔄 Verificando migrações de Operations & Knowledge (Ops DB)...');
-      // NOTE: 024_phase2_operations.sql likely likely contains FKs. We should ideally inline it or fix it.
-      // For now, I'll trust the inline approach for main tables.
-      // But 024 is external. I should check it.
-      // If 024 has FKs, it will fail.
+      // Migração para Operations & Knowledge (Digital Maturity Phase 2)
+      console.log('🔄 Verificando migrações de Operations & Knowledge...');
       const operationsMigration = fs.readFileSync(path.join(__dirname, 'migrations', '024_phase2_operations.sql'), 'utf8');
-      // Hacky fix: Remove REFERENCES via regex? Or just let it fail and fix the file?
-      // Better to fix the file.
-      await pool.opsPool.query(operationsMigration);
-      console.log('✅ Migração de Operations & Knowledge verificada/aplicada no Ops DB.');
+      await pool.query(operationsMigration);
+      console.log('✅ Migração de Operations & Knowledge verificada/aplicada.');
 
       // Migração para SOP Templates (Automation Phase)
-      console.log('🔄 Verificando migrações de SOP Templates (Ops DB)...');
+      console.log('🔄 Verificando migrações de SOP Templates...');
       const sopMigration = fs.readFileSync(path.join(__dirname, 'migrations', '025_create_sop_templates.sql'), 'utf8');
-      await pool.opsPool.query(sopMigration);
-      console.log('✅ Migração de SOP Templates verificada/aplicada no Ops DB.');
+
+      // Use helper to run split statements if needed, or just query if file is simple
+      // Since 025 has triggers, we should treat it carefully.
+      // But for now, assuming simple query execution or simple split if supported.
+      // Ideally reuse the parser logic above, but for quick fix:
+      await pool.query(sopMigration);
+      console.log('✅ Migração de SOP Templates verificada/aplicada.');
 
       // Migração para Task Expansion (Task Management Phase)
-      console.log('🔄 Verificando migrações de Task Expansion (Ops DB)...');
+      console.log('🔄 Verificando migrações de Task Expansion...');
       const taskMigration = fs.readFileSync(path.join(__dirname, 'migrations', '026_expand_tasks_table.sql'), 'utf8');
-      await pool.opsPool.query(taskMigration);
-      console.log('✅ Migração de Task Expansion verificada/aplicada no Ops DB.');
+      await pool.query(taskMigration);
+      console.log('✅ Migração de Task Expansion verificada/aplicada.');
 
       // Migração 027: Detailed Project Fields
-      console.log('🔄 Verificando migrações de Projetos Detalhados (027) (Ops DB)...');
+      console.log('🔄 Verificando migrações de Projetos Detalhados (027)...');
       const projectDetailed = fs.readFileSync(path.join(__dirname, 'migrations', '027_expand_projects_table.sql'), 'utf8');
-      await pool.opsPool.query(projectDetailed);
-      console.log('✅ Migração 027 aplicada no Ops DB.');
+      await pool.query(projectDetailed);
+      console.log('✅ Migração 027 aplicada.');
 
       // Migração 028: Detailed Task Fields
-      console.log('🔄 Verificando migrações de Tarefas Detalhadas (028) (Ops DB)...');
+      console.log('🔄 Verificando migrações de Tarefas Detalhadas (028)...');
       const taskDetailed = fs.readFileSync(path.join(__dirname, 'migrations', '028_expand_tasks_detailed.sql'), 'utf8');
-      await pool.opsPool.query(taskDetailed);
-      console.log('✅ Migração 028 aplicada no Ops DB.');
+      await pool.query(taskDetailed);
+      console.log('✅ Migração 028 aplicada.');
 
-      // Migração 030: Native OAuth Integrations (Core DB usually? Or Ops?)
-      console.log('🔄 Verificando migrações de OAuth Integrations (030) (Core DB)...');
+      // Migração 030: Native OAuth Integrations
+      console.log('🔄 Verificando migrações de OAuth Integrations (030)...');
       const oauthMigration = fs.readFileSync(path.join(__dirname, 'migrations', '030_create_oauth_integrations.sql'), 'utf8');
       await pool.query(oauthMigration);
-
-      // Migração 031: Financial & Services (Ops DB)
-      console.log('🔄 Verificando migrações de Financial & Services (031) (Ops DB)...');
-      const financialMigration = fs.readFileSync(path.join(__dirname, 'migrations', '031_setup_financial_ops.sql'), 'utf8');
-      await pool.opsPool.query(financialMigration);
-      console.log('✅ Migração 031 (Financial) aplicada no Ops DB.');
       console.log('✅ Migração 030 aplicada.');
 
     } catch (err) {
@@ -598,6 +535,20 @@ async function initializeDatabase() {
     // Don't crash the app if schema already exists
   }
 }
+
+// Run schema initialization
+// Last updated: 2025-11-24 22:38
+// Run schema initialization
+// Last updated: 2025-11-24 22:38
+// initializeDatabase(); // Moved to server.listen to ensure order
+
+// --- SOCIAL ---
+const socialCtrl = require('./socialController');
+app.get('/api/social/posts', socialCtrl.getPosts);
+app.post('/api/social/posts', socialCtrl.createPost);
+app.put('/api/social/posts/:id', socialCtrl.updatePost);
+app.delete('/api/social/posts/:id', socialCtrl.deletePost);
+app.get('/api/social/holidays', socialCtrl.getHolidays);
 
 // --- ROTAS ---
 
@@ -717,7 +668,6 @@ app.get('/api/integrations/whatsapp', authenticateToken, integrationsController.
 app.post('/api/integrations/whatsapp', authenticateToken, integrationsController.saveWhatsAppConfig);
 app.delete('/api/integrations/whatsapp', authenticateToken, integrationsController.deleteWhatsAppConfig);
 app.post('/api/integrations/n8n', authenticateToken, integrationsController.saveN8nConfig);
-app.get('/api/integrations/n8n/url', authenticateToken, integrationsController.getN8nUrl);
 
 // --- WEBHOOKS ---
 const whatsappController = require('./whatsappController');
@@ -783,9 +733,8 @@ app.post('/api/users', authenticateToken, checkAdmin, userCtrl.createUser);
 app.put('/api/users/:id', authenticateToken, checkAdmin, userCtrl.updateTeamMember);
 app.delete('/api/users/:id', authenticateToken, checkAdmin, userCtrl.deleteTeamMember);
 
-// Login & Registration (Public - No Auth)
+// Login
 app.post('/api/auth/login', userCtrl.login);
-app.post('/api/auth/register', userCtrl.register);
 app.post('/api/auth/forgot-password', userCtrl.forgotPassword);
 app.post('/api/auth/reset-password', userCtrl.resetPasswordConfirm);
 
@@ -823,18 +772,15 @@ app.delete('/api/tasks/:id', authenticateToken, taskCtrl.deleteTask);
 
 // --- AGENT TEMPLATES ---
 const templatesController = require('./templatesController'); // Kept for legacy if needed, or replace if duplicate
-app.use('/api/templates', templatesController); // Restore legacy support for prompts
-
 // New SOP Template Controller
 const templateController = require('./controllers/templateController');
 
 // Template CRUD
-// Template CRUD (SOPs)
-app.get('/api/sop-templates', authenticateToken, templateController.getAllTemplates);
-app.post('/api/sop-templates', authenticateToken, templateController.createTemplate);
-app.get('/api/sop-templates/:id', authenticateToken, templateController.getTemplateDetails);
-app.put('/api/sop-templates/:id', authenticateToken, templateController.updateTemplate);
-app.delete('/api/sop-templates/:id', authenticateToken, templateController.deleteTemplate);
+app.get('/api/templates', authenticateToken, templateController.getAllTemplates);
+app.post('/api/templates', authenticateToken, templateController.createTemplate);
+app.get('/api/templates/:id', authenticateToken, templateController.getTemplateDetails);
+app.put('/api/templates/:id', authenticateToken, templateController.updateTemplate);
+app.delete('/api/templates/:id', authenticateToken, templateController.deleteTemplate);
 
 // Apply Template to Project
 app.post('/api/projects/:id/apply-template', authenticateToken, templateController.applyTemplateToProject);
@@ -891,34 +837,6 @@ app.post('/api/financial/sync', authenticateToken, financialCtrl.runSync);
 app.get('/api/financial/suppliers', authenticateToken, financialCtrl.getSuppliers);
 app.post('/api/financial/suppliers', authenticateToken, financialCtrl.createSupplier);
 app.get('/api/financial/clients', authenticateToken, financialCtrl.getClients);
-
-// --- ML DATA & ANALYTICS ROUTES ---
-const dataController = require('./controllers/dataController');
-const trainingController = require('./controllers/trainingController');
-
-// Dataset Management
-app.post('/api/data/upload', authenticateToken, dataController.upload.single('file'), dataController.uploadDataset);
-app.get('/api/data/datasets', authenticateToken, dataController.getDatasets);
-
-// Model Training & Experiments
-app.get('/api/models/experiments', authenticateToken, trainingController.getExperiments);
-app.post('/api/models/experiments', authenticateToken, trainingController.createExperiment);
-app.get('/api/models/experiments/:id', authenticateToken, trainingController.getExperimentDetails);
-app.post('/api/models/experiments/:id/deploy', authenticateToken, trainingController.deployModel);
-
-// Model Predictions
-app.post('/api/predictions/custom', authenticateToken, trainingController.runPrediction);
-app.get('/api/predictions/history', authenticateToken, trainingController.getPredictionHistory);
-
-// Analytics Results & Segments
-app.get('/api/analytics/results', authenticateToken, dataController.getAnalyticsResults);
-app.get('/api/analytics/segments', authenticateToken, dataController.getSegments);
-app.get('/api/analytics/segments/:code', authenticateToken, dataController.getSegmentData);
-app.get('/api/analytics/algorithms', authenticateToken, dataController.getAlgorithms);
-
-// --- ML ANALYSIS ENDPOINTS (Fase 1 MVP) ---
-const analysisRoutes = require('./routes/analysisRoutes');
-app.use('/api/analysis', analysisRoutes);
 
 // --- BULLMQ DASHBOARD ---
 const serverAdapter = require('./queueBoard');
