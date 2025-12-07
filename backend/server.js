@@ -897,10 +897,10 @@ app.get('/api/churn/predict', authenticateToken, churnController.predictChurn);
 app.get('/api/sop-templates', authenticateToken, async (req, res) => {
   try {
     const result = await pool.opsPool.query('SELECT * FROM templates ORDER BY created_at DESC');
-    res.json({ success: true, templates: result.rows });
+    res.json(result.rows); // Frontend expects array directly
   } catch (err) {
     console.error('Error fetching SOP templates:', err);
-    res.json({ success: true, templates: [] });
+    res.json([]); // Return empty array on error
   }
 });
 
