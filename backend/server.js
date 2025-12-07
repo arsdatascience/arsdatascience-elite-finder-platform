@@ -18,13 +18,7 @@ app.set('trust proxy', 1); // Necessário para Railway/Vercel e rate-limiter
 const authenticateToken = require('./middleware/auth');
 const helmet = require('helmet');
 
-// Configuração de Segurança (Helmet)
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }, // Permitir carregar imagens/assets de outros domínios
-  contentSecurityPolicy: false // Desabilitar CSP estrito por enquanto para evitar bloqueios de scripts externos
-}));
-
-// Configuração de Origens Permitidas
+// Configuração de Origens Permitidas - MUST BE DEFINED BEFORE CORS
 const allowedOrigins = [
   'https://marketinghub.aiiam.com.br',
   'https://elitefinder.vercel.app',
@@ -39,18 +33,32 @@ if (process.env.FRONTEND_URL) {
 }
 
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(null, false);
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   optionsSuccessStatus: 200
 };
 
-// Middleware para debug e garantia de headers
+// ============ CORS MUST COME FIRST ============
+// Handle preflight OPTIONS for all routes BEFORE any other middleware
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
+
+// Manual CORS headers backup (in case cors package fails)
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+  if (origin && allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
   }
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
@@ -58,9 +66,13 @@ app.use((req, res, next) => {
   next();
 });
 
+// ============ HELMET AFTER CORS ============
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false
+}));
+
 app.use(compression());
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Enable Pre-Flight for all routes
 const stripeController = require('./stripeController');
 
 // Webhook Stripe (Precisa ser antes do express.json() global para validar assinatura)
