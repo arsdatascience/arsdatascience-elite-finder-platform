@@ -918,6 +918,11 @@ server.listen(PORT, HOST, () => {
     const jobProcessor = require('./services/jobProcessor');
     jobProcessor.start();
     console.log('🚀 Job Processor (BullMQ) started');
+
+    // Iniciar ML Alert Scheduler (Proactive Alerts)
+    const mlAlertScheduler = require('./workers/mlAlertScheduler');
+    mlAlertScheduler.start();
+
     console.log('🔄 Force Deploy: ' + new Date().toISOString());
 
   }).catch(err => {
