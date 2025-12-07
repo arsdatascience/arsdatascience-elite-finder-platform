@@ -908,8 +908,9 @@ const io = new Server(server, {
 global.io = io;
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+const HOST = '0.0.0.0'; // Required for Railway/Docker containers
+server.listen(PORT, HOST, () => {
+  console.log(`🚀 Servidor rodando em ${HOST}:${PORT}`);
   console.log(`📡 Socket.io pronto para conexões`);
 
   // Rodar processos de inicialização em background
