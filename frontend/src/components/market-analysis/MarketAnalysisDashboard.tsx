@@ -1,11 +1,3 @@
-import React, { useState, useEffect } from 'react';
-import {
-    Database, Cpu, FlaskConical, Target, TrendingUp,
-    BarChart3, Clock, CheckCircle, AlertCircle, Eye
-} from 'lucide-react';
-import { DataUpload } from './DataUpload';
-import { TrainingWizard } from './TrainingWizard';
-import { ExperimentDetails } from './ExperimentDetails';
 import { apiClient } from '../../services/apiClient';
 
 type TabType = 'data' | 'training' | 'experiments' | 'predictions';

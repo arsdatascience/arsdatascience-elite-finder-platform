@@ -1,35 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import {
-    ArrowLeft, BarChart3, Target, TrendingUp, Activity,
-    Layers, Clock, CheckCircle, XCircle, Download, RefreshCw
-} from 'lucide-react';
-import { apiClient } from '../../services/apiClient';
-
-interface Experiment {
-    id: string;
-    name: string;
-    dataset_id: string;
-    dataset_name?: string;
-    algorithm: string;
-    task_type: string;
-    status: 'pending' | 'running' | 'completed' | 'failed';
-    target_column: string;
-    feature_columns: string[];
-    hyperparameters: Record<string, any>;
-    metrics?: {
-        accuracy?: number;
-        precision?: number;
-        recall?: number;
-        f1_score?: number;
-        r2?: number;
-        rmse?: number;
-        mae?: number;
-        mape?: number;
-    };
-    feature_importance?: { feature: string; importance: number }[];
-    training_duration?: number;
-    created_at: string;
-    completed_at?: string;
+name: string;
+dataset_id: string;
+dataset_name ?: string;
+algorithm: string;
+task_type: string;
+status: 'pending' | 'running' | 'completed' | 'failed';
+target_column: string;
+feature_columns: string[];
+hyperparameters: Record<string, any>;
+metrics ?: {
+    accuracy?: number;
+    precision?: number;
+    recall?: number;
+    f1_score?: number;
+    r2?: number;
+    rmse?: number;
+    mae?: number;
+    mape?: number;
+};
+feature_importance ?: { feature: string; importance: number }[];
+training_duration ?: number;
+created_at: string;
+completed_at ?: string;
 }
 
 interface ExperimentDetailsProps {
@@ -40,7 +31,7 @@ interface ExperimentDetailsProps {
 export const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experimentId, onBack }) => {
     const [experiment, setExperiment] = useState<Experiment | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [, setError] = useState<string | null>(null);
 
     useEffect(() => {
         loadExperiment();
