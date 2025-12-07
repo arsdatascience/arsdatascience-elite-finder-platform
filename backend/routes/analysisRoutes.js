@@ -59,4 +59,20 @@ router.post('/profitability', authenticateToken, analysisController.profitabilit
 // 13. Revenue Scenarios
 router.post('/revenue-scenarios', authenticateToken, analysisController.revenueScenarios);
 
+// ============================================
+// FASE 4 CUSTOM TRAINING - 4 Model Types
+// ============================================
+
+// 14. Train Regression Model
+router.post('/train/regression', authenticateToken, analysisController.trainRegression);
+
+// 15. Train Classification Model
+router.post('/train/classification', authenticateToken, analysisController.trainClassification);
+
+// 16. Train Clustering Model
+router.post('/train/clustering', authenticateToken, analysisController.trainClustering);
+
+// 17. Train Time Series Model
+router.post('/train/timeseries', authenticateToken, analysisController.trainTimeseries);
+
 module.exports = router;
