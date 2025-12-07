@@ -111,6 +111,10 @@ app.get('/api/audio/history', authenticateToken, audioController.getHistory);
 app.get('/api/audio/analysis/:id', authenticateToken, audioController.getAnalysis);
 app.delete('/api/audio/analysis/:id', authenticateToken, audioController.deleteAnalysis);
 
+// ML Agent Routes (AI-powered analytics via natural language)
+const mlAgentRoutes = require('./routes/mlAgent.routes');
+app.use('/api/ml-agent', mlAgentRoutes);
+
 // Log request URL para debug
 app.use((req, res, next) => {
   console.log(`[Request] ${req.method} ${req.url}`);
