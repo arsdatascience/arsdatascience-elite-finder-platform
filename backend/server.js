@@ -890,6 +890,15 @@ app.use('/api/copies', copiesController);
 const churnController = require('./churnController');
 app.get('/api/churn/predict', authenticateToken, churnController.predictChurn);
 
+// --- SOP TEMPLATES ---
+const templateController = require('./controllers/templateController');
+app.get('/api/sop-templates', authenticateToken, templateController.getAllTemplates);
+app.post('/api/sop-templates', authenticateToken, templateController.createTemplate);
+app.get('/api/sop-templates/:id', authenticateToken, templateController.getTemplateDetails);
+app.put('/api/sop-templates/:id', authenticateToken, templateController.updateTemplate);
+app.delete('/api/sop-templates/:id', authenticateToken, templateController.deleteTemplate);
+app.post('/api/projects/:id/apply-template', authenticateToken, templateController.applyTemplateToProject);
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error('❌ Global Error Handler:', err);
