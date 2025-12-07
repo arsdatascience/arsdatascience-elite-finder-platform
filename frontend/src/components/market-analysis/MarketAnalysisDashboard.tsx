@@ -1,6 +1,16 @@
+import React, { useState, useEffect } from 'react';
+import {
+    Database, Cpu, FlaskConical, Target,
+    BarChart3, Clock, CheckCircle, AlertCircle, Eye, Trophy, PieChart
+} from 'lucide-react';
+import { DataUpload } from './DataUpload';
+import { TrainingWizard } from './TrainingWizard';
+import { ExperimentDetails } from './ExperimentDetails';
+import { ModelComparison } from './ModelComparison';
+import { AnalyticsResults } from './AnalyticsResults';
 import { apiClient } from '../../services/apiClient';
 
-type TabType = 'data' | 'training' | 'experiments' | 'predictions';
+type TabType = 'data' | 'training' | 'experiments' | 'results' | 'comparison' | 'predictions';
 
 interface Experiment {
     id: string;
@@ -37,10 +47,12 @@ const MarketAnalysisDashboard: React.FC = () => {
     };
 
     const tabs = [
-        { id: 'data' as TabType, label: 'Dados', icon: Database, description: 'Upload e gerenciamento de datasets' },
-        { id: 'training' as TabType, label: 'Treinamento', icon: Cpu, description: 'Configurar novo treinamento' },
-        { id: 'experiments' as TabType, label: 'Experimentos', icon: FlaskConical, description: 'Histórico e resultados' },
-        { id: 'predictions' as TabType, label: 'Predições', icon: Target, description: 'Usar modelos em produção' },
+        { id: 'data' as TabType, label: 'Dados', icon: Database },
+        { id: 'training' as TabType, label: 'Treinamento', icon: Cpu },
+        { id: 'experiments' as TabType, label: 'Experimentos', icon: FlaskConical },
+        { id: 'results' as TabType, label: 'Resultados', icon: PieChart },
+        { id: 'comparison' as TabType, label: 'Comparação', icon: Trophy },
+        { id: 'predictions' as TabType, label: 'Predições', icon: Target },
     ];
 
     const getStatusIcon = (status: string) => {
@@ -89,18 +101,18 @@ const MarketAnalysisDashboard: React.FC = () => {
             {/* Tabs */}
             <div className="bg-white border-b border-slate-200">
                 <div className="max-w-7xl mx-auto px-6">
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 overflow-x-auto">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`px-6 py-4 flex items-center gap-2 border-b-2 transition-all
+                                className={`px-4 py-3 flex items-center gap-2 border-b-2 transition-all whitespace-nowrap
                                     ${activeTab === tab.id
                                         ? 'border-[#597996] text-[#597996] bg-[#597996]/5'
                                         : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
                             >
-                                <tab.icon className="w-5 h-5" />
-                                <span className="font-medium">{tab.label}</span>
+                                <tab.icon className="w-4 h-4" />
+                                <span className="font-medium text-sm">{tab.label}</span>
                             </button>
                         ))}
                     </div>
@@ -194,6 +206,12 @@ const MarketAnalysisDashboard: React.FC = () => {
                             </div>
                         )}
                     </div>
+                )}
+
+                {activeTab === 'results' && <AnalyticsResults />}
+
+                {activeTab === 'comparison' && (
+                    <ModelComparison onSelectExperiment={(id) => setSelectedExperiment(id)} />
                 )}
 
                 {activeTab === 'predictions' && (
