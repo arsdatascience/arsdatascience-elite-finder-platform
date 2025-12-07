@@ -46,19 +46,12 @@ const corsOptions = {
 };
 
 // 1. FIRST: Handle OPTIONS preflight requests IMMEDIATELY
-console.log('🌐 CORS v2: Origins allowed:', allowedOrigins);
 app.options('*', (req, res) => {
   const origin = req.headers.origin;
-  console.log(`📨 OPTIONS preflight from: ${origin}`);
 
-  // Set CORS headers
+  // Only allow whitelisted origins
   if (origin && allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-    console.log(`✅ CORS allowed for: ${origin}`);
-  } else {
-    // Fallback: set to first allowed origin for debugging
-    res.setHeader('Access-Control-Allow-Origin', 'https://marketinghub.aiiam.com.br');
-    console.log(`⚠️ CORS fallback for: ${origin}`);
   }
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
