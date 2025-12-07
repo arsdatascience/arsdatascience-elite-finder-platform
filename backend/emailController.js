@@ -1,6 +1,6 @@
 /**
  * Email Controller
- * Handles email configuration and sending
+ * Handles email configuration and sending with multiple SMTP support
  */
 
 const nodemailer = require('nodemailer');
@@ -93,40 +93,53 @@ const testEmail = async (req, res) => {
 };
 
 /**
- * Save email configuration
+ * Save email configuration (create new or update existing)
  * POST /api/email/config
  */
 const saveConfig = async (req, res) => {
     try {
-        const { smtpHost, smtpPort, smtpUser, smtpPassword, smtpFrom, smtpFromName, smtpSecure, userId } = req.body;
+        const {
+            id, // If provided, update existing
+            name = 'Principal',
+            smtpHost,
+            smtpPort,
+            smtpUser,
+            smtpPassword,
+            smtpFrom,
+            smtpFromName,
+            smtpSecure,
+            isDefault = false,
+            useFor = 'all',
+            userId
+        } = req.body;
 
         if (!userId) {
             return res.status(400).json({ success: false, error: 'Usuário não identificado' });
         }
 
-        // Check if config exists
-        const existing = await db.opsQuery(
-            'SELECT id FROM email_config WHERE user_id = $1',
-            [userId]
-        );
-
-        if (existing.rows.length > 0) {
-            // Update existing
+        if (id) {
+            // Update existing config
             await db.opsQuery(`
         UPDATE email_config 
-        SET smtp_host = $1, smtp_port = $2, smtp_user = $3, smtp_password = $4, 
-            smtp_from = $5, smtp_from_name = $6, smtp_secure = $7, updated_at = NOW()
-        WHERE user_id = $8
-      `, [smtpHost, smtpPort, smtpUser, smtpPassword, smtpFrom, smtpFromName, smtpSecure, userId]);
+        SET name = $1, smtp_host = $2, smtp_port = $3, smtp_user = $4, smtp_password = $5, 
+            smtp_from = $6, smtp_from_name = $7, smtp_secure = $8, is_default = $9, use_for = $10, updated_at = NOW()
+        WHERE id = $11 AND user_id = $12
+      `, [name, smtpHost, smtpPort, smtpUser, smtpPassword, smtpFrom, smtpFromName, smtpSecure, isDefault, useFor, id, userId]);
+
         } else {
-            // Insert new
+            // Insert new config
+            // If this is set as default, remove default from others first
+            if (isDefault) {
+                await db.opsQuery('UPDATE email_config SET is_default = false WHERE user_id = $1', [userId]);
+            }
+
             await db.opsQuery(`
-        INSERT INTO email_config (user_id, smtp_host, smtp_port, smtp_user, smtp_password, smtp_from, smtp_from_name, smtp_secure, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-      `, [userId, smtpHost, smtpPort, smtpUser, smtpPassword, smtpFrom, smtpFromName, smtpSecure]);
+        INSERT INTO email_config (user_id, name, smtp_host, smtp_port, smtp_user, smtp_password, smtp_from, smtp_from_name, smtp_secure, is_default, use_for, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+      `, [userId, name, smtpHost, smtpPort, smtpUser, smtpPassword, smtpFrom, smtpFromName, smtpSecure, isDefault, useFor]);
         }
 
-        res.json({ success: true, message: 'Configurações salvas com sucesso' });
+        res.json({ success: true, message: 'Configuração salva com sucesso' });
 
     } catch (error) {
         console.error('Save email config error:', error);
@@ -135,7 +148,7 @@ const saveConfig = async (req, res) => {
 };
 
 /**
- * Get email configuration for user
+ * Get all email configurations for user
  * GET /api/email/config
  */
 const getConfig = async (req, res) => {
@@ -147,34 +160,85 @@ const getConfig = async (req, res) => {
         }
 
         const result = await db.opsQuery(
-            'SELECT * FROM email_config WHERE user_id = $1',
+            'SELECT * FROM email_config WHERE user_id = $1 ORDER BY is_default DESC, created_at ASC',
             [userId]
         );
 
-        if (result.rows.length === 0) {
-            return res.json({
-                success: true,
-                config: null
-            });
-        }
-
-        const config = result.rows[0];
+        const configs = result.rows.map(config => ({
+            id: config.id,
+            name: config.name,
+            smtpHost: config.smtp_host,
+            smtpPort: config.smtp_port,
+            smtpUser: config.smtp_user,
+            smtpPassword: '••••••••', // Mask password
+            smtpFrom: config.smtp_from,
+            smtpFromName: config.smtp_from_name,
+            smtpSecure: config.smtp_secure,
+            isDefault: config.is_default,
+            useFor: config.use_for,
+            createdAt: config.created_at
+        }));
 
         res.json({
             success: true,
-            config: {
-                smtpHost: config.smtp_host,
-                smtpPort: config.smtp_port,
-                smtpUser: config.smtp_user,
-                smtpPassword: '••••••••', // Mask password
-                smtpFrom: config.smtp_from,
-                smtpFromName: config.smtp_from_name,
-                smtpSecure: config.smtp_secure
-            }
+            configs
         });
 
     } catch (error) {
         console.error('Get email config error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+/**
+ * Delete email configuration
+ * DELETE /api/email/config/:id
+ */
+const deleteConfig = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.query.userId || req.user?.id;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'Usuário não identificado' });
+        }
+
+        await db.opsQuery(
+            'DELETE FROM email_config WHERE id = $1 AND user_id = $2',
+            [id, userId]
+        );
+
+        res.json({ success: true, message: 'Configuração removida' });
+
+    } catch (error) {
+        console.error('Delete email config error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+/**
+ * Set config as default
+ * PUT /api/email/config/:id/default
+ */
+const setDefault = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.body.userId || req.user?.id;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, error: 'Usuário não identificado' });
+        }
+
+        // Remove default from all
+        await db.opsQuery('UPDATE email_config SET is_default = false WHERE user_id = $1', [userId]);
+
+        // Set this one as default
+        await db.opsQuery('UPDATE email_config SET is_default = true WHERE id = $1 AND user_id = $2', [id, userId]);
+
+        res.json({ success: true, message: 'Configuração definida como padrão' });
+
+    } catch (error) {
+        console.error('Set default email config error:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };
@@ -185,16 +249,28 @@ const getConfig = async (req, res) => {
  */
 const sendEmail = async (req, res) => {
     try {
-        const { to, subject, html, text, userId } = req.body;
+        const { to, subject, html, text, userId, configId } = req.body;
 
         // Get config from database
-        const configResult = await db.opsQuery(
-            'SELECT * FROM email_config WHERE user_id = $1',
-            [userId]
-        );
+        let query = 'SELECT * FROM email_config WHERE user_id = $1';
+        let params = [userId];
+
+        if (configId) {
+            query += ' AND id = $2';
+            params.push(configId);
+        } else {
+            query += ' AND is_default = true';
+        }
+
+        const configResult = await db.opsQuery(query, params);
 
         if (configResult.rows.length === 0) {
-            return res.status(400).json({ success: false, error: 'Configure o email primeiro em Configurações > Email' });
+            // Try to get any config
+            const anyConfig = await db.opsQuery('SELECT * FROM email_config WHERE user_id = $1 LIMIT 1', [userId]);
+            if (anyConfig.rows.length === 0) {
+                return res.status(400).json({ success: false, error: 'Configure o email primeiro em Configurações > Email' });
+            }
+            configResult.rows = anyConfig.rows;
         }
 
         const config = configResult.rows[0];
@@ -236,5 +312,7 @@ module.exports = {
     testEmail,
     saveConfig,
     getConfig,
+    deleteConfig,
+    setDefault,
     sendEmail
 };

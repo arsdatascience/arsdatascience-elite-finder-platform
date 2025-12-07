@@ -115,11 +115,13 @@ app.delete('/api/audio/analysis/:id', authenticateToken, audioController.deleteA
 const mlAgentRoutes = require('./routes/mlAgent.routes');
 app.use('/api/ml-agent', mlAgentRoutes);
 
-// Email Routes (SMTP configuration and sending)
+// Email Routes (SMTP configuration and sending - supports multiple)
 const emailController = require('./emailController');
 app.post('/api/email/test', authenticateToken, emailController.testEmail);
 app.post('/api/email/config', authenticateToken, emailController.saveConfig);
 app.get('/api/email/config', authenticateToken, emailController.getConfig);
+app.delete('/api/email/config/:id', authenticateToken, emailController.deleteConfig);
+app.put('/api/email/config/:id/default', authenticateToken, emailController.setDefault);
 app.post('/api/email/send', authenticateToken, emailController.sendEmail);
 
 // Log request URL para debug
