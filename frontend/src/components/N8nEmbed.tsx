@@ -15,10 +15,43 @@ export function N8nEmbed({
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    // URL com locale PT-BR forçado
-    const n8nUrl = 'https://arsdatascience-n8n.aiiam.com.br?locale=pt_BR'
+    const [n8nUrl, setN8nUrl] = useState('')
 
     useEffect(() => {
+        const loadUrl = async () => {
+            const baseUrl = 'https://arsdatascience-n8n.aiiam.com.br';
+            const defaultUrl = `${baseUrl}?locale=pt_BR`;
+
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    setN8nUrl(defaultUrl);
+                    return;
+                }
+
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/n8n/url`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.url) {
+                        // Append locale to the authenticated URL
+                        setN8nUrl(`${data.url}&locale=pt_BR`);
+                    } else {
+                        setN8nUrl(defaultUrl);
+                    }
+                } else {
+                    setN8nUrl(defaultUrl);
+                }
+            } catch (err) {
+                console.warn('Failed to fetch authenticated n8n URL:', err);
+                setN8nUrl(defaultUrl);
+            }
+        };
+
+        loadUrl();
+
         // Timeout de 15 segundos
         const timeout = setTimeout(() => {
             if (isLoading) {

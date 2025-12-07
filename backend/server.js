@@ -668,6 +668,7 @@ app.get('/api/integrations/whatsapp', authenticateToken, integrationsController.
 app.post('/api/integrations/whatsapp', authenticateToken, integrationsController.saveWhatsAppConfig);
 app.delete('/api/integrations/whatsapp', authenticateToken, integrationsController.deleteWhatsAppConfig);
 app.post('/api/integrations/n8n', authenticateToken, integrationsController.saveN8nConfig);
+app.get('/api/integrations/n8n/url', authenticateToken, integrationsController.getN8nUrl);
 
 // --- WEBHOOKS ---
 const whatsappController = require('./whatsappController');

@@ -164,7 +164,7 @@ const CreativeStudio: React.FC = () => {
                         <div className="flex justify-between items-center mb-6">
                             <div>
                                 <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-                                    <Sparkles className="text-purple-600" /> Estúdio Criativo & Copywriter
+                                    <Sparkles className="text-slate-600" /> Estúdio Criativo & Copywriter
                                 </h1>
                                 <p className="text-slate-600 mt-2">Central unificada para criação de textos persuasivos e design de posts.</p>
                             </div>
@@ -184,7 +184,7 @@ const CreativeStudio: React.FC = () => {
                             <button
                                 onClick={() => setActiveTab('design')}
                                 className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'design'
-                                    ? 'bg-white text-purple-700 shadow-sm'
+                                    ? 'bg-white text-slate-700 shadow-sm'
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
@@ -194,7 +194,7 @@ const CreativeStudio: React.FC = () => {
                             <button
                                 onClick={() => setActiveTab('copy')}
                                 className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'copy'
-                                    ? 'bg-white text-purple-700 shadow-sm'
+                                    ? 'bg-white text-slate-700 shadow-sm'
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
@@ -204,7 +204,7 @@ const CreativeStudio: React.FC = () => {
                             <button
                                 onClick={() => setActiveTab('batch')}
                                 className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'batch'
-                                    ? 'bg-white text-purple-700 shadow-sm'
+                                    ? 'bg-white text-slate-700 shadow-sm'
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
@@ -248,7 +248,7 @@ const CreativeStudio: React.FC = () => {
                                                         <div
                                                             key={copy.id}
                                                             onClick={() => loadCopy(copy)}
-                                                            className="p-3 rounded-lg border border-slate-100 hover:border-purple-200 hover:bg-purple-50 cursor-pointer transition-all group relative"
+                                                            className="p-3 rounded-lg border border-slate-100 hover:border-slate-300 hover:bg-slate-50 cursor-pointer transition-all group relative"
                                                         >
                                                             <div className="flex justify-between items-start mb-1">
                                                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${copy.platform === 'instagram' ? 'bg-pink-100 text-pink-700' :
@@ -288,7 +288,7 @@ const CreativeStudio: React.FC = () => {
                                                     value={topic}
                                                     onChange={(e) => setTopic(e.target.value)}
                                                     placeholder="Ex: Promoção de Black Friday para curso de inglês..."
-                                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 h-32 resize-none"
+                                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-slate-500 h-32 resize-none"
                                                 />
                                             </div>
 
@@ -327,7 +327,7 @@ const CreativeStudio: React.FC = () => {
                                                 <select
                                                     value={tone}
                                                     onChange={(e) => setTone(e.target.value)}
-                                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-slate-500 bg-white"
                                                 >
                                                     <option value="persuasive">Persuasivo (Vendas)</option>
                                                     <option value="educational">Educativo / Autoridade</option>
@@ -340,7 +340,7 @@ const CreativeStudio: React.FC = () => {
                                             <button
                                                 onClick={handleGenerate}
                                                 disabled={loading || !topic}
-                                                className={`w-full py-3 rounded-lg font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all ${loading || !topic ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 hover:shadow-purple-200'}`}
+                                                className={`w-full py-3 rounded-lg font-bold text-white flex items-center justify-center gap-2 shadow-lg transition-all ${loading || !topic ? 'bg-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-800 hover:to-slate-950 hover:shadow-slate-200'}`}
                                             >
                                                 {loading ? (
                                                     <>Generating...</>
@@ -369,7 +369,7 @@ const CreativeStudio: React.FC = () => {
                                                 {generatedContent && (
                                                     <button
                                                         onClick={() => copyToClipboard(generatedContent.body || JSON.stringify(generatedContent))}
-                                                        className="text-sm text-slate-600 hover:text-purple-600 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors border border-transparent hover:border-slate-200"
+                                                        className="text-sm text-slate-600 hover:text-slate-900 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors border border-transparent hover:border-slate-200"
                                                     >
                                                         {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
                                                         {copied ? 'Copiado!' : 'Copiar'}
@@ -387,8 +387,8 @@ const CreativeStudio: React.FC = () => {
                                             )}
 
                                             {loading && (
-                                                <div className="h-full flex flex-col items-center justify-center text-purple-600">
-                                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+                                                <div className="h-full flex flex-col items-center justify-center text-slate-600">
+                                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mb-4"></div>
                                                     <p className="animate-pulse">Criando magia...</p>
                                                 </div>
                                             )}
@@ -397,12 +397,12 @@ const CreativeStudio: React.FC = () => {
                                                 <div className="space-y-6 animate-fade-in">
                                                     {/* Headlines */}
                                                     {generatedContent.headlines && (
-                                                        <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                                                            <h4 className="text-xs font-bold text-purple-700 uppercase mb-2">Opções de Título</h4>
+                                                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                                            <h4 className="text-xs font-bold text-slate-700 uppercase mb-2">Opções de Título</h4>
                                                             <ul className="space-y-2">
                                                                 {generatedContent.headlines.map((h: string, i: number) => (
-                                                                    <li key={i} className="flex gap-2 text-purple-900 font-medium">
-                                                                        <span className="text-purple-400">{i + 1}.</span> {h}
+                                                                    <li key={i} className="flex gap-2 text-slate-900 font-medium">
+                                                                        <span className="text-slate-400">{i + 1}.</span> {h}
                                                                     </li>
                                                                 ))}
                                                             </ul>

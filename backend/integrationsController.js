@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const jwt = require('jsonwebtoken');
 const { encrypt, decrypt } = require('./utils/crypto');
 
 const pool = new Pool({
@@ -245,6 +246,40 @@ const saveN8nConfig = async (req, res) => {
 };
 
 // ============================================
+// N8N - Get Authenticated URL
+// ============================================
+const getN8nUrl = async (req, res) => {
+    try {
+        // Shared secret must match N8N_JWT_SECRET env var in n8n container
+        const secret = process.env.N8N_JWT_SECRET || 'elite_finder_jwt_secret_2025_secure';
+        // Base URL from user context
+        const baseUrl = 'https://arsdatascience-n8n.aiiam.com.br';
+
+        // Generate JWT
+        const token = jwt.sign(
+            {
+                sub: req.user.id,
+                email: req.user.email
+            },
+            secret,
+            { expiresIn: '12h' }
+        );
+
+        // Append JWT to URL (requires n8n to be configured to look for 'jwt' query param or custom auth)
+        const authenticatedUrl = `${baseUrl}?jwt=${token}`;
+
+        res.json({
+            success: true,
+            url: authenticatedUrl
+        });
+
+    } catch (error) {
+        console.error('Error generating n8n url:', error);
+        res.status(500).json({ error: 'Failed to generate n8n access' });
+    }
+};
+
+// ============================================
 // WHATSAPP - Get Configuration
 // ============================================
 const getWhatsAppConfig = async (req, res) => {
@@ -354,5 +389,6 @@ module.exports = {
     saveN8nConfig,
     getWhatsAppConfig,
     saveWhatsAppConfig,
-    deleteWhatsAppConfig
+    deleteWhatsAppConfig,
+    getN8nUrl
 };
