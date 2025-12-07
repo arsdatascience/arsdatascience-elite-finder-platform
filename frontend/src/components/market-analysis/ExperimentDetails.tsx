@@ -4,6 +4,7 @@ import {
     Layers, Clock, CheckCircle, Download, RefreshCw
 } from 'lucide-react';
 import { apiClient } from '../../services/apiClient';
+import { generateExperimentPDF } from '../../utils/pdfExport';
 
 interface Experiment {
     id: string;
@@ -136,9 +137,24 @@ export const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment
                     </div>
                     <div className="flex items-center gap-3">
                         {getStatusBadge(experiment.status)}
-                        <button className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 flex items-center gap-2">
+                        <button
+                            onClick={() => generateExperimentPDF({
+                                name: experiment.name,
+                                algorithm: experiment.algorithm,
+                                task_type: experiment.task_type,
+                                target_column: experiment.target_column,
+                                feature_columns: experiment.feature_columns || [],
+                                metrics: experiment.metrics,
+                                feature_importance: experiment.feature_importance,
+                                hyperparameters: experiment.hyperparameters,
+                                created_at: experiment.created_at,
+                                completed_at: experiment.completed_at,
+                                training_duration: experiment.training_duration
+                            })}
+                            className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 flex items-center gap-2"
+                        >
                             <Download className="w-4 h-4" />
-                            Exportar
+                            Exportar PDF
                         </button>
                     </div>
                 </div>
