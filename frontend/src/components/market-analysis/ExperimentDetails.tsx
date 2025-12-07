@@ -1,26 +1,35 @@
-name: string;
-dataset_id: string;
-dataset_name ?: string;
-algorithm: string;
-task_type: string;
-status: 'pending' | 'running' | 'completed' | 'failed';
-target_column: string;
-feature_columns: string[];
-hyperparameters: Record<string, any>;
-metrics ?: {
-    accuracy?: number;
-    precision?: number;
-    recall?: number;
-    f1_score?: number;
-    r2?: number;
-    rmse?: number;
-    mae?: number;
-    mape?: number;
-};
-feature_importance ?: { feature: string; importance: number }[];
-training_duration ?: number;
-created_at: string;
-completed_at ?: string;
+import React, { useState, useEffect } from 'react';
+import {
+    ArrowLeft, BarChart3, Target, TrendingUp, Activity,
+    Layers, Clock, CheckCircle, Download, RefreshCw
+} from 'lucide-react';
+import { apiClient } from '../../services/apiClient';
+
+interface Experiment {
+    id: string;
+    name: string;
+    dataset_id: string;
+    dataset_name?: string;
+    algorithm: string;
+    task_type: string;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    target_column: string;
+    feature_columns: string[];
+    hyperparameters: Record<string, any>;
+    metrics?: {
+        accuracy?: number;
+        precision?: number;
+        recall?: number;
+        f1_score?: number;
+        r2?: number;
+        rmse?: number;
+        mae?: number;
+        mape?: number;
+    };
+    feature_importance?: { feature: string; importance: number }[];
+    training_duration?: number;
+    created_at: string;
+    completed_at?: string;
 }
 
 interface ExperimentDetailsProps {
@@ -31,7 +40,6 @@ interface ExperimentDetailsProps {
 export const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experimentId, onBack }) => {
     const [experiment, setExperiment] = useState<Experiment | null>(null);
     const [loading, setLoading] = useState(true);
-    const [, setError] = useState<string | null>(null);
 
     useEffect(() => {
         loadExperiment();
@@ -44,7 +52,7 @@ export const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment
             const exp = (data || []).find((e: Experiment) => e.id === experimentId);
             setExperiment(exp || null);
         } catch (err) {
-            setError('Falha ao carregar experimento');
+            console.error('Falha ao carregar experimento', err);
         } finally {
             setLoading(false);
         }
@@ -68,21 +76,21 @@ export const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment
     };
 
     const getStatusBadge = (status: string) => {
-        const styles = {
+        const styles: Record<string, string> = {
             pending: 'bg-yellow-100 text-yellow-700',
             running: 'bg-blue-100 text-blue-700',
             completed: 'bg-emerald-100 text-emerald-700',
             failed: 'bg-red-100 text-red-700',
         };
-        const labels = {
+        const labels: Record<string, string> = {
             pending: 'Pendente',
             running: 'Treinando',
             completed: 'Concluído',
             failed: 'Falhou',
         };
         return (
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${styles[status as keyof typeof styles] || 'bg-slate-100'}`}>
-                {labels[status as keyof typeof labels] || status}
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${styles[status] || 'bg-slate-100'}`}>
+                {labels[status] || status}
             </span>
         );
     };
@@ -156,57 +164,17 @@ export const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         {isRegression ? (
                             <>
-                                <MetricCard
-                                    icon={<Target className="w-5 h-5" />}
-                                    label="R²"
-                                    value={metrics.r2?.toFixed(4) || '--'}
-                                    color="#597996"
-                                />
-                                <MetricCard
-                                    icon={<Activity className="w-5 h-5" />}
-                                    label="RMSE"
-                                    value={metrics.rmse?.toFixed(4) || '--'}
-                                    color="#2c6a6b"
-                                />
-                                <MetricCard
-                                    icon={<TrendingUp className="w-5 h-5" />}
-                                    label="MAE"
-                                    value={metrics.mae?.toFixed(4) || '--'}
-                                    color="#597996"
-                                />
-                                <MetricCard
-                                    icon={<BarChart3 className="w-5 h-5" />}
-                                    label="MAPE"
-                                    value={metrics.mape ? `${(metrics.mape * 100).toFixed(2)}%` : '--'}
-                                    color="#2c6a6b"
-                                />
+                                <MetricCard icon={<Target className="w-5 h-5" />} label="R²" value={metrics.r2?.toFixed(4) || '--'} color="#597996" />
+                                <MetricCard icon={<Activity className="w-5 h-5" />} label="RMSE" value={metrics.rmse?.toFixed(4) || '--'} color="#2c6a6b" />
+                                <MetricCard icon={<TrendingUp className="w-5 h-5" />} label="MAE" value={metrics.mae?.toFixed(4) || '--'} color="#597996" />
+                                <MetricCard icon={<BarChart3 className="w-5 h-5" />} label="MAPE" value={metrics.mape ? `${(metrics.mape * 100).toFixed(2)}%` : '--'} color="#2c6a6b" />
                             </>
                         ) : (
                             <>
-                                <MetricCard
-                                    icon={<Target className="w-5 h-5" />}
-                                    label="Accuracy"
-                                    value={metrics.accuracy ? `${(metrics.accuracy * 100).toFixed(2)}%` : '--'}
-                                    color="#597996"
-                                />
-                                <MetricCard
-                                    icon={<CheckCircle className="w-5 h-5" />}
-                                    label="Precision"
-                                    value={metrics.precision ? `${(metrics.precision * 100).toFixed(2)}%` : '--'}
-                                    color="#2c6a6b"
-                                />
-                                <MetricCard
-                                    icon={<Activity className="w-5 h-5" />}
-                                    label="Recall"
-                                    value={metrics.recall ? `${(metrics.recall * 100).toFixed(2)}%` : '--'}
-                                    color="#597996"
-                                />
-                                <MetricCard
-                                    icon={<TrendingUp className="w-5 h-5" />}
-                                    label="F1 Score"
-                                    value={metrics.f1_score ? `${(metrics.f1_score * 100).toFixed(2)}%` : '--'}
-                                    color="#2c6a6b"
-                                />
+                                <MetricCard icon={<Target className="w-5 h-5" />} label="Accuracy" value={metrics.accuracy ? `${(metrics.accuracy * 100).toFixed(2)}%` : '--'} color="#597996" />
+                                <MetricCard icon={<CheckCircle className="w-5 h-5" />} label="Precision" value={metrics.precision ? `${(metrics.precision * 100).toFixed(2)}%` : '--'} color="#2c6a6b" />
+                                <MetricCard icon={<Activity className="w-5 h-5" />} label="Recall" value={metrics.recall ? `${(metrics.recall * 100).toFixed(2)}%` : '--'} color="#597996" />
+                                <MetricCard icon={<TrendingUp className="w-5 h-5" />} label="F1 Score" value={metrics.f1_score ? `${(metrics.f1_score * 100).toFixed(2)}%` : '--'} color="#2c6a6b" />
                             </>
                         )}
                     </div>
@@ -265,7 +233,6 @@ export const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment
                             <InfoRow label="Duração" value={formatDuration(experiment.training_duration)} />
                         </div>
 
-                        {/* Hyperparameters */}
                         {experiment.hyperparameters && Object.keys(experiment.hyperparameters).length > 0 && (
                             <div className="mt-6 pt-4 border-t border-slate-200">
                                 <h4 className="text-sm font-medium text-slate-700 mb-3">Hiperparâmetros</h4>
@@ -282,7 +249,6 @@ export const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment
                     </div>
                 </div>
 
-                {/* Actions */}
                 {experiment.status === 'completed' && (
                     <div className="mt-6 flex justify-end gap-3">
                         <button className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50">
@@ -298,17 +264,15 @@ export const ExperimentDetails: React.FC<ExperimentDetailsProps> = ({ experiment
     );
 };
 
-// Helper Components
-const MetricCard: React.FC<{ icon: React.ReactNode; label: string; value: string; color: string }> =
-    ({ icon, label, value, color }) => (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <div className="flex items-center gap-2 text-slate-500 mb-2">
-                <span style={{ color }}>{icon}</span>
-                <span className="text-sm">{label}</span>
-            </div>
-            <p className="text-2xl font-bold text-slate-800">{value}</p>
+const MetricCard: React.FC<{ icon: React.ReactNode; label: string; value: string; color: string }> = ({ icon, label, value, color }) => (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div className="flex items-center gap-2 text-slate-500 mb-2">
+            <span style={{ color }}>{icon}</span>
+            <span className="text-sm">{label}</span>
         </div>
-    );
+        <p className="text-2xl font-bold text-slate-800">{value}</p>
+    </div>
+);
 
 const InfoRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
     <div className="flex justify-between text-sm">
