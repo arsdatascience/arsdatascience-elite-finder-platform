@@ -40,6 +40,8 @@ import { ApprovalCenter } from '@/components/ApprovalCenter';
 import { HelpCenter } from '@/components/HelpCenter';
 import { ServiceCatalog } from '@/components/ServiceCatalog';
 import SOPManager from '@/components/SOPManager';
+import MarketAnalysisDashboard from '@/components/market-analysis/MarketAnalysisDashboard';
+
 
 const PATH_MAP: Record<ViewState, string> = {
   [ViewState.HOME]: '/',
@@ -69,7 +71,9 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.APPROVALS]: '/approvals',
   [ViewState.SERVICE_CATALOG]: '/services',
   [ViewState.PROCESSES]: '/processes',
+  [ViewState.MARKET_ANALYSIS]: '/market-analysis',
 };
+
 
 
 
@@ -221,8 +225,10 @@ const App: React.FC = () => {
           <Route path="/approvals" element={<ApprovalCenter />} />
           <Route path="/services" element={<ServiceCatalog />} />
           <Route path="/processes" element={<SOPManager />} />
+          <Route path="/market-analysis" element={<MarketAnalysisDashboard />} />
         </Route>
       </Route>
+
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

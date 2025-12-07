@@ -28,8 +28,10 @@ export enum ViewState {
   ASSETS = 'ASSETS',
   APPROVALS = 'APPROVALS',
   SERVICE_CATALOG = 'SERVICE_CATALOG',
-  PROCESSES = 'PROCESSES'
+  PROCESSES = 'PROCESSES',
+  MARKET_ANALYSIS = 'MARKET_ANALYSIS'
 }
+
 
 export enum LeadStatus {
   NEW = 'new',

@@ -432,5 +432,40 @@ export const apiClient = {
             const response = await axiosInstance.post(`/projects/${projectId}/apply-template`, { templateId });
             return response.data;
         }
+    },
+    // --- MARKET ANALYSIS & ML ---
+    marketAnalysis: {
+        // Data Management
+        uploadDataset: async (formData: FormData) => {
+            const response = await axiosInstance.post('/data/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            return response.data;
+        },
+        getDatasets: async () => {
+            const response = await axiosInstance.get('/data/datasets');
+            return response.data;
+        },
+
+        // Predictive Analysis (VPS)
+        predict: async (endpoint: string, data: any) => {
+            const response = await axiosInstance.post(`/analysis/${endpoint}`, data);
+            return response.data;
+        },
+
+        // Model Training
+        createExperiment: async (data: any) => {
+            const response = await axiosInstance.post('/models/experiments', data);
+            return response.data;
+        },
+        getExperiments: async () => {
+            const response = await axiosInstance.get('/models/experiments');
+            return response.data;
+        },
+        getExperimentDetails: async (id: string) => {
+            const response = await axiosInstance.get(`/models/experiments/${id}`);
+            return response.data;
+        }
     }
 };
+

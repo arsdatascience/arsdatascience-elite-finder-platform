@@ -578,17 +578,6 @@ async function initializeDatabase() {
     // Don't crash the app if schema already exists
   }
 }
-
-// Run schema initialization
-// Last updated: 2025-11-24 22:38
-// Run schema initialization
-// Last updated: 2025-11-24 22:38
-// initializeDatabase(); // Moved to server.listen to ensure order
-
-// --- SOCIAL ---
-const socialCtrl = require('./socialController');
-app.get('/api/social/posts', socialCtrl.getPosts);
-app.post('/api/social/posts', socialCtrl.createPost);
 app.put('/api/social/posts/:id', socialCtrl.updatePost);
 app.delete('/api/social/posts/:id', socialCtrl.deletePost);
 app.get('/api/social/holidays', socialCtrl.getHolidays);
