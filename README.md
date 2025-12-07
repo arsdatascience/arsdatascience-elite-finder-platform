@@ -8,53 +8,52 @@ O Elite Finder é um ecossistema "Simbiótico" onde CRM, Marketing, Projetos e F
 
 ## 🏗️ Arquitetura de Sistema e Integrações (Omnichannel)
 
-O sistema opera em uma arquitetura de microsserviços modular, garantindo fluidez, escala e interconectividade entre todos os dados.
+O sistema opera em uma arquitetura de microsserviços modular, garantindo fluidez, escala e interconectividade.
 
-### 1. Núcleo de Dados (Data Core)
-*   **PostgreSQL (Railway):** Armazena dados relacionais críticos (Clientes, Projetos, Metadados de Arquivos, Financeiro). Garante integridade referencial.
-*   **Redis (Railway):** 
-    *   **Cache de Alta Performance:** Dashboard e Analytics carregam em <100ms.
-    *   **Fila de Processamento (BullMQ):** Gerencia tarefas pesadas (envio em massa de WhatsApp, processamento de IA) sem travar a interface do usuário.
-*   **Qdrant (Vector DB):** Memória de Longo Prazo da IA (RAG). Armazena estratégias de marketing, manuais e histórico, permitindo que a IA "lembre" do contexto da empresa.
-*   **S3 Compatible Storage (Railway/AWS):** Armazenamento de Assets (Imagens, Vídeos, Documentos). O banco guarda apenas o link público, garantindo leveza.
+### 1. Núcleo de Dados (Dual-Database Architecture)
+*   **Data Core (PostgreSQL):** Dados sensíveis e estruturais (Clientes, Auth, Tenants).
+*   **Maglev Ops (PostgreSQL):** Dados operacionais de alta frequência (Projetos, Tasks, Financeiro, Assets, Serviços).
+    *   *Benefício:* Garante que operações pesadas de relatório ou gestão não afetem o login ou a segurança dos clientes.
+*   **Redis (Railway):** Cache de Alta Performance (<100ms) e Fila de Processamento (BullMQ).
+*   **Qdrant (Vector DB):** Memória de Longo Prazo da IA (RAG).
+*   **S3 Compatible Storage:** Armazenamento seguro de Assets.
 
 ### 2. Fluxo Omnichannel (Data Flow)
 O sistema implementa um loop de dados contínuo validado:
 1.  **Entrada:** Mensagem recebida via WhatsApp/Social.
 2.  **Processamento:** Job criado no Redis (BullMQ).
 3.  **Inteligência:** IA analisa sentimento e intenção (OpenAI/Anthropic) consultando o Qdrant (RAG).
-4.  **Ação:** Atualiza Score do Lead no PostgreSQL e notifica o UI via WebSocket em tempo real.
+4.  **Ação:** Atualiza Score do Lead e move cards no Flight Control em tempo real.
 
 ---
 
 ## 🌟 Módulos Implementados
 
-### ✅ Fase 1: Gestão Corporativa (Project & Portfolio)
-*   **Centro de Projetos:** Visão holística de todos os projetos em andamento, prazos e orçamentos.
-*   **Kanban de Tarefas:** Quadro visual Drag-and-Drop para gestão ágil de entregas.
-*   **Gestão de Carga de Trabalho:** Visualização de tarefas por membro da equipe para evitar gargalos.
+### ✅ Fase 1: Gestão Corporativa (Flight Control)
+*   **Centro de Projetos (Maglev):** Visão holística de todos os projetos em andamento, prazos e orçamentos.
+*   **Kanban 3.0:** Quadro visual Drag-and-Drop para gestão ágil de entregas.
+*   **Gestão de Carga de Trabalho:** Visualização de tarefas por membro da equipe.
 
 ### ✅ Fase 2: Operações e Conhecimento
-*   **Biblioteca Digital (Asset Library):**
-    *   Upload inteligente direto para nuvem (S3).
-    *   Organização hierárquica por pastas.
-    *   Busca global de arquivos.
-*   **Central de Aprovações (Approval Workflow):**
-    *   **Links Públicos Seguros:** Clientes aprovam peças sem precisar de login e senha.
-    *   **Histórico de Revisão:** Detalhes de quem aprovou, rejeitou ou pediu alterações e quando.
-    *   **Integração Social:** Postagens agendadas geram automaticamente pedidos de aprovação.
+*   **SOP Manager:** Gestão de Procedimentos Operacionais Padrão integrados às tarefas.
+*   **Biblioteca Digital (Asset Library):** Upload inteligente e gestão de arquivos com link público.
+*   **Central de Aprovações:** Workflow de aprovação com clientes (Tokenized Links).
+
+### ✅ Fase 3: Financeiro e Serviços
+*   **Módulo Financeiro:** Controle de Transações, Categorias e ROI de projetos.
+*   **Service Catalog:** Gestão de portfólio de serviços e precificação.
 
 ### 🧠 Inteligência Artificial (Symbiosis Core)
-*   **Smart Lead Mover:** Move leads no Kanban automaticamente baseado na análise de conversas.
-*   **Financial Advisor:** Chatbot com acesso em tempo real ao fluxo de caixa.
-*   **Content Loop:** Gera pautas de conteúdo baseadas nas dores dos clientes.
+*   **Smart Lead Mover:** Move leads no Kanban automaticamente conforme conversa.
+*   **Elite Assistant:** Chatbot contextual com acesso a manuais e dados financeiros.
+*   **Content Loop:** Geração de conteúdo baseada em logs de suporte.
 
 ---
 
 ## 🛠️ Stack Tecnológica
 
-*   **Frontend:** React, TypeScript, TailwindCSS, Framer Motion, `@dnd-kit` (Kanban), `Recharts` (Analytics).
-*   **Backend:** Node.js, Express, `bullmq` (Filas), `ioredis` (Cache), `pg` (Postgres).
+*   **Frontend:** React, TypeScript, TailwindCSS, Framer Motion, `@dnd-kit` (Kanban).
+*   **Backend:** Node.js, Express, `bullmq` (Filas), `ioredis` (Cache), `pg` (Postgres Multi-Pool).
 *   **Infraestrutura:** Docker Ready, Deploy via Railway/Vercel.
 *   **IA Models:** OpenAI (GPT-4o), Google (Gemini 2.0 Flash), Anthropic (Claude 3.5 Sonnet).
 

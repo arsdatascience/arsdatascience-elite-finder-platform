@@ -1,4 +1,4 @@
-const db = require('./database'); // Use Core DB (where assets live)
+const db = require('./database').opsPool; // Use Ops DB (Maglev)
 const storageService = require('./services/storageService');
 const { getTenantScope } = require('./utils/tenantSecurity');
 

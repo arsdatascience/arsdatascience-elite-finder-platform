@@ -1,4 +1,4 @@
-const { opsPool: pool } = require('../db');
+const { opsPool: pool } = require('../database');
 
 const getServices = async (req, res) => {
     try {

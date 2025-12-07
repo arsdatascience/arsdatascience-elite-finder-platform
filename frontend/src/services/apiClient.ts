@@ -409,23 +409,23 @@ export const apiClient = {
     // --- SOP TEMPLATES ---
     templates: {
         list: async () => {
-            const response = await axiosInstance.get('/templates');
+            const response = await axiosInstance.get('/sop-templates');
             return response.data;
         },
         create: async (data: any) => {
-            const response = await axiosInstance.post('/templates', data);
+            const response = await axiosInstance.post('/sop-templates', data);
             return response.data;
         },
         getDetails: async (id: number) => {
-            const response = await axiosInstance.get(`/templates/${id}`);
+            const response = await axiosInstance.get(`/sop-templates/${id}`);
             return response.data;
         },
         update: async (id: number, data: any) => {
-            const response = await axiosInstance.put(`/templates/${id}`, data);
+            const response = await axiosInstance.put(`/sop-templates/${id}`, data);
             return response.data;
         },
         delete: async (id: number) => {
-            const response = await axiosInstance.delete(`/templates/${id}`);
+            const response = await axiosInstance.delete(`/sop-templates/${id}`);
             return response.data;
         },
         applyToProject: async (projectId: number, templateId: number) => {

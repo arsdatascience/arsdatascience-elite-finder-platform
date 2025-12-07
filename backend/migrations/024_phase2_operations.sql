@@ -3,9 +3,9 @@
 -- 1. ASSET FOLDERS (Hierarchical Structure)
 CREATE TABLE IF NOT EXISTS asset_folders (
     id SERIAL PRIMARY KEY,
-    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id INTEGER, -- Ref Core DB
     parent_id INTEGER REFERENCES asset_folders(id) ON DELETE CASCADE,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE, -- Optional: Root folders per client
+    client_id INTEGER, -- Ref Core DB
     project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE, -- Optional: Folders for specific projects
     
     name VARCHAR(255) NOT NULL,
@@ -22,9 +22,9 @@ CREATE INDEX IF NOT EXISTS idx_folders_client ON asset_folders(client_id);
 -- 2. ASSETS (Digital Library Files)
 CREATE TABLE IF NOT EXISTS assets (
     id SERIAL PRIMARY KEY,
-    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id INTEGER, -- Ref Core DB
     folder_id INTEGER REFERENCES asset_folders(id) ON DELETE SET NULL,
-    uploader_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    uploader_id INTEGER, -- Ref Core DB
     
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -47,12 +47,12 @@ CREATE INDEX IF NOT EXISTS idx_assets_tenant ON assets(tenant_id);
 -- 3. APPROVAL REQUESTS (Comunicação e Aprovação)
 CREATE TABLE IF NOT EXISTS approval_requests (
     id SERIAL PRIMARY KEY,
-    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id INTEGER, -- Ref Core DB
     
     asset_id INTEGER REFERENCES assets(id) ON DELETE CASCADE, -- Can approve a file/art
-    social_post_id INTEGER REFERENCES social_posts(id) ON DELETE CASCADE, -- Can approve a social post
+    social_post_id INTEGER, -- Ref Core DB (social_posts)
     
-    requester_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    requester_id INTEGER, -- Ref Core DB
     client_contact_id INTEGER, -- External client contact (future feature)
     
     status VARCHAR(50) DEFAULT 'pending', -- pending, approved, rejected, changes_requested
@@ -74,7 +74,7 @@ CREATE INDEX IF NOT EXISTS idx_approvals_token ON approval_requests(review_token
 -- 4. PROJECT TEMPLATES (Processos e Modelos)
 CREATE TABLE IF NOT EXISTS project_templates (
     id SERIAL PRIMARY KEY,
-    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id INTEGER, -- Ref Core DB
     
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS project_templates (
 -- 5. SERVICE CATALOG (Gestão de Produto)
 CREATE TABLE IF NOT EXISTS service_catalog (
     id SERIAL PRIMARY KEY,
-    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id INTEGER, -- Ref Core DB
     
     name VARCHAR(255) NOT NULL,
     description TEXT,

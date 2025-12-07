@@ -1,4 +1,4 @@
-const pool = require('./database');
+const pool = require('./database').opsPool; // Use Ops DB (Maglev)
 const crypto = require('crypto');
 
 /**

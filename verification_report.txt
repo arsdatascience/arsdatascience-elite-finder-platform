@@ -1,0 +1,22 @@
+🔍 VERIFYING MIGRATION (Row Count Comparison)...
+---------------------------------------------------
+TABLE                         CORE      MAGLEV    STATUS
+---------------------------------------------------
+financial_categories          16        16        ✅ OK
+suppliers                     0         0         ✅ OK
+financial_transactions        823       823       ✅ OK
+services                      0         0         ✅ OK
+service_catalog               0         0         ✅ OK
+asset_folders                 1         1         ✅ OK
+assets                        0         0         ✅ OK
+project_templates             0         0         ✅ OK
+templates                     44        44        ✅ OK
+template_items                246       246       ✅ OK
+approval_requests             0         0         ✅ OK
+projects                      1         1         ✅ OK
+project_members               1         1         ✅ OK
+tasks                         0         0         ✅ OK
+task_comments                 0         0         ✅ OK
+project_activity_log          0         0         ✅ OK
+---------------------------------------------------
+✨ SUCCESS: All table counts match!

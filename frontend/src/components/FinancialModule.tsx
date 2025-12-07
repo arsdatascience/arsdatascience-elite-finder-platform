@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
 import {
     Wallet, Calendar, Download, Filter,
     Plus, Edit2, X,
     ArrowUpCircle, ArrowDownCircle, DollarSign, BarChart3, Tag, Users,
-    Loader2
+    Loader2, ShoppingBag, List
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+
+import { ServiceCatalog } from './ServiceCatalog';
+import SOPManager from './SOPManager';
 
 interface Transaction {
     id: string;
@@ -49,7 +51,7 @@ interface DashboardData {
 }
 
 const FinancialModule: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'settings'>('dashboard');
+    const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'settings' | 'services' | 'processes'>('dashboard');
     const [loading, setLoading] = useState(true);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -599,6 +601,18 @@ const FinancialModule: React.FC = () => {
                             <DollarSign size={14} className="inline mr-1" /> Transações
                         </button>
                         <button
+                            onClick={() => setActiveTab('services')}
+                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'services' ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                            <ShoppingBag size={14} className="inline mr-1" /> Serviços
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('processes')}
+                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'processes' ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                        >
+                            <List size={14} className="inline mr-1" /> Processos
+                        </button>
+                        <button
                             onClick={() => setActiveTab('settings')}
                             className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'settings' ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
@@ -770,6 +784,20 @@ const FinancialModule: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            )}
+
+            {/* Service Catalog Tab */}
+            {activeTab === 'services' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <ServiceCatalog />
+                </div>
+            )}
+
+            {/* SOP/Processes Tab */}
+            {activeTab === 'processes' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <SOPManager />
                 </div>
             )}
 

@@ -1,0 +1,158 @@
+[
+  {
+    "name": "id",
+    "type": "integer"
+  },
+  {
+    "name": "tenant_id",
+    "type": "integer"
+  },
+  {
+    "name": "client_id",
+    "type": "integer"
+  },
+  {
+    "name": "owner_id",
+    "type": "integer"
+  },
+  {
+    "name": "name",
+    "type": "character varying"
+  },
+  {
+    "name": "description",
+    "type": "text"
+  },
+  {
+    "name": "status",
+    "type": "character varying"
+  },
+  {
+    "name": "priority",
+    "type": "character varying"
+  },
+  {
+    "name": "start_date",
+    "type": "date"
+  },
+  {
+    "name": "end_date",
+    "type": "date"
+  },
+  {
+    "name": "budget",
+    "type": "numeric"
+  },
+  {
+    "name": "settings",
+    "type": "jsonb"
+  },
+  {
+    "name": "created_at",
+    "type": "timestamp without time zone"
+  },
+  {
+    "name": "updated_at",
+    "type": "timestamp without time zone"
+  },
+  {
+    "name": "marketing_objectives",
+    "type": "text"
+  },
+  {
+    "name": "target_audience",
+    "type": "text"
+  },
+  {
+    "name": "value_proposition",
+    "type": "text"
+  },
+  {
+    "name": "brand_positioning",
+    "type": "text"
+  },
+  {
+    "name": "marketing_channels",
+    "type": "jsonb"
+  },
+  {
+    "name": "timeline_activities",
+    "type": "text"
+  },
+  {
+    "name": "dependencies",
+    "type": "text"
+  },
+  {
+    "name": "key_milestones",
+    "type": "jsonb"
+  },
+  {
+    "name": "team_structure",
+    "type": "jsonb"
+  },
+  {
+    "name": "tools_platforms",
+    "type": "text"
+  },
+  {
+    "name": "external_suppliers",
+    "type": "text"
+  },
+  {
+    "name": "creative_assets",
+    "type": "text"
+  },
+  {
+    "name": "kpis",
+    "type": "text"
+  },
+  {
+    "name": "goals",
+    "type": "text"
+  },
+  {
+    "name": "analysis_tools",
+    "type": "text"
+  },
+  {
+    "name": "reporting_frequency",
+    "type": "character varying"
+  },
+  {
+    "name": "budget_media",
+    "type": "numeric"
+  },
+  {
+    "name": "budget_production",
+    "type": "numeric"
+  },
+  {
+    "name": "budget_contingency",
+    "type": "numeric"
+  },
+  {
+    "name": "budget_breakdown",
+    "type": "jsonb"
+  },
+  {
+    "name": "risks",
+    "type": "text"
+  },
+  {
+    "name": "mitigation_plan",
+    "type": "text"
+  },
+  {
+    "name": "approval_status",
+    "type": "character varying"
+  },
+  {
+    "name": "creative_brief_link",
+    "type": "text"
+  },
+  {
+    "name": "assets_link",
+    "type": "text"
+  }
+]
