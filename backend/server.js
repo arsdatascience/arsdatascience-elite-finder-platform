@@ -407,9 +407,22 @@ async function initializeDatabase() {
               updated_at TIMESTAMP DEFAULT NOW()
           );
 
+          CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
+
+          -- Ensure columns exist before indexing (Fix for 'column does not exist' error)
+          DO $$
+          BEGIN
+              IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='client_id') THEN
+                  ALTER TABLE projects ADD COLUMN client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL;
+              END IF;
+              
+              IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='tenant_id') THEN
+                  ALTER TABLE projects ADD COLUMN tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE;
+              END IF;
+          END $$;
+
           CREATE INDEX IF NOT EXISTS idx_projects_tenant ON projects(tenant_id);
           CREATE INDEX IF NOT EXISTS idx_projects_client ON projects(client_id);
-          CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 
           -- 2. PROJECT MEMBERS
           CREATE TABLE IF NOT EXISTS project_members (
