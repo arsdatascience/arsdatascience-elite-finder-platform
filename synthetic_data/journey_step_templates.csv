@@ -1,0 +1,9 @@
+id,tenant_id,journey_type,step_order,channel,delay_minutes,action_type,action_template,condition_type,condition_value,is_active
+1,226,abandoned_cart,1,email,60,send_email,Você esqueceu algo no carrinho!,,,True
+2,226,abandoned_cart,2,whatsapp,1440,send_whatsapp,Ainda interessado? 10% OFF!,if_not_opened,,True
+3,226,abandoned_cart,3,email,4320,send_email,Última chance - seu carrinho expira em breve,if_not_opened,,True
+4,226,onboarding,1,email,0,send_email,Bem-vindo! Conheça nossos recursos,,,True
+5,226,onboarding,2,email,1440,send_email,Dica #1: Como começar,if_not_opened,,True
+6,226,onboarding,3,whatsapp,2880,send_whatsapp,Precisa de ajuda?,if_not_opened,,True
+7,226,reactivation,1,email,0,send_email,Sentimos sua falta!,,,True
+8,226,reactivation,2,email,10080,send_email,Oferta especial só pra você,if_not_opened,,True

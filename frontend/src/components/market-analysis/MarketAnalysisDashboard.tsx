@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Database, Cpu, FlaskConical, Target,
-    BarChart3, Clock, CheckCircle, AlertCircle, Eye, Trophy, PieChart, BookOpen
+    BarChart3, Clock, CheckCircle, AlertCircle, Eye, Trophy, PieChart, BookOpen, Upload
 } from 'lucide-react';
 import { DataUpload } from './DataUpload';
 import { TrainingWizard } from './TrainingWizard';
@@ -11,9 +11,10 @@ import { AnalyticsResults } from './AnalyticsResults';
 import { AnalysisHub } from './AnalysisHub';
 import { PredictionInterface } from './PredictionInterface';
 import MLAlgorithmsGuide from './MLAlgorithmsGuide';
+import { BulkDataImport } from './BulkDataImport';
 import { apiClient } from '../../services/apiClient';
 
-type TabType = 'data' | 'training' | 'experiments' | 'results' | 'comparison' | 'predictions' | 'hub' | 'guide';
+type TabType = 'data' | 'training' | 'experiments' | 'results' | 'comparison' | 'predictions' | 'hub' | 'guide' | 'import';
 
 interface Experiment {
     id: string;
@@ -58,6 +59,7 @@ const MarketAnalysisDashboard: React.FC = () => {
         { id: 'predictions' as TabType, label: 'Predições', icon: Target },
         { id: 'hub' as TabType, label: 'Analysis Hub', icon: BarChart3 },
         { id: 'guide' as TabType, label: 'Guia ML', icon: BookOpen },
+        { id: 'import' as TabType, label: 'Importar', icon: Upload },
     ];
 
     const getStatusIcon = (status: string) => {
@@ -224,6 +226,8 @@ const MarketAnalysisDashboard: React.FC = () => {
                 {activeTab === 'hub' && <AnalysisHub />}
 
                 {activeTab === 'guide' && <MLAlgorithmsGuide />}
+
+                {activeTab === 'import' && <BulkDataImport />}
             </div>
         </div>
     );

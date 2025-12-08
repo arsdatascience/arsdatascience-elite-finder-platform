@@ -930,6 +930,12 @@ app.post('/api/insights/customer-journey', authenticateToken, insightsController
 app.get('/api/insights/recent', authenticateToken, insightsController.getRecentInsights);
 app.get('/api/insights/:id', authenticateToken, insightsController.getInsightById);
 
+// --- BULK DATA IMPORT ---
+const bulkImportCtrl = require('./bulkImportController');
+app.get('/api/import/tables', authenticateToken, bulkImportCtrl.listTables);
+app.get('/api/import/template/:tableName', authenticateToken, bulkImportCtrl.getTemplate);
+app.post('/api/import/preview', authenticateToken, bulkImportCtrl.upload.single('file'), bulkImportCtrl.previewData);
+app.post('/api/import/:tableName', authenticateToken, bulkImportCtrl.upload.single('file'), bulkImportCtrl.importData);
 
 // --- SERVICE CATALOG (Phase 2) ---
 const serviceCtrl = require('./controllers/serviceController');
