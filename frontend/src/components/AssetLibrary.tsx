@@ -124,6 +124,26 @@ export const AssetLibrary: React.FC = () => {
             loadContent();
         } catch (error) {
             console.error('Error deleting asset:', error);
+            alert('Erro ao excluir arquivo.');
+        }
+    };
+
+    const handleDownloadAsset = async (id: number) => {
+        try {
+            const response = await apiClient.assets.downloadAsset(id);
+            if (response.success && response.data?.url) {
+                // Open signed URL in new tab for download
+                const link = document.createElement('a');
+                link.href = response.data.url;
+                link.download = response.data.name || 'download';
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        } catch (error) {
+            console.error('Error downloading asset:', error);
+            alert('Erro ao baixar arquivo.');
         }
     };
 
@@ -277,16 +297,13 @@ export const AssetLibrary: React.FC = () => {
 
                                                 {/* Hover Actions */}
                                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[1px]">
-                                                    <a
-                                                        href={asset.file_url}
-                                                        download
-                                                        target="_blank"
-                                                        rel="noreferrer"
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleDownloadAsset(asset.id); }}
                                                         className="p-2 bg-white/90 rounded-full hover:bg-primary-600 hover:text-white text-gray-700 transition-colors shadow-sm"
                                                         title="Download"
                                                     >
                                                         <Download size={16} />
-                                                    </a>
+                                                    </button>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleDeleteAsset(asset.id); }}
                                                         className="p-2 bg-white/90 rounded-full hover:bg-red-600 hover:text-white text-gray-700 transition-colors shadow-sm"

@@ -357,6 +357,10 @@ export const apiClient = {
         deleteAsset: async (id: number) => {
             const response = await axiosInstance.delete(`/assets/${id}`);
             return response.data;
+        },
+        downloadAsset: async (id: number) => {
+            const response = await axiosInstance.get(`/assets/${id}/download`);
+            return response.data;
         }
     },
 

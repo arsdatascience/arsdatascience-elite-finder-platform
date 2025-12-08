@@ -889,6 +889,7 @@ const assetCtrl = require('./assetController');
 app.get('/api/assets', authenticateToken, assetCtrl.listAssets);
 app.post('/api/assets', authenticateToken, checkLimit('storage'), socialMediaController.upload.single('file'), assetCtrl.uploadAsset); // Using existing upload middleware for now
 app.delete('/api/assets/:id', authenticateToken, assetCtrl.deleteAsset);
+app.get('/api/assets/:id/download', authenticateToken, assetCtrl.downloadAsset);
 
 app.get('/api/folders', authenticateToken, assetCtrl.listFolders);
 app.post('/api/folders', authenticateToken, assetCtrl.createFolder);

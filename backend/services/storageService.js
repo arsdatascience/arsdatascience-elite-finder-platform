@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl: getS3SignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 // Check if S3 is configured
 const isS3Configured = process.env.S3_ACCESS_KEY && process.env.S3_SECRET_KEY && process.env.S3_BUCKET;
@@ -122,7 +123,39 @@ const deleteFile = async (fileUrl) => {
     }
 };
 
+/**
+ * Get a signed URL for file download (works for files with restricted access)
+ */
+const getSignedUrl = async (fileUrl, expiresIn = 3600) => {
+    if (!isS3Configured) {
+        // For local files, just return the URL as-is
+        return fileUrl;
+    }
+
+    try {
+        // Extract key from URL
+        // URL format: https://endpoint/bucket/key
+        const urlParts = fileUrl.split(`${BUCKET_NAME}/`);
+        if (urlParts.length < 2) return fileUrl;
+
+        const key = urlParts[1];
+
+        const command = new GetObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: key,
+            ResponseContentDisposition: 'attachment'
+        });
+
+        const signedUrl = await getS3SignedUrl(s3Client, command, { expiresIn });
+        return signedUrl;
+    } catch (error) {
+        console.error('Error generating signed URL:', error);
+        return fileUrl; // Fallback to original URL
+    }
+};
+
 module.exports = {
     uploadFile,
-    deleteFile
+    deleteFile,
+    getSignedUrl
 };

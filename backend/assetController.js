@@ -206,6 +206,32 @@ const assetController = {
             console.error('Error deleting asset:', error);
             res.status(500).json({ success: false, error: 'Database error' });
         }
+    },
+
+    downloadAsset: async (req, res) => {
+        const { id } = req.params;
+
+        try {
+            const assetRes = await db.query('SELECT file_url, name, file_type FROM assets WHERE id = $1', [id]);
+            if (assetRes.rows.length === 0) {
+                return res.status(404).json({ success: false, error: 'Asset not found' });
+            }
+
+            const asset = assetRes.rows[0];
+            const signedUrl = await storageService.getSignedUrl(asset.file_url);
+
+            res.json({
+                success: true,
+                data: {
+                    url: signedUrl,
+                    name: asset.name,
+                    type: asset.file_type
+                }
+            });
+        } catch (error) {
+            console.error('Error generating download URL:', error);
+            res.status(500).json({ success: false, error: 'Failed to generate download URL' });
+        }
     }
 };
 
