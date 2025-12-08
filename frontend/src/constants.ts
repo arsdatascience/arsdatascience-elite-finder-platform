@@ -1,6 +1,6 @@
 // Navigation and data constants
 import { Campaign, Lead, LeadStatus, Metric, ChatMessage } from './types';
-import { Home, LayoutDashboard, Megaphone, Plane, MessageSquare, Settings, Share2, GitBranch, BookOpen, Sparkles, Users, FileText, Bot, Calendar, Palette, Mic, Wallet, HelpCircle, Briefcase, Folder, CheckCircle2, ShoppingBag, List, BrainCircuit, Heart } from 'lucide-react';
+import { Home, LayoutDashboard, Megaphone, Plane, MessageSquare, Settings, Share2, GitBranch, BookOpen, Sparkles, Users, FileText, Bot, Calendar, Palette, Mic, Wallet, HelpCircle, Briefcase, Folder, CheckCircle2, ShoppingBag, List, BrainCircuit, Heart, Image, AudioWaveform, Cpu } from 'lucide-react';
 
 export const NAV_ITEMS = [
   // Home
@@ -24,6 +24,13 @@ export const NAV_ITEMS = [
   { id: 'FINANCIAL_MODULE', label: 'Gestão Financeira', icon: Wallet },
   { id: 'ASSETS', label: 'Biblioteca Digital', icon: Folder },
   { id: 'APPROVALS', label: 'Central de Aprovações', icon: CheckCircle2 },
+
+  // Previously removed items - RESTORED
+  { id: 'ELITE_ASSISTANT', label: 'Elite Assistente IA', icon: Bot },
+  { id: 'AGENT_BUILDER', label: 'Construtor de Agentes', icon: Cpu },
+  { id: 'IMAGE_GENERATION', label: 'Gerador de Imagens', icon: Image },
+  { id: 'AUDIO_ANALYSIS', label: 'Análise de Áudio', icon: AudioWaveform },
+
   { id: 'HELP_CENTER', label: 'Manual de Uso', icon: HelpCircle },
   { id: 'SERVICE_CATALOG', label: 'Catálogo de Serviços', icon: ShoppingBag },
   { id: 'PROCESSES', label: 'Processos e Modelos', icon: List },
