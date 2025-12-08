@@ -234,7 +234,7 @@ const AlgorithmConfigModal: React.FC<AlgorithmConfigModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-gray-800 rounded-2xl overflow-hidden flex flex-col shadow-2xl border border-gray-700" style={{ width: '800px', height: '800px' }}>
+            <div className="bg-gray-800 rounded-2xl overflow-hidden flex flex-col shadow-2xl border border-gray-700" style={{ width: '1000px', height: '900px' }}>
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-700 bg-gradient-to-r from-blue-600/20 to-purple-600/20">
                     <div className="flex items-center gap-4">
@@ -242,7 +242,10 @@ const AlgorithmConfigModal: React.FC<AlgorithmConfigModalProps> = ({
                             <Settings2 className="w-6 h-6 text-blue-400" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-white">{algorithm.name}</h2>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-xl font-bold text-white">{algorithm.name}</h2>
+                                <span className="px-2 py-0.5 bg-blue-600/40 text-blue-300 text-xs font-bold rounded-full">v1.2</span>
+                            </div>
                             <p className="text-sm text-gray-400">{algorithm.library}</p>
                         </div>
                     </div>
