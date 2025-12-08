@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Database, Cpu, FlaskConical, Target,
-    BarChart3, Clock, CheckCircle, AlertCircle, Eye, Trophy, PieChart
+    BarChart3, Clock, CheckCircle, AlertCircle, Eye, Trophy, PieChart, BookOpen
 } from 'lucide-react';
 import { DataUpload } from './DataUpload';
 import { TrainingWizard } from './TrainingWizard';
@@ -10,9 +10,10 @@ import { ModelComparison } from './ModelComparison';
 import { AnalyticsResults } from './AnalyticsResults';
 import { AnalysisHub } from './AnalysisHub';
 import { PredictionInterface } from './PredictionInterface';
+import MLAlgorithmsGuide from './MLAlgorithmsGuide';
 import { apiClient } from '../../services/apiClient';
 
-type TabType = 'data' | 'training' | 'experiments' | 'results' | 'comparison' | 'predictions' | 'hub';
+type TabType = 'data' | 'training' | 'experiments' | 'results' | 'comparison' | 'predictions' | 'hub' | 'guide';
 
 interface Experiment {
     id: string;
@@ -56,6 +57,7 @@ const MarketAnalysisDashboard: React.FC = () => {
         { id: 'comparison' as TabType, label: 'Comparação', icon: Trophy },
         { id: 'predictions' as TabType, label: 'Predições', icon: Target },
         { id: 'hub' as TabType, label: 'Analysis Hub', icon: BarChart3 },
+        { id: 'guide' as TabType, label: 'Guia ML', icon: BookOpen },
     ];
 
     const getStatusIcon = (status: string) => {
@@ -220,6 +222,8 @@ const MarketAnalysisDashboard: React.FC = () => {
                 {activeTab === 'predictions' && <PredictionInterface />}
 
                 {activeTab === 'hub' && <AnalysisHub />}
+
+                {activeTab === 'guide' && <MLAlgorithmsGuide />}
             </div>
         </div>
     );
