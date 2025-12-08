@@ -517,7 +517,8 @@ const askEliteAssistant = async (req, res) => {
     const { isSuperAdmin, tenantId } = getTenantScope(req);
 
     if (tenantId && !isSuperAdmin) {
-      const finRes = await db.query(`
+      // Financial data is in OPS DB (Maglev)
+      const finRes = await db.opsPool.query(`
             SELECT 
                 SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as total_income,
                 SUM(CASE WHEN type = 'expense' AND status = 'paid' THEN amount ELSE 0 END) as total_expense
