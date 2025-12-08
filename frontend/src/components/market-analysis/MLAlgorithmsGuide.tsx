@@ -4,7 +4,8 @@ import {
     Zap, Brain, BarChart3, Activity,
     CheckCircle, XCircle, Info, Star, Search, Settings
 } from 'lucide-react';
-import AlgorithmConfigModal, { ALGORITHM_CONFIGS } from './AlgorithmConfigModal';
+import AlgorithmConfigModal from './AlgorithmConfigModal';
+import { ALGORITHM_CONFIGS } from '../../data/index';
 
 interface Algorithm {
     id: string;

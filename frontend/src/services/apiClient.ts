@@ -506,6 +506,61 @@ export const apiClient = {
             const response = await axiosInstance.get('/analytics/algorithms', { params: { task_type: taskType } });
             return response.data;
         }
+    },
+
+    // ML Algorithm Configuration Management
+    mlConfigs: {
+        list: async () => {
+            const response = await axiosInstance.get('/ml/configs');
+            return response.data;
+        },
+        getByAlgorithm: async (algorithmId: string) => {
+            const response = await axiosInstance.get(`/ml/configs/${algorithmId}`);
+            return response.data;
+        },
+        create: async (config: {
+            algorithm_id: string;
+            algorithm_name: string;
+            algorithm_category: string;
+            config: Record<string, any>;
+            preset_name?: string;
+            is_default?: boolean;
+            description?: string;
+        }) => {
+            const response = await axiosInstance.post('/ml/configs', config);
+            return response.data;
+        },
+        update: async (id: string, config: {
+            config: Record<string, any>;
+            preset_name?: string;
+            is_default?: boolean;
+            description?: string;
+        }) => {
+            const response = await axiosInstance.put(`/ml/configs/${id}`, config);
+            return response.data;
+        },
+        delete: async (id: string) => {
+            const response = await axiosInstance.delete(`/ml/configs/${id}`);
+            return response.data;
+        },
+        getHistory: async (configId: string) => {
+            const response = await axiosInstance.get(`/ml/configs/${configId}/history`);
+            return response.data;
+        },
+        getHolidays: async () => {
+            const response = await axiosInstance.get('/ml/holidays');
+            return response.data;
+        },
+        addHoliday: async (holiday: {
+            holiday_name: string;
+            holiday_date: string;
+            lower_window?: number;
+            upper_window?: number;
+            is_recurring?: boolean;
+        }) => {
+            const response = await axiosInstance.post('/ml/holidays', holiday);
+            return response.data;
+        }
     }
 };
 

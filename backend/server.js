@@ -895,6 +895,17 @@ app.get('/api/folders', authenticateToken, assetCtrl.listFolders);
 app.post('/api/folders', authenticateToken, assetCtrl.createFolder);
 app.delete('/api/folders/:id', authenticateToken, assetCtrl.deleteFolder);
 
+// --- ML ALGORITHM CONFIGURATION ROUTES ---
+const mlConfigCtrl = require('./mlConfigController');
+app.get('/api/ml/configs', authenticateToken, mlConfigCtrl.list);
+app.get('/api/ml/configs/:algorithmId', authenticateToken, mlConfigCtrl.getByAlgorithm);
+app.post('/api/ml/configs', authenticateToken, mlConfigCtrl.create);
+app.put('/api/ml/configs/:id', authenticateToken, mlConfigCtrl.update);
+app.delete('/api/ml/configs/:id', authenticateToken, mlConfigCtrl.delete);
+app.get('/api/ml/holidays', authenticateToken, mlConfigCtrl.getHolidays);
+app.post('/api/ml/holidays', authenticateToken, mlConfigCtrl.addHoliday);
+app.get('/api/ml/configs/:id/history', authenticateToken, mlConfigCtrl.getHistory);
+
 // --- APPROVAL WORKFLOW ROUTES (Phase 2) ---
 const approvalCtrl = require('./approvalController');
 app.get('/api/approvals', authenticateToken, approvalCtrl.getApprovals);
