@@ -170,15 +170,15 @@ exports.listTables = async (req, res) => {
     try {
         const tables = [];
 
-        // Query para buscar tabelas e suas colunas
+        // Query simplificada para buscar tabelas e suas colunas
         const tableQuery = `
             SELECT 
                 t.table_name,
-                array_agg(c.column_name ORDER BY c.ordinal_position) as columns,
-                array_agg(
-                    CASE WHEN c.is_nullable = 'NO' AND c.column_default IS NULL 
-                    THEN c.column_name ELSE NULL END
-                ) FILTER (WHERE c.is_nullable = 'NO' AND c.column_default IS NULL) as required_columns
+                json_agg(json_build_object(
+                    'name', c.column_name,
+                    'nullable', c.is_nullable,
+                    'has_default', c.column_default IS NOT NULL
+                ) ORDER BY c.ordinal_position) as column_info
             FROM information_schema.tables t
             JOIN information_schema.columns c ON t.table_name = c.table_name AND t.table_schema = c.table_schema
             WHERE t.table_schema = 'public' 
@@ -189,18 +189,29 @@ exports.listTables = async (req, res) => {
             ORDER BY t.table_name
         `;
 
+        // Função para processar resultado
+        const processRows = (rows, dbName) => {
+            for (const row of rows) {
+                const columnInfo = row.column_info || [];
+                const columns = columnInfo.map(c => c.name);
+                const requiredColumns = columnInfo
+                    .filter(c => c.nullable === 'NO' && !c.has_default)
+                    .map(c => c.name);
+
+                tables.push({
+                    id: row.table_name,
+                    label: formatTableName(row.table_name) + ` (${dbName})`,
+                    columns,
+                    requiredColumns,
+                    database: dbName === 'Crossover' ? 'core' : 'ops'
+                });
+            }
+        };
+
         // Buscar tabelas do Crossover (core)
         try {
             const coreResult = await pool.query(tableQuery);
-            for (const row of coreResult.rows) {
-                tables.push({
-                    id: row.table_name,
-                    label: formatTableName(row.table_name) + ' (Crossover)',
-                    columns: row.columns || [],
-                    requiredColumns: (row.required_columns || []).filter(Boolean),
-                    database: 'core'
-                });
-            }
+            processRows(coreResult.rows, 'Crossover');
         } catch (err) {
             console.error('Error fetching Crossover tables:', err.message);
         }
@@ -208,15 +219,7 @@ exports.listTables = async (req, res) => {
         // Buscar tabelas do Megalev (ops)
         try {
             const opsResult = await opsPool.query(tableQuery);
-            for (const row of opsResult.rows) {
-                tables.push({
-                    id: row.table_name,
-                    label: formatTableName(row.table_name) + ' (Megalev)',
-                    columns: row.columns || [],
-                    requiredColumns: (row.required_columns || []).filter(Boolean),
-                    database: 'ops'
-                });
-            }
+            processRows(opsResult.rows, 'Megalev');
         } catch (err) {
             console.error('Error fetching Megalev tables:', err.message);
         }
