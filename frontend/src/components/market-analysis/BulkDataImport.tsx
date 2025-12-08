@@ -339,6 +339,40 @@ export const BulkDataImport: React.FC = () => {
                             </p>
                         </div>
 
+                        {/* ETL Normalization Info */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <p className="text-blue-800 font-medium mb-2">🔧 Normalização ETL Automática</p>
+                            <p className="text-sm text-blue-700 mb-3">
+                                Os dados são normalizados automaticamente antes da inserção para evitar erros de formato:
+                            </p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+                                <div className="bg-white/50 p-2 rounded">
+                                    <span className="font-medium">🔤 Strings:</span>
+                                    <span className="text-blue-700"> Trim + remove caracteres invisíveis</span>
+                                </div>
+                                <div className="bg-white/50 p-2 rounded">
+                                    <span className="font-medium">🔢 Números:</span>
+                                    <span className="text-blue-700"> Limpa texto, converte int/float</span>
+                                </div>
+                                <div className="bg-white/50 p-2 rounded">
+                                    <span className="font-medium">✅ Boolean:</span>
+                                    <span className="text-blue-700"> true/false/sim/não/1/0</span>
+                                </div>
+                                <div className="bg-white/50 p-2 rounded">
+                                    <span className="font-medium">📅 Datas:</span>
+                                    <span className="text-blue-700"> DD/MM/YYYY → ISO</span>
+                                </div>
+                                <div className="bg-white/50 p-2 rounded">
+                                    <span className="font-medium">📋 JSON:</span>
+                                    <span className="text-blue-700"> Parse automático de arrays/objects</span>
+                                </div>
+                                <div className="bg-white/50 p-2 rounded">
+                                    <span className="font-medium">🆔 UUID:</span>
+                                    <span className="text-blue-700"> Validação de formato</span>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Layer 1 - Base Tables */}
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
