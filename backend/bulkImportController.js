@@ -164,27 +164,124 @@ const SUPPORTED_TABLES = {
 
 /**
  * GET /api/import/tables
- * Lista tabelas disponíveis para importação
+ * Lista tabelas disponíveis para importação (dinâmico dos bancos)
  */
 exports.listTables = async (req, res) => {
     try {
-        const tables = Object.entries(SUPPORTED_TABLES).map(([key, config]) => ({
-            id: key,
-            label: config.label,
-            columns: config.columns,
-            requiredColumns: config.requiredColumns,
-            database: config.database
-        }));
+        const tables = [];
+
+        // Query para buscar tabelas e suas colunas
+        const tableQuery = `
+            SELECT 
+                t.table_name,
+                array_agg(c.column_name ORDER BY c.ordinal_position) as columns,
+                array_agg(
+                    CASE WHEN c.is_nullable = 'NO' AND c.column_default IS NULL 
+                    THEN c.column_name ELSE NULL END
+                ) FILTER (WHERE c.is_nullable = 'NO' AND c.column_default IS NULL) as required_columns
+            FROM information_schema.tables t
+            JOIN information_schema.columns c ON t.table_name = c.table_name AND t.table_schema = c.table_schema
+            WHERE t.table_schema = 'public' 
+            AND t.table_type = 'BASE TABLE'
+            AND t.table_name NOT LIKE 'pg_%'
+            AND t.table_name NOT LIKE '_prisma%'
+            GROUP BY t.table_name
+            ORDER BY t.table_name
+        `;
+
+        // Buscar tabelas do Crossover (core)
+        try {
+            const coreResult = await pool.query(tableQuery);
+            for (const row of coreResult.rows) {
+                tables.push({
+                    id: row.table_name,
+                    label: formatTableName(row.table_name) + ' (Crossover)',
+                    columns: row.columns || [],
+                    requiredColumns: (row.required_columns || []).filter(Boolean),
+                    database: 'core'
+                });
+            }
+        } catch (err) {
+            console.error('Error fetching Crossover tables:', err.message);
+        }
+
+        // Buscar tabelas do Megalev (ops)
+        try {
+            const opsResult = await opsPool.query(tableQuery);
+            for (const row of opsResult.rows) {
+                tables.push({
+                    id: row.table_name,
+                    label: formatTableName(row.table_name) + ' (Megalev)',
+                    columns: row.columns || [],
+                    requiredColumns: (row.required_columns || []).filter(Boolean),
+                    database: 'ops'
+                });
+            }
+        } catch (err) {
+            console.error('Error fetching Megalev tables:', err.message);
+        }
+
+        // Ordenar por nome
+        tables.sort((a, b) => a.id.localeCompare(b.id));
 
         res.json({
             success: true,
-            tables
+            tables,
+            databases: {
+                core: 'Crossover (CRM/CDP)',
+                ops: 'Megalev (Operations/ML)'
+            }
         });
     } catch (error) {
         console.error('Error listing tables:', error);
-        res.status(500).json({ success: false, error: 'Failed to list tables' });
+        res.status(500).json({ success: false, error: 'Failed to list tables: ' + error.message });
     }
 };
+
+/**
+ * Formata nome da tabela para exibição
+ */
+function formatTableName(tableName) {
+    return tableName
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
+/**
+ * Helper: Busca informações de uma tabela do banco de dados
+ */
+async function getTableInfo(tableName, database) {
+    const dbPool = database === 'ops' ? opsPool : pool;
+
+    try {
+        const result = await dbPool.query(`
+            SELECT 
+                c.column_name,
+                c.data_type,
+                c.is_nullable,
+                c.column_default
+            FROM information_schema.columns c
+            WHERE c.table_schema = 'public' 
+            AND c.table_name = $1
+            ORDER BY c.ordinal_position
+        `, [tableName]);
+
+        if (result.rows.length === 0) {
+            return null;
+        }
+
+        const columns = result.rows.map(r => r.column_name);
+        const requiredColumns = result.rows
+            .filter(r => r.is_nullable === 'NO' && !r.column_default)
+            .map(r => r.column_name);
+
+        return { columns, requiredColumns, database };
+    } catch (error) {
+        console.error(`Error fetching table info for ${tableName}:`, error.message);
+        return null;
+    }
+}
 
 /**
  * GET /api/import/template/:tableName
@@ -193,17 +290,25 @@ exports.listTables = async (req, res) => {
 exports.getTemplate = async (req, res) => {
     try {
         const { tableName } = req.params;
-        const tableConfig = SUPPORTED_TABLES[tableName];
+        const { database = 'core' } = req.query;
 
-        if (!tableConfig) {
-            return res.status(404).json({ success: false, error: 'Table not found' });
+        // Buscar colunas do banco
+        const tableInfo = await getTableInfo(tableName, database);
+
+        if (!tableInfo) {
+            // Fallback para SUPPORTED_TABLES se existir
+            const staticConfig = SUPPORTED_TABLES[tableName];
+            if (!staticConfig) {
+                return res.status(404).json({ success: false, error: 'Table not found' });
+            }
+            tableInfo = { columns: staticConfig.columns, requiredColumns: staticConfig.requiredColumns };
         }
 
         // Gerar header CSV
-        const header = tableConfig.columns.join(',');
+        const header = tableInfo.columns.join(',');
 
         // Gerar exemplo de linha
-        const exampleRow = tableConfig.columns.map(col => {
+        const exampleRow = tableInfo.columns.map(col => {
             if (col.includes('id') && col !== 'id') return 'uuid-reference';
             if (col === 'id') return '(auto-generated)';
             if (col.includes('_at')) return '2024-01-01 00:00:00';
@@ -234,17 +339,28 @@ exports.getTemplate = async (req, res) => {
  */
 exports.previewData = async (req, res) => {
     try {
-        const { tableName } = req.body;
+        const { tableName, database = 'core' } = req.body;
         const file = req.file;
 
         if (!file) {
             return res.status(400).json({ success: false, error: 'No file uploaded' });
         }
 
-        const tableConfig = SUPPORTED_TABLES[tableName];
-        if (!tableConfig) {
-            fs.unlinkSync(file.path);
-            return res.status(404).json({ success: false, error: 'Table not found' });
+        // Buscar info da tabela dinamicamente
+        let tableInfo = await getTableInfo(tableName, database);
+
+        if (!tableInfo) {
+            // Fallback para SUPPORTED_TABLES
+            const staticConfig = SUPPORTED_TABLES[tableName];
+            if (!staticConfig) {
+                fs.unlinkSync(file.path);
+                return res.status(404).json({ success: false, error: 'Table not found in database' });
+            }
+            tableInfo = {
+                columns: staticConfig.columns,
+                requiredColumns: staticConfig.requiredColumns,
+                database: staticConfig.database
+            };
         }
 
         // Parse CSV
@@ -253,7 +369,7 @@ exports.previewData = async (req, res) => {
 
         // Validar colunas
         const csvColumns = records.length > 0 ? Object.keys(records[0]) : [];
-        const missingRequired = tableConfig.requiredColumns.filter(col => !csvColumns.includes(col));
+        const missingRequired = (tableInfo.requiredColumns || []).filter(col => !csvColumns.includes(col));
 
         // Limpar arquivo temporário
         fs.unlinkSync(file.path);
@@ -262,11 +378,12 @@ exports.previewData = async (req, res) => {
             success: true,
             preview: {
                 tableName,
-                tableLabel: tableConfig.label,
+                tableLabel: formatTableName(tableName),
+                database: tableInfo.database,
                 totalRows: records.length,
                 csvColumns,
-                tableColumns: tableConfig.columns,
-                requiredColumns: tableConfig.requiredColumns,
+                tableColumns: tableInfo.columns,
+                requiredColumns: tableInfo.requiredColumns || [],
                 missingRequired,
                 sampleData: records.slice(0, 10),
                 isValid: missingRequired.length === 0
@@ -290,16 +407,28 @@ exports.importData = async (req, res) => {
 
     try {
         const { tableName } = req.params;
+        const { database = 'core' } = req.query;
         const tenantId = req.user?.tenantId;
 
         if (!file) {
             return res.status(400).json({ success: false, error: 'No file uploaded' });
         }
 
-        const tableConfig = SUPPORTED_TABLES[tableName];
-        if (!tableConfig) {
-            fs.unlinkSync(file.path);
-            return res.status(404).json({ success: false, error: `Table "${tableName}" not supported` });
+        // Buscar info da tabela dinamicamente
+        let tableInfo = await getTableInfo(tableName, database);
+
+        if (!tableInfo) {
+            // Fallback para SUPPORTED_TABLES
+            const staticConfig = SUPPORTED_TABLES[tableName];
+            if (!staticConfig) {
+                fs.unlinkSync(file.path);
+                return res.status(404).json({ success: false, error: `Table "${tableName}" not found in database` });
+            }
+            tableInfo = {
+                columns: staticConfig.columns,
+                requiredColumns: staticConfig.requiredColumns,
+                database: staticConfig.database
+            };
         }
 
         // Parse CSV
@@ -316,14 +445,15 @@ exports.importData = async (req, res) => {
         }
 
         // Determinar qual pool usar
-        const dbPool = tableConfig.database === 'ops' ? opsPool : pool;
+        const dbPool = tableInfo.database === 'ops' ? opsPool : pool;
 
-        // Preparar inserção
-        const csvColumns = Object.keys(records[0]).filter(col => tableConfig.columns.includes(col));
+        // Preparar inserção - usar colunas do CSV que existem na tabela
+        const csvColumns = Object.keys(records[0]).filter(col => tableInfo.columns.includes(col));
 
-        // Adicionar tenant_id se necessário
+        // Verificar se tem tenant_id na tabela e adicionar se necessário
+        const hasTenantColumn = tableInfo.columns.includes('tenant_id');
         const finalColumns = [...csvColumns];
-        if (tableConfig.useUserTenant && !csvColumns.includes('tenant_id') && tenantId) {
+        if (hasTenantColumn && !csvColumns.includes('tenant_id') && tenantId) {
             finalColumns.push('tenant_id');
         }
 
@@ -360,7 +490,7 @@ exports.importData = async (req, res) => {
                     });
 
                     // Adicionar tenant_id se necessário
-                    if (tableConfig.useUserTenant && !csvColumns.includes('tenant_id') && tenantId) {
+                    if (hasTenantColumn && !csvColumns.includes('tenant_id') && tenantId) {
                         values.push(tenantId);
                     }
 
@@ -386,7 +516,7 @@ exports.importData = async (req, res) => {
             success: true,
             result: {
                 tableName,
-                tableLabel: tableConfig.label,
+                tableLabel: formatTableName(tableName),
                 totalRows: records.length,
                 inserted,
                 failed: errors.length,

@@ -51,14 +51,17 @@ export const BulkDataImport: React.FC = () => {
 
     const loadTables = async () => {
         setLoading(true);
+        setError(null);
         try {
             const response = await apiClient.get('/import/tables');
             if (response.data.success) {
                 setTables(response.data.tables);
+            } else {
+                setError('Falha ao carregar lista de tabelas');
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to load tables:', err);
-            setError('Falha ao carregar lista de tabelas');
+            setError('Falha ao carregar tabelas. O servidor pode estar reiniciando. Clique em "Tentar Novamente".');
         } finally {
             setLoading(false);
         }
