@@ -53,9 +53,9 @@ export const BulkDataImport: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await apiClient.get('/import/tables');
-            if (response.data.success) {
-                setTables(response.data.tables);
+            const response = await apiClient.bulkImport.getTables();
+            if (response.success) {
+                setTables(response.tables);
             } else {
                 setError('Falha ao carregar lista de tabelas');
             }
@@ -81,10 +81,10 @@ export const BulkDataImport: React.FC = () => {
         if (!selectedTable) return;
 
         try {
-            const response = await apiClient.get(`/import/template/${selectedTable}`, {
-                responseType: 'blob'
-            });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const tableInfo = tables.find(t => t.id === selectedTable);
+            const database = tableInfo?.database || 'core';
+            const blob = await apiClient.bulkImport.getTemplate(selectedTable, database);
+            const url = window.URL.createObjectURL(new Blob([blob]));
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', `${selectedTable}_template.csv`);
@@ -104,18 +104,14 @@ export const BulkDataImport: React.FC = () => {
         setError(null);
 
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('tableName', selectedTable);
+            const tableInfo = tables.find(t => t.id === selectedTable);
+            const database = tableInfo?.database || 'core';
+            const response = await apiClient.bulkImport.preview(file, selectedTable, database);
 
-            const response = await apiClient.post('/import/preview', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-
-            if (response.data.success) {
-                setPreview(response.data.preview);
+            if (response.success) {
+                setPreview(response.preview);
             } else {
-                setError(response.data.error || 'Falha no preview');
+                setError(response.error || 'Falha no preview');
             }
         } catch (err: any) {
             setError(err.response?.data?.error || 'Falha ao fazer preview');
@@ -131,18 +127,15 @@ export const BulkDataImport: React.FC = () => {
         setError(null);
 
         try {
-            const formData = new FormData();
-            formData.append('file', file);
+            const tableInfo = tables.find(t => t.id === selectedTable);
+            const database = tableInfo?.database || 'core';
+            const response = await apiClient.bulkImport.importData(file, selectedTable, database);
 
-            const response = await apiClient.post(`/import/${selectedTable}`, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-
-            if (response.data.success) {
-                setResult(response.data.result);
+            if (response.success) {
+                setResult(response.result);
                 setPreview(null);
             } else {
-                setError(response.data.error || 'Falha na importação');
+                setError(response.error || 'Falha na importação');
             }
         } catch (err: any) {
             setError(err.response?.data?.error || 'Falha ao importar dados');
@@ -237,8 +230,8 @@ export const BulkDataImport: React.FC = () => {
                                 <span
                                     key={col}
                                     className={`text-xs px-2 py-1 rounded ${selectedTableInfo.requiredColumns.includes(col)
-                                            ? 'bg-amber-100 text-amber-800'
-                                            : 'bg-gray-200 text-gray-600'
+                                        ? 'bg-amber-100 text-amber-800'
+                                        : 'bg-gray-200 text-gray-600'
                                         }`}
                                 >
                                     {col}

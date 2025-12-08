@@ -561,6 +561,38 @@ export const apiClient = {
             const response = await axiosInstance.post('/ml/holidays', holiday);
             return response.data;
         }
+    },
+
+    // Bulk Import endpoints
+    bulkImport: {
+        getTables: async () => {
+            const response = await axiosInstance.get('/import/tables');
+            return response.data;
+        },
+        getTemplate: async (tableName: string, database: string = 'core') => {
+            const response = await axiosInstance.get(`/import/template/${tableName}?database=${database}`, {
+                responseType: 'blob'
+            });
+            return response.data;
+        },
+        preview: async (file: File, tableName: string, database: string = 'core') => {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('tableName', tableName);
+            formData.append('database', database);
+            const response = await axiosInstance.post('/import/preview', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            return response.data;
+        },
+        importData: async (file: File, tableName: string, database: string = 'core') => {
+            const formData = new FormData();
+            formData.append('file', file);
+            const response = await axiosInstance.post(`/import/${tableName}?database=${database}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            return response.data;
+        }
     }
 };
 
