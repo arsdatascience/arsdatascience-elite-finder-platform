@@ -104,6 +104,48 @@ export const BulkDataImport: React.FC = () => {
         }
     };
 
+    // Drag and drop state
+    const [isDragging, setIsDragging] = useState(false);
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const droppedFiles = Array.from(e.dataTransfer.files);
+
+        if (batchMode) {
+            // Batch mode: accept multiple CSV files
+            const csvFiles = droppedFiles.filter(f => f.name.endsWith('.csv'));
+            if (csvFiles.length > 0) {
+                setBatchFiles(csvFiles);
+                setBatchResult(null);
+                setError(null);
+            }
+        } else {
+            // Single mode: accept first CSV file
+            const csvFile = droppedFiles.find(f => f.name.endsWith('.csv'));
+            if (csvFile) {
+                setFile(csvFile);
+                setPreview(null);
+                setResult(null);
+                setError(null);
+            }
+        }
+    };
+
     const downloadTemplate = async () => {
         if (!selectedTable) return;
 
@@ -453,38 +495,47 @@ export const BulkDataImport: React.FC = () => {
                             O nome de cada arquivo deve corresponder ao nome da tabela de destino (ex: <code className="bg-gray-100 px-1 rounded">ml_experiments.csv</code>)
                         </p>
 
-                        <label
-                            htmlFor="batch-csv-upload"
-                            className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition block"
+                        <div
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
                         >
-                            <input
-                                id="batch-csv-upload"
-                                type="file"
-                                accept=".csv"
-                                multiple
-                                onChange={handleBatchFileChange}
-                                className="hidden"
-                            />
-                            {batchFiles.length > 0 ? (
-                                <div>
-                                    <Files className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
-                                    <p className="font-medium text-emerald-600">{batchFiles.length} arquivo(s) selecionado(s)</p>
-                                    <div className="mt-2 flex flex-wrap gap-2 justify-center">
-                                        {batchFiles.map((f, idx) => (
-                                            <span key={idx} className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded">
-                                                {f.name}
-                                            </span>
-                                        ))}
+                            <label
+                                htmlFor="batch-csv-upload"
+                                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition block ${isDragging
+                                    ? 'border-emerald-500 bg-emerald-100 scale-[1.02]'
+                                    : 'border-gray-300 hover:border-emerald-500 hover:bg-emerald-50'
+                                    }`}
+                            >
+                                <input
+                                    id="batch-csv-upload"
+                                    type="file"
+                                    accept=".csv"
+                                    multiple
+                                    onChange={handleBatchFileChange}
+                                    className="hidden"
+                                />
+                                {batchFiles.length > 0 ? (
+                                    <div>
+                                        <Files className="w-8 h-8 mx-auto mb-2 text-emerald-600" />
+                                        <p className="font-medium text-emerald-600">{batchFiles.length} arquivo(s) selecionado(s)</p>
+                                        <div className="mt-2 flex flex-wrap gap-2 justify-center">
+                                            {batchFiles.map((f, idx) => (
+                                                <span key={idx} className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded">
+                                                    {f.name}
+                                                </span>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="text-gray-500">
-                                    <Upload className="w-8 h-8 mx-auto mb-2" />
-                                    <p>Clique para selecionar ou arraste arquivos CSV</p>
-                                    <p className="text-xs mt-1">Até 50 arquivos de uma vez</p>
-                                </div>
-                            )}
-                        </label>
+                                ) : (
+                                    <div className="text-gray-500">
+                                        <Upload className="w-8 h-8 mx-auto mb-2" />
+                                        <p>Clique para selecionar ou arraste arquivos CSV</p>
+                                        <p className="text-xs mt-1">Até 50 arquivos de uma vez</p>
+                                    </div>
+                                )}
+                            </label>
+                        </div>
 
                         {batchFiles.length > 0 && !batchResult && (
                             <button
@@ -659,10 +710,18 @@ export const BulkDataImport: React.FC = () => {
                                 2. Upload do Arquivo CSV
                             </h3>
 
-                            <div className="flex items-center gap-4">
+                            <div
+                                className="flex items-center gap-4"
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                            >
                                 <label
                                     htmlFor="csv-upload"
-                                    className="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition"
+                                    className={`flex-1 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition ${isDragging
+                                        ? 'border-emerald-500 bg-emerald-100 scale-[1.02]'
+                                        : 'border-gray-300 hover:border-emerald-500 hover:bg-emerald-50'
+                                        }`}
                                 >
                                     <input
                                         id="csv-upload"
@@ -677,10 +736,15 @@ export const BulkDataImport: React.FC = () => {
                                             <span className="font-medium">{file.name}</span>
                                             <span className="text-gray-500">({(file.size / 1024).toFixed(1)} KB)</span>
                                         </div>
+                                    ) : isDragging ? (
+                                        <div className="text-emerald-600">
+                                            <Upload className="w-8 h-8 mx-auto mb-2 animate-bounce" />
+                                            <p className="font-medium">Solte o arquivo aqui!</p>
+                                        </div>
                                     ) : (
                                         <div className="text-gray-500">
                                             <Upload className="w-8 h-8 mx-auto mb-2" />
-                                            <p>Clique para selecionar ou arraste um arquivo CSV</p>
+                                            <p>Clique para selecionar ou <strong>arraste</strong> um arquivo CSV</p>
                                         </div>
                                     )}
                                 </label>
@@ -698,7 +762,19 @@ export const BulkDataImport: React.FC = () => {
                                         ) : (
                                             <Eye className="w-5 h-5" />
                                         )}
-                                        Preview Dados
+                                        Preview
+                                    </button>
+                                    <button
+                                        onClick={handleImport}
+                                        disabled={importing}
+                                        className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition"
+                                    >
+                                        {importing ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <Upload className="w-5 h-5" />
+                                        )}
+                                        Importar Direto
                                     </button>
                                 </div>
                             )}
