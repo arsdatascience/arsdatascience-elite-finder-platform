@@ -249,9 +249,28 @@ const AlgorithmConfigModal: React.FC<AlgorithmConfigModalProps> = ({
                             <p className="text-sm text-gray-400">{algorithm.library}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
-                        <X className="w-5 h-5 text-gray-400" />
-                    </button>
+                    {/* Estimated Accuracy Display */}
+                    <div className="flex items-center gap-4">
+                        <div className="text-center px-4 py-2 bg-gray-900/70 rounded-xl border border-gray-600">
+                            <p className="text-xs text-gray-400 mb-1">Acurácia Estimada</p>
+                            <div className="flex items-center justify-center gap-2">
+                                <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{
+                                        backgroundColor: accuracyInfo.accuracy >= 0.90 ? '#22c55e' :
+                                            accuracyInfo.accuracy >= 0.80 ? '#84cc16' :
+                                                accuracyInfo.accuracy >= 0.70 ? '#eab308' : '#ef4444'
+                                    }}
+                                />
+                                <span className="text-2xl font-bold text-white">
+                                    {Math.round(accuracyInfo.accuracy * 100)}%
+                                </span>
+                            </div>
+                        </div>
+                        <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
+                            <X className="w-5 h-5 text-gray-400" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Content */}
