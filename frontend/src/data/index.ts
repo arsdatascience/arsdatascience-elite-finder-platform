@@ -154,62 +154,251 @@ export function validateConfig(algorithmId: string, config: Record<string, any>)
     return { valid: errors.length === 0, errors };
 }
 
-// Calculate estimated accuracy based on config
+// Calculate estimated accuracy based on config - COMPLETE IMPLEMENTATION
 export function calculateEstimatedAccuracy(algorithmId: string, config: Record<string, any>): { accuracy: number; tips: string[] } {
     const algo = ALGORITHM_CONFIGS[algorithmId];
-    if (!algo) return { accuracy: 0.5, tips: [] };
+    if (!algo) return { accuracy: 0.5, tips: ['Algoritmo não encontrado'] };
 
     let accuracy = algo.baseAccuracy;
     const tips: string[] = [];
 
-    // Adjust based on hyperparameters
-    algo.hyperparameters.forEach(hp => {
-        const value = config[hp.name];
-        if (value === undefined) return;
+    // ========== ENSEMBLE ALGORITHMS (Random Forest, XGBoost, LightGBM, Gradient Boosting) ==========
+    if (algo.category === 'regression' || algo.category === 'classification') {
 
-        if (hp.impact === 'high') {
-            // Simple heuristic: being closer to default is better
-            const defaultVal = hp.default;
-            if (typeof value === 'number' && typeof defaultVal === 'number') {
-                const deviation = Math.abs(value - defaultVal) / (hp.max! - hp.min! || 1);
-                if (deviation > 0.5) {
-                    accuracy -= 0.02;
-                    tips.push(`${hp.label}: value is far from optimal default`);
-                }
+        // N_ESTIMATORS (Número de árvores) - HIGH IMPACT
+        if (config.n_estimators !== undefined) {
+            if (config.n_estimators >= 500) {
+                accuracy += 0.03;
+            } else if (config.n_estimators >= 300) {
+                accuracy += 0.02;
+            } else if (config.n_estimators >= 100) {
+                accuracy += 0.01;
+            } else if (config.n_estimators < 100) {
+                accuracy -= 0.03;
+                tips.push('⚠️ n_estimators < 100 pode resultar em underfitting');
             }
         }
-    });
 
-    // Ensemble-specific boosts
-    if (config.n_estimators) {
-        if (config.n_estimators >= 300) accuracy += 0.02;
-        if (config.n_estimators >= 500) accuracy += 0.01;
-        if (config.n_estimators < 100) {
-            accuracy -= 0.03;
-            tips.push('Aumentar n_estimators pode melhorar a precisão');
+        // LEARNING_RATE - HIGH IMPACT (inverse relationship)
+        if (config.learning_rate !== undefined) {
+            if (config.learning_rate <= 0.03) {
+                accuracy += 0.02;
+                tips.push('✓ Learning rate baixo é mais preciso, mas requer mais árvores');
+            } else if (config.learning_rate <= 0.1) {
+                accuracy += 0.01;
+            } else if (config.learning_rate >= 0.2) {
+                accuracy -= 0.03;
+                tips.push('⚠️ Learning rate alto pode causar overfitting');
+            }
+        }
+
+        // MAX_DEPTH - MEDIUM-HIGH IMPACT
+        if (config.max_depth !== undefined && config.max_depth !== null && config.max_depth > 0) {
+            if (config.max_depth >= 3 && config.max_depth <= 8) {
+                accuracy += 0.01; // Sweet spot for boosting
+            } else if (config.max_depth > 15) {
+                accuracy -= 0.02;
+                tips.push('⚠️ Profundidade muito alta pode causar overfitting');
+            }
+        }
+
+        // SUBSAMPLE & COLSAMPLE - MEDIUM IMPACT (regularization)
+        if (config.subsample !== undefined && config.subsample < 1.0) {
+            if (config.subsample >= 0.7 && config.subsample <= 0.9) {
+                accuracy += 0.01;
+                tips.push('✓ Subsample entre 0.7-0.9 ajuda na generalização');
+            }
+        }
+        if (config.colsample_bytree !== undefined && config.colsample_bytree < 1.0) {
+            if (config.colsample_bytree >= 0.7 && config.colsample_bytree <= 0.9) {
+                accuracy += 0.01;
+            }
+        }
+
+        // REGULARIZATION (reg_alpha, reg_lambda) - HIGH IMPACT
+        const regAlpha = config.reg_alpha ?? 0;
+        const regLambda = config.reg_lambda ?? 0;
+        if (regAlpha > 0 || regLambda > 0) {
+            accuracy += 0.015;
+            tips.push('✓ Regularização ativa melhora generalização');
+        }
+
+        // MIN_CHILD_WEIGHT / MIN_SAMPLES_LEAF - MEDIUM IMPACT
+        if (config.min_child_weight !== undefined && config.min_child_weight > 1) {
+            accuracy += 0.005;
+        }
+        if (config.min_samples_leaf !== undefined && config.min_samples_leaf > 1) {
+            accuracy += 0.005;
+        }
+
+        // GAMMA (XGBoost) - MEDIUM IMPACT
+        if (config.gamma !== undefined && config.gamma > 0) {
+            if (config.gamma <= 0.2) {
+                accuracy += 0.01;
+            } else if (config.gamma > 0.5) {
+                accuracy -= 0.01;
+                tips.push('⚠️ Gamma muito alto pode subajustar o modelo');
+            }
+        }
+
+        // LightGBM specific: NUM_LEAVES
+        if (config.num_leaves !== undefined) {
+            if (config.num_leaves >= 31 && config.num_leaves <= 127) {
+                accuracy += 0.01;
+            } else if (config.num_leaves > 255) {
+                accuracy -= 0.02;
+                tips.push('⚠️ num_leaves muito alto pode causar overfitting');
+            }
+        }
+
+        // CLASS BALANCE (for classification)
+        if (algo.category === 'classification') {
+            if (config.class_weight === 'balanced' || config.is_unbalance === true) {
+                accuracy += 0.02;
+                tips.push('✓ Balanceamento de classes ativado');
+            }
+            if (config.scale_pos_weight !== undefined && config.scale_pos_weight > 1) {
+                accuracy += 0.015;
+                tips.push(`✓ scale_pos_weight=${config.scale_pos_weight} ajustado para desbalanceamento`);
+            }
         }
     }
 
-    // Learning rate adjustments
-    if (config.learning_rate) {
-        if (config.learning_rate <= 0.05) accuracy += 0.01;
-        if (config.learning_rate >= 0.2) {
-            accuracy -= 0.02;
-            tips.push('Learning rate muito alto pode causar overfitting');
+    // ========== LINEAR MODELS (Ridge, Lasso, ElasticNet, Logistic) ==========
+    if (algorithmId.includes('ridge') || algorithmId.includes('lasso') || algorithmId.includes('elasticnet') || algorithmId.includes('logistic')) {
+
+        // ALPHA / C (regularization strength)
+        if (config.alpha !== undefined) {
+            if (config.alpha >= 0.5 && config.alpha <= 10) {
+                accuracy += 0.01;
+                tips.push('✓ Alpha em faixa balanceada');
+            } else if (config.alpha > 50) {
+                accuracy -= 0.02;
+                tips.push('⚠️ Alpha muito alto pode subajustar');
+            }
+        }
+        if (config.C !== undefined) {
+            if (config.C >= 0.1 && config.C <= 10) {
+                accuracy += 0.01;
+            } else if (config.C > 100) {
+                accuracy -= 0.02;
+                tips.push('⚠️ C muito alto pode causar overfitting');
+            }
+        }
+
+        // L1_RATIO (ElasticNet)
+        if (config.l1_ratio !== undefined && config.l1_ratio > 0 && config.l1_ratio < 1) {
+            accuracy += 0.01;
+            tips.push('✓ Mix L1/L2 ativado em ElasticNet');
         }
     }
 
-    // Regularization adjustments
-    if (config.reg_alpha || config.reg_lambda) {
-        if ((config.reg_alpha || 0) > 0 || (config.reg_lambda || 0) > 0) {
+    // ========== CLUSTERING (K-Means, DBSCAN, Hierarchical) ==========
+    if (algo.category === 'clustering') {
+
+        // K-Means specific
+        if (config.n_init !== undefined && config.n_init >= 20) {
+            accuracy += 0.02;
+            tips.push('✓ Múltiplas inicializações melhoram estabilidade');
+        }
+        if (config.init === 'k-means++') {
+            accuracy += 0.01;
+        }
+
+        // DBSCAN
+        if (config.eps !== undefined && config.min_samples !== undefined) {
+            tips.push('💡 Use K-distance graph para otimizar eps');
+        }
+
+        // Hierarchical
+        if (config.linkage === 'ward') {
+            accuracy += 0.01;
+            tips.push('✓ Linkage "ward" geralmente é mais robusto');
+        }
+    }
+
+    // ========== TIME SERIES (Prophet, ARIMA, SARIMA, ExpSmoothing) ==========
+    if (algo.category === 'time_series') {
+
+        // Prophet
+        if (algorithmId === 'prophet') {
+            if (config.seasonality_mode === 'multiplicative') {
+                accuracy += 0.01;
+                tips.push('✓ Modo multiplicativo bom para dados com sazonalidade crescente');
+            }
+            if (config.changepoint_prior_scale !== undefined) {
+                if (config.changepoint_prior_scale >= 0.01 && config.changepoint_prior_scale <= 0.1) {
+                    accuracy += 0.01;
+                } else if (config.changepoint_prior_scale > 0.3) {
+                    accuracy -= 0.02;
+                    tips.push('⚠️ changepoint_prior_scale alto pode causar overfitting em tendência');
+                }
+            }
+            if (config.seasonality_prior_scale !== undefined && config.seasonality_prior_scale >= 5 && config.seasonality_prior_scale <= 20) {
+                accuracy += 0.01;
+            }
+        }
+
+        // ARIMA/SARIMA
+        if (algorithmId === 'arima' || algorithmId === 'sarima') {
+            if (config.d !== undefined && config.d >= 1 && config.d <= 2) {
+                accuracy += 0.01;
+                tips.push('✓ Diferenciação aplicada para estacionariedade');
+            }
+            if (algorithmId === 'sarima' && config.s !== undefined) {
+                accuracy += 0.02;
+                tips.push(`✓ Período sazonal s=${config.s} configurado`);
+            }
+        }
+
+        // Exponential Smoothing
+        if (algorithmId === 'exponential_smoothing') {
+            if (config.trend !== null && config.seasonal !== null) {
+                accuracy += 0.02;
+                tips.push('✓ Holt-Winters completo (tendência + sazonalidade)');
+            } else if (config.trend !== null) {
+                accuracy += 0.01;
+            }
+            if (config.damped_trend === true) {
+                accuracy += 0.01;
+                tips.push('✓ Tendência amortecida é mais conservadora');
+            }
+            if (config.optimized === true) {
+                accuracy += 0.01;
+            }
+        }
+    }
+
+    // ========== SVM ==========
+    if (algorithmId.includes('svm')) {
+        if (config.kernel === 'rbf') {
+            accuracy += 0.01;
+            tips.push('✓ Kernel RBF é versátil para dados não-lineares');
+        }
+        if (config.probability === true) {
+            tips.push('✓ Probabilidades habilitadas para AUC');
+        }
+        if (config.C !== undefined && config.C >= 1 && config.C <= 10) {
             accuracy += 0.01;
         }
     }
 
-    // Clamp accuracy
+    // ========== NAIVE BAYES ==========
+    if (algorithmId === 'naive_bayes') {
+        if (config.var_smoothing !== undefined && config.var_smoothing >= 1e-10 && config.var_smoothing <= 1e-8) {
+            accuracy += 0.01;
+        }
+        tips.push('💡 Naive Bayes é rápido mas assume independência de features');
+    }
+
+    // Clamp accuracy between 0.5 and 0.99
     accuracy = Math.max(0.5, Math.min(0.99, accuracy));
 
-    return { accuracy: Math.round(accuracy * 100) / 100, tips };
+    // Round to 2 decimal places
+    return {
+        accuracy: Math.round(accuracy * 100) / 100,
+        tips: tips.slice(0, 5) // Limit to 5 tips
+    };
 }
 
 // Total algorithm count
