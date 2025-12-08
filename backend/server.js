@@ -935,8 +935,9 @@ const bulkImportCtrl = require('./bulkImportController');
 app.get('/api/import/tables', authenticateToken, bulkImportCtrl.listTables);
 app.get('/api/import/template/:tableName', authenticateToken, bulkImportCtrl.getTemplate);
 app.post('/api/import/preview', authenticateToken, bulkImportCtrl.upload.single('file'), bulkImportCtrl.previewData);
-app.post('/api/import/:tableName', authenticateToken, bulkImportCtrl.upload.single('file'), bulkImportCtrl.importData);
+// IMPORTANT: /batch route MUST come BEFORE /:tableName to avoid 'batch' being captured as tableName
 app.post('/api/import/batch', authenticateToken, bulkImportCtrl.upload.array('files', 50), bulkImportCtrl.batchImport);
+app.post('/api/import/:tableName', authenticateToken, bulkImportCtrl.upload.single('file'), bulkImportCtrl.importData);
 
 // --- SERVICE CATALOG (Phase 2) ---
 const serviceCtrl = require('./controllers/serviceController');
