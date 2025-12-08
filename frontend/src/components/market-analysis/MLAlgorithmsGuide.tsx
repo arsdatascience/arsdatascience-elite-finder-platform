@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
     TrendingUp, Target, Users, Clock, ChevronDown, ChevronRight,
-    Zap, Brain, BarChart3, LineChart, PieChart, Activity,
-    CheckCircle, XCircle, AlertCircle, Info, Star, Search
+    Zap, Brain, BarChart3, Activity,
+    CheckCircle, XCircle, Info, Star, Search, Settings
 } from 'lucide-react';
+import AlgorithmConfigModal, { ALGORITHM_CONFIGS } from './AlgorithmConfigModal';
 
 interface Algorithm {
     id: string;
@@ -478,11 +479,12 @@ const getSpeedBadge = (speed: string) => {
     return badges[speed] || badges.moderate;
 };
 
-const AlgorithmCard: React.FC<{ algorithm: Algorithm; isExpanded: boolean; onToggle: () => void }> = ({
-    algorithm, isExpanded, onToggle
+const AlgorithmCard: React.FC<{ algorithm: Algorithm; isExpanded: boolean; onToggle: () => void; onConfigure: () => void }> = ({
+    algorithm, isExpanded, onToggle, onConfigure
 }) => {
     const complexityBadge = getComplexityBadge(algorithm.complexity);
     const speedBadge = getSpeedBadge(algorithm.speed);
+    const hasConfig = ALGORITHM_CONFIGS[algorithm.id] !== undefined;
 
     return (
         <div className="bg-gray-800/60 rounded-xl border border-gray-700 overflow-hidden">
@@ -603,12 +605,21 @@ const AlgorithmCard: React.FC<{ algorithm: Algorithm; isExpanded: boolean; onTog
                         </div>
                     )}
 
-                    {/* Metrics */}
-                    <div className="flex gap-4 pt-2 border-t border-gray-700">
+                    {/* Metrics & Configure Button */}
+                    <div className="flex items-center justify-between gap-4 pt-2 border-t border-gray-700">
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-gray-400">Precisão:</span>
                             <span className="text-sm font-medium text-white">🎯 {algorithm.precision}</span>
                         </div>
+                        {hasConfig && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onConfigure(); }}
+                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/80 text-white rounded-lg text-sm font-medium transition"
+                            >
+                                <Settings className="w-4 h-4" />
+                                Configurar
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
@@ -620,6 +631,7 @@ const MLAlgorithmsGuide: React.FC = () => {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [expandedAlgorithm, setExpandedAlgorithm] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [configModalAlgorithm, setConfigModalAlgorithm] = useState<string | null>(null);
 
     const filteredAlgorithms = ALGORITHMS.filter(alg => {
         const matchesCategory = !selectedCategory || alg.category === selectedCategory;
@@ -677,8 +689,8 @@ const MLAlgorithmsGuide: React.FC = () => {
                             key={cat.id}
                             onClick={() => setSelectedCategory(isSelected ? null : cat.id)}
                             className={`p-4 rounded-xl border transition-all ${isSelected
-                                    ? `bg-gradient-to-br ${getCategoryColor(cat.id)} border-transparent`
-                                    : 'bg-gray-800/50 border-gray-700 hover:border-gray-600'
+                                ? `bg-gradient-to-br ${getCategoryColor(cat.id)} border-transparent`
+                                : 'bg-gray-800/50 border-gray-700 hover:border-gray-600'
                                 }`}
                         >
                             <Icon className={`w-6 h-6 mb-2 ${isSelected ? 'text-white' : 'text-gray-400'}`} />
@@ -752,9 +764,17 @@ const MLAlgorithmsGuide: React.FC = () => {
                         onToggle={() => setExpandedAlgorithm(
                             expandedAlgorithm === algorithm.id ? null : algorithm.id
                         )}
+                        onConfigure={() => setConfigModalAlgorithm(algorithm.id)}
                     />
                 ))}
             </div>
+
+            {/* Configuration Modal */}
+            <AlgorithmConfigModal
+                algorithmId={configModalAlgorithm || ''}
+                isOpen={configModalAlgorithm !== null}
+                onClose={() => setConfigModalAlgorithm(null)}
+            />
 
             {/* Comparison Table */}
             <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
