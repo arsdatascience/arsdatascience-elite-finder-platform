@@ -356,7 +356,7 @@ export const AgentBuilder: React.FC = () => {
         if (templateId) {
             const loadTemplate = async () => {
                 try {
-                    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates/${templateId}`);
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agent-templates/${templateId}`);
                     const data = await response.json();
                     if (data.base_config) {
                         // Merge robusto para garantir que novos campos (como advancedConfig ou prompts) não quebrem com templates antigos
@@ -385,7 +385,7 @@ export const AgentBuilder: React.FC = () => {
             return;
         }
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agent-templates`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -444,7 +444,7 @@ export const AgentBuilder: React.FC = () => {
     const fetchTemplates = async () => {
         setLoadingTemplates(true);
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates`);
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agent-templates`);
             const data = await response.json();
 
             // Garantir que data é um array válido
@@ -475,7 +475,7 @@ export const AgentBuilder: React.FC = () => {
     const handleSetupTemplates = async () => {
         try {
             setLoadingTemplates(true);
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates/setup-db`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agent-templates/setup-db`, {
                 method: 'POST'
             });
             const data = await response.json();
@@ -496,7 +496,7 @@ export const AgentBuilder: React.FC = () => {
 
     const handleSelectTemplate = async (templateId: string) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates/${templateId}`);
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agent-templates/${templateId}`);
             const data = await response.json();
             if (data.base_config) {
                 setConfig({

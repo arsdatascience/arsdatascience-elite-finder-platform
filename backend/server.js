@@ -869,11 +869,14 @@ app.put('/api/tasks/:id', authenticateToken, taskCtrl.updateTask);
 app.delete('/api/tasks/:id', authenticateToken, taskCtrl.deleteTask);
 
 // --- AGENT TEMPLATES ---
-const templatesController = require('./templatesController'); // Kept for legacy if needed, or replace if duplicate
+const templatesController = require('./templatesController'); // Agent templates from agent_templates table
 // New SOP Template Controller
 const templateController = require('./controllers/templateController');
 
-// Template CRUD
+// Agent Templates (from agent_templates table) - For Agent Builder
+app.use('/api/agent-templates', templatesController);
+
+// SOP Template CRUD (from templates table)
 app.get('/api/templates', authenticateToken, templateController.getAllTemplates);
 app.post('/api/templates', authenticateToken, templateController.createTemplate);
 app.get('/api/templates/:id', authenticateToken, templateController.getTemplateDetails);
