@@ -287,7 +287,7 @@ const getWhatsAppConfig = async (req, res) => {
 
     try {
         const result = await pool.query(
-            "SELECT platform, config, access_token FROM integrations WHERE user_id = $1 AND platform IN ('whatsapp', 'evolution_api') LIMIT 1",
+            "SELECT platform, status, config, access_token FROM integrations WHERE user_id = $1 AND platform IN ('whatsapp', 'evolution_api') LIMIT 1",
             [userId]
         );
 
