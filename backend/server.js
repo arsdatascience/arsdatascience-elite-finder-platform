@@ -208,6 +208,56 @@ async function initializeDatabase() {
 
     console.log(`✅ Database schema initialized! (${successCount} executed, ${skipCount} skipped, ${errorCount} errors)`);
 
+    // ============================================
+    // CRITICAL: Create unified_customers table (CDP) - independent block
+    // ============================================
+    console.log('🔄 Verificando tabela unified_customers (CDP)...');
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS unified_customers (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          tenant_id INTEGER,
+          client_id INTEGER,
+          email VARCHAR(255),
+          phone VARCHAR(50),
+          whatsapp_number VARCHAR(50),
+          name VARCHAR(255),
+          facebook_id VARCHAR(100),
+          instagram_id VARCHAR(100),
+          google_id VARCHAR(100),
+          linkedin_id VARCHAR(100),
+          tiktok_id VARCHAR(100),
+          preferred_channel VARCHAR(50) DEFAULT 'whatsapp',
+          communication_frequency VARCHAR(20) DEFAULT 'medium',
+          best_contact_time VARCHAR(50),
+          language VARCHAR(10) DEFAULT 'pt-BR',
+          timezone VARCHAR(50) DEFAULT 'America/Sao_Paulo',
+          current_stage VARCHAR(50) DEFAULT 'awareness',
+          last_channel VARCHAR(50),
+          last_interaction TIMESTAMP,
+          total_touchpoints INTEGER DEFAULT 0,
+          channel_mix JSONB DEFAULT '{}',
+          lifetime_value DECIMAL(12,2) DEFAULT 0,
+          avg_order_value DECIMAL(12,2) DEFAULT 0,
+          purchase_count INTEGER DEFAULT 0,
+          tags TEXT[],
+          segments TEXT[],
+          cart_items JSONB,
+          cart_value DECIMAL(12,2) DEFAULT 0,
+          cart_updated_at TIMESTAMP,
+          first_seen_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_unified_customers_tenant ON unified_customers(tenant_id);
+        CREATE INDEX IF NOT EXISTS idx_unified_customers_email ON unified_customers(email);
+        CREATE INDEX IF NOT EXISTS idx_unified_customers_phone ON unified_customers(phone);
+      `);
+      console.log('✅ Tabela unified_customers (CDP) verificada/criada.');
+    } catch (cdpErr) {
+      console.log('⚠️ unified_customers já existe ou erro:', cdpErr.message);
+    }
+
     // Migração Automática para Analytics de Imagens
     console.log('🔄 Verificando migrações de Analytics...');
     try {
