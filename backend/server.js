@@ -562,6 +562,16 @@ async function initializeDatabase() {
       await pool.query(oauthMigration);
       console.log('✅ Migração 030 aplicada.');
 
+      // Migração 041: Drop empty financial tables from Crossover (they live in Maglev/OPS now)
+      console.log('🔄 Limpando tabelas financeiras vazias do Crossover (041)...');
+      try {
+        await pool.query('DROP TABLE IF EXISTS financial_transactions CASCADE;');
+        await pool.query('DROP TABLE IF EXISTS financial_categories CASCADE;');
+        console.log('✅ Tabelas financeiras removidas do Crossover (agora estão no Maglev).');
+      } catch (dropErr) {
+        console.log('⚠️ Tabelas financeiras já removidas ou não existem:', dropErr.message);
+      }
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
