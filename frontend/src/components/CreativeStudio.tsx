@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { PenTool, Send, Copy, Check, Sparkles, Instagram, Linkedin, Mail, MessageCircle, Save, History, Trash2, Layout, FileText, Layers } from 'lucide-react';
+import { PenTool, Send, Copy, Check, Sparkles, Instagram, Linkedin, Mail, MessageCircle, Save, History, Trash2, Layout, FileText, Layers, Image } from 'lucide-react';
 import { ContentGenerator } from './ContentGenerator';
 import { BatchWizard } from './BatchWizard';
+import { ImageGenerationPage } from './ImageGenerationPage';
+
 
 const CreativeStudio: React.FC = () => {
     const [topic, setTopic] = useState('');
@@ -121,7 +123,7 @@ const CreativeStudio: React.FC = () => {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const [activeTab, setActiveTab] = useState<'copy' | 'design' | 'batch'>('batch');
+    const [activeTab, setActiveTab] = useState<'copy' | 'design' | 'batch' | 'images'>('design');
 
     const handleBatchGenerate = async (config: any) => {
         setLoading(true);
@@ -211,6 +213,16 @@ const CreativeStudio: React.FC = () => {
                                 <Layers size={18} />
                                 Produção em Série (Batch)
                             </button>
+                            <button
+                                onClick={() => setActiveTab('images')}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'images'
+                                    ? 'bg-white text-slate-700 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                            >
+                                <Image size={18} />
+                                Geração de Imagens (IA)
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -219,7 +231,11 @@ const CreativeStudio: React.FC = () => {
                 <div className="flex-1 p-8">
                     <div className="max-w-6xl mx-auto w-full h-full">
 
-                        {activeTab === 'batch' ? (
+                        {activeTab === 'images' ? (
+                            <div className="h-full">
+                                <ImageGenerationPage />
+                            </div>
+                        ) : activeTab === 'batch' ? (
                             <div className="h-full">
                                 <BatchWizard onGenerate={handleBatchGenerate} loading={loading} />
                             </div>
