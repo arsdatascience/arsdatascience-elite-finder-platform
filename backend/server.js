@@ -572,6 +572,16 @@ async function initializeDatabase() {
         console.log('⚠️ Tabelas financeiras já removidas ou não existem:', dropErr.message);
       }
 
+      // Migração 042: Omnichannel CDP Foundation
+      console.log('🔄 Verificando migrações de Omnichannel CDP (042)...');
+      try {
+        const omnichannelMigration = fs.readFileSync(path.join(__dirname, 'migrations', '042_omnichannel_foundation.sql'), 'utf8');
+        await pool.query(omnichannelMigration);
+        console.log('✅ Migração 042 (Omnichannel Foundation) aplicada.');
+      } catch (cdpErr) {
+        console.log('⚠️ Omnichannel CDP já existe ou erro:', cdpErr.message);
+      }
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
