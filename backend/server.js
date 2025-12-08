@@ -582,6 +582,16 @@ async function initializeDatabase() {
         console.log('⚠️ Omnichannel CDP já existe ou erro:', cdpErr.message);
       }
 
+      // Migração 043: KPI and Satisfaction Metrics
+      console.log('🔄 Verificando migrações de KPIs e Satisfação (043)...');
+      try {
+        const kpiMigration = fs.readFileSync(path.join(__dirname, 'migrations', '043_kpi_satisfaction_metrics.sql'), 'utf8');
+        await pool.query(kpiMigration);
+        console.log('✅ Migração 043 (KPI Metrics) aplicada.');
+      } catch (kpiErr) {
+        console.log('⚠️ KPI tables já existem ou erro:', kpiErr.message);
+      }
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
@@ -747,6 +757,39 @@ app.post('/api/images/upscale', authenticateToken, checkLimit('ai_generation'), 
 app.post('/api/images/:id/variations', authenticateToken, checkLimit('ai_generation'), imageController.createVariations);
 app.post('/api/images/translate', authenticateToken, imageController.translate);
 app.delete('/api/images/:id', authenticateToken, imageController.deleteImage);
+
+// --- KPI & CUSTOMER JOURNEY ROUTES ---
+const kpiController = require('./kpiController');
+const CustomerService = require('./services/customerService');
+
+// Dashboard KPIs
+app.get('/api/kpis/dashboard', authenticateToken, kpiController.getDashboardKPIs);
+app.get('/api/kpis/journey', authenticateToken, kpiController.getJourneyAnalytics);
+
+// NPS Surveys
+app.post('/api/kpis/nps', authenticateToken, kpiController.submitNPSSurvey);
+app.get('/api/kpis/nps/history', authenticateToken, kpiController.getNPSHistory);
+
+// CSAT Surveys
+app.post('/api/kpis/csat', authenticateToken, kpiController.submitCSATSurvey);
+
+// Employee Happiness
+app.post('/api/kpis/happiness', authenticateToken, kpiController.submitHappinessSurvey);
+app.get('/api/kpis/happiness/history', authenticateToken, kpiController.getHappinessHistory);
+
+// Unified Customer API
+app.get('/api/customers/unified/:id', authenticateToken, async (req, res) => {
+  try {
+    const db = require('./database');
+    const result = await db.query('SELECT * FROM unified_customers WHERE id = $1', [req.params.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Customer not found' });
+    }
+    res.json({ success: true, customer: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 
 

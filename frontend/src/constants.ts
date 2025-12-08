@@ -1,12 +1,13 @@
 // Navigation and data constants
 import { Campaign, Lead, LeadStatus, Metric, ChatMessage } from './types';
-import { Home, LayoutDashboard, Megaphone, Plane, MessageSquare, Settings, Share2, GitBranch, BookOpen, Sparkles, Users, FileText, Bot, Calendar, Palette, Mic, Wallet, HelpCircle, Briefcase, Folder, CheckCircle2, ShoppingBag, List, BrainCircuit } from 'lucide-react';
+import { Home, LayoutDashboard, Megaphone, Plane, MessageSquare, Settings, Share2, GitBranch, BookOpen, Sparkles, Users, FileText, Bot, Calendar, Palette, Mic, Wallet, HelpCircle, Briefcase, Folder, CheckCircle2, ShoppingBag, List, BrainCircuit, Heart } from 'lucide-react';
 
 export const NAV_ITEMS = [
   // Home
   { id: 'HOME', label: 'Início', icon: Home },
   // Existing items
   { id: 'DASHBOARD', label: 'Dashboard Executivo', icon: LayoutDashboard },
+  { id: 'CUSTOMER_JOURNEY', label: 'Jornada do Cliente', icon: Heart },
   { id: 'MARKET_ANALYSIS', label: 'Análise de Mercado IA', icon: BrainCircuit },
   { id: 'CAMPAIGNS', label: 'Campanhas de Ads', icon: Megaphone },
 
