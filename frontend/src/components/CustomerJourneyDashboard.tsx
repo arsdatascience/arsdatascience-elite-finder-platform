@@ -4,7 +4,7 @@ import {
     Smile, ThumbsUp, PieChart, BarChart3, ArrowUp, ArrowDown,
     RefreshCw, ChevronRight, Star, UserCheck, Clock
 } from 'lucide-react';
-import { useApiClient } from '../hooks/useApiClient';
+import { apiClient } from '@/services/apiClient';
 
 interface KPIData {
     nps: {
@@ -40,7 +40,6 @@ interface KPIData {
 }
 
 const CustomerJourneyDashboard: React.FC = () => {
-    const api = useApiClient();
     const [kpis, setKpis] = useState<KPIData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -52,7 +51,7 @@ const CustomerJourneyDashboard: React.FC = () => {
     const fetchKPIs = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/kpis/dashboard');
+            const response = await apiClient.get('/kpis/dashboard');
             if (response.data.success) {
                 setKpis(response.data.kpis);
             }
