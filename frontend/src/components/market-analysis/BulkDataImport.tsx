@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
     Upload, Database, FileSpreadsheet, CheckCircle, XCircle,
-    AlertTriangle, Download, RefreshCw, ChevronDown, Eye, Loader2, Files
+    AlertTriangle, Download, RefreshCw, ChevronDown, Eye, Loader2, Files,
+    BookOpen, ChevronRight
 } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
 
@@ -69,6 +70,7 @@ export const BulkDataImport: React.FC = () => {
     const [batchMode, setBatchMode] = useState(false);
     const [batchFiles, setBatchFiles] = useState<File[]>([]);
     const [batchResult, setBatchResult] = useState<BatchImportResponse | null>(null);
+    const [showGuide, setShowGuide] = useState(false);
 
     useEffect(() => {
         loadTables();
@@ -254,6 +256,188 @@ export const BulkDataImport: React.FC = () => {
                         : 'Importe um arquivo CSV para uma tabela específica do sistema'
                     }
                 </p>
+            </div>
+
+            {/* Import Order Guide */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <button
+                    onClick={() => setShowGuide(!showGuide)}
+                    className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 transition"
+                >
+                    <div className="flex items-center gap-3">
+                        <BookOpen className="w-5 h-5 text-indigo-600" />
+                        <span className="font-semibold text-gray-800">📋 Manual de Ordem de Importação</span>
+                        <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">26 tabelas</span>
+                    </div>
+                    <ChevronRight className={`w-5 h-5 text-gray-500 transition-transform ${showGuide ? 'rotate-90' : ''}`} />
+                </button>
+
+                {showGuide && (
+                    <div className="p-6 space-y-6">
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                            <p className="text-amber-800 font-medium mb-1">⚠️ Importante: Ordem de Importação</p>
+                            <p className="text-sm text-amber-700">
+                                Para evitar erros de <strong>Foreign Key</strong>, importe as tabelas na ordem abaixo.
+                                Tabelas filhas dependem de tabelas pai - importar fora de ordem causará erros.
+                            </p>
+                        </div>
+
+                        {/* Layer 1 - Base Tables */}
+                        <div>
+                            <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                <span className="bg-emerald-100 text-emerald-800 px-2 py-1 text-xs rounded-full">1ª Camada</span>
+                                Tabelas Base (sem dependências)
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {[
+                                    { name: 'ml_industry_segments.csv', desc: 'Segmentos de indústria', db: 'Megalev' },
+                                    { name: 'ml_prophet_holidays.csv', desc: 'Feriados para Prophet', db: 'Megalev' },
+                                    { name: 'ml_datasets.csv', desc: 'Datasets de ML', db: 'Megalev' },
+                                    { name: 'unified_customers.csv', desc: 'Clientes unificados (CDP)', db: 'Crossover' },
+                                ].map(t => (
+                                    <div key={t.name} className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
+                                        <span className="text-lg">📄</span>
+                                        <div>
+                                            <code className="text-sm font-medium text-gray-900">{t.name}</code>
+                                            <p className="text-xs text-gray-500">{t.desc} • {t.db}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Layer 2 - Depends on Datasets */}
+                        <div>
+                            <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                <span className="bg-blue-100 text-blue-800 px-2 py-1 text-xs rounded-full">2ª Camada</span>
+                                Depende de: ml_datasets
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {[
+                                    { name: 'ml_experiments.csv', desc: 'Experimentos de ML', db: 'Megalev' },
+                                    { name: 'ml_algorithm_configs.csv', desc: 'Configurações de algoritmos', db: 'Megalev' },
+                                ].map(t => (
+                                    <div key={t.name} className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
+                                        <span className="text-lg">📄</span>
+                                        <div>
+                                            <code className="text-sm font-medium text-gray-900">{t.name}</code>
+                                            <p className="text-xs text-gray-500">{t.desc} • {t.db}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Layer 3 - Depends on Experiments */}
+                        <div>
+                            <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                <span className="bg-purple-100 text-purple-800 px-2 py-1 text-xs rounded-full">3ª Camada</span>
+                                Depende de: ml_experiments
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                {[
+                                    { name: 'ml_predictions.csv', desc: 'Predições' },
+                                    { name: 'ml_regression_results.csv', desc: 'Resultados regressão' },
+                                    { name: 'ml_classification_results.csv', desc: 'Resultados classificação' },
+                                    { name: 'ml_clustering_results.csv', desc: 'Resultados clustering' },
+                                    { name: 'ml_timeseries_results.csv', desc: 'Resultados séries temporais' },
+                                    { name: 'ml_sales_analytics.csv', desc: 'Analytics vendas' },
+                                    { name: 'ml_marketing_analytics.csv', desc: 'Analytics marketing' },
+                                    { name: 'ml_customer_analytics.csv', desc: 'Analytics clientes' },
+                                    { name: 'ml_financial_analytics.csv', desc: 'Analytics financeiro' },
+                                    { name: 'ml_segment_analytics.csv', desc: 'Analytics segmentos' },
+                                ].map(t => (
+                                    <div key={t.name} className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
+                                        <span className="text-lg">📄</span>
+                                        <div>
+                                            <code className="text-xs font-medium text-gray-900">{t.name}</code>
+                                            <p className="text-xs text-gray-500">{t.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Layer 4 - Visualization Tables */}
+                        <div>
+                            <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                <span className="bg-orange-100 text-orange-800 px-2 py-1 text-xs rounded-full">4ª Camada</span>
+                                Depende de: ml_*_results
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {[
+                                    { name: 'ml_viz_regression.csv', desc: 'Visualizações regressão' },
+                                    { name: 'ml_viz_classification.csv', desc: 'Visualizações classificação' },
+                                    { name: 'ml_viz_clustering.csv', desc: 'Visualizações clustering' },
+                                    { name: 'ml_viz_timeseries.csv', desc: 'Visualizações séries temporais' },
+                                    { name: 'ml_algorithm_config_history.csv', desc: 'Histórico de configs' },
+                                ].map(t => (
+                                    <div key={t.name} className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
+                                        <span className="text-lg">📊</span>
+                                        <div>
+                                            <code className="text-sm font-medium text-gray-900">{t.name}</code>
+                                            <p className="text-xs text-gray-500">{t.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Layer 5 - Customer Journey Tables */}
+                        <div>
+                            <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                <span className="bg-rose-100 text-rose-800 px-2 py-1 text-xs rounded-full">5ª Camada</span>
+                                Depende de: unified_customers
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {[
+                                    { name: 'customer_interactions.csv', desc: 'Interações omnichannel' },
+                                    { name: 'customer_journeys.csv', desc: 'Jornadas do cliente' },
+                                    { name: 'identity_graph.csv', desc: 'Grafo de identidades' },
+                                    { name: 'journey_step_templates.csv', desc: 'Templates de steps' },
+                                ].map(t => (
+                                    <div key={t.name} className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
+                                        <span className="text-lg">👥</span>
+                                        <div>
+                                            <code className="text-sm font-medium text-gray-900">{t.name}</code>
+                                            <p className="text-xs text-gray-500">{t.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Layer 6 - Conversion Events */}
+                        <div>
+                            <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                <span className="bg-teal-100 text-teal-800 px-2 py-1 text-xs rounded-full">6ª Camada</span>
+                                Depende de: customer_interactions
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
+                                    <span className="text-lg">💰</span>
+                                    <div>
+                                        <code className="text-sm font-medium text-gray-900">conversion_events.csv</code>
+                                        <p className="text-xs text-gray-500">Eventos de conversão</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Summary */}
+                        <div className="bg-gray-100 rounded-lg p-4 mt-4">
+                            <p className="font-medium text-gray-800 mb-2">📝 Resumo Rápido da Ordem:</p>
+                            <ol className="text-sm text-gray-700 space-y-1 list-decimal list-inside">
+                                <li><code className="bg-white px-1 rounded">ml_industry_segments</code>, <code className="bg-white px-1 rounded">ml_datasets</code>, <code className="bg-white px-1 rounded">unified_customers</code></li>
+                                <li><code className="bg-white px-1 rounded">ml_experiments</code>, <code className="bg-white px-1 rounded">ml_algorithm_configs</code></li>
+                                <li><code className="bg-white px-1 rounded">ml_*_results</code>, <code className="bg-white px-1 rounded">ml_*_analytics</code></li>
+                                <li><code className="bg-white px-1 rounded">ml_viz_*</code>, <code className="bg-white px-1 rounded">ml_algorithm_config_history</code></li>
+                                <li><code className="bg-white px-1 rounded">customer_interactions</code>, <code className="bg-white px-1 rounded">customer_journeys</code></li>
+                                <li><code className="bg-white px-1 rounded">conversion_events</code></li>
+                            </ol>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* BATCH MODE */}
