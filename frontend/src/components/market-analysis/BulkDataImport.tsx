@@ -35,24 +35,39 @@ interface ImportResult {
     errors: { row: number; error: string }[];
 }
 
-interface BatchResult {
+interface LayerFileResult {
     file: string;
     tableName: string;
     database: string;
     totalRows: number;
     inserted: number;
     failed: number;
+    transformations: number;
     errors: { row: number; error: string }[];
+}
+
+interface LayerResult {
+    layer: number;
+    layerName: string;
+    files: LayerFileResult[];
+    totalInserted: number;
+    totalFailed: number;
+    transformationsApplied: number;
 }
 
 interface BatchImportResponse {
     success: boolean;
-    totalFiles: number;
-    processedFiles: number;
-    failedFiles: number;
-    importOrder: string[];
-    results: BatchResult[];
-    errors: { file: string; tableName: string; error: string }[];
+    normalize: boolean;
+    summary: {
+        totalFiles: number;
+        processedFiles: number;
+        failedFiles: number;
+        totalInserted: number;
+        totalFailed: number;
+        totalTransformations: number;
+    };
+    layerResults: LayerResult[];
+    errors: { file: string; tableName: string; layer: string; error: string }[];
 }
 
 export const BulkDataImport: React.FC = () => {
@@ -559,50 +574,72 @@ export const BulkDataImport: React.FC = () => {
                             <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
                                 <CheckCircle className="w-5 h-5 text-green-600" />
                                 Resultado da Importação em Lote
+                                {batchResult.normalize && (
+                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">ETL Ativo</span>
+                                )}
                             </h3>
 
-                            <div className="grid grid-cols-3 gap-4 mb-4">
-                                <div className="bg-gray-50 rounded-lg p-4 text-center">
-                                    <div className="text-2xl font-bold text-gray-800">{batchResult.totalFiles}</div>
-                                    <div className="text-sm text-gray-500">Total de Arquivos</div>
+                            {/* Summary Stats */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                                <div className="bg-gray-50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold text-gray-800">{batchResult.summary.totalFiles}</div>
+                                    <div className="text-xs text-gray-500">Arquivos</div>
                                 </div>
-                                <div className="bg-green-50 rounded-lg p-4 text-center">
-                                    <div className="text-2xl font-bold text-green-600">{batchResult.processedFiles}</div>
-                                    <div className="text-sm text-gray-500">Processados</div>
+                                <div className="bg-green-50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold text-green-600">{batchResult.summary.totalInserted}</div>
+                                    <div className="text-xs text-gray-500">Inseridos</div>
                                 </div>
-                                <div className="bg-red-50 rounded-lg p-4 text-center">
-                                    <div className="text-2xl font-bold text-red-600">{batchResult.failedFiles}</div>
-                                    <div className="text-sm text-gray-500">Falharam</div>
+                                <div className="bg-amber-50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold text-amber-600">{batchResult.summary.totalFailed}</div>
+                                    <div className="text-xs text-gray-500">Falhas</div>
+                                </div>
+                                <div className="bg-blue-50 rounded-lg p-3 text-center">
+                                    <div className="text-lg font-bold text-blue-600">{batchResult.summary.totalTransformations}</div>
+                                    <div className="text-xs text-gray-500">Transformações ETL</div>
                                 </div>
                             </div>
 
-                            <p className="text-sm text-gray-600 mb-2">
-                                <strong>Ordem de importação:</strong> {batchResult.importOrder?.join(' → ')}
-                            </p>
-
-                            {/* Results per file */}
-                            <div className="space-y-2 max-h-60 overflow-y-auto">
-                                {batchResult.results?.map((r, idx) => (
-                                    <div key={idx} className={`p-3 rounded-lg ${r.failed === 0 ? 'bg-green-50' : 'bg-amber-50'}`}>
-                                        <div className="flex items-center justify-between">
-                                            <span className="font-medium text-gray-800">{r.file}</span>
-                                            <span className="text-xs text-gray-500">→ {r.tableName} ({r.database})</span>
-                                        </div>
-                                        <div className="text-sm text-gray-600 mt-1">
-                                            ✅ {r.inserted} inseridos | ❌ {r.failed} falhas | Total: {r.totalRows}
-                                        </div>
-                                        {r.errors?.length > 0 && (
-                                            <div className="text-xs text-red-600 mt-1">
-                                                {r.errors.slice(0, 2).map(e => `Linha ${e.row}: ${e.error}`).join('; ')}
+                            {/* Layer Results */}
+                            <div className="space-y-4 max-h-80 overflow-y-auto">
+                                {batchResult.layerResults?.map((layer) => (
+                                    <div key={layer.layer} className="border border-gray-200 rounded-lg overflow-hidden">
+                                        <div className="bg-gradient-to-r from-gray-100 to-gray-50 px-4 py-2 flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-6 h-6 bg-emerald-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                                                    {layer.layer}
+                                                </span>
+                                                <span className="font-medium text-gray-700">{layer.layerName}</span>
                                             </div>
-                                        )}
+                                            <div className="flex items-center gap-3 text-xs">
+                                                <span className="text-green-600">✅ {layer.totalInserted}</span>
+                                                <span className="text-amber-600">❌ {layer.totalFailed}</span>
+                                                {layer.transformationsApplied > 0 && (
+                                                    <span className="text-blue-600">🔧 {layer.transformationsApplied}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="divide-y divide-gray-100">
+                                            {layer.files.map((f, idx) => (
+                                                <div key={idx} className={`px-4 py-2 ${f.failed === 0 ? 'bg-white' : 'bg-amber-50'}`}>
+                                                    <div className="flex items-center justify-between text-sm">
+                                                        <span className="font-medium text-gray-800">{f.file}</span>
+                                                        <span className="text-xs text-gray-500">→ {f.tableName}</span>
+                                                    </div>
+                                                    <div className="text-xs text-gray-600 mt-1">
+                                                        {f.inserted}/{f.totalRows} inseridos
+                                                        {f.transformations > 0 && ` | ${f.transformations} transformações`}
+                                                        {f.failed > 0 && <span className="text-red-600 ml-2">| {f.failed} falhas</span>}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
 
                             {batchResult.errors?.length > 0 && (
                                 <div className="mt-4 p-3 bg-red-50 rounded-lg">
-                                    <p className="font-medium text-red-800 mb-1">Arquivos com erro:</p>
+                                    <p className="font-medium text-red-800 mb-1">Erros gerais:</p>
                                     {batchResult.errors.map((e, idx) => (
                                         <p key={idx} className="text-sm text-red-600">{e.file}: {e.error}</p>
                                     ))}

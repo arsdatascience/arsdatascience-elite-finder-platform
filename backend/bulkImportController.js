@@ -10,31 +10,176 @@ const csv = require('csv-parse/sync');
 const fs = require('fs');
 const path = require('path');
 
-// Ordem de importação para respeitar FKs (tabelas pai primeiro)
-const TABLE_IMPORT_ORDER = [
-    // 1. Tabelas base sem dependências
-    'tenants',
-    'users',
-    'ml_industry_segments',
-    'ml_datasets',
-    // 2. Tabelas com FK para datasets
-    'ml_experiments',
-    // 3. Tabelas com FK para experiments
-    'ml_predictions',
-    'ml_regression_results',
-    'ml_classification_results',
-    'ml_clustering_results',
-    'ml_timeseries_results',
-    'ml_sales_analytics',
-    'ml_marketing_analytics',
-    'ml_customer_analytics',
-    'ml_financial_analytics',
-    // 4. Tabelas de clientes (CDP)
-    'unified_customers',
-    'customer_interactions',
-    'customer_journeys',
-    'conversion_events'
-];
+// Camadas de importação com dependências
+const IMPORT_LAYERS = {
+    1: {
+        name: 'Base (sem dependências)',
+        tables: ['tenants', 'users', 'ml_industry_segments', 'ml_prophet_holidays', 'ml_datasets', 'unified_customers'],
+        dependsOn: []
+    },
+    2: {
+        name: 'Experimentos (depende de datasets)',
+        tables: ['ml_experiments', 'ml_algorithm_configs'],
+        dependsOn: ['ml_datasets']
+    },
+    3: {
+        name: 'Resultados ML (depende de experiments)',
+        tables: ['ml_predictions', 'ml_regression_results', 'ml_classification_results', 'ml_clustering_results', 'ml_timeseries_results', 'ml_sales_analytics', 'ml_marketing_analytics', 'ml_customer_analytics', 'ml_financial_analytics', 'ml_segment_analytics'],
+        dependsOn: ['ml_experiments']
+    },
+    4: {
+        name: 'Visualizações (depende de results)',
+        tables: ['ml_viz_regression', 'ml_viz_classification', 'ml_viz_clustering', 'ml_viz_timeseries', 'ml_algorithm_config_history'],
+        dependsOn: ['ml_regression_results', 'ml_classification_results', 'ml_clustering_results', 'ml_timeseries_results']
+    },
+    5: {
+        name: 'Jornada do Cliente (depende de customers)',
+        tables: ['customer_interactions', 'customer_journeys', 'identity_graph', 'journey_step_templates'],
+        dependsOn: ['unified_customers']
+    },
+    6: {
+        name: 'Conversões (depende de interactions)',
+        tables: ['conversion_events'],
+        dependsOn: ['customer_interactions']
+    }
+};
+
+// Ordem flat para compatibilidade
+const TABLE_IMPORT_ORDER = Object.values(IMPORT_LAYERS).flatMap(layer => layer.tables);
+
+/**
+ * ETL Normalization Functions
+ */
+const ETL = {
+    // Normaliza valor string (trim, remove caracteres invisíveis)
+    normalizeString: (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        return String(value).trim().replace(/[\u200B-\u200D\uFEFF]/g, '');
+    },
+
+    // Converte para número (int ou float)
+    normalizeNumber: (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        const cleaned = String(value).replace(/[^\d.-]/g, '');
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? null : num;
+    },
+
+    // Converte para boolean
+    normalizeBoolean: (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        const lower = String(value).toLowerCase().trim();
+        if (['true', '1', 'yes', 'sim', 't', 's'].includes(lower)) return true;
+        if (['false', '0', 'no', 'não', 'nao', 'f', 'n'].includes(lower)) return false;
+        return null;
+    },
+
+    // Converte para data ISO
+    normalizeDate: (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        // Tentar vários formatos
+        const str = String(value).trim();
+
+        // ISO format
+        if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str;
+
+        // DD/MM/YYYY ou DD-MM-YYYY
+        const brMatch = str.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+        if (brMatch) return `${brMatch[3]}-${brMatch[2]}-${brMatch[1]}`;
+
+        // MM/DD/YYYY
+        const usMatch = str.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+        if (usMatch) return `${usMatch[3]}-${usMatch[1]}-${usMatch[2]}`;
+
+        return str;
+    },
+
+    // Normaliza JSON (parse se for string)
+    normalizeJSON: (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        if (typeof value === 'object') return value;
+        try {
+            return JSON.parse(value);
+        } catch (e) {
+            // Se não for JSON válido, retorna como array de string
+            return value.includes(',') ? value.split(',').map(s => s.trim()) : value;
+        }
+    },
+
+    // Normaliza UUID (remove espaços, valida formato)
+    normalizeUUID: (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        const cleaned = String(value).trim().toLowerCase();
+        if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(cleaned)) {
+            return cleaned;
+        }
+        return null;
+    },
+
+    // Aplica normalização baseada no tipo da coluna
+    normalizeValue: (value, columnType) => {
+        if (!columnType) return ETL.normalizeString(value);
+
+        const type = columnType.toLowerCase();
+
+        if (type.includes('int') || type.includes('serial')) {
+            const num = ETL.normalizeNumber(value);
+            return num !== null ? Math.floor(num) : null;
+        }
+        if (type.includes('numeric') || type.includes('decimal') || type.includes('float') || type.includes('double')) {
+            return ETL.normalizeNumber(value);
+        }
+        if (type.includes('bool')) {
+            return ETL.normalizeBoolean(value);
+        }
+        if (type.includes('date') || type.includes('timestamp')) {
+            return ETL.normalizeDate(value);
+        }
+        if (type.includes('json')) {
+            return ETL.normalizeJSON(value);
+        }
+        if (type.includes('uuid')) {
+            return ETL.normalizeUUID(value);
+        }
+
+        return ETL.normalizeString(value);
+    },
+
+    // Normaliza nome de coluna (lowercase, underscores)
+    normalizeColumnName: (name) => {
+        return String(name)
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '_')
+            .replace(/[^a-z0-9_]/g, '');
+    },
+
+    // Normaliza um registro inteiro baseado no schema
+    normalizeRecord: (record, columnTypes) => {
+        const normalized = {};
+        const transformations = [];
+
+        for (const [key, value] of Object.entries(record)) {
+            const normalizedKey = ETL.normalizeColumnName(key);
+            const columnType = columnTypes[normalizedKey] || 'text';
+            const normalizedValue = ETL.normalizeValue(value, columnType);
+
+            normalized[normalizedKey] = normalizedValue;
+
+            // Registra transformação se houve mudança
+            if (value !== normalizedValue || key !== normalizedKey) {
+                transformations.push({
+                    column: normalizedKey,
+                    original: value,
+                    normalized: normalizedValue,
+                    type: columnType
+                });
+            }
+        }
+
+        return { normalized, transformations };
+    }
+};
 
 // Configuração de upload
 const storage = multer.diskStorage({
@@ -582,10 +727,12 @@ exports.importData = async (req, res) => {
 
 /**
  * POST /api/import/batch
- * Importa múltiplos arquivos CSV de uma vez, respeitando ordem de FKs
+ * Importa múltiplos arquivos CSV por camadas, com normalização ETL
  */
 exports.batchImport = async (req, res) => {
     const files = req.files;
+    const { normalize = 'true' } = req.body; // Normalizar dados por padrão
+    const shouldNormalize = normalize === 'true' || normalize === true;
 
     try {
         const tenantId = req.user?.tenantId;
@@ -594,153 +741,196 @@ exports.batchImport = async (req, res) => {
             return res.status(400).json({ success: false, error: 'No files uploaded' });
         }
 
-        const results = [];
-        const errors = [];
+        console.log(`[BatchImport] Starting with ${files.length} files, normalize=${shouldNormalize}`);
 
-        // Mapear arquivos para tabelas (baseado no nome do arquivo)
+        // Mapear arquivos para tabelas
         const fileToTable = files.map(file => {
-            // Remove extensão e prefixos como "import_timestamp_"
             let tableName = file.originalname
                 .replace('.csv', '')
                 .replace(/^import_\d+_/, '')
-                .toLowerCase();
-
-            // Normalizar nome para nome de tabela válido
-            tableName = tableName.replace(/[^a-z0-9_]/g, '_');
-
+                .toLowerCase()
+                .replace(/[^a-z0-9_]/g, '_');
             return { file, tableName };
         });
 
-        // Ordenar arquivos pela ordem de dependências
-        fileToTable.sort((a, b) => {
-            const orderA = TABLE_IMPORT_ORDER.indexOf(a.tableName);
-            const orderB = TABLE_IMPORT_ORDER.indexOf(b.tableName);
-            // Tabelas não na lista vão para o final
-            const posA = orderA === -1 ? 999 : orderA;
-            const posB = orderB === -1 ? 999 : orderB;
-            return posA - posB;
-        });
-
-        console.log('Import order:', fileToTable.map(f => f.tableName));
-
-        // Processar cada arquivo na ordem correta
+        // Determinar camada de cada arquivo
+        const filesByLayer = {};
         for (const { file, tableName } of fileToTable) {
-            try {
-                // Tentar encontrar tabela em Megalev ou Crossover
-                let tableInfo = await getTableInfo(tableName, 'ops');
-                let database = 'ops';
+            const layerNum = Object.entries(IMPORT_LAYERS).find(
+                ([, layer]) => layer.tables.includes(tableName)
+            )?.[0] || '99';
 
-                if (!tableInfo) {
-                    tableInfo = await getTableInfo(tableName, 'core');
-                    database = 'core';
-                }
+            if (!filesByLayer[layerNum]) filesByLayer[layerNum] = [];
+            filesByLayer[layerNum].push({ file, tableName });
+        }
 
-                if (!tableInfo) {
-                    // Tentar com SUPPORTED_TABLES
-                    const staticConfig = SUPPORTED_TABLES[tableName];
-                    if (staticConfig) {
-                        tableInfo = {
-                            columns: staticConfig.columns,
-                            requiredColumns: staticConfig.requiredColumns,
-                            database: staticConfig.database
-                        };
-                        database = staticConfig.database;
-                    } else {
-                        errors.push({
+        // Ordenar layers numericamente
+        const sortedLayerNums = Object.keys(filesByLayer).sort((a, b) => parseInt(a) - parseInt(b));
+
+        const layerResults = [];
+        const allErrors = [];
+        let totalTransformations = 0;
+
+        // Processar por camada
+        for (const layerNum of sortedLayerNums) {
+            const layerFiles = filesByLayer[layerNum];
+            const layerInfo = IMPORT_LAYERS[layerNum] || { name: 'Outras tabelas' };
+
+            console.log(`[BatchImport] Processing layer ${layerNum}: ${layerInfo.name} (${layerFiles.length} files)`);
+
+            const layerResult = {
+                layer: parseInt(layerNum),
+                layerName: layerInfo.name,
+                files: [],
+                totalInserted: 0,
+                totalFailed: 0,
+                transformationsApplied: 0
+            };
+
+            for (const { file, tableName } of layerFiles) {
+                try {
+                    // Buscar info da tabela com tipos de coluna
+                    let tableInfo = await getTableInfoWithTypes(tableName, 'ops');
+                    let database = 'ops';
+
+                    if (!tableInfo) {
+                        tableInfo = await getTableInfoWithTypes(tableName, 'core');
+                        database = 'core';
+                    }
+
+                    if (!tableInfo) {
+                        const staticConfig = SUPPORTED_TABLES[tableName];
+                        if (staticConfig) {
+                            tableInfo = {
+                                columns: staticConfig.columns,
+                                columnTypes: {},
+                                requiredColumns: staticConfig.requiredColumns,
+                                database: staticConfig.database
+                            };
+                            database = staticConfig.database;
+                        } else {
+                            allErrors.push({
+                                file: file.originalname,
+                                tableName,
+                                layer: layerNum,
+                                error: 'Table not found in any database'
+                            });
+                            continue;
+                        }
+                    }
+
+                    // Parse CSV
+                    const fileContent = fs.readFileSync(file.path, 'utf8');
+                    const records = csv.parse(fileContent, {
+                        columns: true,
+                        skip_empty_lines: true,
+                        relax_column_count: true,
+                        trim: true
+                    });
+
+                    if (records.length === 0) {
+                        allErrors.push({
                             file: file.originalname,
                             tableName,
-                            error: 'Table not found in any database'
+                            layer: layerNum,
+                            error: 'CSV file is empty'
                         });
                         continue;
                     }
-                }
 
-                // Parse CSV
-                const fileContent = fs.readFileSync(file.path, 'utf8');
-                const records = csv.parse(fileContent, {
-                    columns: true,
-                    skip_empty_lines: true,
-                    relax_column_count: true
-                });
+                    // Determinar pool
+                    const dbPool = database === 'ops' ? opsPool : pool;
 
-                if (records.length === 0) {
-                    errors.push({
-                        file: file.originalname,
-                        tableName,
-                        error: 'CSV file is empty'
-                    });
-                    continue;
-                }
+                    // Normalizar nomes de colunas do CSV
+                    const csvColumns = Object.keys(records[0])
+                        .map(col => ETL.normalizeColumnName(col))
+                        .filter(col => tableInfo.columns.includes(col));
 
-                // Determinar qual pool usar
-                const dbPool = database === 'ops' ? opsPool : pool;
+                    const hasTenantColumn = tableInfo.columns.includes('tenant_id');
+                    const finalColumns = [...csvColumns];
+                    if (hasTenantColumn && !csvColumns.includes('tenant_id') && tenantId) {
+                        finalColumns.push('tenant_id');
+                    }
 
-                // Preparar inserção
-                const csvColumns = Object.keys(records[0]).filter(col => tableInfo.columns.includes(col));
-                const hasTenantColumn = tableInfo.columns.includes('tenant_id');
-                const finalColumns = [...csvColumns];
-                if (hasTenantColumn && !csvColumns.includes('tenant_id') && tenantId) {
-                    finalColumns.push('tenant_id');
-                }
+                    let inserted = 0;
+                    let rowErrors = [];
+                    let transformCount = 0;
 
-                let inserted = 0;
-                let rowErrors = [];
+                    // Inserir em batches de 100
+                    for (let i = 0; i < records.length; i += 100) {
+                        const batch = records.slice(i, i + 100);
 
-                // Inserir em batches
-                for (let i = 0; i < records.length; i += 100) {
-                    const batch = records.slice(i, i + 100);
+                        for (const record of batch) {
+                            try {
+                                let processedRecord = record;
+                                let recordTransformations = [];
 
-                    for (const record of batch) {
-                        try {
-                            const values = csvColumns.map(col => {
-                                let val = record[col];
-                                if (val === '' || val === undefined) return null;
-                                if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
-                                    try {
-                                        val = val.replace(/""/g, '"');
-                                        JSON.parse(val);
-                                        return val;
-                                    } catch (e) {
-                                        return null;
-                                    }
+                                // Aplicar normalização ETL se habilitado
+                                if (shouldNormalize) {
+                                    const { normalized, transformations } = ETL.normalizeRecord(record, tableInfo.columnTypes);
+                                    processedRecord = normalized;
+                                    recordTransformations = transformations;
+                                    transformCount += transformations.length;
                                 }
-                                return val;
-                            });
 
-                            if (hasTenantColumn && !csvColumns.includes('tenant_id') && tenantId) {
-                                values.push(tenantId);
+                                const values = csvColumns.map(col => {
+                                    const normalizedCol = shouldNormalize ? col : ETL.normalizeColumnName(col);
+                                    let val = processedRecord[normalizedCol];
+
+                                    // Tratamento especial para JSON
+                                    if (val !== null && typeof val === 'object') {
+                                        return JSON.stringify(val);
+                                    }
+
+                                    return val;
+                                });
+
+                                if (hasTenantColumn && !csvColumns.includes('tenant_id') && tenantId) {
+                                    values.push(tenantId);
+                                }
+
+                                const placeholders = values.map((_, idx) => `$${idx + 1}`).join(', ');
+                                const query = `INSERT INTO ${tableName} (${finalColumns.join(', ')}) VALUES (${placeholders}) ON CONFLICT DO NOTHING`;
+
+                                await dbPool.query(query, values);
+                                inserted++;
+                            } catch (rowError) {
+                                rowErrors.push({
+                                    row: i + batch.indexOf(record) + 1,
+                                    error: rowError.message.substring(0, 100)
+                                });
                             }
-
-                            const placeholders = values.map((_, idx) => `$${idx + 1}`).join(', ');
-                            const query = `INSERT INTO ${tableName} (${finalColumns.join(', ')}) VALUES (${placeholders}) ON CONFLICT DO NOTHING`;
-
-                            await dbPool.query(query, values);
-                            inserted++;
-                        } catch (rowError) {
-                            rowErrors.push({
-                                row: i + batch.indexOf(record) + 1,
-                                error: rowError.message
-                            });
                         }
                     }
+
+                    layerResult.files.push({
+                        file: file.originalname,
+                        tableName,
+                        database,
+                        totalRows: records.length,
+                        inserted,
+                        failed: rowErrors.length,
+                        transformations: transformCount,
+                        errors: rowErrors.slice(0, 3)
+                    });
+
+                    layerResult.totalInserted += inserted;
+                    layerResult.totalFailed += rowErrors.length;
+                    layerResult.transformationsApplied += transformCount;
+                    totalTransformations += transformCount;
+
+                } catch (fileError) {
+                    allErrors.push({
+                        file: file.originalname,
+                        tableName,
+                        layer: layerNum,
+                        error: fileError.message
+                    });
                 }
+            }
 
-                results.push({
-                    file: file.originalname,
-                    tableName,
-                    database,
-                    totalRows: records.length,
-                    inserted,
-                    failed: rowErrors.length,
-                    errors: rowErrors.slice(0, 5)
-                });
-
-            } catch (fileError) {
-                errors.push({
-                    file: file.originalname,
-                    tableName,
-                    error: fileError.message
-                });
+            if (layerResult.files.length > 0) {
+                layerResults.push(layerResult);
             }
         }
 
@@ -751,19 +941,27 @@ exports.batchImport = async (req, res) => {
             }
         }
 
+        // Calcular totais
+        const totalInserted = layerResults.reduce((sum, l) => sum + l.totalInserted, 0);
+        const totalFailed = layerResults.reduce((sum, l) => sum + l.totalFailed, 0);
+
         res.json({
             success: true,
-            totalFiles: files.length,
-            processedFiles: results.length,
-            failedFiles: errors.length,
-            importOrder: fileToTable.map(f => f.tableName),
-            results,
-            errors
+            normalize: shouldNormalize,
+            summary: {
+                totalFiles: files.length,
+                processedFiles: layerResults.reduce((sum, l) => sum + l.files.length, 0),
+                failedFiles: allErrors.length,
+                totalInserted,
+                totalFailed,
+                totalTransformations
+            },
+            layerResults,
+            errors: allErrors
         });
 
     } catch (error) {
         console.error('Batch import error:', error);
-        // Limpar arquivos em caso de erro
         if (files) {
             for (const file of files) {
                 if (file.path && fs.existsSync(file.path)) {
@@ -777,6 +975,45 @@ exports.batchImport = async (req, res) => {
         });
     }
 };
+
+/**
+ * Helper: Busca informações de uma tabela incluindo tipos de coluna
+ */
+async function getTableInfoWithTypes(tableName, database) {
+    const dbPool = database === 'ops' ? opsPool : pool;
+
+    try {
+        const result = await dbPool.query(`
+            SELECT 
+                c.column_name,
+                c.data_type,
+                c.is_nullable,
+                c.column_default
+            FROM information_schema.columns c
+            WHERE c.table_schema = 'public' 
+            AND c.table_name = $1
+            ORDER BY c.ordinal_position
+        `, [tableName]);
+
+        if (result.rows.length === 0) {
+            return null;
+        }
+
+        const columns = result.rows.map(r => r.column_name);
+        const columnTypes = {};
+        result.rows.forEach(r => {
+            columnTypes[r.column_name] = r.data_type;
+        });
+        const requiredColumns = result.rows
+            .filter(r => r.is_nullable === 'NO' && !r.column_default)
+            .map(r => r.column_name);
+
+        return { columns, columnTypes, requiredColumns, database };
+    } catch (error) {
+        console.error(`Error fetching table info for ${tableName}:`, error.message);
+        return null;
+    }
+}
 
 // Export multer upload middleware
 exports.upload = upload;
