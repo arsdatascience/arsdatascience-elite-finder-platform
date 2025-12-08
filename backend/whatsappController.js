@@ -79,6 +79,13 @@ const handleWebhook = async (req, res) => {
             return res.status(400).send('Invalid payload');
         }
 
+        // Ignorar mensagens de GRUPOS (JID termina em @g.us)
+        // Só processamos mensagens individuais (@s.whatsapp.net)
+        if (data && data.key && data.key.remoteJid && data.key.remoteJid.includes('@g.us')) {
+            console.log(`🚫 Ignoring group message from: ${data.key.remoteJid}`);
+            return res.status(200).send('Ignored group message');
+        }
+
         // Ignorar mensagens enviadas pelo próprio bot (fromMe)
         if (data && data.key && data.key.fromMe) {
             return res.status(200).send('Ignored fromMe');
