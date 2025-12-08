@@ -128,6 +128,36 @@ export const SalesCoachingChat: React.FC = () => {
         }
     };
 
+    const handleDeleteSession = async (sessionId: string) => {
+        if (!confirm('Tem certeza que deseja excluir esta conversa?')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/sessions/${sessionId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                // Remove from local state
+                setSessions(prev => prev.filter(s => s.id !== sessionId));
+
+                // Clear active session if it was deleted
+                if (activeSessionId === sessionId) {
+                    setActiveSessionId(null);
+                    setActivePhone(null);
+                    setMessages([]);
+                    setAnalysis(null);
+                }
+            } else {
+                alert('Erro ao excluir conversa.');
+            }
+        } catch (error) {
+            console.error('Error deleting session:', error);
+            alert('Erro ao excluir conversa.');
+        }
+    };
+
     const selectSession = async (session: Session) => {
         setActiveSessionId(session.id);
         setActivePhone(session.phone);
@@ -402,10 +432,19 @@ export const SalesCoachingChat: React.FC = () => {
                                 className={`p-4 border-b border-gray-50 cursor-pointer hover:bg-gray-50 transition-colors ${activeSessionId === session.id ? 'bg-primary-50 border-l-4 border-l-primary-500' : ''}`}
                             >
                                 <div className="flex justify-between items-start mb-1">
-                                    <span className="font-bold text-gray-800 text-sm truncate">{session.name}</span>
-                                    <span className="text-[10px] text-gray-400">
-                                        {new Date(session.lastUpdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
+                                    <span className="font-bold text-gray-800 text-sm truncate flex-1">{session.name}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-gray-400">
+                                            {new Date(session.lastUpdate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDeleteSession(session.id); }}
+                                            className="p-1 hover:bg-red-100 rounded text-gray-400 hover:text-red-500 transition-colors"
+                                            title="Excluir conversa"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-1 text-xs text-gray-500">
                                     <Smartphone size={10} />

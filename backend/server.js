@@ -793,6 +793,7 @@ app.post('/webhooks/whatsapp', whatsappController.handleWebhook);
 app.post('/api/whatsapp/send', authenticateToken, whatsappController.sendOutboundMessage);
 app.get('/api/whatsapp/sessions', authenticateToken, whatsappController.getSessions);
 app.get('/api/whatsapp/sessions/:sessionId/messages', authenticateToken, whatsappController.getSessionMessages);
+app.delete('/api/whatsapp/sessions/:sessionId', authenticateToken, whatsappController.deleteSession);
 
 // --- AI SERVICES ---
 const aiController = require('./aiController');

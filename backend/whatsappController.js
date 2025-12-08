@@ -249,4 +249,29 @@ const getSessionMessages = async (req, res) => {
     }
 };
 
-module.exports = { handleWebhook, sendOutboundMessage, getSessions, getSessionMessages };
+/**
+ * DELETE /api/whatsapp/sessions/:sessionId
+ * Deleta uma sessão de chat e suas mensagens
+ */
+const deleteSession = async (req, res) => {
+    const { sessionId } = req.params;
+    try {
+        // Deletar mensagens primeiro (FK constraint)
+        await db.query('DELETE FROM chat_messages WHERE session_id = $1', [sessionId]);
+
+        // Deletar a sessão
+        const result = await db.query('DELETE FROM chat_sessions WHERE id = $1 RETURNING id', [sessionId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Session not found' });
+        }
+
+        console.log(`🗑️ Session ${sessionId} deleted successfully`);
+        res.json({ success: true, message: 'Session deleted' });
+    } catch (error) {
+        console.error('Error deleting session:', error);
+        res.status(500).json({ error: 'Failed to delete session' });
+    }
+};
+
+module.exports = { handleWebhook, sendOutboundMessage, getSessions, getSessionMessages, deleteSession };
