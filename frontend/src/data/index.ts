@@ -37,32 +37,37 @@ import { RANDOM_FOREST_REGRESSOR, GRADIENT_BOOSTING_REGRESSOR, XGBOOST_REGRESSOR
 import { LOGISTIC_REGRESSION, DECISION_TREE_CLASSIFIER, RANDOM_FOREST_CLASSIFIER, XGBOOST_CLASSIFIER, LIGHTGBM_CLASSIFIER, NAIVE_BAYES, SVM_CLASSIFIER, GRADIENT_BOOSTING_CLASSIFIER } from './algorithmConfigsClassification';
 import { KMEANS, DBSCAN, HIERARCHICAL_CLUSTERING, PROPHET, ARIMA, SARIMA, EXPONENTIAL_SMOOTHING } from './algorithmConfigsClusteringTS';
 
-// Complete map of all algorithms
+// Complete map of all algorithms (with aliases for MLAlgorithmsGuide compatibility)
 export const ALGORITHM_CONFIGS: Record<string, AlgorithmDefinition> = {
     // Regression (8)
     linear_regression: LINEAR_REGRESSION,
     ridge_regression: RIDGE_REGRESSION,
     lasso_regression: LASSO_REGRESSION,
     elasticnet_regression: ELASTICNET_REGRESSION,
+    elasticnet: ELASTICNET_REGRESSION, // Alias for MLAlgorithmsGuide
     random_forest_regressor: RANDOM_FOREST_REGRESSOR,
     gradient_boosting_regressor: GRADIENT_BOOSTING_REGRESSOR,
+    gradient_boosting: GRADIENT_BOOSTING_REGRESSOR, // Alias for MLAlgorithmsGuide
     xgboost_regressor: XGBOOST_REGRESSOR,
     lightgbm_regressor: LIGHTGBM_REGRESSOR,
 
     // Classification (8)
     logistic_regression: LOGISTIC_REGRESSION,
     decision_tree_classifier: DECISION_TREE_CLASSIFIER,
+    decision_tree: DECISION_TREE_CLASSIFIER, // Alias for MLAlgorithmsGuide
     random_forest_classifier: RANDOM_FOREST_CLASSIFIER,
     gradient_boosting_classifier: GRADIENT_BOOSTING_CLASSIFIER,
     xgboost_classifier: XGBOOST_CLASSIFIER,
     lightgbm_classifier: LIGHTGBM_CLASSIFIER,
     naive_bayes: NAIVE_BAYES,
     svm_classifier: SVM_CLASSIFIER,
+    svm: SVM_CLASSIFIER, // Alias for MLAlgorithmsGuide
 
     // Clustering (3)
     kmeans: KMEANS,
     dbscan: DBSCAN,
     hierarchical_clustering: HIERARCHICAL_CLUSTERING,
+    hierarchical: HIERARCHICAL_CLUSTERING, // Alias for MLAlgorithmsGuide
 
     // Time Series (4)
     prophet: PROPHET,

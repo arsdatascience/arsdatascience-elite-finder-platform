@@ -234,7 +234,7 @@ const AlgorithmConfigModal: React.FC<AlgorithmConfigModalProps> = ({
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-gray-700">
+            <div className="bg-gray-800 rounded-2xl overflow-hidden flex flex-col shadow-2xl border border-gray-700" style={{ width: '800px', height: '800px' }}>
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-700 bg-gradient-to-r from-blue-600/20 to-purple-600/20">
                     <div className="flex items-center gap-4">
