@@ -3,9 +3,10 @@ import {
     Users, TrendingUp, Heart, DollarSign, Target, Activity,
     Smile, ThumbsUp, PieChart, BarChart3, ArrowUp, ArrowDown,
     RefreshCw, ChevronRight, Star, UserCheck, Clock, Zap,
-    Award, AlertTriangle, CheckCircle, XCircle, Search
+    Award, AlertTriangle, CheckCircle, XCircle, Search, Sparkles
 } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
+import { AIInsightsPanel } from './AIInsightsPanel';
 
 interface KPIData {
     nps: {
@@ -44,7 +45,7 @@ const CustomerJourneyDashboard: React.FC = () => {
     const [kpis, setKpis] = useState<KPIData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeSection, setActiveSection] = useState<'satisfaction' | 'financial' | 'journey' | 'team'>('satisfaction');
+    const [activeSection, setActiveSection] = useState<'satisfaction' | 'financial' | 'journey' | 'team' | 'insights'>('satisfaction');
 
     useEffect(() => {
         fetchKPIs();
@@ -106,6 +107,7 @@ const CustomerJourneyDashboard: React.FC = () => {
         { id: 'financial' as const, label: 'Financeiro', icon: DollarSign, color: 'from-green-600 to-green-800' },
         { id: 'journey' as const, label: 'Jornada', icon: TrendingUp, color: 'from-blue-600 to-blue-800' },
         { id: 'team' as const, label: 'Equipe', icon: Users, color: 'from-amber-600 to-amber-800' },
+        { id: 'insights' as const, label: 'Insights IA', icon: Sparkles, color: 'from-pink-600 to-purple-600' },
     ];
 
     if (loading) {
@@ -143,8 +145,8 @@ const CustomerJourneyDashboard: React.FC = () => {
                             key={section.id}
                             onClick={() => setActiveSection(section.id)}
                             className={`p-4 rounded-xl border transition-all ${isSelected
-                                    ? `bg-gradient-to-br ${section.color} border-transparent shadow-lg scale-105`
-                                    : 'bg-gray-800/50 border-gray-700 hover:border-gray-600 hover:bg-gray-800'
+                                ? `bg-gradient-to-br ${section.color} border-transparent shadow-lg scale-105`
+                                : 'bg-gray-800/50 border-gray-700 hover:border-gray-600 hover:bg-gray-800'
                                 }`}
                         >
                             <Icon className={`w-6 h-6 mb-2 mx-auto ${isSelected ? 'text-white' : 'text-gray-400'}`} />
@@ -506,6 +508,13 @@ const CustomerJourneyDashboard: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* AI Insights Section */}
+            {activeSection === 'insights' && (
+                <div className="animate-in fade-in duration-300">
+                    <AIInsightsPanel />
                 </div>
             )}
 

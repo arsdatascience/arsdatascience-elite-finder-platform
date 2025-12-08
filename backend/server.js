@@ -924,6 +924,13 @@ const qdrantController = require('./controllers/qdrantController');
 app.get('/api/qdrant/collections', qdrantController.getCollections);
 app.get('/api/qdrant/test', qdrantController.testConnection);
 
+// --- AI INSIGHTS (Customer Journey) ---
+const insightsController = require('./insightsController');
+app.post('/api/insights/customer-journey', authenticateToken, insightsController.generateCustomerJourneyInsight);
+app.get('/api/insights/recent', authenticateToken, insightsController.getRecentInsights);
+app.get('/api/insights/:id', authenticateToken, insightsController.getInsightById);
+
+
 // --- SERVICE CATALOG (Phase 2) ---
 const serviceCtrl = require('./controllers/serviceController');
 app.get('/api/services', authenticateToken, serviceCtrl.getServices);
