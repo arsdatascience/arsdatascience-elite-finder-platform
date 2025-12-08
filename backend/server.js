@@ -936,6 +936,7 @@ app.get('/api/import/tables', authenticateToken, bulkImportCtrl.listTables);
 app.get('/api/import/template/:tableName', authenticateToken, bulkImportCtrl.getTemplate);
 app.post('/api/import/preview', authenticateToken, bulkImportCtrl.upload.single('file'), bulkImportCtrl.previewData);
 app.post('/api/import/:tableName', authenticateToken, bulkImportCtrl.upload.single('file'), bulkImportCtrl.importData);
+app.post('/api/import/batch', authenticateToken, bulkImportCtrl.upload.array('files', 50), bulkImportCtrl.batchImport);
 
 // --- SERVICE CATALOG (Phase 2) ---
 const serviceCtrl = require('./controllers/serviceController');

@@ -10,6 +10,32 @@ const csv = require('csv-parse/sync');
 const fs = require('fs');
 const path = require('path');
 
+// Ordem de importação para respeitar FKs (tabelas pai primeiro)
+const TABLE_IMPORT_ORDER = [
+    // 1. Tabelas base sem dependências
+    'tenants',
+    'users',
+    'ml_industry_segments',
+    'ml_datasets',
+    // 2. Tabelas com FK para datasets
+    'ml_experiments',
+    // 3. Tabelas com FK para experiments
+    'ml_predictions',
+    'ml_regression_results',
+    'ml_classification_results',
+    'ml_clustering_results',
+    'ml_timeseries_results',
+    'ml_sales_analytics',
+    'ml_marketing_analytics',
+    'ml_customer_analytics',
+    'ml_financial_analytics',
+    // 4. Tabelas de clientes (CDP)
+    'unified_customers',
+    'customer_interactions',
+    'customer_journeys',
+    'conversion_events'
+];
+
 // Configuração de upload
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -535,6 +561,204 @@ exports.importData = async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Import failed: ' + error.message
+        });
+    }
+};
+
+/**
+ * POST /api/import/batch
+ * Importa múltiplos arquivos CSV de uma vez, respeitando ordem de FKs
+ */
+exports.batchImport = async (req, res) => {
+    const files = req.files;
+
+    try {
+        const tenantId = req.user?.tenantId;
+
+        if (!files || files.length === 0) {
+            return res.status(400).json({ success: false, error: 'No files uploaded' });
+        }
+
+        const results = [];
+        const errors = [];
+
+        // Mapear arquivos para tabelas (baseado no nome do arquivo)
+        const fileToTable = files.map(file => {
+            // Remove extensão e prefixos como "import_timestamp_"
+            let tableName = file.originalname
+                .replace('.csv', '')
+                .replace(/^import_\d+_/, '')
+                .toLowerCase();
+
+            // Normalizar nome para nome de tabela válido
+            tableName = tableName.replace(/[^a-z0-9_]/g, '_');
+
+            return { file, tableName };
+        });
+
+        // Ordenar arquivos pela ordem de dependências
+        fileToTable.sort((a, b) => {
+            const orderA = TABLE_IMPORT_ORDER.indexOf(a.tableName);
+            const orderB = TABLE_IMPORT_ORDER.indexOf(b.tableName);
+            // Tabelas não na lista vão para o final
+            const posA = orderA === -1 ? 999 : orderA;
+            const posB = orderB === -1 ? 999 : orderB;
+            return posA - posB;
+        });
+
+        console.log('Import order:', fileToTable.map(f => f.tableName));
+
+        // Processar cada arquivo na ordem correta
+        for (const { file, tableName } of fileToTable) {
+            try {
+                // Tentar encontrar tabela em Megalev ou Crossover
+                let tableInfo = await getTableInfo(tableName, 'ops');
+                let database = 'ops';
+
+                if (!tableInfo) {
+                    tableInfo = await getTableInfo(tableName, 'core');
+                    database = 'core';
+                }
+
+                if (!tableInfo) {
+                    // Tentar com SUPPORTED_TABLES
+                    const staticConfig = SUPPORTED_TABLES[tableName];
+                    if (staticConfig) {
+                        tableInfo = {
+                            columns: staticConfig.columns,
+                            requiredColumns: staticConfig.requiredColumns,
+                            database: staticConfig.database
+                        };
+                        database = staticConfig.database;
+                    } else {
+                        errors.push({
+                            file: file.originalname,
+                            tableName,
+                            error: 'Table not found in any database'
+                        });
+                        continue;
+                    }
+                }
+
+                // Parse CSV
+                const fileContent = fs.readFileSync(file.path, 'utf8');
+                const records = csv.parse(fileContent, {
+                    columns: true,
+                    skip_empty_lines: true,
+                    relax_column_count: true
+                });
+
+                if (records.length === 0) {
+                    errors.push({
+                        file: file.originalname,
+                        tableName,
+                        error: 'CSV file is empty'
+                    });
+                    continue;
+                }
+
+                // Determinar qual pool usar
+                const dbPool = database === 'ops' ? opsPool : pool;
+
+                // Preparar inserção
+                const csvColumns = Object.keys(records[0]).filter(col => tableInfo.columns.includes(col));
+                const hasTenantColumn = tableInfo.columns.includes('tenant_id');
+                const finalColumns = [...csvColumns];
+                if (hasTenantColumn && !csvColumns.includes('tenant_id') && tenantId) {
+                    finalColumns.push('tenant_id');
+                }
+
+                let inserted = 0;
+                let rowErrors = [];
+
+                // Inserir em batches
+                for (let i = 0; i < records.length; i += 100) {
+                    const batch = records.slice(i, i + 100);
+
+                    for (const record of batch) {
+                        try {
+                            const values = csvColumns.map(col => {
+                                let val = record[col];
+                                if (val === '' || val === undefined) return null;
+                                if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
+                                    try {
+                                        val = val.replace(/""/g, '"');
+                                        JSON.parse(val);
+                                        return val;
+                                    } catch (e) {
+                                        return null;
+                                    }
+                                }
+                                return val;
+                            });
+
+                            if (hasTenantColumn && !csvColumns.includes('tenant_id') && tenantId) {
+                                values.push(tenantId);
+                            }
+
+                            const placeholders = values.map((_, idx) => `$${idx + 1}`).join(', ');
+                            const query = `INSERT INTO ${tableName} (${finalColumns.join(', ')}) VALUES (${placeholders}) ON CONFLICT DO NOTHING`;
+
+                            await dbPool.query(query, values);
+                            inserted++;
+                        } catch (rowError) {
+                            rowErrors.push({
+                                row: i + batch.indexOf(record) + 1,
+                                error: rowError.message
+                            });
+                        }
+                    }
+                }
+
+                results.push({
+                    file: file.originalname,
+                    tableName,
+                    database,
+                    totalRows: records.length,
+                    inserted,
+                    failed: rowErrors.length,
+                    errors: rowErrors.slice(0, 5)
+                });
+
+            } catch (fileError) {
+                errors.push({
+                    file: file.originalname,
+                    tableName,
+                    error: fileError.message
+                });
+            }
+        }
+
+        // Limpar arquivos temporários
+        for (const file of files) {
+            if (fs.existsSync(file.path)) {
+                fs.unlinkSync(file.path);
+            }
+        }
+
+        res.json({
+            success: true,
+            totalFiles: files.length,
+            processedFiles: results.length,
+            failedFiles: errors.length,
+            importOrder: fileToTable.map(f => f.tableName),
+            results,
+            errors
+        });
+
+    } catch (error) {
+        console.error('Batch import error:', error);
+        // Limpar arquivos em caso de erro
+        if (files) {
+            for (const file of files) {
+                if (file.path && fs.existsSync(file.path)) {
+                    fs.unlinkSync(file.path);
+                }
+            }
+        }
+        res.status(500).json({
+            success: false,
+            error: 'Batch import failed: ' + error.message
         });
     }
 };
