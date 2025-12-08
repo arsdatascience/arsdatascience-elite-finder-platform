@@ -396,9 +396,24 @@ exports.previewData = async (req, res) => {
         const fileContent = fs.readFileSync(file.path, 'utf8');
         const records = csv.parse(fileContent, { columns: true, skip_empty_lines: true });
 
-        // Validar colunas
-        const csvColumns = records.length > 0 ? Object.keys(records[0]) : [];
-        const missingRequired = (tableInfo.requiredColumns || []).filter(col => !csvColumns.includes(col));
+        // Validar colunas - normalizar nomes (trim e lowercase para comparação)
+        const csvColumns = records.length > 0
+            ? Object.keys(records[0]).map(col => col.trim())
+            : [];
+
+        // Debug: log column comparison
+        console.log('CSV columns:', csvColumns);
+        console.log('Required columns:', tableInfo.requiredColumns);
+
+        const missingRequired = (tableInfo.requiredColumns || []).filter(col => {
+            const found = csvColumns.some(csvCol =>
+                csvCol.toLowerCase() === col.toLowerCase()
+            );
+            if (!found) {
+                console.log(`Missing required column: ${col}`);
+            }
+            return !found;
+        });
 
         // Limpar arquivo temporário
         fs.unlinkSync(file.path);
