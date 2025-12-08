@@ -257,13 +257,13 @@ const AlgorithmConfigModal: React.FC<AlgorithmConfigModalProps> = ({
                                 <div
                                     className="w-3 h-3 rounded-full"
                                     style={{
-                                        backgroundColor: accuracyInfo.accuracy >= 0.90 ? '#22c55e' :
-                                            accuracyInfo.accuracy >= 0.80 ? '#84cc16' :
-                                                accuracyInfo.accuracy >= 0.70 ? '#eab308' : '#ef4444'
+                                        backgroundColor: accuracy >= 0.90 ? '#22c55e' :
+                                            accuracy >= 0.80 ? '#84cc16' :
+                                                accuracy >= 0.70 ? '#eab308' : '#ef4444'
                                     }}
                                 />
                                 <span className="text-2xl font-bold text-white">
-                                    {Math.round(accuracyInfo.accuracy * 100)}%
+                                    {Math.round(accuracy * 100)}%
                                 </span>
                             </div>
                         </div>
