@@ -608,9 +608,13 @@ async function initializeDatabase() {
 
       // Migração 030: Native OAuth Integrations
       console.log('🔄 Verificando migrações de OAuth Integrations (030)...');
-      const oauthMigration = fs.readFileSync(path.join(__dirname, 'migrations', '030_create_oauth_integrations.sql'), 'utf8');
-      await pool.query(oauthMigration);
-      console.log('✅ Migração 030 aplicada.');
+      try {
+        const oauthMigration = fs.readFileSync(path.join(__dirname, 'migrations', '030_create_oauth_integrations.sql'), 'utf8');
+        await pool.query(oauthMigration);
+        console.log('✅ Migração 030 aplicada.');
+      } catch (oauthErr) {
+        console.log('⚠️ OAuth Integrations (030) já existe ou erro ignorável:', oauthErr.message);
+      }
 
       // Migração 041: Drop empty financial tables from Crossover (they live in Maglev/OPS now)
       console.log('🔄 Limpando tabelas financeiras vazias do Crossover (041)...');
