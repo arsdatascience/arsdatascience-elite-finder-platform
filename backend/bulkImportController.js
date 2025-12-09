@@ -106,6 +106,43 @@ const ETL = {
         }
     },
 
+    // Normaliza arrays do formato Python ['item'] para PostgreSQL {"item"}
+    normalizeArray: (value) => {
+        if (value === null || value === undefined || value === '') return null;
+        if (Array.isArray(value)) {
+            // Already an array, convert to PostgreSQL format
+            return `{${value.map(v => `"${String(v).replace(/"/g, '\\"')}"`).join(',')}}`;
+        }
+
+        const str = String(value).trim();
+
+        // Check if it's Python-style array: ['item1', 'item2']
+        if (str.startsWith('[') && str.endsWith(']')) {
+            try {
+                // Replace single quotes with double quotes for JSON parsing
+                const jsonStr = str.replace(/'/g, '"');
+                const parsed = JSON.parse(jsonStr);
+                if (Array.isArray(parsed)) {
+                    // Convert to PostgreSQL array format: {"item1","item2"}
+                    return `{${parsed.map(v => `"${String(v).replace(/"/g, '\\"')}"`).join(',')}}`;
+                }
+            } catch (e) {
+                // If parsing fails, try manual extraction
+                const content = str.slice(1, -1); // Remove [ and ]
+                const items = content.split(',').map(s => s.trim().replace(/^['"]|['"]$/g, ''));
+                return `{${items.map(v => `"${v}"`).join(',')}}`;
+            }
+        }
+
+        // Already PostgreSQL format
+        if (str.startsWith('{') && str.endsWith('}')) {
+            return str;
+        }
+
+        // Single value, wrap in array
+        return `{"${str}"}`;
+    },
+
     // Normaliza UUID (remove espaços, valida formato)
     normalizeUUID: (value) => {
         if (value === null || value === undefined || value === '') return null;
@@ -140,6 +177,10 @@ const ETL = {
         }
         if (type.includes('uuid')) {
             return ETL.normalizeUUID(value);
+        }
+        // Handle PostgreSQL array types (TEXT[], VARCHAR[], etc.)
+        if (type.includes('[]') || type.includes('array')) {
+            return ETL.normalizeArray(value);
         }
 
         return ETL.normalizeString(value);
