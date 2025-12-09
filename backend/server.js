@@ -277,6 +277,14 @@ async function initializeDatabase() {
     try {
       await pool.query(`
             ALTER TABLE generated_images 
+            ADD COLUMN IF NOT EXISTS tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+            ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+            ADD COLUMN IF NOT EXISTS url TEXT,
+            ADD COLUMN IF NOT EXISTS thumbnail_url TEXT,
+            ADD COLUMN IF NOT EXISTS prompt TEXT,
+            ADD COLUMN IF NOT EXISTS model VARCHAR(100),
+            ADD COLUMN IF NOT EXISTS width INTEGER,
+            ADD COLUMN IF NOT EXISTS height INTEGER,
             ADD COLUMN IF NOT EXISTS cost NUMERIC(10, 4) DEFAULT 0,
             ADD COLUMN IF NOT EXISTS provider VARCHAR(50) DEFAULT 'replicate',
             ADD COLUMN IF NOT EXISTS generation_time INTEGER,
