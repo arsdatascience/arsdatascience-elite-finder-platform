@@ -646,6 +646,21 @@ async function initializeDatabase() {
         console.log('⚠️ KPI tables já existem ou erro:', kpiErr.message);
       }
 
+      // Migração 044: ML Algorithm Configs and History
+      console.log('🔄 Verificando migrações de ML Algorithm Configs (044)...');
+      try {
+        // Drop old table structure (from 034) to recreate with new structure (044)
+        await pool.query('DROP TABLE IF EXISTS ml_algorithm_config_history CASCADE;');
+        await pool.query('DROP TABLE IF EXISTS ml_algorithm_configs CASCADE;');
+        console.log('🗑️ Tabelas ML antigas removidas para atualização de schema.');
+
+        const mlConfigMigration = fs.readFileSync(path.join(__dirname, 'migrations', '044_ml_algorithm_configs.sql'), 'utf8');
+        await pool.query(mlConfigMigration);
+        console.log('✅ Migração 044 (ML Configs) aplicada.');
+      } catch (mlConfigErr) {
+        console.log('⚠️ ML Configs já existem ou erro:', mlConfigErr.message);
+      }
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
