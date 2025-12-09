@@ -656,6 +656,16 @@ async function initializeDatabase() {
         console.log('⚠️ ML Module Schema já existe ou erro:', mlModuleErr.message);
       }
 
+      // Migração 035: ML Industry Segments (ml_segment_analytics, ml_viz_*) - lives in OPS/Maglev
+      console.log('🔄 Verificando migrações de ML Industry Segments (035) no Maglev...');
+      try {
+        const mlSegmentMigration = fs.readFileSync(path.join(__dirname, 'migrations', '035_ml_industry_segments.sql'), 'utf8');
+        await pool.opsPool.query(mlSegmentMigration);
+        console.log('✅ Migração 035 (ML Segments) aplicada no Maglev.');
+      } catch (mlSegmentErr) {
+        console.log('⚠️ ML Segments já existe ou erro:', mlSegmentErr.message);
+      }
+
       // Migração 044: ML Algorithm Configs and History (lives in OPS/Maglev DB)
       console.log('🔄 Verificando migrações de ML Algorithm Configs (044) no Maglev...');
       try {

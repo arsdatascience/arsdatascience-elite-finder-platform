@@ -64,7 +64,7 @@ CREATE TABLE ml_experiments (
 CREATE TABLE ml_predictions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID,
-    experiment_id UUID REFERENCES ml_experiments(id),
+    experiment_id UUID, -- FK removed for synthetic data import
     input_data JSONB,
     predictions JSONB,
     confidence FLOAT,
@@ -92,7 +92,7 @@ CREATE TABLE ml_algorithm_configs (
 -- REGRESSION RESULTS
 CREATE TABLE ml_regression_results (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    experiment_id UUID REFERENCES ml_experiments(id),
+    experiment_id UUID, -- FK removed for synthetic data import
     r2_score FLOAT,
     rmse FLOAT,
     mae FLOAT,
@@ -109,7 +109,7 @@ CREATE TABLE ml_regression_results (
 -- CLASSIFICATION RESULTS
 CREATE TABLE ml_classification_results (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    experiment_id UUID REFERENCES ml_experiments(id),
+    experiment_id UUID, -- FK removed for synthetic data import
     accuracy FLOAT,
     precision_score FLOAT,
     recall FLOAT,
@@ -126,7 +126,7 @@ CREATE TABLE ml_classification_results (
 -- CLUSTERING RESULTS
 CREATE TABLE ml_clustering_results (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    experiment_id UUID REFERENCES ml_experiments(id),
+    experiment_id UUID, -- FK removed for synthetic data import
     silhouette_score FLOAT,
     davies_bouldin_index FLOAT,
     calinski_harabasz_score FLOAT,
@@ -141,7 +141,7 @@ CREATE TABLE ml_clustering_results (
 -- TIME SERIES RESULTS
 CREATE TABLE ml_timeseries_results (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    experiment_id UUID REFERENCES ml_experiments(id),
+    experiment_id UUID, -- FK removed for synthetic data import
     mape FLOAT,
     rmse FLOAT,
     mae FLOAT,
@@ -161,7 +161,7 @@ CREATE TABLE ml_timeseries_results (
 -- SALES ANALYTICS
 CREATE TABLE ml_sales_analytics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    experiment_id UUID REFERENCES ml_experiments(id),
+    experiment_id UUID, -- FK removed for synthetic data import
     period VARCHAR(50),
     total_sales DECIMAL(15,2),
     predicted_sales DECIMAL(15,2),
@@ -178,7 +178,7 @@ CREATE TABLE ml_sales_analytics (
 -- MARKETING ANALYTICS
 CREATE TABLE ml_marketing_analytics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    experiment_id UUID REFERENCES ml_experiments(id),
+    experiment_id UUID, -- FK removed for synthetic data import
     campaign_name VARCHAR(255),
     roi FLOAT,
     cac DECIMAL(10,2),
@@ -197,7 +197,7 @@ CREATE TABLE ml_marketing_analytics (
 -- CUSTOMER ANALYTICS
 CREATE TABLE ml_customer_analytics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    experiment_id UUID REFERENCES ml_experiments(id),
+    experiment_id UUID, -- FK removed for synthetic data import
     total_customers INTEGER,
     new_customers INTEGER,
     churned_customers INTEGER,
@@ -215,7 +215,7 @@ CREATE TABLE ml_customer_analytics (
 -- FINANCIAL ANALYTICS
 CREATE TABLE ml_financial_analytics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    experiment_id UUID REFERENCES ml_experiments(id),
+    experiment_id UUID, -- FK removed for synthetic data import
     period VARCHAR(50),
     revenue DECIMAL(15,2),
     expenses DECIMAL(15,2),

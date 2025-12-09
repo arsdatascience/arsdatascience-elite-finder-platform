@@ -21,8 +21,8 @@ CREATE TABLE IF NOT EXISTS ml_industry_segments (
 -- 2. SEGMENT ANALYTICS TABLE (Algorithm results per segment)
 CREATE TABLE IF NOT EXISTS ml_segment_analytics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    segment_id INTEGER REFERENCES ml_industry_segments(id),
-    experiment_id UUID REFERENCES ml_experiments(id),
+    segment_id INTEGER, -- FK removed for synthetic data import
+    experiment_id UUID, -- FK removed for synthetic data import
     tenant_id UUID,
     
     -- Analysis metadata
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS ml_segment_analytics (
 -- 3. REGRESSION VISUALIZATION DATA
 CREATE TABLE IF NOT EXISTS ml_viz_regression (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    segment_analytics_id UUID REFERENCES ml_segment_analytics(id),
+    segment_analytics_id UUID, -- FK removed for synthetic data import
     
     -- Regression-specific visualizations
     scatter_data JSONB,         -- actual vs predicted points
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS ml_viz_regression (
 -- 4. CLASSIFICATION VISUALIZATION DATA
 CREATE TABLE IF NOT EXISTS ml_viz_classification (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    segment_analytics_id UUID REFERENCES ml_segment_analytics(id),
+    segment_analytics_id UUID, -- FK removed for synthetic data import
     
     -- Classification-specific visualizations
     confusion_matrix JSONB,     -- matrix data for heatmap
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS ml_viz_classification (
 -- 5. CLUSTERING VISUALIZATION DATA
 CREATE TABLE IF NOT EXISTS ml_viz_clustering (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    segment_analytics_id UUID REFERENCES ml_segment_analytics(id),
+    segment_analytics_id UUID, -- FK removed for synthetic data import
     
     -- Clustering-specific visualizations
     cluster_scatter JSONB,      -- 2D projection of clusters
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS ml_viz_clustering (
 -- 6. TIME SERIES VISUALIZATION DATA
 CREATE TABLE IF NOT EXISTS ml_viz_timeseries (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    segment_analytics_id UUID REFERENCES ml_segment_analytics(id),
+    segment_analytics_id UUID, -- FK removed for synthetic data import
     
     -- Time series-specific visualizations
     historical_data JSONB,      -- line chart historical
