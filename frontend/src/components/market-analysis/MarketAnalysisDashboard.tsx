@@ -13,6 +13,7 @@ import { PredictionInterface } from './PredictionInterface';
 import MLAlgorithmsGuide from './MLAlgorithmsGuide';
 import { BulkDataImport } from './BulkDataImport';
 import { apiClient } from '../../services/apiClient';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 
 type TabType = 'data' | 'training' | 'experiments' | 'results' | 'comparison' | 'predictions' | 'hub' | 'guide' | 'import';
 
@@ -128,106 +129,108 @@ const MarketAnalysisDashboard: React.FC = () => {
 
             {/* Tab Content */}
             <div className="max-w-7xl mx-auto">
-                {activeTab === 'data' && <DataUpload />}
+                <ErrorBoundary name={`Tab: ${activeTab}`}>
+                    {activeTab === 'data' && <DataUpload />}
 
-                {activeTab === 'training' && <TrainingWizard />}
+                    {activeTab === 'training' && <TrainingWizard />}
 
-                {activeTab === 'experiments' && (
-                    <div className="p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h2 className="text-xl font-bold text-slate-800">Experimentos</h2>
-                                <p className="text-slate-500">Histórico de treinamentos e seus resultados</p>
-                            </div>
-                            <button
-                                onClick={loadExperiments}
-                                className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 flex items-center gap-2"
-                            >
-                                <Clock className="w-4 h-4" />
-                                Atualizar
-                            </button>
-                        </div>
-
-                        {loading ? (
-                            <div className="flex justify-center py-12">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#597996]" />
-                            </div>
-                        ) : experiments.length > 0 ? (
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                                <table className="w-full">
-                                    <thead className="bg-slate-50 border-b border-slate-200">
-                                        <tr>
-                                            <th className="text-left px-6 py-3 text-sm font-medium text-slate-600">Nome</th>
-                                            <th className="text-left px-6 py-3 text-sm font-medium text-slate-600">Algoritmo</th>
-                                            <th className="text-left px-6 py-3 text-sm font-medium text-slate-600">Tipo</th>
-                                            <th className="text-left px-6 py-3 text-sm font-medium text-slate-600">Status</th>
-                                            <th className="text-left px-6 py-3 text-sm font-medium text-slate-600">Data</th>
-                                            <th className="text-left px-6 py-3 text-sm font-medium text-slate-600">Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {experiments.map(exp => (
-                                            <tr key={exp.id} className="hover:bg-slate-50">
-                                                <td className="px-6 py-4">
-                                                    <span className="font-medium text-slate-800">{exp.name}</span>
-                                                </td>
-                                                <td className="px-6 py-4 text-slate-600">{exp.algorithm}</td>
-                                                <td className="px-6 py-4">
-                                                    <span className="px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-600">
-                                                        {exp.task_type}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="flex items-center gap-2">
-                                                        {getStatusIcon(exp.status)}
-                                                        <span className="text-sm text-slate-600 capitalize">{exp.status}</span>
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">
-                                                    {formatDate(exp.created_at)}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <button
-                                                        onClick={() => setSelectedExperiment(exp.id)}
-                                                        className="p-2 hover:bg-slate-100 rounded-lg text-[#597996] transition-colors"
-                                                    >
-                                                        <Eye className="w-5 h-5" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
-                                <FlaskConical className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                                <h3 className="text-lg font-medium text-slate-700 mb-2">Nenhum experimento ainda</h3>
-                                <p className="text-slate-500 mb-4">Inicie seu primeiro treinamento na aba "Treinamento"</p>
+                    {activeTab === 'experiments' && (
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-800">Experimentos</h2>
+                                    <p className="text-slate-500">Histórico de treinamentos e seus resultados</p>
+                                </div>
                                 <button
-                                    onClick={() => setActiveTab('training')}
-                                    className="px-4 py-2 bg-[#2c6a6b] text-white rounded-lg hover:bg-[#245858]"
+                                    onClick={loadExperiments}
+                                    className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 flex items-center gap-2"
                                 >
-                                    Criar Experimento
+                                    <Clock className="w-4 h-4" />
+                                    Atualizar
                                 </button>
                             </div>
-                        )}
-                    </div>
-                )}
 
-                {activeTab === 'results' && <AnalyticsResults />}
+                            {loading ? (
+                                <div className="flex justify-center py-12">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#597996]" />
+                                </div>
+                            ) : experiments.length > 0 ? (
+                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <table className="w-full">
+                                        <thead className="bg-slate-50 border-b border-slate-200">
+                                            <tr>
+                                                <th className="text-left px-6 py-3 text-sm font-medium text-slate-600">Nome</th>
+                                                <th className="text-left px-6 py-3 text-sm font-medium text-slate-600">Algoritmo</th>
+                                                <th className="text-left px-6 py-3 text-sm font-medium text-slate-600">Tipo</th>
+                                                <th className="text-left px-6 py-3 text-sm font-medium text-slate-600">Status</th>
+                                                <th className="text-left px-6 py-3 text-sm font-medium text-slate-600">Data</th>
+                                                <th className="text-left px-6 py-3 text-sm font-medium text-slate-600">Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {experiments.map(exp => (
+                                                <tr key={exp.id} className="hover:bg-slate-50">
+                                                    <td className="px-6 py-4">
+                                                        <span className="font-medium text-slate-800">{exp.name}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-slate-600">{exp.algorithm}</td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-600">
+                                                            {exp.task_type}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className="flex items-center gap-2">
+                                                            {getStatusIcon(exp.status)}
+                                                            <span className="text-sm text-slate-600 capitalize">{exp.status}</span>
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-slate-500">
+                                                        {formatDate(exp.created_at)}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <button
+                                                            onClick={() => setSelectedExperiment(exp.id)}
+                                                            className="p-2 hover:bg-slate-100 rounded-lg text-[#597996] transition-colors"
+                                                        >
+                                                            <Eye className="w-5 h-5" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+                                    <FlaskConical className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                    <h3 className="text-lg font-medium text-slate-700 mb-2">Nenhum experimento ainda</h3>
+                                    <p className="text-slate-500 mb-4">Inicie seu primeiro treinamento na aba "Treinamento"</p>
+                                    <button
+                                        onClick={() => setActiveTab('training')}
+                                        className="px-4 py-2 bg-[#2c6a6b] text-white rounded-lg hover:bg-[#245858]"
+                                    >
+                                        Criar Experimento
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                {activeTab === 'comparison' && (
-                    <ModelComparison onSelectExperiment={(id) => setSelectedExperiment(id)} />
-                )}
+                    {activeTab === 'results' && <AnalyticsResults />}
 
-                {activeTab === 'predictions' && <PredictionInterface />}
+                    {activeTab === 'comparison' && (
+                        <ModelComparison onSelectExperiment={(id) => setSelectedExperiment(id)} />
+                    )}
 
-                {activeTab === 'hub' && <AnalysisHub />}
+                    {activeTab === 'predictions' && <PredictionInterface />}
 
-                {activeTab === 'guide' && <MLAlgorithmsGuide />}
+                    {activeTab === 'hub' && <AnalysisHub />}
 
-                {activeTab === 'import' && <BulkDataImport />}
+                    {activeTab === 'guide' && <MLAlgorithmsGuide />}
+
+                    {activeTab === 'import' && <BulkDataImport />}
+                </ErrorBoundary>
             </div>
         </div>
     );

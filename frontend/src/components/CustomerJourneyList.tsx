@@ -11,18 +11,37 @@ export const CustomerJourneyList: React.FC<Props> = ({ onSelectCustomer }) => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [stage, setStage] = useState('all');
+    const [clientId, setClientId] = useState('all');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [clients, setClients] = useState<any[]>([]);
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
 
     useEffect(() => {
+        fetchClients();
+    }, []);
+
+    useEffect(() => {
         fetchCustomers();
-    }, [page, search, stage]);
+    }, [page, search, stage, clientId, startDate, endDate]);
+
+    const fetchClients = async () => {
+        try {
+            const response = await apiClient.clients.getClients();
+            // Assuming response is { success: true, clients: [...] } or just array
+            const clientList = Array.isArray(response) ? response : (response.clients || []);
+            setClients(clientList);
+        } catch (error) {
+            console.error('Failed to fetch clients', error);
+        }
+    };
 
     const fetchCustomers = async () => {
         setLoading(true);
         try {
             const response = await apiClient.get('/customers/unified', {
-                params: { page, limit: 10, search, stage }
+                params: { page, limit: 10, search, stage, clientId, startDate, endDate }
             });
             if (response.data.success) {
                 setCustomers(response.data.customers);
@@ -69,7 +88,37 @@ export const CustomerJourneyList: React.FC<Props> = ({ onSelectCustomer }) => {
                         className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-white placeholder:text-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                     />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                    <select
+                        value={clientId}
+                        onChange={(e) => setClientId(e.target.value)}
+                        className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary outline-none max-w-[200px]"
+                    >
+                        <option value="all">Todas as Contas</option>
+                        {clients.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+
+                    <div className="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-lg px-2">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="bg-transparent text-white text-sm py-2 px-1 outline-none w-[110px]"
+                            placeholder="Início"
+                        />
+                        <span className="text-gray-500">-</span>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="bg-transparent text-white text-sm py-2 px-1 outline-none w-[110px]"
+                            placeholder="Fim"
+                        />
+                    </div>
+
                     <select
                         value={stage}
                         onChange={(e) => setStage(e.target.value)}

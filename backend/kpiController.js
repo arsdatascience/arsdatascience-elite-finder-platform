@@ -325,7 +325,7 @@ const kpiController = {
     // ==========================================
     getUnifiedCustomers: async (req, res) => {
         const { isSuperAdmin, tenantId } = getTenantScope(req);
-        const { page = 1, limit = 20, search, stage } = req.query;
+        const { page = 1, limit = 20, search, stage, clientId, startDate, endDate } = req.query;
         const offset = (page - 1) * limit;
 
         try {
@@ -346,6 +346,24 @@ const kpiController = {
                 paramCount++;
                 query += ` AND current_stage = $${paramCount}`;
                 params.push(stage);
+            }
+
+            if (clientId && clientId !== 'all') {
+                paramCount++;
+                query += ` AND client_id = $${paramCount}`;
+                params.push(clientId);
+            }
+
+            if (startDate) {
+                paramCount++;
+                query += ` AND last_interaction >= $${paramCount}`;
+                params.push(startDate);
+            }
+
+            if (endDate) {
+                paramCount++;
+                query += ` AND last_interaction <= $${paramCount}`;
+                params.push(endDate);
             }
 
             // Count total

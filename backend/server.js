@@ -1142,15 +1142,19 @@ app.post('/api/sop-templates', authenticateToken, async (req, res) => {
   res.json({ success: true, message: 'Template created' });
 });
 
-// Data/Datasets
-app.get('/api/data/datasets', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.opsPool.query('SELECT * FROM ml_datasets ORDER BY created_at DESC LIMIT 50');
-    res.json(result.rows); // Frontend expects array directly
-  } catch (err) {
-    res.json([]); // Return empty array on error
-  }
-});
+// --- DATA & MARKET ANALYSIS ROUTES ---
+const dataController = require('./controllers/dataController');
+
+// Datasets
+app.post('/api/data/upload', authenticateToken, dataController.upload.single('file'), dataController.uploadDataset);
+app.get('/api/data/datasets', authenticateToken, dataController.getDatasets);
+
+// Analytics & Segments
+app.get('/api/analytics/results', authenticateToken, dataController.getAnalyticsResults);
+app.get('/api/analytics/segments', authenticateToken, dataController.getSegments);
+app.get('/api/analytics/segments/:code', authenticateToken, dataController.getSegmentData);
+app.get('/api/analytics/algorithms', authenticateToken, dataController.getAlgorithms);
+
 
 // Training modules
 app.get('/api/training/modules', authenticateToken, async (req, res) => {
