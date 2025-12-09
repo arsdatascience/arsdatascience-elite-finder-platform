@@ -216,12 +216,10 @@ const mlConfigController = {
 
             const result = await db.query(`
                 SELECT 
-                    h.id, h.previous_config, h.new_config, h.changed_at,
-                    u.name as changed_by_name
-                FROM ml_algorithm_config_history h
-                LEFT JOIN users u ON h.changed_by = u.id
-                WHERE h.config_id = $1
-                ORDER BY h.changed_at DESC
+                    id, config_id, previous_config, new_config, changed_by, changed_at
+                FROM ml_algorithm_config_history
+                WHERE config_id = $1
+                ORDER BY changed_at DESC
                 LIMIT 20
             `, [id]);
 
