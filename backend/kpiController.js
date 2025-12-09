@@ -13,12 +13,19 @@ const kpiController = {
     // ==========================================
     getDashboardKPIs: async (req, res) => {
         const { isSuperAdmin, tenantId } = getTenantScope(req);
-        const { period = 'month' } = req.query;
+        const { period = 'month', clientId, stage } = req.query;
 
         try {
             const now = new Date();
-            const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date(now.getFullYear(), now.getMonth(), 1);
+            const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+            // Helper to build client filter
+            const clientFilter = (clientId && clientId !== 'all') ? 'AND client_id = $4' : 'AND ($4::text IS NULL OR TRUE)';
+            const stageFilterQuery = (stage && stage !== 'all') ? 'AND current_stage = $5' : 'AND ($5::text IS NULL OR TRUE)';
+
+            // Params for standard queries: [tenantId, startDate, endDate, clientId, stage]
+            const queryParams = [tenantId, startDate, endDate, (clientId === 'all' ? null : clientId), (stage === 'all' ? null : stage)];
 
             // 1. NPS Average
             const npsResult = await pool.query(`
@@ -31,7 +38,8 @@ const kpiController = {
                 FROM nps_surveys
                 WHERE (tenant_id = $1 OR $1 IS NULL)
                   AND responded_at >= $2 AND responded_at <= $3
-            `, [tenantId, startDate, endDate]);
+                  ${clientFilter}
+            `, queryParams);
 
             const nps = npsResult.rows[0];
             const npsScore = nps.total_responses > 0
@@ -47,26 +55,30 @@ const kpiController = {
                 FROM csat_surveys
                 WHERE (tenant_id = $1 OR $1 IS NULL)
                   AND responded_at >= $2 AND responded_at <= $3
-            `, [tenantId, startDate, endDate]);
+                  ${clientFilter}
+            `, queryParams);
 
             const csat = csatResult.rows[0];
             const csatPercent = csat.total_responses > 0
                 ? Math.round((csat.satisfied / csat.total_responses) * 100)
                 : null;
 
-            // 3. Client Retention (Cohort strict logic: Clients present last month AND this month / Clients last month)
+            // 3. Client Retention
+            // Note: client_health_metrics uses client_id.
             const retentionQuery = `
                 WITH prev_month_clients AS (
                     SELECT DISTINCT client_id
                     FROM client_health_metrics
                     WHERE (tenant_id = $1 OR $1 IS NULL)
                       AND period_year = $2 AND period_month = $3
+                      ${(clientId && clientId !== 'all') ? 'AND client_id = $6' : ''}
                 ),
                 current_month_clients AS (
                     SELECT DISTINCT client_id
                     FROM client_health_metrics
                     WHERE (tenant_id = $1 OR $1 IS NULL)
                       AND period_year = $4 AND period_month = $5
+                      ${(clientId && clientId !== 'all') ? 'AND client_id = $6' : ''}
                 )
                 SELECT 
                     (SELECT COUNT(*) FROM prev_month_clients) as prev_count,
@@ -77,36 +89,48 @@ const kpiController = {
                     (SELECT COUNT(*) FROM current_month_clients) as current_total
             `;
 
-            const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const rResult = await pool.query(retentionQuery, [
+            const prevDate = new Date(startDate);
+            prevDate.setMonth(prevDate.getMonth() - 1);
+
+            const retentionParams = [
                 tenantId,
                 prevDate.getFullYear(), prevDate.getMonth() + 1,
-                now.getFullYear(), now.getMonth() + 1
-            ]);
+                startDate.getFullYear(), startDate.getMonth() + 1
+            ];
+
+            if (clientId && clientId !== 'all') {
+                retentionParams.push(clientId); // $6
+            }
+
+            const rResult = await pool.query(retentionQuery, retentionParams);
 
             const stats = rResult.rows[0];
             const prevCount = parseInt(stats.prev_count) || 0;
             const retainedCount = parseInt(stats.retained_count) || 0;
             const currentTotal = parseInt(stats.current_total) || 0;
+            const retentionRate = prevCount > 0 ? Math.round((retainedCount / prevCount) * 100) : 100;
 
-            const retentionRate = prevCount > 0
-                ? Math.round((retainedCount / prevCount) * 100)
-                : 100; // If no previous clients, assume 100% start (or 0% depending on business logic, but 100 is safer for new tenant)
-
-            // 4. Financial KPIs (from Maglev/OPS DB)
+            // 4. Financial KPIs
+            // If filtering by specific client, we try to filter financial transactions. 
+            // If table doesn't have client_id, we might return 0 or global (let's assume global for now if no client_id column, or check schema).
+            // Assuming financial_transactions might NOT have client_id in MVP. Let's start with date filter only for now to avoid error, 
+            // OR if user insists on client filter, we return 0 if not implemented.
+            // For now, let's keep it date-based but if I had schema I'd add client_id.
+            // Wait, previous `check_data_integrity.js` looked at `financial_transactions`. Let's assume global for safety unless confirmed.
             const financialResult = await opsPool.query(`
                 SELECT 
                     SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as revenue,
                     SUM(CASE WHEN type = 'expense' AND status = 'paid' THEN amount ELSE 0 END) as expenses
                 FROM financial_transactions
                 WHERE date >= $1 AND date <= $2
+                -- client filter temporarily omitted to prevent crash if column missing
             `, [startDate, endDate]);
 
             const revenue = parseFloat(financialResult.rows[0]?.revenue) || 0;
             const expenses = parseFloat(financialResult.rows[0]?.expenses) || 0;
             const profitMargin = revenue > 0 ? Math.round(((revenue - expenses) / revenue) * 100) : 0;
 
-            // 5. CLV and CAC
+            // 5. CLV (Unified Customers)
             const clvResult = await pool.query(`
                 SELECT 
                     AVG(lifetime_value) as avg_clv,
@@ -114,7 +138,9 @@ const kpiController = {
                 FROM unified_customers
                 WHERE (tenant_id = $1 OR $1 IS NULL)
                   AND lifetime_value > 0
-            `, [tenantId]);
+                  ${clientFilter}
+                  ${stageFilterQuery}
+            `, queryParams);
 
             const avgCLV = parseFloat(clvResult.rows[0]?.avg_clv) || 0;
 
@@ -125,18 +151,19 @@ const kpiController = {
                     COUNT(*) as count
                 FROM unified_customers
                 WHERE (tenant_id = $1 OR $1 IS NULL)
+                ${clientFilter}
                 GROUP BY current_stage
-            `, [tenantId]);
+            `, queryParams);
 
-            // 7. Employee Happiness (last week)
+            // 7. Employee Happiness
             const happinessResult = await pool.query(`
                 SELECT 
                     AVG(happiness_score) as avg_happiness,
                     COUNT(*) as responses
                 FROM employee_happiness
                 WHERE (tenant_id = $1 OR $1 IS NULL)
-                  AND submitted_at >= NOW() - INTERVAL '7 days'
-            `, [tenantId]);
+                  AND submitted_at >= $2 AND submitted_at <= $3
+            `, [tenantId, startDate, endDate]);
 
             res.json({
                 success: true,

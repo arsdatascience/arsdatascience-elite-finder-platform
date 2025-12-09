@@ -38,7 +38,7 @@ const upload = multer({
  */
 const uploadDataset = async (req, res) => {
     try {
-        const tenantId = req.user.tenantId;
+        const tenantId = req.user.tenant_id || req.user.tenantId;
         const file = req.file;
 
         if (!file) {
@@ -185,9 +185,9 @@ function calculateColumnStats(values, type) {
  */
 const getDatasets = async (req, res) => {
     try {
-        const tenantId = req.user.tenantId;
+        const tenantId = req.user.tenant_id || req.user.tenantId;
         const result = await opsPool.query(
-            'SELECT * FROM ml_datasets WHERE tenant_id = $1 ORDER BY created_at DESC',
+            'SELECT * FROM ml_datasets WHERE tenant_id = $1 OR $1 IS NULL ORDER BY created_at DESC',
             [tenantId]
         );
         res.json(result.rows);
@@ -202,7 +202,7 @@ const getDatasets = async (req, res) => {
  */
 const getAnalyticsResults = async (req, res) => {
     try {
-        const tenantId = req.user?.tenantId;
+        const tenantId = req.user?.tenant_id || req.user?.tenantId;
         const { segment, algorithm, analysis_type } = req.query;
 
         let query = `

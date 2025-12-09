@@ -186,12 +186,12 @@ const CustomerJourneyDashboard: React.FC = () => {
                     </select>
 
                     <div className="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-lg px-2 text-sm">
-                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <Calendar className="w-4 h-4 text-white" />
                         <input
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            className="bg-transparent text-white py-2 px-1 outline-none w-[110px]"
+                            className="bg-transparent text-white py-2 px-1 outline-none w-[110px] [color-scheme:dark]"
                             placeholder="Data Inicial"
                         />
                         <span className="text-gray-500">-</span>
@@ -199,7 +199,7 @@ const CustomerJourneyDashboard: React.FC = () => {
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
-                            className="bg-transparent text-white py-2 px-1 outline-none w-[110px]"
+                            className="bg-transparent text-white py-2 px-1 outline-none w-[110px] [color-scheme:dark]"
                             placeholder="Data Final"
                         />
                     </div>
