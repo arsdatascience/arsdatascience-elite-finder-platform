@@ -646,6 +646,16 @@ async function initializeDatabase() {
         console.log('⚠️ KPI tables já existem ou erro:', kpiErr.message);
       }
 
+      // Migração 034: ML Module Schema (all result tables) - lives in OPS/Maglev
+      console.log('🔄 Verificando migrações de ML Module Schema (034) no Maglev...');
+      try {
+        const mlModuleMigration = fs.readFileSync(path.join(__dirname, 'migrations', '034_ml_module_schema.sql'), 'utf8');
+        await pool.opsPool.query(mlModuleMigration);
+        console.log('✅ Migração 034 (ML Module Schema) aplicada no Maglev.');
+      } catch (mlModuleErr) {
+        console.log('⚠️ ML Module Schema já existe ou erro:', mlModuleErr.message);
+      }
+
       // Migração 044: ML Algorithm Configs and History (lives in OPS/Maglev DB)
       console.log('🔄 Verificando migrações de ML Algorithm Configs (044) no Maglev...');
       try {
