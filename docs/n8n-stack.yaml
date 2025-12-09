@@ -1,0 +1,177 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:1.122.3
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=arsdatascience-n8n.aiiam.com.br
+      - N8N_PROTOCOL=https
+      - N8N_PORT=5678
+      - WEBHOOK_URL=https://webhookn8n.aiiam.com.br
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+      - TZ=America/Sao_Paulo
+      - N8N_DEFAULT_LOCALE=pt_BR
+      - N8N_AVAILABLE_LOCALES=pt_BR
+      
+      # --- DATABASE CONFIGURATION (System DB) ---
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=crossover.proxy.rlwy.net
+      - DB_POSTGRESDB_PORT=59957
+      - DB_POSTGRESDB_DATABASE=railway
+      - DB_POSTGRESDB_SCHEMA=n8n_workflows
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=aYLfhaDtABXovCxhPjBOFObCYQTgMvfZ
+      - DB_POSTGRESDB_CONNECTION_TIMEOUT=30000
+      
+      # Authentication settings
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=ArsN8n@2025!Secure
+      - N8N_USER_MANAGEMENT_DISABLED=true
+      
+      # Encryption Key (Keep Safe)
+      - N8N_ENCRYPTION_KEY=f96fbf92bcec8a3f0c126656b6a6059287a44d2f2eef495f348922ff17bfe9d3
+      
+      # Node & System Settings
+      - LANG=pt_BR.UTF-8
+      - LC_ALL=pt_BR.UTF-8
+      - LANGUAGE=pt_BR:pt:en
+      - NODE_OPTIONS=--max-old-space-size=8192
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      
+      # Execution & Data Management
+      - EXECUTIONS_MODE=regular
+      - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+      - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+      - EXECUTIONS_DATA_SAVE_ON_PROGRESS=true
+      - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=336
+      - EXECUTIONS_TIMEOUT=3600
+      - EXECUTIONS_TIMEOUT_MAX=7200
+      - N8N_CONCURRENCY_PRODUCTION_LIMIT=100
+      
+      # Security & CORS
+      - N8N_CORS_ORIGIN=https://marketinghub.aiiam.com.br,https://elitefinder.vercel.app,https://*.vercel.app,https://elite-finder.up.railway.app,https://*.up.railway.app,http://localhost:5173,http://localhost:3000
+      - N8N_SECURE_COOKIE=true
+      - N8N_COOKIE_SAMESITE=none
+      
+      # Features
+      - N8N_TEMPLATES_ENABLED=true
+      - N8N_TEMPLATES_HOST=https://api.n8n.io/api/
+      - N8N_PERSONALIZATION_ENABLED=true
+      - N8N_VERSION_NOTIFICATIONS_ENABLED=true
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_PAYLOAD_SIZE_MAX=16
+      - N8N_BLOCK_FILE_ACCESS_TO_N8N_FILES=false
+      
+      # Webhooks & Editor
+      - WEBHOOK_TUNNEL_URL=https://webhookn8n.aiiam.com.br
+      - N8N_SKIP_WEBHOOK_DEREGISTRATION_SHUTDOWN=true
+      - N8N_EDITOR_BASE_URL=https://arsdatascience-n8n.aiiam.com.br
+      
+      # Logging & Metrics
+      - N8N_LOG_LEVEL=info
+      - N8N_LOG_OUTPUT=console
+      - N8N_METRICS=true
+      - N8N_METRICS_INCLUDE_API_ENDPOINTS=true
+      - N8N_METRICS_INCLUDE_CACHE_METRICS=true
+      - N8N_METRICS_INCLUDE_MESSAGE_EVENT_BUS_METRICS=true
+      - N8N_METRICS_INCLUDE_WORKFLOW_ID_LABEL=true
+      - N8N_METRICS_INCLUDE_NODE_TYPE_LABEL=true
+      - N8N_METRICS_INCLUDE_CREDENTIAL_TYPE_LABEL=true
+      - N8N_METRICS_PREFIX=n8n_
+      
+      # Email (SMTP)
+      - N8N_EMAIL_MODE=smtp
+      - N8N_SMTP_HOST=smtp.gmail.com
+      - N8N_SMTP_PORT=587
+      - N8N_SMTP_USER=arsdatascience@gmail.com
+      - N8N_SMTP_PASS=ukvhjvjuhbjedzf
+      - N8N_SMTP_SENDER=arsdatascience@gmail.com
+      - N8N_SMTP_SSL=false
+      - N8N_SMTP_TLS=true
+
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - n8n_files:/files
+    
+    networks:
+      - portainer_default
+      - prometheus
+    
+    mem_limit: 8g
+    mem_reservation: 1g
+    
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5678/healthz || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+      
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=portainer_default"
+      
+      # Routers (Main)
+      - "traefik.http.routers.n8n-http.rule=Host(`arsdatascience-n8n.aiiam.com.br`)"
+      - "traefik.http.routers.n8n-http.entrypoints=web"
+      - "traefik.http.routers.n8n-http.middlewares=n8n-redirect"
+      
+      - "traefik.http.routers.n8n.rule=Host(`arsdatascience-n8n.aiiam.com.br`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls=true"
+      - "traefik.http.routers.n8n.tls.certresolver=leresolver"
+      
+      # Routers (Webhook)
+      - "traefik.http.routers.n8n-webhook-http.rule=Host(`webhookn8n.aiiam.com.br`)"
+      - "traefik.http.routers.n8n-webhook-http.entrypoints=web"
+      - "traefik.http.routers.n8n-webhook-http.middlewares=n8n-webhook-redirect"
+      
+      - "traefik.http.routers.n8n-webhook.rule=Host(`webhookn8n.aiiam.com.br`)"
+      - "traefik.http.routers.n8n-webhook.entrypoints=websecure"
+      - "traefik.http.routers.n8n-webhook.tls=true"
+      - "traefik.http.routers.n8n-webhook.tls.certresolver=leresolver"
+      - "traefik.http.routers.n8n-webhook.middlewares=n8n-cors"
+      
+      # Middlewares
+      - "traefik.http.middlewares.n8n-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.n8n-redirect.redirectscheme.permanent=true"
+      - "traefik.http.middlewares.n8n-webhook-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.n8n-webhook-redirect.redirectscheme.permanent=true"
+      
+      - "traefik.http.middlewares.n8n-headers.headers.sslredirect=true"
+      - "traefik.http.middlewares.n8n-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.n8n-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.n8n-headers.headers.stsPreload=true"
+      - "traefik.http.middlewares.n8n-headers.headers.forceSTSHeader=true"
+      - "traefik.http.middlewares.n8n-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.n8n-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.n8n-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      
+      - "traefik.http.middlewares.n8n-cors.headers.accesscontrolalloworiginlist=https://marketinghub.aiiam.com.br,https://elitefinder.vercel.app,https://*.vercel.app,https://elite-finder.up.railway.app,https://*.up.railway.app,http://localhost:5173,http://localhost:3000"
+      - "traefik.http.middlewares.n8n-cors.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,OPTIONS,PATCH,HEAD"
+      - "traefik.http.middlewares.n8n-cors.headers.accesscontrolallowheaders=Content-Type,Authorization,X-Requested-With,Accept,Origin,X-N8N-API-Key,Cookie"
+      - "traefik.http.middlewares.n8n-cors.headers.accesscontrolallowcredentials=true"
+      - "traefik.http.middlewares.n8n-cors.headers.accesscontrolmaxage=3600"
+      - "traefik.http.middlewares.n8n-cors.headers.addvaryheader=true"
+      
+      - "traefik.http.middlewares.n8n-iframe.headers.customframeoptionsvalue=ALLOWALL https://marketinghub.aiiam.com.br"
+      - "traefik.http.middlewares.n8n-csp.headers.contentsecuritypolicy=frame-ancestors 'self' https://marketinghub.aiiam.com.br https://elitefinder.vercel.app https://*.vercel.app http://localhost:5173 http://localhost:3000"
+
+volumes:
+  n8n_data:
+    driver: local
+  n8n_files:
+    driver: local
+
+networks:
+  portainer_default:
+    external: true
+  prometheus:
+    external: true

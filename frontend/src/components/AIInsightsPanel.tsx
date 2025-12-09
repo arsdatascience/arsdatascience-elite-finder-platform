@@ -127,8 +127,19 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ onClose }) => 
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <Database className="w-4 h-4" /> Qdrant + Crossover + Megalev
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <Database className="w-4 h-4" /> Qdrant + Crossover + Megalev
+                        </div>
+                        {onClose && (
+                            <button
+                                onClick={onClose}
+                                className="text-gray-400 hover:text-white transition-colors"
+                                title="Fechar Painel"
+                            >
+                                <XCircle className="w-6 h-6" />
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -144,8 +155,8 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ onClose }) => 
                             key={option.id}
                             onClick={() => setFocusArea(option.id as any)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${focusArea === option.id
-                                    ? 'bg-purple-500 text-white'
-                                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
+                                ? 'bg-purple-500 text-white'
+                                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
                                 }`}
                         >
                             <option.icon className="w-4 h-4" />
@@ -310,8 +321,8 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ onClose }) => 
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className="font-medium text-white">{rec.action}</span>
                                                     <span className={`text-xs px-2 py-1 rounded ${rec.priority === 'alta' ? 'bg-red-500/20 text-red-400' :
-                                                            rec.priority === 'média' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                                'bg-gray-500/20 text-gray-400'
+                                                        rec.priority === 'média' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                            'bg-gray-500/20 text-gray-400'
                                                         }`}>
                                                         Prioridade: {rec.priority}
                                                     </span>
