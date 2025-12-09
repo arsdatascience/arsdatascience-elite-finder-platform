@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
     Users, TrendingUp, Heart, DollarSign, Target, Activity,
-    Smile, ThumbsUp, PieChart, BarChart3, ArrowUp, ArrowDown,
+    Smile, ThumbsUp, BarChart3, ArrowUp, ArrowDown,
     RefreshCw, ChevronRight, Star, UserCheck, Clock, Zap,
-    Award, AlertTriangle, CheckCircle, XCircle, Search, Sparkles, List,
+    Award, AlertTriangle, CheckCircle, Search, Sparkles, List,
     Filter, Calendar
 } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
@@ -227,6 +227,20 @@ const CustomerJourneyDashboard: React.FC = () => {
                     )}
                 </div>
             </div>
+
+            {/* Error Message */}
+            {error && (
+                <div className="max-w-5xl mx-auto bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 mb-4">
+                    <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                    <p>{error}</p>
+                    <button
+                        onClick={() => setError(null)}
+                        className="ml-auto text-sm hover:underline hover:text-red-300"
+                    >
+                        Fechar
+                    </button>
+                </div>
+            )}
 
             {/* Section Tabs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
