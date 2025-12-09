@@ -54,7 +54,7 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.SOCIAL]: '/social',
   [ViewState.SOCIAL_CALENDAR]: '/social-calendar',
   [ViewState.SOCIAL_INTEGRATIONS]: '/social-integrations',
-  [ViewState.IMAGE_GENERATION]: '/images/generate',
+  // IMAGE_GENERATION removed - available inside CREATIVE_STUDIO
   [ViewState.AUDIO_ANALYSIS]: '/audio-analysis',
   [ViewState.FINANCIAL_MODULE]: '/financial',
   [ViewState.AUTOMATION]: '/automation',
