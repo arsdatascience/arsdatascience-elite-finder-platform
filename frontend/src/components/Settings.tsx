@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Brain, Eye, EyeOff, Cpu, Check, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock, Mail, Send, TestTube, AlertCircle, CheckCircle } from 'lucide-react';
+import { Save, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Brain, Eye, EyeOff, Cpu, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock, Mail, Send, AlertCircle, CheckCircle } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import { useAuth } from '@/contexts/AuthContext';
 import { UsageStats } from './UsageStats';
@@ -507,12 +507,8 @@ export const Settings: React.FC = () => {
 
 
 
-  // Real Integrations Data (Mockado para UI)
-  const [integrations] = useState([
-    { id: 1, dbId: 1, name: 'Google Ads', platform: 'google_ads', status: 'connected', icon: Search, lastSync: '10 min atrás' },
-    { id: 2, dbId: 2, name: 'Meta Ads', platform: 'meta_ads', status: 'connected', icon: Globe, lastSync: '1 hora atrás' },
-    { id: 3, dbId: 3, name: 'WhatsApp Business', platform: 'whatsapp', status: 'disconnected', icon: MessageSquare, lastSync: '-' },
-  ]);
+  // State removed as it is unused.
+  // const [integrations] = useState([...]);
 
   const SETTINGS_TABS = [
     { id: 'profile', label: 'Perfil', icon: User },

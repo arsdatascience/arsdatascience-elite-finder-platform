@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Printer, Layout, TrendingUp, Users, PieChart as PieIcon, Download, BarChart2, Activity, DollarSign, Calendar } from 'lucide-react';
 import { KPIS, COMPARATIVE_FUNNEL_DATA, CAMPAIGNS_DATA, LEADS_DATA, CLIENTS_LIST } from '../constants';
-import { GOOGLE_SEARCH_TERMS, GOOGLE_AUCTION_INSIGHTS, GOOGLE_TOP_ADS, GOOGLE_KEYWORDS, GOOGLE_DEMOGRAPHICS, GOOGLE_DEVICES, META_CAMPAIGNS, META_CREATIVES, META_PLACEMENTS, META_DEMOGRAPHICS, META_REACH_FREQUENCY, CONVERSION_FUNNEL_DETAILED } from '../mocks/reportData';
+import { GOOGLE_SEARCH_TERMS, GOOGLE_AUCTION_INSIGHTS, GOOGLE_KEYWORDS, GOOGLE_DEMOGRAPHICS, GOOGLE_DEVICES, META_CAMPAIGNS, META_CREATIVES, META_PLACEMENTS, META_REACH_FREQUENCY, CONVERSION_FUNNEL_DETAILED } from '../mocks/reportData';
 import { AreaChart, Area, CartesianGrid, PieChart, Pie, Cell, LabelList, Legend, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import html2canvas from 'html2canvas';
@@ -595,7 +595,7 @@ export const Reports: React.FC = () => {
                     paddingAngle={5}
                     dataKey="clicks"
                   >
-                    {GOOGLE_DEVICES.map((entry, index) => (
+                    {GOOGLE_DEVICES.map((_entry, index) => (
                       <Cell key={`cell-${index}`} fill={index === 0 ? '#4285F4' : index === 1 ? '#34A853' : '#FBBC05'} />
                     ))}
                   </Pie>
