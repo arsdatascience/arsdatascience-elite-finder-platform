@@ -92,7 +92,15 @@ export const ImageGenerationPage: React.FC = () => {
                 setError('Falha na geração da imagem.');
             }
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Erro ao conectar com servidor.');
+            const errorMessage = err.response?.data?.error || 'Erro ao conectar com servidor.';
+            console.error('API Error:', errorMessage);
+
+            // Map technical/DB errors to user-friendly messages
+            if (errorMessage.includes('column') || errorMessage.includes('relation') || errorMessage.includes('SQL')) {
+                setError('Erro interno no servidor. Por favor, tente novamente em alguns instantes. Se persistir, contate o suporte.');
+            } else {
+                setError(errorMessage);
+            }
         } finally {
             setLoading(false);
         }
