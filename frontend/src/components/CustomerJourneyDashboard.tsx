@@ -3,7 +3,8 @@ import {
     Users, TrendingUp, Heart, DollarSign, Target, Activity,
     Smile, ThumbsUp, PieChart, BarChart3, ArrowUp, ArrowDown,
     RefreshCw, ChevronRight, Star, UserCheck, Clock, Zap,
-    Award, AlertTriangle, CheckCircle, XCircle, Search, Sparkles, List
+    Award, AlertTriangle, CheckCircle, XCircle, Search, Sparkles, List,
+    Filter, Calendar
 } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
 import { AIInsightsPanel } from './AIInsightsPanel';
@@ -44,6 +45,13 @@ interface KPIData {
 }
 
 const CustomerJourneyDashboard: React.FC = () => {
+    // Global Filters State
+    const [clientId, setClientId] = useState('all');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [stageFilter, setStageFilter] = useState('all');
+    const [clients, setClients] = useState<any[]>([]);
+
     const [kpis, setKpis] = useState<KPIData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -51,13 +59,29 @@ const CustomerJourneyDashboard: React.FC = () => {
     const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchKPIs();
+        fetchClients();
     }, []);
+
+    useEffect(() => {
+        fetchKPIs();
+    }, [clientId, startDate, endDate, stageFilter]);
+
+    const fetchClients = async () => {
+        try {
+            const response = await apiClient.clients.getClients();
+            const clientList = Array.isArray(response) ? response : (response.clients || []);
+            setClients(clientList);
+        } catch (error) {
+            console.error('Failed to fetch clients', error);
+        }
+    };
 
     const fetchKPIs = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/kpis/dashboard'); // Helper method usage
+            const response = await apiClient.get('/kpis/dashboard', {
+                params: { clientId, startDate, endDate, stage: stageFilter }
+            });
             // Fallback for types since generic get returns AxiosResponse
             if (response.data.success) {
                 setKpis(response.data.kpis);
@@ -139,9 +163,69 @@ const CustomerJourneyDashboard: React.FC = () => {
                     <Heart className="w-8 h-8 text-pink-500" />
                     Jornada do Cliente
                 </h1>
-                <p className="text-gray-400 max-w-2xl mx-auto">
+                <p className="text-gray-400 max-w-2xl mx-auto mb-6">
                     KPIs de Relacionamento, Satisfação, Saúde Financeira e Bem-estar da Equipe
                 </p>
+
+                {/* Global Filters */}
+                <div className="flex flex-wrap items-center justify-center gap-4 bg-gray-800/50 p-4 rounded-xl border border-gray-700 max-w-5xl mx-auto">
+                    <div className="flex items-center gap-2 text-gray-400">
+                        <Filter className="w-4 h-4" />
+                        <span className="text-sm font-medium">Filtros:</span>
+                    </div>
+
+                    <select
+                        value={clientId}
+                        onChange={(e) => setClientId(e.target.value)}
+                        className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary outline-none text-sm"
+                    >
+                        <option value="all">Todos os Clientes</option>
+                        {clients.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+
+                    <div className="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-lg px-2 text-sm">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="bg-transparent text-white py-2 px-1 outline-none w-[110px]"
+                            placeholder="Data Inicial"
+                        />
+                        <span className="text-gray-500">-</span>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="bg-transparent text-white py-2 px-1 outline-none w-[110px]"
+                            placeholder="Data Final"
+                        />
+                    </div>
+
+                    <select
+                        value={stageFilter}
+                        onChange={(e) => setStageFilter(e.target.value)}
+                        className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary outline-none text-sm"
+                    >
+                        <option value="all">Todas as etapas</option>
+                        <option value="awareness">Conscientização</option>
+                        <option value="consideration">Consideração</option>
+                        <option value="decision">Decisão</option>
+                        <option value="retention">Retenção</option>
+                    </select>
+
+                    {/* Clear Filters Button */}
+                    {(clientId !== 'all' || startDate || endDate || stageFilter !== 'all') && (
+                        <button
+                            onClick={() => { setClientId('all'); setStartDate(''); setEndDate(''); setStageFilter('all'); }}
+                            className="text-xs text-red-400 hover:text-red-300 underline"
+                        >
+                            Limpar
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Section Tabs */}
@@ -530,7 +614,10 @@ const CustomerJourneyDashboard: React.FC = () => {
 
             {/* List Section */}
             {activeSection === 'list' && (
-                <CustomerJourneyList onSelectCustomer={(id) => setSelectedCustomerId(id)} />
+                <CustomerJourneyList
+                    onSelectCustomer={(id) => setSelectedCustomerId(id)}
+                    externalFilters={{ clientId, startDate, endDate, stage: stageFilter }}
+                />
             )}
 
             {/* Refresh Button */}

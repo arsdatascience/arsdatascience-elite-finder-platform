@@ -107,7 +107,7 @@ const generateDashboardInsights = async (req, res) => {
     if (!apiKey) {
       console.warn("⚠️ Dashboard Insight: No API Key found.");
       // Return a mock insight instead of error to prevent frontend spinner hang
-      return res.json({ insight: "Aumente o investimento em campanhas de alta performance e revise os criativos com CTR abaixo de 1%." });
+      return res.json({ insight: "⚠️ API Key não configurada. Configure a OPENAI_API_KEY no arquivo .env para receber insights reais." });
     }
 
     // 1. Analyze KPIs to form a search query
@@ -477,7 +477,9 @@ const askEliteAssistant = async (req, res) => {
   const userId = req.user ? req.user.id : null;
   const apiKey = await getEffectiveApiKey(provider, userId);
 
-  if (!apiKey) return res.status(500).json({ error: `${provider.toUpperCase()} API Key not configured` });
+  if (!apiKey) {
+    return res.json({ answer: "⚠️ **Configuração Necessária:** A chave da API (OpenAI/Gemini/Anthropic) não foi encontrada no sistema backend. Por favor, verifique o arquivo `.env`." });
+  }
 
   // Validate history parameter
   if (!history || !Array.isArray(history)) {

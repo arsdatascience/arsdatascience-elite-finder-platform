@@ -1,47 +1,51 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Eye, User, Calendar, MapPin, Mail, Phone, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Search, Eye, User, Calendar, Mail, Phone, ArrowLeft, ArrowRight } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
 
 interface Props {
     onSelectCustomer: (id: string) => void;
+    externalFilters?: {
+        clientId: string;
+        startDate: string;
+        endDate: string;
+        stage?: string;
+    };
 }
 
-export const CustomerJourneyList: React.FC<Props> = ({ onSelectCustomer }) => {
+export const CustomerJourneyList: React.FC<Props> = ({ onSelectCustomer, externalFilters }) => {
     const [customers, setCustomers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [stage, setStage] = useState('all');
-    const [clientId, setClientId] = useState('all');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [clients, setClients] = useState<any[]>([]);
+
+
+    // We prioritize external filters if they exist
+    const activeClientId = externalFilters?.clientId || 'all';
+    const activeStartDate = externalFilters?.startDate || '';
+    const activeEndDate = externalFilters?.endDate || '';
+    const activeStage = externalFilters?.stage && externalFilters.stage !== 'all' ? externalFilters.stage : 'all';
+
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
 
     useEffect(() => {
-        fetchClients();
-    }, []);
-
-    useEffect(() => {
         fetchCustomers();
-    }, [page, search, stage, clientId, startDate, endDate]);
+    }, [page, search, activeClientId, activeStartDate, activeEndDate, activeStage]);
 
-    const fetchClients = async () => {
-        try {
-            const response = await apiClient.clients.getClients();
-            // Assuming response is { success: true, clients: [...] } or just array
-            const clientList = Array.isArray(response) ? response : (response.clients || []);
-            setClients(clientList);
-        } catch (error) {
-            console.error('Failed to fetch clients', error);
-        }
-    };
+    // ...
 
     const fetchCustomers = async () => {
         setLoading(true);
         try {
             const response = await apiClient.get('/customers/unified', {
-                params: { page, limit: 10, search, stage, clientId, startDate, endDate }
+                params: {
+                    page,
+                    limit: 10,
+                    search,
+                    stage: activeStage,
+                    clientId: activeClientId,
+                    startDate: activeStartDate,
+                    endDate: activeEndDate
+                }
             });
             if (response.data.success) {
                 setCustomers(response.data.customers);
@@ -76,7 +80,7 @@ export const CustomerJourneyList: React.FC<Props> = ({ onSelectCustomer }) => {
 
     return (
         <div className="space-y-6 animate-in fade-in duration-300">
-            {/* Filters */}
+            {/* Filters (Reduced - Only Search remains, others handled by parent) */}
             <div className="flex flex-col md:flex-row gap-4 justify-between bg-gray-800/50 p-4 rounded-xl border border-gray-700">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -87,49 +91,6 @@ export const CustomerJourneyList: React.FC<Props> = ({ onSelectCustomer }) => {
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-white placeholder:text-gray-500 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                     />
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    <select
-                        value={clientId}
-                        onChange={(e) => setClientId(e.target.value)}
-                        className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary outline-none max-w-[200px]"
-                    >
-                        <option value="all">Todas as Contas</option>
-                        {clients.map(c => (
-                            <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                    </select>
-
-                    <div className="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-lg px-2">
-                        <Calendar className="w-4 h-4 text-gray-400" />
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="bg-transparent text-white text-sm py-2 px-1 outline-none w-[110px]"
-                            placeholder="Início"
-                        />
-                        <span className="text-gray-500">-</span>
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="bg-transparent text-white text-sm py-2 px-1 outline-none w-[110px]"
-                            placeholder="Fim"
-                        />
-                    </div>
-
-                    <select
-                        value={stage}
-                        onChange={(e) => setStage(e.target.value)}
-                        className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary outline-none"
-                    >
-                        <option value="all">Todas as etapas</option>
-                        <option value="awareness">Conscientização</option>
-                        <option value="consideration">Consideração</option>
-                        <option value="decision">Decisão</option>
-                        <option value="retention">Retenção</option>
-                    </select>
                 </div>
             </div>
 

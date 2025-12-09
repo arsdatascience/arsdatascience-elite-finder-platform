@@ -54,28 +54,44 @@ const kpiController = {
                 ? Math.round((csat.satisfied / csat.total_responses) * 100)
                 : null;
 
-            // 3. Client Retention (compare to previous month)
-            const retentionResult = await pool.query(`
+            // 3. Client Retention (Cohort strict logic: Clients present last month AND this month / Clients last month)
+            const retentionQuery = `
+                WITH prev_month_clients AS (
+                    SELECT DISTINCT client_id
+                    FROM client_health_metrics
+                    WHERE (tenant_id = $1 OR $1 IS NULL)
+                      AND period_year = $2 AND period_month = $3
+                ),
+                current_month_clients AS (
+                    SELECT DISTINCT client_id
+                    FROM client_health_metrics
+                    WHERE (tenant_id = $1 OR $1 IS NULL)
+                      AND period_year = $4 AND period_month = $5
+                )
                 SELECT 
-                    COUNT(DISTINCT client_id) as current_clients
-                FROM client_health_metrics
-                WHERE (tenant_id = $1 OR $1 IS NULL)
-                  AND period_year = $2 AND period_month = $3
-            `, [tenantId, now.getFullYear(), now.getMonth() + 1]);
+                    (SELECT COUNT(*) FROM prev_month_clients) as prev_count,
+                    (SELECT COUNT(*) 
+                     FROM prev_month_clients p
+                     JOIN current_month_clients c ON p.client_id = c.client_id
+                    ) as retained_count,
+                    (SELECT COUNT(*) FROM current_month_clients) as current_total
+            `;
 
-            const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const prevRetention = await pool.query(`
-                SELECT COUNT(DISTINCT client_id) as prev_clients
-                FROM client_health_metrics
-                WHERE (tenant_id = $1 OR $1 IS NULL)
-                  AND period_year = $2 AND period_month = $3
-            `, [tenantId, prevMonth.getFullYear(), prevMonth.getMonth() + 1]);
+            const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const rResult = await pool.query(retentionQuery, [
+                tenantId,
+                prevDate.getFullYear(), prevDate.getMonth() + 1,
+                now.getFullYear(), now.getMonth() + 1
+            ]);
 
-            const currentClients = parseInt(retentionResult.rows[0]?.current_clients) || 0;
-            const prevClients = parseInt(prevRetention.rows[0]?.prev_clients) || currentClients;
-            const retentionRate = prevClients > 0
-                ? Math.round((currentClients / prevClients) * 100)
-                : 100;
+            const stats = rResult.rows[0];
+            const prevCount = parseInt(stats.prev_count) || 0;
+            const retainedCount = parseInt(stats.retained_count) || 0;
+            const currentTotal = parseInt(stats.current_total) || 0;
+
+            const retentionRate = prevCount > 0
+                ? Math.round((retainedCount / prevCount) * 100)
+                : 100; // If no previous clients, assume 100% start (or 0% depending on business logic, but 100 is safer for new tenant)
 
             // 4. Financial KPIs (from Maglev/OPS DB)
             const financialResult = await opsPool.query(`
@@ -143,7 +159,7 @@ const kpiController = {
                     },
                     retention: {
                         rate: retentionRate,
-                        currentClients,
+                        currentClients: currentTotal,
                         benchmark: 75 // Target 75%+
                     },
 

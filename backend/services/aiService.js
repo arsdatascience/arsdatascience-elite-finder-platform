@@ -7,9 +7,15 @@ const OpenAI = require('openai');
 
 class AIService {
     constructor() {
-        this.openai = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY
-        });
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (apiKey) {
+            this.openai = new OpenAI({
+                apiKey: apiKey
+            });
+        } else {
+            console.warn('⚠️ OpenAI API Key missing - AI features will be disabled');
+            this.openai = null;
+        }
     }
 
     /**
@@ -17,6 +23,11 @@ class AIService {
      */
     async generateEmbedding(text) {
         try {
+            if (!this.openai) {
+                console.warn('Skipping embedding: OpenAI not initialized');
+                return [];
+            }
+
             if (!text || text.trim().length === 0) {
                 console.warn('Empty text provided for embedding');
                 return [];
@@ -39,6 +50,10 @@ class AIService {
      */
     async chat(options) {
         try {
+            if (!this.openai) {
+                throw new Error('OpenAI API not configured');
+            }
+
             const {
                 messages,
                 model = 'gpt-4-turbo-preview',
@@ -70,6 +85,10 @@ class AIService {
      * Simple text completion
      */
     async complete(prompt, options = {}) {
+        if (!this.openai) {
+            return 'AI Service Unavailable (Missing Config)';
+        }
+
         const {
             model = 'gpt-4-turbo-preview',
             temperature = 0.7,
