@@ -658,7 +658,7 @@ async function initializeDatabase() {
         // Drop old tables with FK constraints to recreate without FKs
         console.log('🗑️ Removendo tabelas ML antigas para recriar sem FKs...');
         await pool.opsPool.query(`
-          -- Only drop RESULT tables (not data tables like datasets/experiments)
+          -- Drop ALL ml tables to ensure FKs are removed
           DROP TABLE IF EXISTS ml_regression_results CASCADE;
           DROP TABLE IF EXISTS ml_classification_results CASCADE;
           DROP TABLE IF EXISTS ml_clustering_results CASCADE;
@@ -669,7 +669,8 @@ async function initializeDatabase() {
           DROP TABLE IF EXISTS ml_customer_analytics CASCADE;
           DROP TABLE IF EXISTS ml_financial_analytics CASCADE;
           DROP TABLE IF EXISTS ml_algorithm_configs CASCADE;
-          -- NOTE: ml_datasets and ml_experiments are NOT dropped to preserve imported data
+          DROP TABLE IF EXISTS ml_experiments CASCADE;
+          DROP TABLE IF EXISTS ml_datasets CASCADE;
         `);
         console.log('✅ Tabelas ML antigas removidas.');
 

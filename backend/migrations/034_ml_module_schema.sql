@@ -37,7 +37,7 @@ CREATE TABLE ml_experiments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID,
     name VARCHAR(255) NOT NULL,
-    dataset_id UUID REFERENCES ml_datasets(id),
+    dataset_id UUID, -- FK removed for synthetic data import
     algorithm VARCHAR(100) NOT NULL,
     task_type VARCHAR(50) NOT NULL,
     status VARCHAR(50) DEFAULT 'completed',
