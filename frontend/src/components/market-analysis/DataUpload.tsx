@@ -14,6 +14,7 @@ interface Dataset {
     columns: { name: string; type: string }[];
     preview: Record<string, any>[];
     status: string;
+    statistics?: Record<string, any>; // [NEW] Added statistics field
     created_at: string;
 }
 
@@ -301,41 +302,46 @@ export const DataUpload: React.FC = () => {
                                     ) : (
                                         <div className="p-6">
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                {selectedDataset.columns?.map((col, i) => (
-                                                    <div key={i} className="p-4 rounded-lg border border-slate-200 bg-slate-50">
-                                                        <div className="flex items-center justify-between mb-2">
-                                                            <span className="font-medium text-slate-800">{col.name}</span>
-                                                            <span className={`px-2 py-0.5 rounded text-xs font-medium
+                                                {selectedDataset.columns?.map((col, i) => {
+                                                    const stats = selectedDataset.statistics?.[col.name] || {};
+                                                    return (
+                                                        <div key={i} className="p-4 rounded-lg border border-slate-200 bg-slate-50">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className="font-medium text-slate-800">{col.name}</span>
+                                                                <span className={`px-2 py-0.5 rounded text-xs font-medium
                                                                 ${col.type === 'number'
-                                                                    ? 'bg-blue-100 text-blue-700'
-                                                                    : 'bg-purple-100 text-purple-700'}`}>
-                                                                {col.type}
-                                                            </span>
-                                                        </div>
-                                                        <div className="space-y-1 text-sm text-slate-600">
-                                                            <div className="flex justify-between">
-                                                                <span>Valores únicos</span>
-                                                                <span className="font-medium">--</span>
+                                                                        ? 'bg-blue-100 text-blue-700'
+                                                                        : 'bg-purple-100 text-purple-700'}`}>
+                                                                    {col.type}
+                                                                </span>
                                                             </div>
-                                                            <div className="flex justify-between">
-                                                                <span>Nulos</span>
-                                                                <span className="font-medium">--</span>
+                                                            <div className="space-y-1 text-sm text-slate-600">
+                                                                <div className="flex justify-between">
+                                                                    <span>Valores únicos</span>
+                                                                    <span className="font-medium">{stats.unique !== undefined ? stats.unique : '--'}</span>
+                                                                </div>
+                                                                <div className="flex justify-between">
+                                                                    <span>Nulos</span>
+                                                                    <span className="font-medium">{stats.null_count !== undefined ? stats.null_count : '--'}</span>
+                                                                </div>
+                                                                {(col.type === 'number' || col.type === 'integer' || col.type === 'float') && (
+                                                                    <>
+                                                                        <div className="flex justify-between">
+                                                                            <span>Min / Max</span>
+                                                                            <span className="font-medium">
+                                                                                {stats.min !== undefined ? Number(stats.min).toFixed(2) : '--'} / {stats.max !== undefined ? Number(stats.max).toFixed(2) : '--'}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex justify-between">
+                                                                            <span>Média</span>
+                                                                            <span className="font-medium">{stats.mean !== undefined ? Number(stats.mean).toFixed(2) : '--'}</span>
+                                                                        </div>
+                                                                    </>
+                                                                )}
                                                             </div>
-                                                            {col.type === 'number' && (
-                                                                <>
-                                                                    <div className="flex justify-between">
-                                                                        <span>Min / Max</span>
-                                                                        <span className="font-medium">-- / --</span>
-                                                                    </div>
-                                                                    <div className="flex justify-between">
-                                                                        <span>Média</span>
-                                                                        <span className="font-medium">--</span>
-                                                                    </div>
-                                                                </>
-                                                            )}
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    )
+                                                })}
                                             </div>
                                         </div>
                                     )}
