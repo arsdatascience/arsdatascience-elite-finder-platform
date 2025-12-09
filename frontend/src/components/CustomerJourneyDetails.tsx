@@ -35,7 +35,7 @@ export const CustomerJourneyDetails: React.FC<Props> = ({ customerId, onBack }) 
     if (loading) return <div className="p-10 text-center text-gray-400">Carregando perfil unificado...</div>;
     if (!data) return <div className="p-10 text-center text-red-400">Cliente não encontrado.</div>;
 
-    const { customer, identityGraph, timeline, journeys } = data;
+    const { customer, identityGraph, timeline } = data;
 
     const getIconForType = (type: string) => {
         switch (type) {
