@@ -664,6 +664,19 @@ export const BulkDataImport: React.FC = () => {
                                                         {f.transformations > 0 && ` | ${f.transformations} transformações`}
                                                         {f.failed > 0 && <span className="text-red-600 ml-2">| {f.failed} falhas</span>}
                                                     </div>
+                                                    {/* Show first 5 errors if any */}
+                                                    {f.errors && f.errors.length > 0 && (
+                                                        <div className="mt-2 p-2 bg-red-50 rounded text-xs text-red-700 max-h-24 overflow-y-auto">
+                                                            {f.errors.slice(0, 5).map((err: any, idx: number) => (
+                                                                <div key={idx} className="mb-1">
+                                                                    <span className="font-medium">Linha {err.row}:</span> {err.error}
+                                                                </div>
+                                                            ))}
+                                                            {f.errors.length > 5 && (
+                                                                <div className="text-red-500 italic">...e mais {f.errors.length - 5} erros</div>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
