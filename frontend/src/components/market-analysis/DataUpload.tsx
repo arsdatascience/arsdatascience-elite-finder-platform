@@ -284,7 +284,7 @@ export const DataUpload: React.FC = () => {
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-slate-100">
-                                                    {selectedDataset.preview?.slice(0, 20).map((row, i) => (
+                                                    {(Array.isArray(selectedDataset.preview) ? selectedDataset.preview : []).slice(0, 20).map((row, i) => (
                                                         <tr key={i} className="hover:bg-slate-50">
                                                             {selectedDataset.columns?.map((col, j) => (
                                                                 <td key={j} className="px-4 py-2.5 text-slate-600 whitespace-nowrap">
