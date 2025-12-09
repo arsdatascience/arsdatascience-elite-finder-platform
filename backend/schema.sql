@@ -265,3 +265,23 @@ CREATE TABLE IF NOT EXISTS financial_transactions (
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- ============================================
+-- GENERATED IMAGES (AI Creative Studio)
+-- ============================================
+CREATE TABLE IF NOT EXISTS generated_images (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    url TEXT NOT NULL,
+    thumbnail_url TEXT,
+    prompt TEXT,
+    model VARCHAR(100),
+    width INTEGER,
+    height INTEGER,
+    cost NUMERIC(10, 4) DEFAULT 0,
+    provider VARCHAR(50) DEFAULT 'replicate',
+    generation_time INTEGER,
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
