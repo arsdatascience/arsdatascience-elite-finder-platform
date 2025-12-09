@@ -2,42 +2,111 @@
 import { Campaign, Lead, LeadStatus, Metric, ChatMessage } from './types';
 import { Home, LayoutDashboard, Megaphone, Plane, MessageSquare, Settings, Share2, GitBranch, BookOpen, Sparkles, Users, FileText, Bot, Calendar, Mic, Wallet, HelpCircle, Briefcase, Folder, CheckCircle2, ShoppingBag, List, BrainCircuit, Heart, AudioWaveform, Cpu } from 'lucide-react';
 
-export const NAV_ITEMS = [
-  // Home
-  { id: 'HOME', label: 'Início', icon: Home },
-  // Existing items
-  { id: 'DASHBOARD', label: 'Dashboard Executivo', icon: LayoutDashboard },
-  { id: 'CUSTOMER_JOURNEY', label: 'Jornada do Cliente', icon: Heart },
-  { id: 'MARKET_ANALYSIS', label: 'Análise de Mercado IA', icon: BrainCircuit },
-  { id: 'CAMPAIGNS', label: 'Campanhas de Ads', icon: Megaphone },
+// Navigation item structure
+export interface NavItem {
+  id: string;
+  label: string;
+  icon: any;
+}
 
-  { id: 'FLIGHT_CONTROL', label: 'Controle de Voo', icon: Plane },
-  { id: 'CLIENTS', label: 'Clientes e Cadastro', icon: Users },
-  { id: 'CHAT_AI', label: 'Análise de Chat IA', icon: MessageSquare },
-  { id: 'SOCIAL', label: 'Redes Sociais', icon: Share2 },
-  { id: 'AUTOMATION', label: 'Automação N8N', icon: GitBranch },
-  { id: 'REPORTS', label: 'Relatórios', icon: FileText },
-  { id: 'TRAINING', label: 'Academia de Treino', icon: BookOpen },
-  { id: 'CREATIVE_STUDIO', label: 'Estúdio Criativo IA', icon: Sparkles },
-  { id: 'SALES_COACHING', label: 'Coaching de Vendas', icon: Mic },
-  { id: 'PROJECTS', label: 'Gestão de Projetos', icon: Briefcase },
-  { id: 'FINANCIAL_MODULE', label: 'Gestão Financeira', icon: Wallet },
-  { id: 'ASSETS', label: 'Biblioteca Digital', icon: Folder },
-  { id: 'APPROVALS', label: 'Central de Aprovações', icon: CheckCircle2 },
+export interface NavGroup {
+  id: string;
+  name: string;
+  icon: any;
+  items: NavItem[];
+  defaultOpen?: boolean;
+}
 
-  // Previously removed items - RESTORED
-  { id: 'ELITE_ASSISTANT', label: 'Elite Assistente IA', icon: Bot },
-  { id: 'AGENT_BUILDER', label: 'Construtor de Agentes', icon: Cpu },
-  // IMAGE_GENERATION removed - already available inside CREATIVE_STUDIO
-  { id: 'AUDIO_ANALYSIS', label: 'Análise de Áudio', icon: AudioWaveform },
-
-  { id: 'HELP_CENTER', label: 'Manual de Uso', icon: HelpCircle },
-  { id: 'SERVICE_CATALOG', label: 'Catálogo de Serviços', icon: ShoppingBag },
-  { id: 'PROCESSES', label: 'Processos e Modelos', icon: List },
-  { id: 'SOCIAL_CALENDAR', label: 'Calendário Social', icon: Calendar },
-  { id: 'SOCIAL_INTEGRATIONS', label: 'Integrações Sociais', icon: Share2 },
-  { id: 'SETTINGS', label: 'Configurações', icon: Settings },
+// Grouped Navigation Items
+export const NAV_GROUPS: NavGroup[] = [
+  {
+    id: 'home',
+    name: 'Início',
+    icon: Home,
+    defaultOpen: true,
+    items: [
+      { id: 'HOME', label: 'Início', icon: Home },
+    ]
+  },
+  {
+    id: 'analytics',
+    name: 'Análise & Inteligência',
+    icon: BrainCircuit,
+    defaultOpen: true,
+    items: [
+      { id: 'DASHBOARD', label: 'Dashboard Executivo', icon: LayoutDashboard },
+      { id: 'MARKET_ANALYSIS', label: 'Análise de Mercado IA', icon: BrainCircuit },
+      { id: 'CUSTOMER_JOURNEY', label: 'Jornada do Cliente', icon: Heart },
+      { id: 'REPORTS', label: 'Relatórios', icon: FileText },
+    ]
+  },
+  {
+    id: 'marketing',
+    name: 'Marketing & Vendas',
+    icon: Megaphone,
+    defaultOpen: false,
+    items: [
+      { id: 'FLIGHT_CONTROL', label: 'Flight Control (CRM)', icon: Plane },
+      { id: 'CAMPAIGNS', label: 'Campanhas de Ads', icon: Megaphone },
+      { id: 'SOCIAL_CALENDAR', label: 'Calendário Social', icon: Calendar },
+      { id: 'SOCIAL_INTEGRATIONS', label: 'Integrações Sociais', icon: Share2 },
+      { id: 'SOCIAL', label: 'Redes Sociais', icon: Share2 },
+      { id: 'AUTOMATION', label: 'Automação N8N', icon: GitBranch },
+    ]
+  },
+  {
+    id: 'ai',
+    name: 'Inteligência Artificial',
+    icon: Bot,
+    defaultOpen: false,
+    items: [
+      { id: 'ELITE_ASSISTANT', label: 'Elite Assistente IA', icon: Bot },
+      { id: 'SALES_COACHING', label: 'Coaching de Vendas', icon: Mic },
+      { id: 'CREATIVE_STUDIO', label: 'Estúdio Criativo IA', icon: Sparkles },
+      { id: 'CHAT_AI', label: 'Análise de Chat IA', icon: MessageSquare },
+      { id: 'AGENT_BUILDER', label: 'Construtor de Agentes', icon: Cpu },
+      { id: 'AUDIO_ANALYSIS', label: 'Análise de Áudio', icon: AudioWaveform },
+    ]
+  },
+  {
+    id: 'operations',
+    name: 'Operações',
+    icon: Briefcase,
+    defaultOpen: false,
+    items: [
+      { id: 'PROJECTS', label: 'Gestão de Projetos', icon: Briefcase },
+      { id: 'PROCESSES', label: 'Processos e Modelos', icon: List },
+      { id: 'ASSETS', label: 'Biblioteca Digital', icon: Folder },
+      { id: 'APPROVALS', label: 'Central de Aprovações', icon: CheckCircle2 },
+    ]
+  },
+  {
+    id: 'financial',
+    name: 'Financeiro & Serviços',
+    icon: Wallet,
+    defaultOpen: false,
+    items: [
+      { id: 'FINANCIAL_MODULE', label: 'Gestão Financeira', icon: Wallet },
+      { id: 'SERVICE_CATALOG', label: 'Catálogo de Serviços', icon: ShoppingBag },
+      { id: 'CLIENTS', label: 'Clientes e Cadastros', icon: Users },
+    ]
+  },
+  {
+    id: 'support',
+    name: 'Suporte',
+    icon: HelpCircle,
+    defaultOpen: false,
+    items: [
+      { id: 'TRAINING', label: 'Academia de Treino', icon: BookOpen },
+      { id: 'HELP_CENTER', label: 'Manual de Uso', icon: HelpCircle },
+      { id: 'SETTINGS', label: 'Configurações', icon: Settings },
+    ]
+  },
 ];
+
+// Flat NAV_ITEMS for backward compatibility
+export const NAV_ITEMS = NAV_GROUPS.flatMap(group => group.items);
+
 
 export const CLIENTS_LIST = [
   { id: 'all', name: 'Todos os Clientes (Visão Global)' },
