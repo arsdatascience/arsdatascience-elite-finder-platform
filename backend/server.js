@@ -643,6 +643,15 @@ async function initializeDatabase() {
       // Migração 042: Omnichannel CDP Foundation
       console.log('🔄 Verificando migrações de Omnichannel CDP (042)...');
       try {
+        // Drop old tables to ensure FKs and schema updates
+        await pool.query(`
+          DROP TABLE IF EXISTS conversion_events CASCADE;
+          DROP TABLE IF EXISTS customer_journeys CASCADE;
+          DROP TABLE IF EXISTS customer_interactions CASCADE;
+          DROP TABLE IF EXISTS identity_graph CASCADE;
+          DROP TABLE IF EXISTS journey_step_templates CASCADE;
+          DROP TABLE IF EXISTS unified_customers CASCADE;
+        `);
         const omnichannelMigration = fs.readFileSync(path.join(__dirname, 'migrations', '042_omnichannel_foundation.sql'), 'utf8');
         await pool.query(omnichannelMigration);
         console.log('✅ Migração 042 (Omnichannel Foundation) aplicada.');

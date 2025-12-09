@@ -224,7 +224,7 @@ CREATE INDEX IF NOT EXISTS idx_conversions_date ON conversion_events(converted_a
 -- ============================================
 CREATE TABLE IF NOT EXISTS journey_step_templates (
   id SERIAL PRIMARY KEY,
-  tenant_id INTEGER,
+  tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
   
   journey_type VARCHAR(100) NOT NULL,
   step_order INTEGER NOT NULL,
