@@ -104,6 +104,14 @@ app.post('/api/admin/plans', authenticateToken, checkAdmin, planController.creat
 app.put('/api/admin/plans/:id', authenticateToken, checkAdmin, planController.updatePlan);
 app.delete('/api/admin/plans/:id', authenticateToken, checkAdmin, planController.deletePlan);
 
+// Rotas de Admin - Gestão de Tenants (Empresas)
+const tenantController = require('./tenantController');
+app.get('/api/admin/tenants', authenticateToken, checkAdmin, tenantController.getAllTenants);
+app.post('/api/admin/tenants', authenticateToken, checkAdmin, tenantController.createTenant);
+app.put('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantController.updateTenant);
+app.delete('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantController.deleteTenant);
+app.put('/api/tenant/me', authenticateToken, tenantController.updateMyTenant);
+
 // Rota de Análise de Áudio (Whisper + GPT-4o)
 const audioController = require('./audioController');
 app.post('/api/audio/analyze', authenticateToken, audioController.uploadMiddleware, audioController.analyzeAudio);
