@@ -115,6 +115,12 @@ app.delete('/api/audio/analysis/:id', authenticateToken, audioController.deleteA
 const mlAgentRoutes = require('./routes/mlAgent.routes');
 app.use('/api/ml-agent', mlAgentRoutes);
 
+// Cross-Database Unified Routes (Crossover + Maglev integration)
+const crossDatabaseController = require('./crossDatabaseController');
+app.get('/api/unified/customer/:customerId', authenticateToken, crossDatabaseController.getUnifiedCustomerView);
+app.get('/api/unified/customer/:customerId/ml-insights', authenticateToken, crossDatabaseController.getCustomerMlInsights);
+app.get('/api/unified/dashboard', authenticateToken, crossDatabaseController.getUnifiedDashboard);
+
 // Email Routes (SMTP configuration and sending - supports multiple)
 const emailController = require('./emailController');
 app.post('/api/email/test', authenticateToken, emailController.testEmail);
@@ -652,6 +658,7 @@ async function initializeDatabase() {
         // Drop old tables with FK constraints to recreate without FKs
         console.log('🗑️ Removendo tabelas ML antigas para recriar sem FKs...');
         await pool.opsPool.query(`
+          -- Only drop RESULT tables (not data tables like datasets/experiments)
           DROP TABLE IF EXISTS ml_regression_results CASCADE;
           DROP TABLE IF EXISTS ml_classification_results CASCADE;
           DROP TABLE IF EXISTS ml_clustering_results CASCADE;
@@ -662,8 +669,7 @@ async function initializeDatabase() {
           DROP TABLE IF EXISTS ml_customer_analytics CASCADE;
           DROP TABLE IF EXISTS ml_financial_analytics CASCADE;
           DROP TABLE IF EXISTS ml_algorithm_configs CASCADE;
-          DROP TABLE IF EXISTS ml_experiments CASCADE;
-          DROP TABLE IF EXISTS ml_datasets CASCADE;
+          -- NOTE: ml_datasets and ml_experiments are NOT dropped to preserve imported data
         `);
         console.log('✅ Tabelas ML antigas removidas.');
 
