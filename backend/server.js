@@ -646,17 +646,18 @@ async function initializeDatabase() {
         console.log('⚠️ KPI tables já existem ou erro:', kpiErr.message);
       }
 
-      // Migração 044: ML Algorithm Configs and History
+      // Migração 044: ML Algorithm Configs and History (lives in OPS/Maglev DB)
       console.log('🔄 Verificando migrações de ML Algorithm Configs (044)...');
       try {
         // Drop old table structure (from 034) to recreate with new structure (044)
-        await pool.query('DROP TABLE IF EXISTS ml_algorithm_config_history CASCADE;');
-        await pool.query('DROP TABLE IF EXISTS ml_algorithm_configs CASCADE;');
-        console.log('🗑️ Tabelas ML antigas removidas para atualização de schema.');
+        // Use opsPool because ml_algorithm_configs is in Maglev (OPS) database
+        await opsPool.query('DROP TABLE IF EXISTS ml_algorithm_config_history CASCADE;');
+        await opsPool.query('DROP TABLE IF EXISTS ml_algorithm_configs CASCADE;');
+        console.log('🗑️ Tabelas ML antigas removidas para atualização de schema (OPS).');
 
         const mlConfigMigration = fs.readFileSync(path.join(__dirname, 'migrations', '044_ml_algorithm_configs.sql'), 'utf8');
-        await pool.query(mlConfigMigration);
-        console.log('✅ Migração 044 (ML Configs) aplicada.');
+        await opsPool.query(mlConfigMigration);
+        console.log('✅ Migração 044 (ML Configs) aplicada no OPS.');
       } catch (mlConfigErr) {
         console.log('⚠️ ML Configs já existem ou erro:', mlConfigErr.message);
       }
