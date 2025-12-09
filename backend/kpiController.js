@@ -401,9 +401,9 @@ const kpiController = {
 
             // 2. Get Identity Graph (Linked identifiers)
             const identityResult = await pool.query(`
-                SELECT identifier_type, identifier_value, created_at, confidence_score, source
+                SELECT identifier_type, identifier_value, created_at, confidence_score, source_channel as source
                 FROM identity_graph
-                WHERE unified_customer_id = $1
+                WHERE customer_id = $1
                 ORDER BY created_at DESC
             `, [id]);
 
@@ -411,7 +411,7 @@ const kpiController = {
             const interactionResult = await pool.query(`
                 SELECT * 
                 FROM customer_interactions
-                WHERE unified_customer_id = $1
+                WHERE customer_id = $1
                 ORDER BY created_at DESC
                 LIMIT 50
             `, [id]);
@@ -420,8 +420,8 @@ const kpiController = {
             const journeyResult = await pool.query(`
                 SELECT * 
                 FROM customer_journeys
-                WHERE unified_customer_id = $1
-                ORDER BY start_date DESC
+                WHERE customer_id = $1
+                ORDER BY created_at DESC
             `, [id]);
 
             res.json({
