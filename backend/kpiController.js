@@ -379,14 +379,21 @@ const kpiController = {
         const { isSuperAdmin, tenantId } = getTenantScope(req);
         const { id } = req.params;
 
+        console.log(`🔍 fetching details for customer ${id} with tenant ${tenantId} (superAdmin: ${isSuperAdmin})`);
+
         try {
             // 1. Get Core Customer Data
-            const customerResult = await pool.query(`
-                SELECT * FROM unified_customers 
-                WHERE id = $1 AND (tenant_id = $2 OR $2 IS NULL)
-            `, [id, tenantId]);
+            // Allow superadmins to see any customer, otherwise enforce tenant
+            const query = isSuperAdmin
+                ? 'SELECT * FROM unified_customers WHERE id = $1'
+                : 'SELECT * FROM unified_customers WHERE id = $1 AND (tenant_id = $2 OR $2 IS NULL)';
+
+            const params = isSuperAdmin ? [id] : [id, tenantId];
+
+            const customerResult = await pool.query(query, params);
 
             if (customerResult.rows.length === 0) {
+                console.warn(`❌ Customer ${id} not found for this tenant scope.`);
                 return res.status(404).json({ success: false, error: 'Customer not found' });
             }
 
