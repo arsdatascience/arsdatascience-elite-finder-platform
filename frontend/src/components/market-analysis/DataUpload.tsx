@@ -44,9 +44,11 @@ export const DataUpload: React.FC = () => {
     const loadDatasets = async () => {
         try {
             const data = await apiClient.marketAnalysis.getDatasets();
-            setDatasets(data || []);
+            // Ensure data is array to prevent map errors
+            setDatasets(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error('Failed to load datasets', err);
+            setDatasets([]);
         }
     };
 
