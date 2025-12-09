@@ -678,12 +678,25 @@ async function initializeDatabase() {
       // Migração 035: ML Industry Segments (ml_segment_analytics, ml_viz_*) - lives in OPS/Maglev
       console.log('🔄 Verificando migrações de ML Industry Segments (035) no Maglev...');
       try {
+        // Drop old viz tables with FK constraints
+        console.log('🗑️ Removendo tabelas ml_viz antigas...');
+        await pool.opsPool.query(`
+          DROP TABLE IF EXISTS ml_viz_regression CASCADE;
+          DROP TABLE IF EXISTS ml_viz_classification CASCADE;
+          DROP TABLE IF EXISTS ml_viz_clustering CASCADE;
+          DROP TABLE IF EXISTS ml_viz_timeseries CASCADE;
+          DROP TABLE IF EXISTS ml_segment_analytics CASCADE;
+          DROP TABLE IF EXISTS ml_industry_segments CASCADE;
+        `);
+        console.log('✅ Tabelas ml_viz antigas removidas.');
+
         const mlSegmentMigration = fs.readFileSync(path.join(__dirname, 'migrations', '035_ml_industry_segments.sql'), 'utf8');
         await pool.opsPool.query(mlSegmentMigration);
         console.log('✅ Migração 035 (ML Segments) aplicada no Maglev.');
       } catch (mlSegmentErr) {
         console.log('⚠️ ML Segments já existe ou erro:', mlSegmentErr.message);
       }
+
 
       // Migração 044: ML Algorithm Configs and History (lives in OPS/Maglev DB)
       console.log('🔄 Verificando migrações de ML Algorithm Configs (044) no Maglev...');
