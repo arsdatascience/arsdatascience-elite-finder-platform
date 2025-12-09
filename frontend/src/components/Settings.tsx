@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Brain, Eye, EyeOff, Cpu, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock, Mail, Send, AlertCircle, CheckCircle } from 'lucide-react';
+import { Save, Shield, CreditCard, LogOut, User, BrainCircuit, Brain, Eye, EyeOff, Cpu, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock, Mail, Send, AlertCircle, CheckCircle } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import { useAuth } from '@/contexts/AuthContext';
 import { UsageStats } from './UsageStats';
