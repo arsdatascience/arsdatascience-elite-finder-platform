@@ -929,6 +929,7 @@ app.post('/api/kpis/happiness', authenticateToken, kpiController.submitHappiness
 app.get('/api/kpis/happiness/history', authenticateToken, kpiController.getHappinessHistory);
 
 // Unified Customer API
+app.get('/api/customers/unified', authenticateToken, kpiController.getUnifiedCustomers);
 app.get('/api/customers/unified/:id', authenticateToken, async (req, res) => {
   try {
     const db = require('./database');

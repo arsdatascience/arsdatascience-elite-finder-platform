@@ -28,6 +28,20 @@ axiosInstance.interceptors.request.use(
 );
 
 export const apiClient = {
+    // Generic methods
+    get: async (url: string, config?: any) => {
+        return axiosInstance.get(url, config);
+    },
+    post: async (url: string, data?: any, config?: any) => {
+        return axiosInstance.post(url, data, config);
+    },
+    put: async (url: string, data?: any, config?: any) => {
+        return axiosInstance.put(url, data, config);
+    },
+    delete: async (url: string, config?: any) => {
+        return axiosInstance.delete(url, config);
+    },
+
     users: {
         getTeamMembers: async () => {
             const response = await axiosInstance.get('/team');

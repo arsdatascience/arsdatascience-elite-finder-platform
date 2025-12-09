@@ -323,6 +323,58 @@ const kpiController = {
     // ==========================================
     // CLIENT JOURNEY ANALYTICS
     // ==========================================
+    getUnifiedCustomers: async (req, res) => {
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
+        const { page = 1, limit = 20, search, stage } = req.query;
+        const offset = (page - 1) * limit;
+
+        try {
+            let query = `
+                SELECT * FROM unified_customers
+                WHERE (tenant_id = $1 OR $1 IS NULL)
+            `;
+            const params = [tenantId];
+            let paramCount = 1;
+
+            if (search) {
+                paramCount++;
+                query += ` AND (name ILIKE $${paramCount} OR email ILIKE $${paramCount})`;
+                params.push(`%${search}%`);
+            }
+
+            if (stage && stage !== 'all') {
+                paramCount++;
+                query += ` AND current_stage = $${paramCount}`;
+                params.push(stage);
+            }
+
+            // Count total
+            const countResult = await pool.query(query.replace('SELECT *', 'SELECT COUNT(*)'), params);
+            const total = parseInt(countResult.rows[0].count);
+
+            // Fetch data
+            query += ` ORDER BY created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+            params.push(limit, offset);
+
+            const result = await pool.query(query, params);
+
+            res.json({
+                success: true,
+                customers: result.rows,
+                pagination: {
+                    total,
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    totalPages: Math.ceil(total / limit)
+                }
+            });
+
+        } catch (error) {
+            console.error('Error listing unified customers:', error);
+            res.status(500).json({ success: false, error: 'Failed to list customers' });
+        }
+    },
+
     getJourneyAnalytics: async (req, res) => {
         const { isSuperAdmin, tenantId } = getTenantScope(req);
 

@@ -3,10 +3,11 @@ import {
     Users, TrendingUp, Heart, DollarSign, Target, Activity,
     Smile, ThumbsUp, PieChart, BarChart3, ArrowUp, ArrowDown,
     RefreshCw, ChevronRight, Star, UserCheck, Clock, Zap,
-    Award, AlertTriangle, CheckCircle, XCircle, Search, Sparkles
+    Award, AlertTriangle, CheckCircle, XCircle, Search, Sparkles, List
 } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
 import { AIInsightsPanel } from './AIInsightsPanel';
+import { CustomerJourneyList } from './CustomerJourneyList';
 
 interface KPIData {
     nps: {
@@ -45,7 +46,7 @@ const CustomerJourneyDashboard: React.FC = () => {
     const [kpis, setKpis] = useState<KPIData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeSection, setActiveSection] = useState<'satisfaction' | 'financial' | 'journey' | 'team' | 'insights'>('satisfaction');
+    const [activeSection, setActiveSection] = useState<'satisfaction' | 'financial' | 'journey' | 'team' | 'insights' | 'list'>('journey');
 
     useEffect(() => {
         fetchKPIs();
@@ -106,6 +107,7 @@ const CustomerJourneyDashboard: React.FC = () => {
         { id: 'satisfaction' as const, label: 'Satisfação', icon: ThumbsUp, color: 'from-purple-600 to-purple-800' },
         { id: 'financial' as const, label: 'Financeiro', icon: DollarSign, color: 'from-green-600 to-green-800' },
         { id: 'journey' as const, label: 'Jornada', icon: TrendingUp, color: 'from-blue-600 to-blue-800' },
+        { id: 'list' as const, label: 'Explorar', icon: List, color: 'from-gray-600 to-gray-800' },
         { id: 'team' as const, label: 'Equipe', icon: Users, color: 'from-amber-600 to-amber-800' },
         { id: 'insights' as const, label: 'Insights IA', icon: Sparkles, color: 'from-pink-600 to-purple-600' },
     ];
@@ -516,6 +518,11 @@ const CustomerJourneyDashboard: React.FC = () => {
                 <div className="animate-in fade-in duration-300">
                     <AIInsightsPanel />
                 </div>
+            )}
+
+            {/* List Section */}
+            {activeSection === 'list' && (
+                <CustomerJourneyList onSelectCustomer={(id) => console.log('Selected:', id)} />
             )}
 
             {/* Refresh Button */}
