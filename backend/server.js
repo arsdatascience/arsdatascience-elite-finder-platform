@@ -643,7 +643,8 @@ async function initializeDatabase() {
       // Migração 042: Omnichannel CDP Foundation
       console.log('🔄 Verificando migrações de Omnichannel CDP (042)...');
       try {
-        // Drop old tables to ensure FKs and schema updates
+        // Drop old tables to ensure FKs and schema updates - COMMENTED OUT TO PRESERVE DATA AFTER FIX
+        /*
         await pool.query(`
           DROP TABLE IF EXISTS conversion_events CASCADE;
           DROP TABLE IF EXISTS customer_journeys CASCADE;
@@ -652,6 +653,7 @@ async function initializeDatabase() {
           DROP TABLE IF EXISTS journey_step_templates CASCADE;
           DROP TABLE IF EXISTS unified_customers CASCADE;
         `);
+        */
         const omnichannelMigration = fs.readFileSync(path.join(__dirname, 'migrations', '042_omnichannel_foundation.sql'), 'utf8');
         await pool.query(omnichannelMigration);
         console.log('✅ Migração 042 (Omnichannel Foundation) aplicada.');
@@ -672,7 +674,8 @@ async function initializeDatabase() {
       // Migração 034: ML Module Schema (all result tables) - lives in OPS/Maglev
       console.log('🔄 Verificando migrações de ML Module Schema (034) no Maglev...');
       try {
-        // Drop old tables with FK constraints to recreate without FKs
+        // Drop old tables with FK constraints to recreate without FKs - COMMENTED OUT TO PRESERVE DATA
+        /*
         console.log('🗑️ Removendo tabelas ML antigas para recriar sem FKs...');
         await pool.opsPool.query(`
           -- Drop ALL ml tables to ensure FKs are removed
@@ -690,6 +693,7 @@ async function initializeDatabase() {
           DROP TABLE IF EXISTS ml_datasets CASCADE;
         `);
         console.log('✅ Tabelas ML antigas removidas.');
+        */
 
         const mlModuleMigration = fs.readFileSync(path.join(__dirname, 'migrations', '034_ml_module_schema.sql'), 'utf8');
         await pool.opsPool.query(mlModuleMigration);
