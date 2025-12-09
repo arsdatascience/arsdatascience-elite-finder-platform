@@ -930,18 +930,7 @@ app.get('/api/kpis/happiness/history', authenticateToken, kpiController.getHappi
 
 // Unified Customer API
 app.get('/api/customers/unified', authenticateToken, kpiController.getUnifiedCustomers);
-app.get('/api/customers/unified/:id', authenticateToken, async (req, res) => {
-  try {
-    const db = require('./database');
-    const result = await db.query('SELECT * FROM unified_customers WHERE id = $1', [req.params.id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, error: 'Customer not found' });
-    }
-    res.json({ success: true, customer: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+app.get('/api/customers/unified/:id', authenticateToken, kpiController.getUnifiedCustomerDetails);
 
 
 

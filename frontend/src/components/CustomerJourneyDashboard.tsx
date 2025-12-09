@@ -8,6 +8,7 @@ import {
 import { apiClient } from '@/services/apiClient';
 import { AIInsightsPanel } from './AIInsightsPanel';
 import { CustomerJourneyList } from './CustomerJourneyList';
+import { CustomerJourneyDetails } from './CustomerJourneyDetails';
 
 interface KPIData {
     nps: {
@@ -47,6 +48,7 @@ const CustomerJourneyDashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeSection, setActiveSection] = useState<'satisfaction' | 'financial' | 'journey' | 'team' | 'insights' | 'list'>('journey');
+    const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchKPIs();
@@ -55,7 +57,8 @@ const CustomerJourneyDashboard: React.FC = () => {
     const fetchKPIs = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/kpis/dashboard');
+            const response = await apiClient.get('/kpis/dashboard'); // Helper method usage
+            // Fallback for types since generic get returns AxiosResponse
             if (response.data.success) {
                 setKpis(response.data.kpis);
             }
@@ -65,6 +68,11 @@ const CustomerJourneyDashboard: React.FC = () => {
             setLoading(false);
         }
     };
+
+    // If a customer is selected, show details view instead of dashboard
+    if (selectedCustomerId) {
+        return <CustomerJourneyDetails customerId={selectedCustomerId} onBack={() => setSelectedCustomerId(null)} />;
+    }
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', {
@@ -522,7 +530,7 @@ const CustomerJourneyDashboard: React.FC = () => {
 
             {/* List Section */}
             {activeSection === 'list' && (
-                <CustomerJourneyList onSelectCustomer={(id) => console.log('Selected:', id)} />
+                <CustomerJourneyList onSelectCustomer={(id) => setSelectedCustomerId(id)} />
             )}
 
             {/* Refresh Button */}

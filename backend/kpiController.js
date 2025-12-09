@@ -375,6 +375,62 @@ const kpiController = {
         }
     },
 
+    getUnifiedCustomerDetails: async (req, res) => {
+        const { isSuperAdmin, tenantId } = getTenantScope(req);
+        const { id } = req.params;
+
+        try {
+            // 1. Get Core Customer Data
+            const customerResult = await pool.query(`
+                SELECT * FROM unified_customers 
+                WHERE id = $1 AND (tenant_id = $2 OR $2 IS NULL)
+            `, [id, tenantId]);
+
+            if (customerResult.rows.length === 0) {
+                return res.status(404).json({ success: false, error: 'Customer not found' });
+            }
+
+            const customer = customerResult.rows[0];
+
+            // 2. Get Identity Graph (Linked identifiers)
+            const identityResult = await pool.query(`
+                SELECT identifier_type, identifier_value, created_at, confidence_score, source
+                FROM identity_graph
+                WHERE unified_customer_id = $1
+                ORDER BY created_at DESC
+            `, [id]);
+
+            // 3. Get Interaction Timeline
+            const interactionResult = await pool.query(`
+                SELECT * 
+                FROM customer_interactions
+                WHERE unified_customer_id = $1
+                ORDER BY created_at DESC
+                LIMIT 50
+            `, [id]);
+
+            // 4. Get Journey Context
+            const journeyResult = await pool.query(`
+                SELECT * 
+                FROM customer_journeys
+                WHERE unified_customer_id = $1
+                ORDER BY start_date DESC
+            `, [id]);
+
+            res.json({
+                success: true,
+                customer: customer,
+                identityGraph: identityResult.rows,
+                timeline: interactionResult.rows,
+                journeys: journeyResult.rows
+            });
+
+        } catch (error) {
+            console.error('Error getting customer details:', error);
+            res.status(500).json({ success: false, error: 'Failed to get customer details' });
+        }
+    },
+
     getJourneyAnalytics: async (req, res) => {
         const { isSuperAdmin, tenantId } = getTenantScope(req);
 
