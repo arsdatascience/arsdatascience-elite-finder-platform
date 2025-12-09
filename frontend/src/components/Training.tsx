@@ -40,6 +40,13 @@ export const Training: React.FC = () => {
         try {
             const response = await fetch(`${API_URL}/api/training/modules`);
             const data = await response.json();
+
+            // Validate response is an array
+            if (!Array.isArray(data)) {
+                console.error('Error fetching modules: Response is not an array', data);
+                throw new Error('Invalid response format');
+            }
+
             // Se o backend não retornar audience, assumir 'team' para compatibilidade
             const modulesWithAudience = data.map((m: any) => ({ ...m, audience: m.audience || 'team' }));
             setModules(modulesWithAudience);
@@ -66,6 +73,12 @@ export const Training: React.FC = () => {
         try {
             const response = await fetch(`${API_URL}/api/training/progress?user_id=1`);
             const data = await response.json();
+            // Validate response is an array
+            if (!Array.isArray(data)) {
+                console.error('Error fetching progress: Response is not an array', data);
+                setProgress([]);
+                return;
+            }
             setProgress(data);
         } catch (error) {
             console.error('Error fetching progress:', error);
