@@ -649,12 +649,31 @@ async function initializeDatabase() {
       // Migração 034: ML Module Schema (all result tables) - lives in OPS/Maglev
       console.log('🔄 Verificando migrações de ML Module Schema (034) no Maglev...');
       try {
+        // Drop old tables with FK constraints to recreate without FKs
+        console.log('🗑️ Removendo tabelas ML antigas para recriar sem FKs...');
+        await pool.opsPool.query(`
+          DROP TABLE IF EXISTS ml_regression_results CASCADE;
+          DROP TABLE IF EXISTS ml_classification_results CASCADE;
+          DROP TABLE IF EXISTS ml_clustering_results CASCADE;
+          DROP TABLE IF EXISTS ml_timeseries_results CASCADE;
+          DROP TABLE IF EXISTS ml_predictions CASCADE;
+          DROP TABLE IF EXISTS ml_sales_analytics CASCADE;
+          DROP TABLE IF EXISTS ml_marketing_analytics CASCADE;
+          DROP TABLE IF EXISTS ml_customer_analytics CASCADE;
+          DROP TABLE IF EXISTS ml_financial_analytics CASCADE;
+          DROP TABLE IF EXISTS ml_algorithm_configs CASCADE;
+          DROP TABLE IF EXISTS ml_experiments CASCADE;
+          DROP TABLE IF EXISTS ml_datasets CASCADE;
+        `);
+        console.log('✅ Tabelas ML antigas removidas.');
+
         const mlModuleMigration = fs.readFileSync(path.join(__dirname, 'migrations', '034_ml_module_schema.sql'), 'utf8');
         await pool.opsPool.query(mlModuleMigration);
         console.log('✅ Migração 034 (ML Module Schema) aplicada no Maglev.');
       } catch (mlModuleErr) {
         console.log('⚠️ ML Module Schema já existe ou erro:', mlModuleErr.message);
       }
+
 
       // Migração 035: ML Industry Segments (ml_segment_analytics, ml_viz_*) - lives in OPS/Maglev
       console.log('🔄 Verificando migrações de ML Industry Segments (035) no Maglev...');
