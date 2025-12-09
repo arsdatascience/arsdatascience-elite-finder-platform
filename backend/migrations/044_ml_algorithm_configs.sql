@@ -4,7 +4,7 @@
 -- Main configurations table
 CREATE TABLE IF NOT EXISTS ml_algorithm_configs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id UUID, -- No FK, tenants lives in Core DB
     algorithm_id VARCHAR(100) NOT NULL,
     algorithm_name VARCHAR(200) NOT NULL,
     algorithm_category VARCHAR(50) NOT NULL, -- 'regression', 'classification', 'clustering', 'time_series'
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS ml_algorithm_configs (
     description TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    created_by UUID REFERENCES users(id)
+    created_by UUID -- No FK, users lives in Core DB
 );
 
 -- Indexes for fast lookup
@@ -32,7 +32,7 @@ WHERE is_default = true;
 -- Brazilian holidays for Prophet
 CREATE TABLE IF NOT EXISTS ml_prophet_holidays (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+    tenant_id UUID, -- No FK, tenants lives in Core DB
     holiday_name VARCHAR(100) NOT NULL,
     holiday_date DATE NOT NULL,
     lower_window INT DEFAULT 0, -- days before
@@ -65,10 +65,10 @@ ON CONFLICT DO NOTHING;
 -- Config history for auditing
 CREATE TABLE IF NOT EXISTS ml_algorithm_config_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    config_id UUID REFERENCES ml_algorithm_configs(id) ON DELETE CASCADE,
+    config_id UUID, -- FK removed for initial creation (table may not exist yet)
     previous_config JSONB,
     new_config JSONB,
-    changed_by UUID REFERENCES users(id),
+    changed_by UUID, -- No FK, users lives in Core DB
     changed_at TIMESTAMPTZ DEFAULT NOW()
 );
 
