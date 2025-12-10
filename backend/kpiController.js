@@ -15,10 +15,31 @@ const kpiController = {
         const { isSuperAdmin, tenantId } = getTenantScope(req);
         const { period = 'month', clientId, stage } = req.query;
 
+        // Debug log for troubleshooting 500 errors
+        console.log('📊 KPI Dashboard Request:', {
+            query: req.query,
+            tenant: tenantId,
+            user: req.user?.id
+        });
+
         try {
             const now = new Date();
-            const startDate = req.query.startDate ? new Date(req.query.startDate) : new Date(now.getFullYear(), now.getMonth(), 1);
-            const endDate = req.query.endDate ? new Date(req.query.endDate) : new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            // SAFE PARSING: Check for empty string or null before parsing
+            const startDateStr = req.query.startDate;
+            const endDateStr = req.query.endDate;
+
+            const startDate = (startDateStr && startDateStr !== 'null' && startDateStr !== 'undefined' && startDateStr !== '')
+                ? new Date(startDateStr)
+                : new Date(now.getFullYear(), now.getMonth(), 1);
+
+            const endDate = (endDateStr && endDateStr !== 'null' && endDateStr !== 'undefined' && endDateStr !== '')
+                ? new Date(endDateStr)
+                : new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+            // Validate dates are valid (if invalid string passed)
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                throw new Error(`Invalid date format provided: start=${startDateStr}, end=${endDateStr}`);
+            }
 
             // Helper to build client filter
             const clientFilter = (clientId && clientId !== 'all') ? 'AND client_id = $4' : 'AND ($4::text IS NULL OR TRUE)';
@@ -221,8 +242,9 @@ const kpiController = {
             });
 
         } catch (error) {
-            console.error('Error getting dashboard KPIs:', error);
-            res.status(500).json({ success: false, error: 'Failed to load KPIs' });
+            console.error('🔥 CRITICAL ERROR in getDashboardKPIs:', error.message);
+            console.error(error.stack);
+            res.status(500).json({ success: false, error: 'Failed to load KPIs: ' + error.message });
         }
     },
 
