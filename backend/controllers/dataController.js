@@ -201,11 +201,18 @@ const getDatasets = async (req, res) => {
                 try { stats = JSON.parse(stats); } catch (e) { stats = {}; }
             }
 
+            // Ensure columns is an object/array (handle double-encoded or legacy string data)
+            let cols = row.columns || [];
+            if (typeof cols === 'string') {
+                try { cols = JSON.parse(cols); } catch (e) { cols = []; }
+            }
+
             // Check if data follows the { preview, columnStats } structure
             const hasNestedStructure = Array.isArray(stats.preview) || stats.columnStats;
 
             return {
                 ...row,
+                columns: cols,
                 // If nested, use .preview. Else, preview is unavailable (empty array)
                 preview: hasNestedStructure && Array.isArray(stats.preview) ? stats.preview : [],
 
