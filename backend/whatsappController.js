@@ -44,6 +44,7 @@ const sendOutboundMessage = async (req, res) => {
 const handleWebhook = async (req, res) => {
     try {
         const io = req.app.get('io');
+        console.log('🔍 WEBHOOK PAYLOAD RECEIVED:', JSON.stringify(req.body, null, 2)); // DEBUG LOG
         const { instance, data, sender } = req.body; // Formato genérico EvolutionAPI v2
 
         // Adaptação para diferentes formatos de payload

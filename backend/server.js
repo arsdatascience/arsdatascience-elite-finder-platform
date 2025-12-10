@@ -1269,7 +1269,9 @@ const io = new Server(server, {
 });
 
 // Tornar io acessível globalmente se necessário
+// Tornar io acessível globalmente se necessário
 global.io = io;
+app.set('io', io); // Critical: Allow controllers to access io via req.app.get('io')
 
 const PORT = process.env.PORT || 3001;
 const HOST = '0.0.0.0'; // Required for Railway/Docker containers
