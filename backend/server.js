@@ -1,14 +1,36 @@
 
 
 console.log('🚀 STARTING SERVER INITIALIZATION...');
+
+// --- CRITICAL DEBUG: Catch startup errors ---
+process.on('uncaughtException', (err) => {
+  console.error('❌ UNCAUGHT EXCEPTION AT STARTUP:', err);
+  // Keep process alive for a moment to ensure logs are flushed if possible, or exit
+  // process.exit(1); 
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ UNHANDLED REJECTION AT STARTUP:', reason);
+});
+
 require('dotenv').config();
+console.log('✅ Environment loaded');
+
 const express = require('express');
+console.log('✅ Express imported');
 const cors = require('cors');
 const compression = require('compression');
 const fs = require('fs');
 const path = require('path');
 
 const app = express();
+console.log('✅ Express App created');
+
+// --- IMMEDIATE HEALTH CHECK (For Railway) ---
+app.get('/', (req, res) => res.status(200).send('EliteConversion API Booting...'));
+app.get('/health-check', (req, res) => res.status(200).send('OK'));
+console.log('✅ Health check routes defined');
+
 app.set('trust proxy', 1); // Necessário para Railway/Vercel e rate-limiter
 // const PORT = process.env.PORT || 3001; // Moved to bottom for immediate start
 
