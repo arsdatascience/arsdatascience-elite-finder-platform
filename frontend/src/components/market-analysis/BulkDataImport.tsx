@@ -502,6 +502,20 @@ export const BulkDataImport: React.FC = () => {
                                 <span className="bg-rose-100 text-rose-800 px-2 py-1 text-xs rounded-full">5ª Camada</span>
                                 Depende de: unified_customers
                             </h4>
+
+                            <div className="bg-rose-50 border border-rose-100 rounded-lg p-3 mb-3 text-sm text-rose-800">
+                                <p className="font-medium flex items-center gap-2">
+                                    💡 Dica Extra (Ordem Interna):
+                                </p>
+                                <p className="mt-1">
+                                    Se houver vínculo entre jornada e interação, a ordem segura é:
+                                </p>
+                                <ol className="list-decimal list-inside ml-2 mt-1 space-y-1">
+                                    <li><strong>customer_journeys.csv</strong> (Cria o container da jornada)</li>
+                                    <li><strong>customer_interactions.csv</strong> (Insere os eventos dentro da jornada)</li>
+                                </ol>
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                 {[
                                     { name: 'customer_interactions.csv', desc: 'Interações omnichannel' },
