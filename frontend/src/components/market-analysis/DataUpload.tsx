@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Upload, FileText, Check, AlertCircle, RefreshCw, Eye, BarChart3, Trash2, Database, Table as TableIcon } from 'lucide-react';
 import { apiClient } from '../../services/apiClient';
+import { formatCurrency, formatNumber } from '../../utils/formatters';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 
 interface Dataset {
@@ -39,11 +40,11 @@ export const DataUpload: React.FC = () => {
             // Robust check: Ensure response is an array
             const safeData = Array.isArray(response) ? response : (response?.data || []);
             setDatasets(Array.isArray(safeData) ? safeData : []);
-            setDebugLog(prev => ({ ...prev, lastLoad: 'Success', count: safeData.length }));
+            setDebugLog((prev: any) => ({ ...prev, lastLoad: 'Success', count: safeData.length }));
         } catch (err: any) {
             console.error('Failed to load datasets', err);
             setDatasets([]);
-            setDebugLog(prev => ({ ...prev, lastLoad: 'Error', error: err.message }));
+            setDebugLog((prev: any) => ({ ...prev, lastLoad: 'Error', error: err.message }));
         }
     };
 
@@ -134,13 +135,30 @@ export const DataUpload: React.FC = () => {
                     <tbody className="divide-y divide-slate-100">
                         {rows.slice(0, 20).map((row, i) => (
                             <tr key={i} className="hover:bg-slate-50">
-                                {cols.map((col, j) => (
-                                    <td key={j} className="px-4 py-2.5 text-slate-600 whitespace-nowrap">
-                                        {row[col.name] !== undefined && row[col.name] !== null
-                                            ? String(row[col.name])
-                                            : <span className="text-slate-300 italic">null</span>}
-                                    </td>
-                                ))}
+                                {cols.map((col, j) => {
+                                    const value = row[col.name];
+                                    const isMonetary = ['revenue', 'sales', 'profit', 'cost', 'price', 'ltv', 'cac', 'amount', 'budget', 'valor', 'preco'].some(term => col.name.toLowerCase().includes(term));
+
+                                    let displayValue = <span className="text-slate-300 italic">null</span>;
+
+                                    if (value !== undefined && value !== null) {
+                                        if (col.type === 'number' || typeof value === 'number') {
+                                            if (isMonetary) {
+                                                displayValue = <>{formatCurrency(Number(value))}</>;
+                                            } else {
+                                                displayValue = <>{formatNumber(Number(value))}</>;
+                                            }
+                                        } else {
+                                            displayValue = <>{String(value)}</>;
+                                        }
+                                    }
+
+                                    return (
+                                        <td key={j} className={`px-4 py-2.5 text-slate-600 whitespace-nowrap ${col.type === 'number' ? 'text-right' : 'text-left'}`}>
+                                            {displayValue}
+                                        </td>
+                                    );
+                                })}
                             </tr>
                         ))}
                     </tbody>

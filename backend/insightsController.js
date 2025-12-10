@@ -263,18 +263,23 @@ async function collectMegalevData(tenantId, customerIds = null) {
         data.tasks = tasksResult.rows;
 
         // Financeiro resumido
-        const financeResult = await opsPool.query(`
-            SELECT 
-                COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as revenue,
-                COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as expenses
-            FROM transactions
-            WHERE tenant_id = $1 AND date >= NOW() - INTERVAL '30 days'
-        `, [tenantId]);
+        try {
+            const financeResult = await opsPool.query(`
+                SELECT 
+                    COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as revenue,
+                    COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as expenses
+                FROM transactions
+                WHERE tenant_id = $1 AND date >= NOW() - INTERVAL '30 days'
+            `, [tenantId]);
 
-        if (financeResult.rows[0]) {
-            data.financials.revenue = parseFloat(financeResult.rows[0].revenue) || 0;
-            data.financials.expenses = parseFloat(financeResult.rows[0].expenses) || 0;
-            data.financials.profit = data.financials.revenue - data.financials.expenses;
+            if (financeResult.rows[0]) {
+                data.financials.revenue = parseFloat(financeResult.rows[0].revenue) || 0;
+                data.financials.expenses = parseFloat(financeResult.rows[0].expenses) || 0;
+                data.financials.profit = data.financials.revenue - data.financials.expenses;
+            }
+        } catch (error) {
+            console.warn('Tabela transactions não encontrada ou erro ao buscar financeiro:', error.message);
+            // Default to 0s
         }
 
         // KPIs de satisfação (se existir)
@@ -470,6 +475,10 @@ Gere insights acionáveis baseados nesses dados.`;
  * Salva insight no banco de dados
  */
 async function saveInsight({ tenantId, userId, focusArea, insights, crossoverData, megalevData, qdrantContext }) {
+    // Validate if userId is a UUID (to prevent 22P02 "invalid input syntax for type uuid")
+    const isUuid = (str) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+    const validUserId = isUuid(userId) ? userId : null;
+
     const result = await pool.query(`
         INSERT INTO ai_insights (
             tenant_id, insight_type, title, summary, full_analysis,
@@ -494,7 +503,7 @@ async function saveInsight({ tenantId, userId, focusArea, insights, crossoverDat
             }
         }),
         JSON.stringify(qdrantContext.map(c => ({ score: c.score, preview: c.content?.substring(0, 100) }))),
-        userId
+        validUserId
     ]);
 
     return result.rows[0];

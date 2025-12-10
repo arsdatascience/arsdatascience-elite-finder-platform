@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AreaChart, Area, PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList, Legend } from 'recharts';
 import { CLIENTS_LIST, KPIS, COMPARATIVE_FUNNEL_DATA, DEVICE_DATA } from '../constants';
-import { ArrowUpRight, ArrowDownRight, Info, Users, Smartphone, Monitor, Tablet, Loader2, LayoutGrid, List as ListIcon, Table as TableIcon, FileText, FileSpreadsheet, Target, DollarSign, Eye, MousePointer, TrendingUp, Layers } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Info, Users, Smartphone, Monitor, Tablet, Loader2, LayoutGrid, List as ListIcon, Table as TableIcon, FileText, FileSpreadsheet, Target, DollarSign, MousePointer, TrendingUp, Layers } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import { motion, Variants } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
@@ -65,7 +65,7 @@ export const Dashboard: React.FC = () => {
 
   // Additional State from Campaigns.tsx (if needed locally, though react-query handles most)
   // We'll use a new query for detailed campaign analytics
-  const { data: campaignAnalytics, isLoading: isLoadingCampaigns } = useQuery({
+  const { data: campaignAnalytics } = useQuery({
     queryKey: ['campaignAnalytics', selectedClient, dateRange, selectedPlatforms],
     queryFn: async () => {
       // Should adapt to accept 'all' or numeric ID
@@ -81,7 +81,7 @@ export const Dashboard: React.FC = () => {
   });
 
   const campaigns: Campaign[] = campaignAnalytics?.campaigns || [];
-  const kpis = campaignAnalytics?.kpis || null;
+  // const kpis = campaignAnalytics?.kpis || null; // Unused
   const financialChartData = (campaignAnalytics?.chartData || []).map((item: any) => ({
     ...item,
     spend: Number(item.spend || 0),
@@ -599,7 +599,7 @@ export const Dashboard: React.FC = () => {
                     }`}
                 >
                   <div className={`w-1.5 h-1.5 rounded-full ${selectedPlatforms.includes(platform) ? 'bg-current' : 'bg-gray-300'}`}></div>
-                  {platform.charAt(0).toUpperCase() + platform.slice(1)} Args
+                  {platform === 'linkedin' ? 'LinkedIn' : platform.charAt(0).toUpperCase() + platform.slice(1)} Ads
                 </button>
               ))}
             </div>
@@ -669,8 +669,8 @@ export const Dashboard: React.FC = () => {
                       <td className="px-6 py-4 font-medium text-gray-900">{camp.name}</td>
                       <td className="px-6 py-4 capitalize">{camp.platform}</td>
                       <td className="px-6 py-4 capitalize">{camp.status}</td>
-                      <td className="px-6 py-4 text-right">{formatCurrency(camp.spend)}</td>
-                      <td className="px-6 py-4 text-right text-green-600">{formatCurrency(camp.revenue)}</td>
+                      <td className="px-6 py-4 text-right">{formatCurrency(Number(camp.spend))}</td>
+                      <td className="px-6 py-4 text-right text-green-600">{formatCurrency(Number(camp.revenue))}</td>
                       <td className="px-6 py-4 text-right font-bold">{(Number(camp.revenue) / (Number(camp.spend) || 1)).toFixed(2)}x</td>
                     </tr>
                   ))}
@@ -737,7 +737,7 @@ export const Dashboard: React.FC = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={platformData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="spend" nameKey="platform">
-                      {platformData.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                      {platformData.map((_: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
                     <Tooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
                     <Legend />
@@ -752,7 +752,7 @@ export const Dashboard: React.FC = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={platformData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="revenue" nameKey="platform">
-                      {platformData.map((_, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                      {platformData.map((_: any, index: number) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
                     <Tooltip formatter={(value: any) => `R$ ${Number(value || 0).toFixed(2)}`} />
                     <Legend />

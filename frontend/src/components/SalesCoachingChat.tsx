@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Mic, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, MessageSquare, Smartphone, Settings, Users, MessageCircle, Download, UserPlus, X } from 'lucide-react';
+import { Send, Mic, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, MessageSquare, Smartphone, Settings, Users, MessageCircle, Download, UserPlus, X, FileText, FileBarChart } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import socketService from '../services/socket';
 import { WhatsAppConfigModal } from './WhatsAppConfigModal';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Message {
     id: string;
@@ -374,6 +376,97 @@ export const SalesCoachingChat: React.FC = () => {
         URL.revokeObjectURL(url);
     };
 
+    const handleGeneratePDFReport = (type: 'analysis' | 'full') => {
+        if (!analysis && type === 'analysis') {
+            alert('Nenhuma análise disponível para gerar relatório.');
+            return;
+        }
+
+        const doc = new jsPDF();
+        const dateStr = new Date().toLocaleString();
+
+        // Header
+        doc.setFontSize(20);
+        doc.setTextColor(41, 98, 255); // Primary Blue
+        doc.text("Elite Finder - Relatório de Inteligência", 14, 20);
+
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Gerado em: ${dateStr}`, 14, 28);
+        doc.text(`Cliente: ${clientName || formatPhoneNumber(activePhone) || 'Desconhecido'}`, 14, 33);
+
+        let yPos = 45;
+
+        // Section: Analysis Insights
+        if (analysis) {
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text("Análise Estratégica (IA)", 14, yPos);
+            yPos += 10;
+
+            doc.setFontSize(11);
+            doc.setTextColor(50);
+
+            const insightsData = [
+                ['Sentimento', analysis.sentiment],
+                ['Estágio de Compra', analysis.buying_stage],
+                ['Estratégia Sugerida', analysis.suggested_strategy],
+                ['Próxima Ação', analysis.next_best_action],
+                ['Whisper (Dica)', analysis.coach_whisper]
+            ];
+
+            autoTable(doc, {
+                startY: yPos,
+                head: [['Métrica', 'Insight']],
+                body: insightsData,
+                theme: 'grid',
+                headStyles: { fillColor: [41, 98, 255] },
+                columnStyles: { 0: { fontStyle: 'bold', width: 50 } }
+            });
+
+            // @ts-ignore
+            yPos = doc.lastAutoTable.finalY + 15;
+
+            // Objections Table
+            if (analysis.detected_objections && analysis.detected_objections.length > 0) {
+                doc.text("Objeções Detectadas", 14, yPos);
+                yPos += 5;
+                autoTable(doc, {
+                    startY: yPos,
+                    body: analysis.detected_objections.map(obj => [obj]),
+                    theme: 'striped',
+                    headStyles: { fillColor: [220, 53, 69] }, // Red for danger/objection
+                });
+                // @ts-ignore
+                yPos = doc.lastAutoTable.finalY + 15;
+            }
+        }
+
+        // Section: Chat History (If requested)
+        if (type === 'full' && messages.length > 0) {
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text("Histórico da Conversa", 14, yPos);
+            yPos += 10;
+
+            const chatData = messages.map(m => [
+                new Date(m.timestamp).toLocaleTimeString(),
+                m.role === 'agent' ? 'Agente' : 'Cliente',
+                m.content
+            ]);
+
+            autoTable(doc, {
+                startY: yPos,
+                head: [['Hora', 'Autor', 'Mensagem']],
+                body: chatData,
+                theme: 'striped',
+                columnStyles: { 2: { cellWidth: 100 } }
+            });
+        }
+
+        doc.save(`relatorio_${type}_${activePhone || 'cliente'}.pdf`);
+    };
+
     const handleSaveClient = async () => {
         if (!clientName || !clientPhone) return;
 
@@ -564,99 +657,126 @@ export const SalesCoachingChat: React.FC = () => {
             </div>
 
             {/* RIGHT: Teleprompter / AI Coach */}
-            <div className="w-80 flex flex-col gap-4">
-                {/* Status Card */}
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
-                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <BrainCircuit size={16} /> Análise em Tempo Real
+            <div className="w-80 flex flex-col gap-4 overflow-hidden">
+                {/* AI Header with Report Buttons */}
+                <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-200">
+                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                        <BrainCircuit size={14} /> AI COACH
                     </h4>
-
-                    {isAnalyzing ? (
-                        <div className="flex flex-col items-center justify-center py-10 text-gray-400 gap-3">
-                            <Sparkles className="animate-spin text-primary-500" size={32} />
-                            <p className="text-sm animate-pulse">Analisando intenção...</p>
-                        </div>
-                    ) : analysis ? (
-                        <div className="space-y-4">
-                            {/* Sentiment & Stage */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className={`p-3 rounded-xl border ${getSentimentColor(analysis.sentiment)}`}>
-                                    <p className="text-xs font-semibold opacity-70">Sentimento</p>
-                                    <p className="font-bold">{analysis.sentiment}</p>
-                                </div>
-                                <div className="p-3 rounded-xl border border-purple-200 bg-purple-50 text-purple-700">
-                                    <p className="text-xs font-semibold opacity-70">Estágio</p>
-                                    <p className="font-bold">{analysis.buying_stage}</p>
-                                </div>
-                            </div>
-
-                            {/* Objections */}
-                            {analysis.detected_objections && analysis.detected_objections.length > 0 && (
-                                <div className="p-3 bg-red-50 border border-red-100 rounded-xl">
-                                    <p className="text-xs font-bold text-red-500 mb-2 flex items-center gap-1">
-                                        <AlertTriangle size={12} /> OBJEÇÕES DETECTADAS
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                        {analysis.detected_objections.map((obj, i) => (
-                                            <span key={i} className="text-xs bg-white text-red-600 px-2 py-1 rounded-md border border-red-100 shadow-sm">
-                                                {obj}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="text-center py-10 text-gray-400 text-sm">
-                            Aguardando início da conversa para gerar insights...
-                        </div>
-                    )}
+                    <div className="flex gap-1">
+                        <button
+                            onClick={() => handleGeneratePDFReport('analysis')}
+                            disabled={!analysis}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Gerar Relatório de Análise"
+                        >
+                            <FileBarChart size={16} />
+                        </button>
+                        <button
+                            onClick={() => handleGeneratePDFReport('full')}
+                            disabled={!messages.length}
+                            className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Gerar Relatório Completo (Chat + Análise)"
+                        >
+                            <FileText size={16} />
+                        </button>
+                    </div>
                 </div>
 
-                {/* THE TELEPROMPTER (Actionable Advice) */}
-                <div className="flex-1 bg-gradient-to-b from-slate-900 to-slate-800 rounded-2xl shadow-lg border border-slate-700 p-6 text-white relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500"></div>
+                {/* Status Card (Scrollable Area Start) */}
+                <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                        <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                            <BrainCircuit size={16} /> Análise em Tempo Real
+                        </h4>
 
-                    <h4 className="text-sm font-bold text-primary-300 uppercase tracking-wider mb-6 flex items-center gap-2">
-                        <Sparkles size={16} /> Elite Sales Coach
-                    </h4>
-
-                    {analysis ? (
-                        <div className="space-y-6 animate-fade-in">
-                            {/* The Whisper (Main Tip) */}
-                            <div>
-                                <p className="text-xs text-slate-400 mb-1">DICA ESTRATÉGICA (WHISPER)</p>
-                                <p className="text-lg font-medium leading-relaxed text-primary-50">
-                                    "{analysis.coach_whisper}"
-                                </p>
+                        {isAnalyzing ? (
+                            <div className="flex flex-col items-center justify-center py-10 text-gray-400 gap-3">
+                                <Sparkles className="animate-spin text-primary-500" size={32} />
+                                <p className="text-sm animate-pulse">Analisando intenção...</p>
                             </div>
+                        ) : analysis ? (
+                            <div className="space-y-4">
+                                {/* Sentiment & Stage */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className={`p-3 rounded-xl border ${getSentimentColor(analysis.sentiment)}`}>
+                                        <p className="text-xs font-semibold opacity-70">Sentimento</p>
+                                        <p className="font-bold">{analysis.sentiment}</p>
+                                    </div>
+                                    <div className="p-3 rounded-xl border border-purple-200 bg-purple-50 text-purple-700">
+                                        <p className="text-xs font-semibold opacity-70">Estágio</p>
+                                        <p className="font-bold">{analysis.buying_stage}</p>
+                                    </div>
+                                </div>
 
-                            <div className="h-px bg-slate-700"></div>
+                                {/* Objections */}
+                                {analysis.detected_objections && analysis.detected_objections.length > 0 && (
+                                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl">
+                                        <p className="text-xs font-bold text-red-500 mb-2 flex items-center gap-1">
+                                            <AlertTriangle size={12} /> OBJEÇÕES DETECTADAS
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {analysis.detected_objections.map((obj, i) => (
+                                                <span key={i} className="text-xs bg-white text-red-600 px-2 py-1 rounded-md border border-red-100 shadow-sm">
+                                                    {obj}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="text-center py-10 text-gray-400 text-sm">
+                                Aguardando início da conversa para gerar insights...
+                            </div>
+                        )}
+                    </div>
 
-                            {/* Suggested Action */}
-                            <div>
-                                <p className="text-xs text-slate-400 mb-2 flex items-center gap-1">
-                                    <TrendingUp size={12} /> PRÓXIMA AÇÃO RECOMENDADA
-                                </p>
-                                <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-600 hover:border-primary-500/50 transition-colors cursor-pointer group">
-                                    <p className="text-sm text-slate-200 group-hover:text-white transition-colors">
-                                        {analysis.next_best_action}
+                    {/* THE TELEPROMPTER (Actionable Advice) */}
+                    <div className="bg-gradient-to-b from-slate-900 to-slate-800 rounded-2xl shadow-lg border border-slate-700 p-6 text-white relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500"></div>
+
+                        <h4 className="text-sm font-bold text-primary-300 uppercase tracking-wider mb-6 flex items-center gap-2">
+                            <Sparkles size={16} /> Elite Sales Coach
+                        </h4>
+
+                        {analysis ? (
+                            <div className="space-y-6 animate-fade-in">
+                                {/* The Whisper (Main Tip) */}
+                                <div>
+                                    <p className="text-xs text-slate-400 mb-1">DICA ESTRATÉGICA (WHISPER)</p>
+                                    <p className="text-lg font-medium leading-relaxed text-primary-50">
+                                        "{analysis.coach_whisper}"
                                     </p>
                                 </div>
-                            </div>
 
-                            {/* Strategy Tag */}
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/20 text-primary-300 text-xs font-medium border border-blue-500/30">
-                                <BrainCircuit size={12} />
-                                Estratégia: {analysis.suggested_strategy}
+                                <div className="h-px bg-slate-700"></div>
+
+                                {/* Suggested Action */}
+                                <div>
+                                    <p className="text-xs text-slate-400 mb-2 flex items-center gap-1">
+                                        <TrendingUp size={12} /> PRÓXIMA AÇÃO RECOMENDADA
+                                    </p>
+                                    <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-600 hover:border-primary-500/50 transition-colors cursor-pointer group">
+                                        <p className="text-sm text-slate-200 group-hover:text-white transition-colors">
+                                            {analysis.next_best_action}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Strategy Tag */}
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/20 text-primary-300 text-xs font-medium border border-blue-500/30">
+                                    <BrainCircuit size={12} />
+                                    Estratégia: {analysis.suggested_strategy}
+                                </div>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-500 text-center">
-                            <MessageSquare size={48} className="mb-4 opacity-20" />
-                            <p className="text-sm">O Teleprompter será ativado assim que o cliente interagir.</p>
-                        </div>
-                    )}
+                        ) : (
+                            <div className="h-full flex flex-col items-center justify-center text-slate-500 text-center py-8">
+                                <MessageSquare size={48} className="mb-4 opacity-20" />
+                                <p className="text-sm">O Teleprompter será ativado assim que o cliente interagir.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 

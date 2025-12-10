@@ -152,19 +152,20 @@ class AIService {
     async _chatGemini({ messages, model = 'gemini-1.5-pro', temperature, max_tokens, system, response_format }) {
         if (!this.genAI) throw new Error('Gemini API not configured');
 
+        // Extract system prompt
+        let systemPrompt = system;
+        const systemMsg = messages.find(m => m.role === 'system');
+        if (systemMsg) systemPrompt = systemMsg.content;
+
         const geminiModel = this.genAI.getGenerativeModel({
             model: model,
+            systemInstruction: systemPrompt, // Correct placement for system instruction
             generationConfig: {
                 temperature,
                 maxOutputTokens: max_tokens,
                 responseMimeType: response_format?.type === 'json_object' ? 'application/json' : 'text/plain'
             }
         });
-
-        // Extract system prompt
-        let systemPrompt = system;
-        const systemMsg = messages.find(m => m.role === 'system');
-        if (systemMsg) systemPrompt = systemMsg.content;
 
         // Convert messages to Gemini format (user/model)
         const history = messages
@@ -177,8 +178,8 @@ class AIService {
         // The last message is the new prompt
         const lastMsg = history.pop();
         const chat = geminiModel.startChat({
-            history: history,
-            systemInstruction: systemPrompt
+            history: history
+            // systemInstruction removed from here
         });
 
         const result = await chat.sendMessage(lastMsg.parts[0].text);

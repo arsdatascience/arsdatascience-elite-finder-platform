@@ -645,15 +645,29 @@ const analyzeStrategyInternal = async (messages, agentContext, apiKey) => {
 
         TAREFA:
         Realize uma análise em tempo real para fornecer "Coaching de Vendas" imediato.
-        Identifique o sentimento, objeções ocultas e sugira a próxima melhor ação.
+        
+        PRIMEIRO, CLASSIFIQUE O CONTEXTO:
+        - É uma conversa de VENDAS/NEGÓCIOS? (Perguntas sobre produto, preço, serviço, dúvidas técnicas).
+        - Ou é uma conversa INFORMAL/SOCIAL? (Piadas, conversa fiada, "bom dia", assuntos pessoais, memes).
+
+        SE FOR INFORMAL/SOCIAL:
+        - NÃO tente vender agora.
+        - "sentiment": O real (ex: "Positivo" ou "Neutro").
+        - "buying_stage": "Construção de Rapport".
+        - "suggested_strategy": "Manter Conexão Pessoal".
+        - "next_best_action": Sugira uma resposta leve, humorada ou educada para manter o relacionamento.
+        - "coach_whisper": "Conversa informal detectada. Foque no relacionamento, não venda agora."
+
+        SE FOR VENDAS/NEGÓCIOS:
+        Identifique o sentimento, objeções ocultas e sugira a próxima melhor ação para FECHAR A VENDA ou AVANÇAR O FUNIL.
 
         Gere um relatório estratégico estruturado em JSON com os seguintes campos:
         1. "sentiment": Sentimento atual do cliente (Positivo, Neutro, Cético, Irritado).
         2. "detected_objections": Lista de objeções identificadas (ex: Preço, Concorrência, Autoridade).
-        3. "buying_stage": Estágio de compra (Curiosidade, Consideração, Decisão).
-        4. "suggested_strategy": Uma estratégia tática para o vendedor usar AGORA (ex: "Use a técnica de Espelhamento e foque na dor X").
-        5. "next_best_action": A próxima pergunta ou afirmação exata que deve ser feita para avançar a venda.
-        6. "coach_whisper": Uma dica curta e direta para o vendedor (ex: "Cuidado, ele está comparando com o concorrente Y, destaque nosso suporte").
+        3. "buying_stage": Estágio de compra (Curiosidade, Consideração, Decisão, Construção de Rapport).
+        4. "suggested_strategy": Uma estratégia tática para o vendedor usar AGORA.
+        5. "next_best_action": A próxima pergunta ou afirmação exata que deve ser feita.
+        6. "coach_whisper": Uma dica curta e direta para o vendedor (Whisper).
 
         Responda APENAS o JSON.
         `;
