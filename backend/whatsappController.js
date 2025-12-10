@@ -175,10 +175,14 @@ const handleWebhook = async (req, res) => {
         // Instead of waiting for AI and Scoring, we queue a job.
         const { jobsQueue } = require('./queueClient');
         await jobsQueue.add('process_whatsapp_message', {
-            sessionId,
-            phone,
-            messageContent,
-            tenantId
+            type: 'process_whatsapp_message',
+            payload: {
+                sessionId,
+                phone,
+                messageContent,
+                tenantId,
+                clientId
+            }
         });
 
         console.log(`🚀 Async Job Queued: process_whatsapp_message for ${phone}`);
