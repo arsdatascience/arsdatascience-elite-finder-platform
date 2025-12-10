@@ -207,6 +207,14 @@ const getDatasets = async (req, res) => {
                 try { cols = JSON.parse(cols); } catch (e) { cols = []; }
             }
 
+            // Fix for legacy data where columns is an Object instead of Array
+            if (cols && !Array.isArray(cols) && typeof cols === 'object') {
+                cols = Object.entries(cols).map(([name, meta]) => ({
+                    name,
+                    type: meta.type || 'string'
+                }));
+            }
+
             // Check if data follows the { preview, columnStats } structure
             const hasNestedStructure = Array.isArray(stats.preview) || stats.columnStats;
 
