@@ -44,8 +44,13 @@ const sendOutboundMessage = async (req, res) => {
 const handleWebhook = async (req, res) => {
     try {
         const io = req.app.get('io');
-        console.log('🔍 WEBHOOK PAYLOAD RECEIVED:', JSON.stringify(req.body, null, 2)); // DEBUG LOG
-        const { instance, data, sender } = req.body; // Formato genérico EvolutionAPI v2
+        // console.log('🔍 WEBHOOK PAYLOAD RECEIVED:', JSON.stringify(req.body, null, 2)); // DEBUG LOG
+        const { instance, data, sender, event } = req.body; // Formato genérico EvolutionAPI v2
+
+        // Ignorar eventos de status/update para não gerar erro 400
+        if (['messages.update', 'chats.update', 'contacts.update', 'presence.update'].includes(event)) {
+            return res.status(200).send('Event received');
+        }
 
         // Adaptação para diferentes formatos de payload
         let phone = '';

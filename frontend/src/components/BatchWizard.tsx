@@ -44,8 +44,6 @@ export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading, c
             topics,
             platform,
             tone,
-            platform,
-            tone,
             targetAudience,
             clientId
         });
