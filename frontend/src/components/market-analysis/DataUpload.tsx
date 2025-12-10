@@ -389,6 +389,31 @@ export const DataUpload: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* DEBUG SECTION */}
+                <div className="mt-8 p-4 bg-slate-900 rounded-xl overflow-x-auto text-xs text-green-400 font-mono border border-slate-700">
+                    <h4 className="text-white font-bold mb-2 uppercase tracking-wider">Debug Info (Remover em Produção)</h4>
+                    <p className="text-slate-400 mb-2">Selecione um dataset acima para ver seus dados brutos aqui.</p>
+                    {selectedDataset ? (
+                        <pre>{JSON.stringify({
+                            id: selectedDataset.id,
+                            row_count: selectedDataset.row_count,
+                            columnsType: Array.isArray(selectedDataset.columns) ? 'Array' : typeof selectedDataset.columns,
+                            columnsSample: selectedDataset.columns,
+                            previewType: Array.isArray(selectedDataset.preview) ? 'Array' : typeof selectedDataset.preview,
+                            previewLength: selectedDataset.preview?.length,
+                            previewSample: selectedDataset.preview?.slice(0, 1),
+                            statsType: typeof selectedDataset.statistics,
+                            statsKeys: Object.keys(selectedDataset.statistics || {})
+                        }, null, 2)}</pre>
+                    ) : (
+                        <span className="text-slate-500">Nenhum dataset selecionado.</span>
+                    )}
+                    <div className="mt-4 pt-4 border-t border-slate-700">
+                        <h5 className="text-white mb-1">Raw Dataset Dump:</h5>
+                        <pre className="opacity-50 max-h-40 overflow-auto">{JSON.stringify(selectedDataset, null, 2)}</pre>
+                    </div>
+                </div>
             </div>
         </ErrorBoundary>
     );
