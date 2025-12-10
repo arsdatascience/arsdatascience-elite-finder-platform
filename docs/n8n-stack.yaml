@@ -71,7 +71,10 @@ services:
       
       # Webhooks & Editor
       - WEBHOOK_TUNNEL_URL=https://webhookn8n.aiiam.com.br
-      - N8N_SKIP_WEBHOOK_DEREGISTRATION_SHUTDOWN=true
+      - N8N_METRICS_ENABLED=true
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_GIT_NODE_DISABLE_BARE_REPOS=true
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
       - N8N_EDITOR_BASE_URL=https://arsdatascience-n8n.aiiam.com.br
       
       # Logging & Metrics

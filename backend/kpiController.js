@@ -111,24 +111,33 @@ const kpiController = {
             const retentionRate = prevCount > 0 ? Math.round((retainedCount / prevCount) * 100) : 100;
 
             // 4. Financial KPIs
-            // If filtering by specific client, we try to filter financial transactions. 
-            // If table doesn't have client_id, we might return 0 or global (let's assume global for now if no client_id column, or check schema).
-            // Assuming financial_transactions might NOT have client_id in MVP. Let's start with date filter only for now to avoid error, 
-            // OR if user insists on client filter, we return 0 if not implemented.
-            // For now, let's keep it date-based but if I had schema I'd add client_id.
-            // Wait, previous `check_data_integrity.js` looked at `financial_transactions`. Let's assume global for safety unless confirmed.
-            const financialResult = await opsPool.query(`
-                SELECT 
-                    SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as revenue,
-                    SUM(CASE WHEN type = 'expense' AND status = 'paid' THEN amount ELSE 0 END) as expenses
-                FROM financial_transactions
-                WHERE date >= $1 AND date <= $2
-                -- client filter temporarily omitted to prevent crash if column missing
-            `, [startDate, endDate]);
+            let revenue = 0;
+            let expenses = 0;
+            let profitMargin = 0;
 
-            const revenue = parseFloat(financialResult.rows[0]?.revenue) || 0;
-            const expenses = parseFloat(financialResult.rows[0]?.expenses) || 0;
-            const profitMargin = revenue > 0 ? Math.round(((revenue - expenses) / revenue) * 100) : 0;
+            try {
+                // If filtering by specific client, we try to filter financial transactions. 
+                // If table doesn't have client_id, we might return 0 or global (let's assume global for now if no client_id column, or check schema).
+                // Assuming financial_transactions might NOT have client_id in MVP. Let's start with date filter only for now to avoid error, 
+                // OR if user insists on client filter, we return 0 if not implemented.
+                // For now, let's keep it date-based but if I had schema I'd add client_id.
+                // Wait, previous `check_data_integrity.js` looked at `financial_transactions`. Let's assume global for safety unless confirmed.
+                const financialResult = await opsPool.query(`
+                    SELECT 
+                        SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as revenue,
+                        SUM(CASE WHEN type = 'expense' AND status = 'paid' THEN amount ELSE 0 END) as expenses
+                    FROM financial_transactions
+                    WHERE date >= $1 AND date <= $2
+                    -- client filter temporarily omitted to prevent crash if column missing
+                `, [startDate, endDate]);
+
+                revenue = parseFloat(financialResult.rows[0]?.revenue) || 0;
+                expenses = parseFloat(financialResult.rows[0]?.expenses) || 0;
+                profitMargin = revenue > 0 ? Math.round(((revenue - expenses) / revenue) * 100) : 0;
+            } catch (finErr) {
+                console.warn('⚠️ Financial KPIs validation failed (ignoring):', finErr.message);
+                // metrics remain 0
+            }
 
             // 5. CLV (Unified Customers)
             const clvResult = await pool.query(`

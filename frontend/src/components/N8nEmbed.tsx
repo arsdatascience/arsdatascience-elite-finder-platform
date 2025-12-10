@@ -36,8 +36,16 @@ export function N8nEmbed({
                 if (res.ok) {
                     const data = await res.json();
                     if (data.success && data.url) {
-                        // Append locale to the authenticated URL
-                        setN8nUrl(`${data.url}&locale=pt_BR`);
+                        let finalUrl = data.url;
+
+                        // Ensure protocol
+                        if (!finalUrl.startsWith('http')) {
+                            finalUrl = `https://${finalUrl}`;
+                        }
+
+                        // Append locale correctly
+                        const separator = finalUrl.includes('?') ? '&' : '?';
+                        setN8nUrl(`${finalUrl}${separator}locale=pt_BR`);
                     } else {
                         setN8nUrl(defaultUrl);
                     }
@@ -142,7 +150,6 @@ export function N8nEmbed({
                 className="border-0 w-full h-full"
                 title="N8N Workflow Editor - Automação de Marketing"
                 allow="clipboard-read; clipboard-write; fullscreen"
-                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads"
                 referrerPolicy="strict-origin-when-cross-origin"
                 loading="eager"
                 onLoad={handleLoad}
