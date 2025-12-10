@@ -190,7 +190,27 @@ const getDatasets = async (req, res) => {
             'SELECT * FROM ml_datasets WHERE tenant_id = $1 OR $1 IS NULL ORDER BY created_at DESC',
             [tenantId]
         );
-        res.json(result.rows);
+
+        // Unpack statistics and preview from the JSONB column to match frontend expectations
+        const datasets = result.rows.map(row => {
+            // Ensure statistics is an object (pg driver handles JSONB automatic parsing)
+            let stats = row.statistics || {};
+
+            // In case it came back as string for some reason (e.g. legacy data or driver quirk)
+            if (typeof stats === 'string') {
+                try { stats = JSON.parse(stats); } catch (e) { stats = {}; }
+            }
+
+            return {
+                ...row,
+                // Top-level preview expected by frontend
+                preview: Array.isArray(stats.preview) ? stats.preview : [],
+                // Flattened statistics (columnStats) expected by frontend
+                statistics: stats.columnStats || {}
+            };
+        });
+
+        res.json(datasets);
     } catch (error) {
         console.error('Get Datasets Error:', error);
         res.status(500).json({ error: 'Failed to fetch datasets' });
