@@ -25,8 +25,20 @@ const sendMessage = async (userId, to, content) => {
         );
 
         if (result.rows.length === 0) {
-            console.warn(`No connected WhatsApp integration found for user ${userId}`);
-            return null; // Or throw error
+            console.warn(`No connected WhatsApp integration found for user ${userId}. Checking ENV vars...`);
+
+            // Fallback to Environment Variables (System Default)
+            if (process.env.EVOLUTION_API_URL && process.env.EVOLUTION_API_KEY) {
+                console.log('Using System ENV vars for Evolution API');
+                return await sendEvolutionApi(
+                    { url: process.env.EVOLUTION_API_URL, instanceName: process.env.EVOLUTION_INSTANCE_NAME || 'Atendimento' }, // Fallback instance name
+                    process.env.EVOLUTION_API_KEY,
+                    to,
+                    content
+                );
+            }
+
+            throw new Error('No WhatsApp integration found (DB or ENV). Please configure it in settings.');
         }
 
         const integration = result.rows[0];

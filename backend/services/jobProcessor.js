@@ -220,9 +220,10 @@ async function handleWhatsAppMessage(payload) {
 
     try {
         // ========================================
+        // ========================================
         // ML INTENT DETECTION (Feature Flag)
         // ========================================
-        if (process.env.ENABLE_ML_AGENT === 'true' && messageContent) {
+        if (process.env.ENABLE_ML_AGENT !== 'false' && messageContent) { // Default to TRUE
             const intentResult = mlIntentDetector.detectIntent(messageContent);
 
             if (intentResult.matched) {
@@ -232,6 +233,8 @@ async function handleWhatsAppMessage(payload) {
                 await handleMLIntent(intentResult.intent, messageContent, clientId, sessionId, phone, io);
                 return; // Exit early - ML handled this message
             }
+        } else {
+            console.log('🤖 [ML] Agent disabled or empty content');
         }
 
         // ========================================
