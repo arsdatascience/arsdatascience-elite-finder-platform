@@ -45,10 +45,24 @@ const kpiController = {
             const clientFilter = (clientId && clientId !== 'all') ? 'AND client_id = $4' : 'AND ($4::text IS NULL OR TRUE)';
             const stageFilterQuery = (stage && stage !== 'all') ? 'AND current_stage = $5' : 'AND ($5::text IS NULL OR TRUE)';
 
-            // Params for standard queries: [tenantId, startDate, endDate, clientId, stage]
-            const queryParams = [tenantId, startDate, endDate, (clientId === 'all' ? null : clientId), (stage === 'all' ? null : stage)];
+            // Params for standard queries [tenantId, startDate, endDate, clientId, stage]
+            // ERROR FIX: Postgres throws error if we pass more params than used in query placeholders.
+            // We must construct specific param arrays for each query.
 
-            // 1. NPS Average
+            const baseParams = [tenantId, startDate, endDate]; // $1, $2, $3 (Common)
+
+            // 1. NPS Average (Uses $1, $2, $3... and maybe $4 if client filter)
+            // Query logic: ... WHERE (tenant_id = $1...) AND ... ${clientFilter}
+            // clientFilter uses $4. stageFilter uses $5.
+            // NPS only uses clientFilter ($4). It DOES NOT usage stageFilter ($5).
+            const npsParams = [...baseParams];
+            if (clientId && clientId !== 'all') {
+                npsParams.push(clientId); // $4
+            } else {
+                npsParams.push(null); // $4 (dummy for OR $4 IS NULL)
+            }
+            // NPS does NOT use $5, so do NOT push it.
+
             const npsResult = await pool.query(`
                 SELECT 
                     AVG(score) as avg_score,
@@ -60,14 +74,15 @@ const kpiController = {
                 WHERE (tenant_id = $1 OR $1 IS NULL)
                   AND responded_at >= $2 AND responded_at <= $3
                   ${clientFilter}
-            `, queryParams);
+            `, npsParams);
 
             const nps = npsResult.rows[0];
             const npsScore = nps.total_responses > 0
                 ? Math.round(((nps.promoters - nps.detractors) / nps.total_responses) * 100)
                 : null;
 
-            // 2. CSAT Average
+            // 2. CSAT Average (Uses $1, $2, $3, $4)
+            const csatParams = [...npsParams]; // Same params as NPS (client filter supported)
             const csatResult = await pool.query(`
                 SELECT 
                     AVG(score) as avg_score,
@@ -77,7 +92,7 @@ const kpiController = {
                 WHERE (tenant_id = $1 OR $1 IS NULL)
                   AND responded_at >= $2 AND responded_at <= $3
                   ${clientFilter}
-            `, queryParams);
+            `, csatParams);
 
             const csat = csatResult.rows[0];
             const csatPercent = csat.total_responses > 0
@@ -122,6 +137,15 @@ const kpiController = {
             if (clientId && clientId !== 'all') {
                 retentionParams.push(clientId); // $6
             }
+            // Retention query explicitly constructs params internally, so it was likely fine IF filtering,
+            // but let's check if my previous code logic was correct. 
+            // Previous code:
+            /*
+             const retentionParams = [tenantId, prevY, prevM, currY, currM];
+             if (client) retentionParams.push(clientId);
+            */
+            // This one looks correct because it constructed specific array. 
+            // BUT wait, in the loop before it was part of `queryParams` which was failing others.
 
             const rResult = await pool.query(retentionQuery, retentionParams);
 
@@ -137,20 +161,14 @@ const kpiController = {
             let profitMargin = 0;
 
             try {
-                // If filtering by specific client, we try to filter financial transactions. 
-                // If table doesn't have client_id, we might return 0 or global (let's assume global for now if no client_id column, or check schema).
-                // Assuming financial_transactions might NOT have client_id in MVP. Let's start with date filter only for now to avoid error, 
-                // OR if user insists on client filter, we return 0 if not implemented.
-                // For now, let's keep it date-based but if I had schema I'd add client_id.
-                // Wait, previous `check_data_integrity.js` looked at `financial_transactions`. Let's assume global for safety unless confirmed.
+                // Uses $1, $2 only
                 const financialResult = await opsPool.query(`
                     SELECT 
                         SUM(CASE WHEN type = 'income' AND status = 'paid' THEN amount ELSE 0 END) as revenue,
                         SUM(CASE WHEN type = 'expense' AND status = 'paid' THEN amount ELSE 0 END) as expenses
                     FROM financial_transactions
                     WHERE date >= $1 AND date <= $2
-                    -- client filter temporarily omitted to prevent crash if column missing
-                `, [startDate, endDate]);
+                `, [startDate, endDate]); // Already using specific array [startDate, endDate]
 
                 revenue = parseFloat(financialResult.rows[0]?.revenue) || 0;
                 expenses = parseFloat(financialResult.rows[0]?.expenses) || 0;
@@ -161,31 +179,82 @@ const kpiController = {
             }
 
             // 5. CLV (Unified Customers)
-            const clvResult = await pool.query(`
+            // Uses $1 (tenant), clientFilter ($4), stageFilter ($5)
+            // This needs the FULL 5 params because it MIGHT use $5
+            const clvParams = [tenantId, startDate, endDate]; // $1, $2, $3 (unused but index matters for $4/$5?)
+            // WAIT. If query uses $1, $4, $5... queryParams MUST have indices 0, 3, 4 matched.
+            // Postgres uses positional arguments provided in the array. $1 = arr[0], $2 = arr[1].
+            // If the query text says `$4`, it requires at least 4 items in array.
+            // BUT if query text does NOT use $2 and $3, can we pass them?
+            // "bind message supplies 5 parameters, prepared statement requires 3" -> this implies it looks at MAX ($N) token?
+            // No, it likely iterates the SQL and counts unique placeholders or highest placeholder.
+            // If highest is $5, we need 5 params.
+            // If highest is $3 (NPS), providing 5 params crashes it.
+
+            // For CLV: Uses $1, $4, $5. (Does it use $2, $3? "lifetime_value > 0" no date filter in provided code).
+            // Line 148: `WHERE (tenant_id = $1 OR $1 IS NULL) ... ${clientFilter} ${stageFilterQuery}`
+            // clientFilter is `AND client_id = $4`.
+            // So query has holes: $1, $4, $5. Missing $2, $3.
+            // Postgres generally creates prepared statement parameters based on usage. 
+            // If $2 and $3 are NOT in the string, then the PREPARED STATEMENT expects 3 params? Or does it verify indices?
+            // "prepared statement requires 3 parameters" suggests it counted 3 distinct placeholders ($1, $4, $5 -> 3 args?).
+            // Or does it expect contiguous?
+            // It's safer to rewrite filters to use consecutive numbers $2, $3.
+
+            // LET'S REWRITE FILTERS for CLV to be standard $1, $2, $3.
+
+            let clvQuery = `
                 SELECT 
                     AVG(lifetime_value) as avg_clv,
                     COUNT(*) as total_customers
                 FROM unified_customers
                 WHERE (tenant_id = $1 OR $1 IS NULL)
                   AND lifetime_value > 0
-                  ${clientFilter}
-                  ${stageFilterQuery}
-            `, queryParams);
+            `;
+            const clvQueryArgs = [tenantId];
+            let clvIdx = 2; // Next param index
 
+            if (clientId && clientId !== 'all') {
+                clvQuery += ` AND client_id = $${clvIdx}`;
+                clvQueryArgs.push(clientId);
+                clvIdx++;
+            }
+            if (stage && stage !== 'all') {
+                clvQuery += ` AND current_stage = $${clvIdx}`;
+                clvQueryArgs.push(stage);
+                clvIdx++;
+            }
+
+            const clvResult = await pool.query(clvQuery, clvQueryArgs);
             const avgCLV = parseFloat(clvResult.rows[0]?.avg_clv) || 0;
 
             // 6. Journey Stage Distribution
-            const journeyResult = await pool.query(`
+            // Uses $1. clientFilter uses ... wait.
+            // Original code used `clientFilter` string which hardcoded `$4`.
+            // If we regenerate the query string dynamically, we avoid gaps.
+
+            let journeyQuery = `
                 SELECT 
                     current_stage,
                     COUNT(*) as count
                 FROM unified_customers
                 WHERE (tenant_id = $1 OR $1 IS NULL)
-                ${clientFilter}
-                GROUP BY current_stage
-            `, queryParams);
+            `;
+            const journeyArgs = [tenantId];
+            let journeyIdx = 2;
+
+            if (clientId && clientId !== 'all') {
+                journeyQuery += ` AND client_id = $${journeyIdx}`;
+                journeyArgs.push(clientId);
+                journeyIdx++;
+            }
+            // Group by
+            journeyQuery += ` GROUP BY current_stage`;
+
+            const journeyResult = await pool.query(journeyQuery, journeyArgs);
 
             // 7. Employee Happiness
+            // Uses $1, $2, $3.
             const happinessResult = await pool.query(`
                 SELECT 
                     AVG(happiness_score) as avg_happiness,
@@ -193,7 +262,7 @@ const kpiController = {
                 FROM employee_happiness
                 WHERE (tenant_id = $1 OR $1 IS NULL)
                   AND submitted_at >= $2 AND submitted_at <= $3
-            `, [tenantId, startDate, endDate]);
+            `, [tenantId, startDate, endDate]); // Specific array
 
             res.json({
                 success: true,
