@@ -7,7 +7,7 @@ USER root
 # RUN apk add --no-cache python3 py3-pip
 
 # Switch back to node user
-USER node
+# USER node
 
 # Expose the port n8n runs on
 EXPOSE 5678

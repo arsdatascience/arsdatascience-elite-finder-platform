@@ -130,6 +130,8 @@ services:
       - "traefik.http.routers.n8n.entrypoints=websecure"
       - "traefik.http.routers.n8n.tls=true"
       - "traefik.http.routers.n8n.tls.certresolver=leresolver"
+      - "traefik.http.middlewares.n8n-cors.headers.accesscontrolalloworiginlist=https://marketinghub.aiiam.com.br,https://elitefinder.vercel.app,https://*.vercel.app,https://elite-finder.up.railway.app,https://*.up.railway.app,http://localhost:5173,http://localhost:3000"
+      - "traefik.http.routers.n8n.middlewares=n8n-headers,n8n-csp,n8n-cors"
       
       # Routers (Webhook)
       - "traefik.http.routers.n8n-webhook-http.rule=Host(`webhookn8n.aiiam.com.br`)"
