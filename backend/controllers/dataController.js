@@ -186,18 +186,10 @@ function calculateColumnStats(values, type) {
 const getDatasets = async (req, res) => {
     try {
         const tenantId = req.user.tenant_id || req.user.tenantId;
-        console.log(`[DEBUG] getDatasets - User Tenant: ${tenantId}, User ID: ${req.user.id}`);
-
         const result = await opsPool.query(
             'SELECT * FROM ml_datasets WHERE tenant_id = $1 OR $1 IS NULL ORDER BY created_at DESC',
             [tenantId]
         );
-
-        console.log(`[DEBUG] getDatasets - Found ${result.rows.length} rows`);
-        if (result.rows.length > 0) {
-            console.log(`[DEBUG] First row ID: ${result.rows[0].id}`);
-            console.log(`[DEBUG] First row statistics keys: ${Object.keys(result.rows[0].statistics || {})}`);
-        }
 
         // Unpack statistics and preview from the JSONB column to match frontend expectations
         const datasets = result.rows.map(row => {
@@ -209,12 +201,16 @@ const getDatasets = async (req, res) => {
                 try { stats = JSON.parse(stats); } catch (e) { stats = {}; }
             }
 
+            // Check if data follows the { preview, columnStats } structure
+            const hasNestedStructure = Array.isArray(stats.preview) || stats.columnStats;
+
             return {
                 ...row,
-                // Top-level preview expected by frontend
-                preview: Array.isArray(stats.preview) ? stats.preview : [],
-                // Flattened statistics (columnStats) expected by frontend
-                statistics: stats.columnStats || {}
+                // If nested, use .preview. Else, preview is unavailable (empty array)
+                preview: hasNestedStructure && Array.isArray(stats.preview) ? stats.preview : [],
+
+                // If nested, use .columnStats. Else, assume the whole object IS the column stats (legacy/flat format)
+                statistics: hasNestedStructure ? (stats.columnStats || {}) : stats
             };
         });
 
@@ -223,6 +219,29 @@ const getDatasets = async (req, res) => {
         console.error('Get Datasets Error:', error);
         res.status(500).json({ error: 'Failed to fetch datasets' });
     }
+};
+// Ensure statistics is an object (pg driver handles JSONB automatic parsing)
+let stats = row.statistics || {};
+
+// In case it came back as string for some reason (e.g. legacy data or driver quirk)
+if (typeof stats === 'string') {
+    try { stats = JSON.parse(stats); } catch (e) { stats = {}; }
+}
+
+return {
+    ...row,
+    // Top-level preview expected by frontend
+    preview: Array.isArray(stats.preview) ? stats.preview : [],
+    // Flattened statistics (columnStats) expected by frontend
+    statistics: stats.columnStats || {}
+};
+        });
+
+res.json(datasets);
+    } catch (error) {
+    console.error('Get Datasets Error:', error);
+    res.status(500).json({ error: 'Failed to fetch datasets' });
+}
 };
 
 /**
