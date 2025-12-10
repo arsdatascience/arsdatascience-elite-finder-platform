@@ -36,6 +36,14 @@ app.set('trust proxy', 1); // Necessário para Railway/Vercel e rate-limiter
 
 
 // Middleware
+// --- GLOBAL REQUEST LOGGER (DEBUG) ---
+app.use((req, res, next) => {
+  console.log(`[Request] ${req.method} ${req.url}`);
+  // Log headers to check for Content-Type or weird User-Agents
+  console.log('Headers:', JSON.stringify(req.headers['content-type'] || 'no-content-type'));
+  next();
+});
+
 const authenticateToken = require('./middleware/auth');
 const helmet = require('helmet');
 
@@ -161,10 +169,7 @@ app.put('/api/email/config/:id/default', authenticateToken, emailController.setD
 app.post('/api/email/send', authenticateToken, emailController.sendEmail);
 
 // Log request URL para debug
-app.use((req, res, next) => {
-  console.log(`[Request] ${req.method} ${req.url}`);
-  next();
-});
+// Log request moved to top
 
 
 // Conexão com Banco de Dados (PostgreSQL no Railway)
