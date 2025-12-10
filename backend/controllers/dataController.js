@@ -101,7 +101,11 @@ const uploadDataset = async (req, res) => {
         res.status(201).json(response);
     } catch (error) {
         console.error('Dataset Upload Error:', error);
-        res.status(500).json({ error: 'Failed to upload dataset' });
+        res.status(500).json({
+            error: 'Failed to upload dataset',
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };
 

@@ -27,6 +27,7 @@ export const DataUpload: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [selectedDataset, setSelectedDataset] = useState<Dataset | null>(null);
     const [previewTab, setPreviewTab] = useState<'table' | 'stats'>('table');
+    const [debugLog, setDebugLog] = useState<any>(null); // New Debug State
 
     useEffect(() => {
         loadDatasets();
@@ -38,9 +39,11 @@ export const DataUpload: React.FC = () => {
             // Robust check: Ensure response is an array
             const safeData = Array.isArray(response) ? response : (response?.data || []);
             setDatasets(Array.isArray(safeData) ? safeData : []);
-        } catch (err) {
+            setDebugLog(prev => ({ ...prev, lastLoad: 'Success', count: safeData.length }));
+        } catch (err: any) {
             console.error('Failed to load datasets', err);
             setDatasets([]);
+            setDebugLog(prev => ({ ...prev, lastLoad: 'Error', error: err.message }));
         }
     };
 
@@ -56,8 +59,10 @@ export const DataUpload: React.FC = () => {
             if (validTypes.includes(ext)) {
                 setFile(f);
                 setError(null);
+                setDebugLog({ action: 'File Dropped', file: f.name, size: f.size });
             } else {
                 setError('Formato inválido. Use CSV, Excel, JSON ou Parquet.');
+                setDebugLog({ action: 'File Rejected', reason: 'Invalid Type', ext });
             }
         }
     }, []);
@@ -67,17 +72,22 @@ export const DataUpload: React.FC = () => {
 
         setUploading(true);
         setError(null);
+        setDebugLog({ action: 'Upload Started', file: file.name });
 
         const formData = new FormData();
         formData.append('file', file);
         formData.append('name', file.name.split('.')[0]);
 
         try {
-            await apiClient.marketAnalysis.uploadDataset(formData);
+            const res = await apiClient.marketAnalysis.uploadDataset(formData);
             setFile(null);
+            setDebugLog({ action: 'Upload Success', response: res });
             loadDatasets();
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Falha no upload');
+            const errorMsg = err.response?.data?.error || 'Falha no upload';
+            const errorDetails = err.response?.data?.details || err.message;
+            setError(errorMsg);
+            setDebugLog({ action: 'Upload Failed', error: errorMsg, details: errorDetails, fullError: err.response?.data });
         } finally {
             setUploading(false);
         }
@@ -393,6 +403,17 @@ export const DataUpload: React.FC = () => {
                 {/* DEBUG SECTION */}
                 <div className="mt-8 p-4 bg-slate-900 rounded-xl overflow-x-auto text-xs text-green-400 font-mono border border-slate-700">
                     <h4 className="text-white font-bold mb-2 uppercase tracking-wider">Debug Info (Remover em Produção)</h4>
+
+                    {/* ACTION LOGS */}
+                    {debugLog && (
+                        <div className="mb-4 pb-4 border-b border-slate-700">
+                            <h5 className="text-yellow-400 font-bold mb-1">📢 Última Ação / Upload Log:</h5>
+                            <pre className="bg-black/30 p-2 rounded text-blue-300 overflow-auto max-h-40">
+                                {JSON.stringify(debugLog, null, 2)}
+                            </pre>
+                        </div>
+                    )}
+
                     <p className="text-slate-400 mb-2">Selecione um dataset acima para ver seus dados brutos aqui.</p>
                     {selectedDataset ? (
                         <pre>{JSON.stringify({
