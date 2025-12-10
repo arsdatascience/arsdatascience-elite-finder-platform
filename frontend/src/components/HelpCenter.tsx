@@ -32,41 +32,69 @@ interface HelpSection {
 const HELP_SECTIONS: HelpSection[] = [
     {
         id: 'dashboard',
-        title: 'Dashboard',
+        title: 'Gestão Estratégica (Dashboard)',
         icon: LayoutDashboard,
-        description: 'Visão geral do desempenho do seu negócio.',
+        description: 'Visão unificada de ROI e desempenho de mídia paga.',
         steps: [
             {
-                title: 'KPIs Principais',
-                content: 'Acompanhe métricas vitais como ROI, CTR, CPC e Conversões em tempo real. Os cards superiores mostram o resumo consolidado.'
+                title: 'Filtros de Plataforma',
+                content: 'Use os botões no topo da aba "Gestão Estratégica" para filtrar dados específicos de Google Ads, Meta Ads, YouTube Ads ou LinkedIn Ads.'
             },
             {
-                title: 'Gráficos de Desempenho',
-                content: 'Visualize a evolução das suas campanhas ao longo do tempo. Você pode filtrar por período (Hoje, 7 dias, 30 dias).'
+                title: 'KPIs Consolidados',
+                content: 'Visualize o ROI Total, Custo por Conversão (CPA) e Taxa de Conversão combinados de todas as suas campanhas ativas.'
+            },
+            {
+                title: 'Gráficos de Tendência',
+                content: 'Compare visualmente o investimento vs. receita gerada nos últimos 30 dias para identificar eficiência de gastos.'
             },
             {
                 title: 'Funil de Vendas',
-                content: 'Entenda onde você está perdendo clientes. O funil mostra a jornada desde a impressão até a venda.'
+                content: 'Monitore as taxas de conversão em cada etapa: Impressões -> Cliques -> Leads -> Vendas.'
             }
         ]
     },
     {
         id: 'sales_coaching',
-        title: 'Sales Coaching',
+        title: 'Sales Coaching & Teleprompter',
         icon: Headphones,
-        description: 'Seu assistente de vendas em tempo real via WhatsApp.',
+        description: 'Assistente de IA em tempo real para fechar mais vendas.',
         steps: [
             {
-                title: 'Conectando o WhatsApp',
-                content: 'Clique no ícone de engrenagem, selecione "Evolution API", insira a URL da API, Nome da Instância e API Key. Salve para conectar.'
+                title: 'Conexão Evolution API',
+                content: 'Certifique-se de que sua instância do WhatsApp está conectada. O sistema detecta automaticamente conversas ativas.'
             },
             {
-                title: 'Teleprompter IA',
-                content: 'Enquanto você conversa com o cliente, a IA analisa o sentimento e sugere respostas estratégicas no painel à direita.'
+                title: 'Teleprompter Inteligente',
+                content: 'Enquanto você conversa, a IA analisa o texto e sugere respostas. O painel agora possui scroll vertical para visualizar análises longas.'
             },
             {
-                title: 'Gestão de Sessões',
-                content: 'Alterne entre diferentes conversas na barra lateral esquerda. O histórico é salvo automaticamente.'
+                title: 'Detecção de Contexto',
+                content: 'A IA sabe quando você está apenas batendo papo (Informal) ou negociando (Vendas) e adapta as sugestões: Rapport vs Técnicas de Fechamento.'
+            },
+            {
+                title: 'Relatórios PDF',
+                content: 'Ao final de uma conversa, clique nos botões de download para baixar um "Relatório de Análise" (resumido) ou "Histórico Completo" em PDF.'
+            }
+        ]
+    },
+    {
+        id: 'market_analysis',
+        title: 'Análise de Mercado (ML)',
+        icon: BarChart3,
+        description: 'Machine Learning aplicado aos seus dados de negócio.',
+        steps: [
+            {
+                title: 'Aba Dados',
+                content: 'Faça upload de arquivos CSV/Excel. A tabela formata automaticamente valores monetários (R$) e numéricos para facilitar a leitura.'
+            },
+            {
+                title: 'Visualização de Dados',
+                content: 'Explore distribuições estatísticas, correlações e detecte outliers nos seus datasets importados antes de rodar modelos.'
+            },
+            {
+                title: 'Insights IA',
+                content: 'A aba "Insights IA" cruza dados do CRM, Financeiro e Projetos para gerar estratégias de retenção e upsell baseadas no perfil real dos seus clientes.'
             }
         ]
     },
@@ -81,7 +109,7 @@ const HELP_SECTIONS: HelpSection[] = [
                 content: 'Use o botão "Nova Campanha" para iniciar. A IA pode ajudar a gerar a estrutura ideal para Google ou Meta Ads.'
             },
             {
-                title: 'Otimização',
+                title: 'Otimização Automática',
                 content: 'O sistema monitora o desempenho e sugere ajustes de orçamento ou criativos para maximizar o ROI.'
             }
         ]
@@ -93,32 +121,32 @@ const HELP_SECTIONS: HelpSection[] = [
         description: 'Controle granular de tráfego e distribuição de leads.',
         steps: [
             {
-                title: 'Smart Lead Mover (Novo)',
-                content: 'A IA monitora o WhatsApp. Se o cliente disser "Quero fechar", o card move automaticamente para "Negociação" no Kanban.'
+                title: 'Kanban Drag-and-Drop',
+                content: 'Arraste leads entre colunas para atualizar status. A IA pode mover cards automaticamente baseada em gatilhos do WhatsApp.'
             },
             {
-                title: 'Lead Scoring Automático',
-                content: 'Cada lead ganha pontos (0-100) baseado em dados (email, empresa) e interações. Leads quentes sobem no ranking.'
+                title: 'Quick Actions',
+                content: 'No card do lead, use os botões rápidos para Ligar, Enviar WhatsApp ou Agendar Reunião sem abrir telas extras.'
             },
             {
-                title: 'Follow-up Omnichannel',
-                content: 'Se um lead novo não for atendido em 24h, o sistema envia um "Oi" automático no WhatsApp para reativá-lo.'
+                title: 'Lead Scoring',
+                content: 'Identifique rapidamente os leads mais quentes (pontuação alta) e priorize o atendimento.'
             }
         ]
     },
     {
         id: 'chat_ai',
-        title: 'Análise IA',
+        title: 'Análise de Conversas',
         icon: MessageSquare,
-        description: 'Analise conversas passadas para extrair insights.',
+        description: 'Auditoria de qualidade de atendimento com IA.',
         steps: [
             {
-                title: 'Upload de Conversas',
-                content: 'Cole o texto de uma conversa ou faça upload de um arquivo para análise profunda.'
+                title: 'Upload de Histórico',
+                content: 'Cole o texto de uma conversa ou faça upload de um arquivo para análise profunda de sentimento e objeções.'
             },
             {
                 title: 'Relatório de Qualidade',
-                content: 'Receba um relatório detalhando pontos fortes, fracos e oportunidades de melhoria no atendimento.'
+                content: 'Receba um relatório detalhando pontos fortes, fracos e oportunidades de melhoria no atendimento da sua equipe.'
             }
         ]
     },
@@ -126,15 +154,15 @@ const HELP_SECTIONS: HelpSection[] = [
         id: 'clients',
         title: 'Clientes & Leads',
         icon: Users,
-        description: 'CRM completo para gestão de relacionamento.',
+        description: 'Base unificada de contatos.',
         steps: [
             {
-                title: 'Cadastro',
-                content: 'Adicione clientes manualmente ou integre com formulários para captura automática.'
+                title: 'Cadastro Unificado',
+                content: 'Adicione clientes manualmente ou integre com formulários. O sistema unifica duplicatas automaticamente.'
             },
             {
-                title: 'Segmentação',
-                content: 'Use tags e filtros para organizar sua base de contatos e criar campanhas direcionadas.'
+                title: 'Segmentação Inteligente',
+                content: 'Use tags e filtros para criar listas de segmentação (ex: "VIP", "Risco de Churn") para ações de marketing.'
             }
         ]
     },
@@ -145,12 +173,12 @@ const HELP_SECTIONS: HelpSection[] = [
         description: 'Gestão de redes sociais em um só lugar.',
         steps: [
             {
-                title: 'Agendamento',
-                content: 'Crie e agende posts para Instagram, LinkedIn e Facebook.'
+                title: 'Agendamento Multi-Plataforma',
+                content: 'Crie e agende posts para Instagram, LinkedIn e Facebook a partir de uma única interface.'
             },
             {
                 title: 'Calendário Visual',
-                content: 'Visualize seu planejamento de conteúdo no módulo "Calendário".'
+                content: 'Visualize todo o seu planejamento de conteúdo no módulo "Calendário" para garantir consistência.'
             }
         ]
     },
@@ -161,16 +189,16 @@ const HELP_SECTIONS: HelpSection[] = [
         description: 'Crie assets visuais e textos persuasivos.',
         steps: [
             {
-                title: 'Content Loop (Novo)',
-                content: 'A IA lê as dúvidas do suporte e gera ideias de posts que resolvem dores reais dos clientes.'
-            },
-            {
-                title: 'Geração de Copy',
-                content: 'Use a IA para escrever legendas, e-mails e roteiros de vídeo.'
+                title: 'Geração de Copywriting',
+                content: 'Use a IA para escrever legendas, e-mails de vendas e roteiros de vídeo focados em conversão.'
             },
             {
                 title: 'Editor de Imagens',
-                content: 'Crie designs rápidos para seus posts sem sair da plataforma.'
+                content: 'Crie designs rápidos e profissionais para seus posts sem precisar de softwares externos.'
+            },
+            {
+                title: 'Content Loop',
+                content: 'A IA analisa dúvidas frequentes do suporte e sugere temas de conteúdo que resolvem dores reais.'
             }
         ]
     },
@@ -181,12 +209,12 @@ const HELP_SECTIONS: HelpSection[] = [
         description: 'Crie fluxos de trabalho automatizados complexos.',
         steps: [
             {
-                title: 'Workflows',
-                content: 'Conecte diferentes apps e serviços. Ex: "Quando chegar lead no Facebook, enviar WhatsApp e adicionar no CRM".'
+                title: 'Workflows Visuais',
+                content: 'Conecte diferentes apps e serviços (ex: "Novo Lead -> CRM -> WhatsApp -> Email") em uma interface visual.'
             },
             {
-                title: 'Templates',
-                content: 'Use modelos prontos para automações comuns de marketing e vendas.'
+                title: 'Templates Prontos',
+                content: 'Use modelos pré-configurados para automações comuns de marketing e vendas para ganhar tempo.'
             }
         ]
     },
@@ -194,19 +222,19 @@ const HELP_SECTIONS: HelpSection[] = [
         id: 'projects',
         title: 'Gestão de Projetos',
         icon: Briefcase,
-        description: 'Gerencie projetos, tarefas e prazos.',
+        description: 'Gerencie escopo, prazos e entregáveis.',
         steps: [
             {
-                title: 'Novo Projeto',
-                content: 'Clique em "Novo Projeto" no Project Center. Defina cliente, orçamento e prazos. O status inicial pode ser "Planejamento".'
+                title: 'Estrutura de Projetos',
+                content: 'Organize o trabalho em Projetos > Tarefas > Subtarefas. Defina budget e prazos para cada projeto.'
             },
             {
-                title: 'Quadro Kanban',
-                content: 'Gerencie tarefas arrastando cards entre colunas (Backlog -> Em Andamento -> Concluído). O progresso atualiza a barra do projeto.'
+                title: 'Visão Kanban e Lista',
+                content: 'Escolha a visualização que melhor se adapta ao seu fluxo de trabalho.'
             },
             {
-                title: 'Carga de Trabalho',
-                content: 'Visualize quantas tarefas cada membro da equipe possui para evitar sobrecarga.'
+                title: 'Gestão de Capacidade',
+                content: 'Visualize a carga de trabalho da equipe para evitar gargalos e atrasos.'
             }
         ]
     },
@@ -217,12 +245,12 @@ const HELP_SECTIONS: HelpSection[] = [
         description: 'Controle de receitas, despesas e fluxo de caixa.',
         steps: [
             {
-                title: 'Transações',
-                content: 'Registre entradas e saídas. Vincule a clientes e projetos para relatórios de rentabilidade.'
+                title: 'Fluxo de Caixa',
+                content: 'Acompanhe entradas e saídas em tempo real. Categorize transações para relatórios precisos.'
             },
             {
-                title: 'Dashboard Financeiro',
-                content: 'Acompanhe o fluxo de caixa, lucro líquido e despesas por categoria em tempo real.'
+                title: 'Rentabilidade por Cliente',
+                content: 'Vincule receitas e despesas a clientes específicos para saber quem traz mais lucro.'
             }
         ]
     },
@@ -230,15 +258,15 @@ const HELP_SECTIONS: HelpSection[] = [
         id: 'service_catalog',
         title: 'Catálogo de Serviços',
         icon: ShoppingBag,
-        description: 'Gestão de produtos e serviços oferecidos (Em Implementação).',
+        description: 'Gestão de produtos e serviços.',
         steps: [
             {
-                title: 'Definição de Produtos',
-                content: 'Cadastre seus pacotes de serviços (ex: "Gestão de Mídias Social Starter") com preços e escopo padrão.'
+                title: 'Padronização',
+                content: 'Cadastre seus pacotes de serviços com preços e escopos definidos para agilizar orçamentos.'
             },
             {
-                title: 'Propostas Rápidas',
-                content: 'Use os serviços cadastrados para gerar propostas comerciais padronizadas em segundos.'
+                title: 'Propostas Ágeis',
+                content: 'Gere propostas comerciais profissionais usando os itens do seu catálogo em poucos cliques.'
             }
         ]
     },
@@ -249,16 +277,16 @@ const HELP_SECTIONS: HelpSection[] = [
         description: 'Seu consultor de negócios 24/7.',
         steps: [
             {
-                title: 'Financial Advisor (Novo)',
-                content: 'Pergunte "Qual meu saldo?" ou "Como está o ROI?" e ele responderá com dados reais do financeiro.'
+                title: 'Respostas Baseadas em Dados',
+                content: 'Pergunte sobre seus números (ex: "Qual meu faturamento este mês?") e receba respostas precisas.'
             },
             {
-                title: 'Acesso à Internet (Novo)',
-                content: 'Ative o botão "Acesso à Internet" para que a IA pesquise tendências e notícias atuais na web.'
+                title: 'Pesquisa Web',
+                content: 'Ative o acesso à internet para que a IA pesquise tendências de mercado e concorrentes.'
             },
             {
-                title: 'Memória RAG',
-                content: 'O assistente lê seus manuais e documentos internos para dar respostas técnicas precisas.'
+                title: 'Memória Empresarial (RAG)',
+                content: 'O assistente aprende com seus documentos e manuais para dar respostas alinhadas à sua cultura.'
             }
         ]
     }

@@ -145,15 +145,22 @@ const mlData = await pool.opsPool.query('SELECT * FROM ml_predictions');
 
 ### ✅ WhatsApp Sales Coaching
 - Integração com Evolution API
-- Análise de conversas em tempo real
-- Coaching por IA
+- **Teleprompter IA:** Análise de sentimento e sugestões em tempo real com scroll vertical
+- **Relatórios PDF:** Geração de relatórios de análise e históricos completos
+- Detecção de contexto (Vendas vs Conversa Informal)
 - Botão de excluir conversas
 
 ### ✅ Módulo ML/Analytics
 - 22 algoritmos implementados (Regression, Classification, Clustering, Time Series)
-- Importação em batch de dados CSV
-- Visualizações por segmento
+- **Aba de Dados:** Visualização com formatação monetária automática (R$)
+- Importação em batch de dados CSV/Excel
+- Visualizações por segmento e Insights Automáticos
 - Configuração de hiperparâmetros
+
+### ✅ Gestão Estratégica (Dashboard)
+- Filtros por Plataforma: Google Ads, Meta Ads, YouTube Ads, LinkedIn Ads
+- KPIs Consolidados de todas as fontes
+- Análise de ROI e Custo por Conversão
 
 ### ✅ Gestão de Projetos
 - Projetos com budget e timeline
@@ -507,6 +514,13 @@ Proprietário - Todos os direitos reservados.
 ---
 
 ## 🔄 Changelog Recente
+
+### 2025-12-10
+- ✅ Correção Crítica: Insights IA acessando dados reais (Fix Tenant ID)
+- ✅ Dashboard: Filtros de Ads (Google, Meta, Youtube, LinkedIn)
+- ✅ Market Analysis: Formatação monetária na tabela de dados
+- ✅ Teleprompter: Scroll vertical, Relatórios PDF e Detecção de Contexto
+- ✅ Correção de erros TypeScript e Backend (UUID validation)
 
 ### 2025-12-08
 - ✅ Integração WhatsApp Sales Coaching corrigida
