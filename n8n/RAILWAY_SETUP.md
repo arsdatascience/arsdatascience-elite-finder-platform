@@ -32,6 +32,7 @@ Para fazer o deploy do n8n usando este repositório no Railway:
 | `N8N_BASIC_AUTH_USER` | `admin` | |
 | `N8N_BASIC_AUTH_PASSWORD` | `ArsN8n@2025!Secure` | |
 | `N8N_ENCRYPTION_KEY` | `f96fbf92bcec8a3f0c126656b6a6059287a44d2f2eef495f348922ff17bfe9d3` | **CRÍTICO: Não perca isso ou perderá as credenciais salvas** |
+| `N8N_EDITOR_BASE_URL` | `https://arsdatascience-n8n.aiiam.com.br` | Necessário para evitar erros de CSRF/Embed |
 | `N8N_CORS_ORIGIN` | `https://marketinghub.aiiam.com.br,https://elitefinder.vercel.app,https://*.vercel.app,https://elite-finder.up.railway.app,https://*.up.railway.app` | Permitir Embed |
 | `N8N_SECURE_COOKIE` | `true` | |
 | `N8N_COOKIE_SAMESITE` | `none` | Necessário para iframe |

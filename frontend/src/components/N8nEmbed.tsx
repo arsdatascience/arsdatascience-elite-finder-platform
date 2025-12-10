@@ -15,19 +15,17 @@ export function N8nEmbed({
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    const [n8nUrl, setN8nUrl] = useState('')
+    const baseUrl = 'https://arsdatascience-n8n.aiiam.com.br';
+    const defaultUrl = `${baseUrl}?locale=pt_BR`;
+
+    // Optimistic loading: Start with default URL immediately
+    const [n8nUrl, setN8nUrl] = useState(defaultUrl)
 
     useEffect(() => {
         const loadUrl = async () => {
-            const baseUrl = 'https://arsdatascience-n8n.aiiam.com.br';
-            const defaultUrl = `${baseUrl}?locale=pt_BR`;
-
             try {
                 const token = localStorage.getItem('token');
-                if (!token) {
-                    setN8nUrl(defaultUrl);
-                    return;
-                }
+                if (!token) return; // Keep default
 
                 const res = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/n8n/url`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -37,24 +35,21 @@ export function N8nEmbed({
                     const data = await res.json();
                     if (data.success && data.url) {
                         let finalUrl = data.url;
+                        if (!finalUrl.startsWith('http')) finalUrl = `https://${finalUrl}`;
 
-                        // Ensure protocol
-                        if (!finalUrl.startsWith('http')) {
-                            finalUrl = `https://${finalUrl}`;
-                        }
-
-                        // Append locale correctly
+                        // Append locale
                         const separator = finalUrl.includes('?') ? '&' : '?';
-                        setN8nUrl(`${finalUrl}${separator}locale=pt_BR`);
-                    } else {
-                        setN8nUrl(defaultUrl);
+                        const newUrl = `${finalUrl}${separator}locale=pt_BR`;
+
+                        // Only update if different to avoid reloading iframe
+                        if (newUrl !== defaultUrl) {
+                            setN8nUrl(newUrl);
+                        }
                     }
-                } else {
-                    setN8nUrl(defaultUrl);
                 }
             } catch (err) {
-                console.warn('Failed to fetch authenticated n8n URL:', err);
-                setN8nUrl(defaultUrl);
+                console.warn('Background fetch of n8n URL failed, using default:', err);
+                // No action needed, default is already set
             }
         };
 
