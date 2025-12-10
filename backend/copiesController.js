@@ -5,13 +5,13 @@ const authenticateToken = require('./middleware/auth');
 
 // Salvar uma nova copy
 router.post('/', authenticateToken, async (req, res) => {
-    const { topic, platform, tone, content } = req.body;
+    const { topic, platform, tone, content, clientId } = req.body;
     const userId = req.user.id;
 
     try {
         const result = await db.query(
-            'INSERT INTO saved_copies (user_id, topic, platform, tone, content) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [userId, topic, platform, tone, content]
+            'INSERT INTO saved_copies (user_id, topic, platform, tone, content, client_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [userId, topic, platform, tone, content, clientId || null]
         );
         res.status(201).json(result.rows[0]);
     } catch (error) {
@@ -23,11 +23,20 @@ router.post('/', authenticateToken, async (req, res) => {
 // Listar histórico de copys do usuário
 router.get('/', authenticateToken, async (req, res) => {
     const userId = req.user.id;
+    const { clientId } = req.query;
+
     try {
-        const result = await db.query(
-            'SELECT * FROM saved_copies WHERE user_id = $1 ORDER BY created_at DESC',
-            [userId]
-        );
+        let query = 'SELECT * FROM saved_copies WHERE user_id = $1';
+        const params = [userId];
+
+        if (clientId) {
+            query += ' AND client_id = $2';
+            params.push(clientId);
+        }
+
+        query += ' ORDER BY created_at DESC';
+
+        const result = await db.query(query, params);
         res.json(result.rows);
     } catch (error) {
         console.error('Erro ao listar copys:', error);

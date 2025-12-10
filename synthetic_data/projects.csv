@@ -1,0 +1,4 @@
+id,name,tenant_id,status,created_at
+1,Digital Transformation,1,active,2023-01-01T00:00:00Z
+2,Global Expansion,2,active,2023-01-01T00:00:00Z
+3,Retail Optimization,3,active,2023-01-01T00:00:00Z

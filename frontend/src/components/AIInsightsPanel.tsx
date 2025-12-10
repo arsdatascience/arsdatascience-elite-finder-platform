@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
     Sparkles, Brain, TrendingUp, AlertTriangle, Lightbulb,
     Download, RefreshCw, ChevronRight, CheckCircle, XCircle,
-    Database, Search, FileText, Clock
+    Database, Search, FileText, Bot, Clock
 } from 'lucide-react';
 import { apiClient } from '@/services/apiClient';
+
+import { AIProvider, AI_MODELS, OpenAIModel } from '@/constants/aiModels';
 
 interface Insight {
     id: string;
@@ -42,6 +44,16 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ onClose }) => 
     const [focusArea, setFocusArea] = useState<'all' | 'churn' | 'upsell' | 'engagement'>('all');
     const [error, setError] = useState<string | null>(null);
 
+    // AI Selection State
+    const [provider, setProvider] = useState<AIProvider>(AIProvider.OPENAI);
+    const [model, setModel] = useState<string>(OpenAIModel.GPT_4O);
+
+    // Update model when provider changes
+    useEffect(() => {
+        const firstModel = AI_MODELS[provider][0].id;
+        setModel(firstModel);
+    }, [provider]);
+
     useEffect(() => {
         fetchRecentInsights();
     }, []);
@@ -66,7 +78,9 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ onClose }) => 
         try {
             const response = await apiClient.post('/insights/customer-journey', {
                 focusArea,
-                generateReport: true
+                generateReport: true,
+                provider, // Send selected provider
+                model     // Send selected model
             });
             if (response.data.success) {
                 setSelectedInsight(response.data.insight);
@@ -143,6 +157,42 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ onClose }) => 
                     </div>
                 </div>
 
+                {/* Model Selection */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label className="block text-xs text-gray-400 mb-1 ml-1">Provedor IA</label>
+                        <div className="relative">
+                            <Bot className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <select
+                                value={provider}
+                                onChange={(e) => setProvider(e.target.value as AIProvider)}
+                                className="w-full bg-gray-900/50 border border-gray-700 text-gray-200 text-sm rounded-lg pl-9 pr-3 py-2 outline-none focus:border-purple-500/50 transition-colors appearance-none"
+                            >
+                                <option value={AIProvider.OPENAI}>OpenAI (Padrão)</option>
+                                <option value={AIProvider.ANTHROPIC}>Anthropic (Claude)</option>
+                                <option value={AIProvider.GEMINI}>Google (Gemini)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-xs text-gray-400 mb-1 ml-1">Modelo</label>
+                        <div className="relative">
+                            <Brain className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <select
+                                value={model}
+                                onChange={(e) => setModel(e.target.value)}
+                                className="w-full bg-gray-900/50 border border-gray-700 text-gray-200 text-sm rounded-lg pl-9 pr-3 py-2 outline-none focus:border-purple-500/50 transition-colors appearance-none"
+                            >
+                                {AI_MODELS[provider].map(m => (
+                                    <option key={m.id} value={m.id}>
+                                        {m.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Focus Area Selection */}
                 <div className="flex flex-wrap gap-2 mb-4">
                     {[
@@ -185,8 +235,24 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ onClose }) => 
                 </button>
 
                 {error && (
-                    <div className="mt-3 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
-                        {error}
+                    <div className="mt-3 p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+                        <div className="flex items-start gap-3">
+                            <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                            <div className="flex-1">
+                                <h4 className="font-semibold text-red-400">Erro na Análise</h4>
+                                <p className="text-red-300 text-sm mt-1">{error}</p>
+                            </div>
+                        </div>
+                        {error.includes('status code 500') && (
+                            <div className="mt-3 pt-3 border-t border-red-500/20">
+                                <p className="text-xs text-red-400 font-mono mb-1">Debug Info:</p>
+                                <pre className="text-[10px] bg-black/30 p-2 rounded overflow-auto max-h-32 text-red-300/70 font-mono">
+                                    Backend endpoint: /api/insights/customer-journey{'\n'}
+                                    Check: ai_insights table exists?{'\n'}
+                                    Check: columns in projects table (budget vs total_value)?
+                                </pre>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

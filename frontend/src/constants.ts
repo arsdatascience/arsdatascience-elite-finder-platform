@@ -47,7 +47,7 @@ export const NAV_GROUPS: NavGroup[] = [
     defaultOpen: false,
     items: [
       { id: 'FLIGHT_CONTROL', label: 'Flight Control (CRM)', icon: Plane },
-      { id: 'CAMPAIGNS', label: 'Campanhas de Ads', icon: Megaphone },
+
       { id: 'SOCIAL_CALENDAR', label: 'Calendário Social', icon: Calendar },
       { id: 'SOCIAL_INTEGRATIONS', label: 'Integrações Sociais', icon: Share2 },
       { id: 'SOCIAL', label: 'Redes Sociais', icon: Share2 },

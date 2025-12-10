@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
     BarChart3, TrendingUp, Table, PieChart, Activity,
-    Download, RefreshCw, ArrowUpRight, ArrowDownRight,
-    Target, Layers, Calendar, Database, Factory, ShoppingCart,
+    Download, RefreshCw,
+    Target, Layers, Database, Factory, ShoppingCart,
     Store, Cpu, Sprout, Car, Sparkles, GitBranch, Clock, Filter
 } from 'lucide-react';
 import { apiClient } from '../../services/apiClient';
+import { formatCurrency, formatNumber } from '../../utils/formatters';
 
 // Segment icons mapping
 const SEGMENT_ICONS: Record<string, React.ElementType> = {
@@ -96,22 +97,25 @@ export const AnalyticsResults: React.FC = () => {
         }
     };
 
-    const formatNumber = (num: number | undefined): string => {
-        if (num === undefined || num === null) return '--';
-        if (Math.abs(num) < 0.01 || Math.abs(num) > 10000) {
-            return num.toExponential(2);
-        }
-        return num.toFixed(4);
+
+
+    const isMonetaryMetric = (name: string) => {
+        const lowerName = name.toLowerCase();
+        return ['revenue', 'sales', 'profit', 'cost', 'price', 'ltv', 'cac', 'amount', 'budget'].some(term => lowerName.includes(term));
     };
 
-    const formatDate = (dateStr: string) => {
-        return new Date(dateStr).toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+    const getFormattedMetric = (name: string, value: number) => {
+        if (isMonetaryMetric(name)) return formatCurrency(value);
+        return formatNumber(value);
     };
+
+
+
+    // ... MetricDisplay Component ...
+
+
+
+
 
     const getAlgorithmDisplayName = (algorithm: string): string => {
         const names: Record<string, string> = {
@@ -278,7 +282,7 @@ export const AnalyticsResults: React.FC = () => {
                                                         </p>
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <span className="text-xs font-medium text-[#2c6a6b]">
-                                                                {result.primary_metric_name}: {formatNumber(result.primary_metric_value)}
+                                                                {result.primary_metric_name}: {getFormattedMetric(result.primary_metric_name, result.primary_metric_value)}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -311,7 +315,7 @@ export const AnalyticsResults: React.FC = () => {
                                         <SummaryCard
                                             icon={<Target className="w-5 h-5" />}
                                             label={selectedResult.primary_metric_name}
-                                            value={formatNumber(selectedResult.primary_metric_value)}
+                                            value={getFormattedMetric(selectedResult.primary_metric_name, selectedResult.primary_metric_value)}
                                             color="#2c6a6b"
                                         />
                                         <SummaryCard
@@ -437,7 +441,7 @@ export const AnalyticsResults: React.FC = () => {
                                                     <tbody className="divide-y divide-slate-100">
                                                         <tr className="hover:bg-slate-50">
                                                             <td className="px-4 py-3 font-medium text-slate-800">{selectedResult.primary_metric_name}</td>
-                                                            <td className="px-4 py-3 text-right text-slate-600">{formatNumber(selectedResult.primary_metric_value)}</td>
+                                                            <td className="px-4 py-3 text-right text-slate-600">{getFormattedMetric(selectedResult.primary_metric_name, selectedResult.primary_metric_value)}</td>
                                                             <td className="px-4 py-3 text-center">
                                                                 <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-medium">
                                                                     ✓
@@ -447,7 +451,7 @@ export const AnalyticsResults: React.FC = () => {
                                                         {selectedResult.secondary_metrics && Object.entries(selectedResult.secondary_metrics).map(([key, value]) => (
                                                             <tr key={key} className="hover:bg-slate-50">
                                                                 <td className="px-4 py-3 font-medium text-slate-800">{key}</td>
-                                                                <td className="px-4 py-3 text-right text-slate-600">{formatNumber(value as number)}</td>
+                                                                <td className="px-4 py-3 text-right text-slate-600">{getFormattedMetric(key, value as number)}</td>
                                                                 <td className="px-4 py-3 text-center">
                                                                     <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-medium">
                                                                         ✓
@@ -495,9 +499,19 @@ const SummaryCard: React.FC<{ icon: React.ReactNode; label: string; value: strin
     </div>
 );
 
+
+
 const MetricDisplay: React.FC<{ name: string; value: number }> = ({ name, value }) => {
     const isPercentage = name.includes('accuracy') || name.includes('precision') || name.includes('recall') || name.includes('f1') || name.includes('auc');
-    const displayValue = isPercentage && value <= 1 ? `${(value * 100).toFixed(2)}%` : value.toFixed(4);
+
+    let displayValue = '';
+    if (isPercentage && value <= 1) {
+        displayValue = `${(value * 100).toFixed(2)}%`;
+    } else if (['revenue', 'sales', 'profit', 'cost', 'price', 'ltv', 'cac', 'amount', 'budget'].some(term => name.toLowerCase().includes(term))) {
+        displayValue = formatCurrency(value);
+    } else {
+        displayValue = formatNumber(value);
+    }
 
     return (
         <div className="p-3 bg-slate-50 rounded-lg">

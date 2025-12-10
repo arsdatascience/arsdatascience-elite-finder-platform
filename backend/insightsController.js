@@ -18,7 +18,7 @@ exports.generateCustomerJourneyInsight = async (req, res) => {
     try {
         const tenantId = req.user.tenantId;
         const userId = req.user.id;
-        const { focusArea = 'all', customerIds = null } = req.body;
+        const { focusArea = 'all', customerIds = null, provider = 'openai', model } = req.body;
 
         // 1. Coletar dados do Crossover (leads, clients, interactions)
         const crossoverData = await collectCrossoverData(tenantId, customerIds);
@@ -35,7 +35,9 @@ exports.generateCustomerJourneyInsight = async (req, res) => {
             crossoverData,
             megalevData,
             qdrantContext,
-            focusArea
+            focusArea,
+            provider,
+            model
         });
 
         // 5. Salvar insight no banco
@@ -46,7 +48,8 @@ exports.generateCustomerJourneyInsight = async (req, res) => {
             insights,
             crossoverData,
             megalevData,
-            qdrantContext
+            qdrantContext,
+            provider // Optional: save provider metadata if table supports it (schema didn't have it, but useful for debug)
         });
 
         // 6. Gerar e salvar relatório no S3 (opcional)
@@ -241,7 +244,7 @@ async function collectMegalevData(tenantId, customerIds = null) {
         // Projetos ativos
         const projectsResult = await opsPool.query(`
             SELECT id, name, status, client_id, 
-                   COALESCE(total_value, 0) as total_value,
+                   COALESCE(budget, 0) as total_value,
                    created_at
             FROM projects
             WHERE tenant_id = $1 AND status != 'cancelled'
@@ -367,7 +370,7 @@ async function searchQdrantContext(query) {
 /**
  * Gera insights usando LLM
  */
-async function generateInsightsWithAI({ crossoverData, megalevData, qdrantContext, focusArea }) {
+async function generateInsightsWithAI({ crossoverData, megalevData, qdrantContext, focusArea, provider, model }) {
     const systemPrompt = `Você é um especialista em análise de jornada do cliente e estratégia de negócios.
 Analise os dados fornecidos e gere insights acionáveis em português brasileiro.
 
@@ -423,7 +426,8 @@ Gere insights acionáveis baseados nesses dados.`;
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt }
             ],
-            model: 'gpt-4-turbo-preview',
+            provider,
+            model: model || 'gpt-4-turbo-preview', // Default logic handled here or service
             temperature: 0.7,
             response_format: { type: 'json_object' }
         });

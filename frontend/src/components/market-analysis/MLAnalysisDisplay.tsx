@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useEffect, useState } from 'react';
+import { Socket } from 'socket.io-client';
 import {
     BarChart3,
     TrendingUp,
@@ -9,9 +9,9 @@ import {
     Instagram,
     Loader2,
     CheckCircle2,
-    XCircle,
-    RefreshCw
+    XCircle
 } from 'lucide-react';
+import { formatCurrency } from '../../utils/formatters';
 
 interface MLAnalysisData {
     intent: string;
@@ -52,11 +52,11 @@ const intentColors: Record<string, string> = {
     churn_prediction: 'text-red-500 bg-red-50'
 };
 
-export function MLAnalysisDisplay({ sessionId, socket, onAnalysisComplete }: MLAnalysisDisplayProps) {
+export function MLAnalysisDisplay({ socket, onAnalysisComplete }: MLAnalysisDisplayProps) {
     const [analysis, setAnalysis] = useState<MLAnalysisData | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [history, setHistory] = useState<MLAnalysisData[]>([]);
+
 
     useEffect(() => {
         const socketInstance = socket || (typeof window !== 'undefined' ? (window as any).socket : null);
@@ -72,7 +72,7 @@ export function MLAnalysisDisplay({ sessionId, socket, onAnalysisComplete }: MLA
             setAnalysis(data);
             setLoading(false);
             setError(null);
-            setHistory(prev => [data, ...prev.slice(0, 9)]); // Keep last 10
+
 
             if (onAnalysisComplete) {
                 onAnalysisComplete(data);
@@ -87,7 +87,7 @@ export function MLAnalysisDisplay({ sessionId, socket, onAnalysisComplete }: MLA
         };
 
         // Listen for loading state
-        const handleLoading = (data: { intent: string }) => {
+        const handleLoading = () => {
             setLoading(true);
             setError(null);
         };
@@ -174,11 +174,11 @@ export function MLAnalysisDisplay({ sessionId, socket, onAnalysisComplete }: MLA
                     <div className="bg-gray-50 rounded-lg p-4">
                         <p className="text-xs text-gray-500 mb-2">Dados do período</p>
                         <div className="grid grid-cols-3 gap-3">
-                            {analysis.data.chart_data.slice(0, 6).map((item: any, index: number) => (
+                            {analysis.data.chart_data.map((item: any, index: number) => (
                                 <div key={index} className="text-center p-2 bg-white rounded-lg shadow-sm">
                                     <p className="text-xs text-gray-500">{item.date}</p>
                                     <p className="text-sm font-semibold text-gray-900">
-                                        {item.reach?.toLocaleString() || item.revenue?.toLocaleString() || '-'}
+                                        {item.reach ? item.reach.toLocaleString() : formatCurrency(item.revenue)}
                                     </p>
                                 </div>
                             ))}

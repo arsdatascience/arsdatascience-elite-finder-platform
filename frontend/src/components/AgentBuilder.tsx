@@ -6,6 +6,7 @@ import {
     Shield, Fingerprint, Wand2, Smartphone, Check,
     LayoutTemplate, X, Loader2, RefreshCw, Zap
 } from 'lucide-react';
+import { ClientSelector } from './common/ClientSelector';
 // Tipos baseados na especificação do usuário
 interface AgentConfig {
     identity: {
@@ -225,6 +226,7 @@ export const AgentBuilder: React.FC = () => {
     const [searchParams] = useSearchParams();
     const templateId = searchParams.get('template');
     const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'vector' | 'prompts' | 'channels' | 'advanced' | 'deploy'>('identity');
+    const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
     const [config, setConfig] = useState<AgentConfig>(INITIAL_CONFIG);
 
     const TABS = [
@@ -259,7 +261,7 @@ export const AgentBuilder: React.FC = () => {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agents`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(agentConfig)
+                body: JSON.stringify({ ...agentConfig, clientId: selectedClientId })
             });
             if (!response.ok) {
                 const errorData = await response.json();
@@ -571,7 +573,13 @@ export const AgentBuilder: React.FC = () => {
                     </div>
                     <p className="text-sm text-gray-500">Configure agentes especializados com parâmetros avançados de RAG e Engenharia de Prompt.</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 items-center">
+                    <div className="w-64">
+                        <ClientSelector
+                            selectedClientId={selectedClientId}
+                            onSelectClient={setSelectedClientId}
+                        />
+                    </div>
                     <button
                         onClick={() => window.open('/whatsapp-simulator', '_blank')}
                         className="px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg font-medium flex items-center gap-2 border border-green-200"

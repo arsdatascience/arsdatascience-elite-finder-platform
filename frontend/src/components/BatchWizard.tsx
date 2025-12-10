@@ -4,9 +4,10 @@ import { Calendar, Layers, Target, Wand2, ArrowRight, ArrowLeft } from 'lucide-r
 interface BatchWizardProps {
     onGenerate: (config: any) => void;
     loading: boolean;
+    clientId?: number | null;
 }
 
-export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading }) => {
+export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading, clientId }) => {
     const [step, setStep] = useState(1);
     const [days, setDays] = useState(5);
     const [topics, setTopics] = useState<string[]>(Array(5).fill(''));
@@ -43,7 +44,10 @@ export const BatchWizard: React.FC<BatchWizardProps> = ({ onGenerate, loading })
             topics,
             platform,
             tone,
-            targetAudience
+            platform,
+            tone,
+            targetAudience,
+            clientId
         });
     };
 

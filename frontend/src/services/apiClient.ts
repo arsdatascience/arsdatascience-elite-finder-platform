@@ -303,8 +303,10 @@ export const apiClient = {
             const response = await axiosInstance.post('/images/generate', data);
             return response.data;
         },
-        list: async (limit = 20, page = 1) => {
-            const response = await axiosInstance.get('/images', { params: { limit, page } });
+        list: async (limit = 20, page = 1, clientId?: number | null) => {
+            const params: any = { limit, page };
+            if (clientId) params.clientId = clientId;
+            const response = await axiosInstance.get('/images', { params });
             return response.data;
         },
         delete: async (id: string) => {

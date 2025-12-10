@@ -431,6 +431,7 @@ const generateMarketingContent = async (req, res) => {
       TÓPICO/PRODUTO: ${request.topic}
       TOM DE VOZ: ${request.tone}
       IDIOMA: Português do Brasil (PT-BR)
+      CLIENTE_ID: ${request.clientId || 'N/A'}
 
       REGRAS:
       1. Use gatilhos mentais (urgência, escassez, prova social).
@@ -852,7 +853,7 @@ const generateContentIdeasFromChat = async (req, res) => {
 };
 
 const startBatchGeneration = async (req, res) => {
-  const { days, topics, platform, tone, targetAudience, provider = 'openai' } = req.body;
+  const { days, topics, platform, tone, targetAudience, provider = 'openai', clientId } = req.body;
   const user_id = req.user ? req.user.id : null;
   const { tenantId } = getTenantScope(req);
   const { jobsQueue } = require('./queueClient'); // Ensure this imports correctly
@@ -883,33 +884,35 @@ const startBatchGeneration = async (req, res) => {
           targetAudience,
           provider,
           userId: user_id,
-          tenantId
+          tenantId,
+          clientId
         }
-      },
-      opts: {
-        jobId: `batch_${batchId}_day_${index + 1}`
       }
+    },
+      opts: {
+      jobId: `batch_${batchId}_day_${index + 1}`
+    }
     }));
 
-    // Add all jobs to queue
-    // Check if jobsQueue exists and has addBulk
-    if (jobsQueue && jobsQueue.addBulk) {
-      await jobsQueue.addBulk(jobs);
-    } else {
-      console.warn("⚠️ jobsQueue not available, falling back to sequential add or error.");
-      // Fallback if needed, but assuming it works for now based on project structure
-    }
-
-    res.json({
-      success: true,
-      batchId,
-      message: `Batch iniciada! ${days} posts sendo gerados em segundo plano.`
-    });
-
-  } catch (error) {
-    console.error('Batch Generation Start Failed:', error);
-    res.status(500).json({ error: 'Failed to start batch generation' });
+  // Add all jobs to queue
+  // Check if jobsQueue exists and has addBulk
+  if (jobsQueue && jobsQueue.addBulk) {
+    await jobsQueue.addBulk(jobs);
+  } else {
+    console.warn("⚠️ jobsQueue not available, falling back to sequential add or error.");
+    // Fallback if needed, but assuming it works for now based on project structure
   }
+
+  res.json({
+    success: true,
+    batchId,
+    message: `Batch iniciada! ${days} posts sendo gerados em segundo plano.`
+  });
+
+} catch (error) {
+  console.error('Batch Generation Start Failed:', error);
+  res.status(500).json({ error: 'Failed to start batch generation' });
+}
 };
 
 module.exports = {

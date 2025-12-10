@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { Dashboard } from '@/components/Dashboard';
-import { Campaigns } from '@/components/Campaigns';
+
 import { FlightControl } from '@/components/FlightControl';
 import { ClientRegistration } from '@/components/ClientRegistration';
 import { AnalysisMode } from '@/components/AnalysisMode';
@@ -47,7 +47,7 @@ import CustomerJourneyDashboard from '@/components/CustomerJourneyDashboard';
 const PATH_MAP: Record<ViewState, string> = {
   [ViewState.HOME]: '/',
   [ViewState.DASHBOARD]: '/dashboard',
-  [ViewState.CAMPAIGNS]: '/campaigns',
+
   [ViewState.FLIGHT_CONTROL]: '/flight-control',
   [ViewState.CLIENTS]: '/clients',
   [ViewState.CHAT_AI]: '/chat-ai',
@@ -193,7 +193,7 @@ const App: React.FC = () => {
         <Route element={<Layout />}>
           <Route path="/" element={<Home onSelect={handleNavigate} />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/campaigns" element={<Campaigns />} />
+
           <Route path="/flight-control" element={<FlightControl />} />
           <Route path="/clients" element={<ClientRegistration />} />
           <Route path="/chat-ai" element={<AnalysisMode />} />

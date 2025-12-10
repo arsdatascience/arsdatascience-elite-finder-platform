@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { PenTool, Send, Copy, Check, Sparkles, Instagram, Linkedin, Mail, MessageCircle, Save, History, Trash2, Layout, FileText, Layers, Image } from 'lucide-react';
-import { ContentGenerator } from './ContentGenerator';
-import { BatchWizard } from './BatchWizard';
+import { ClientSelector } from './common/ClientSelector';
 import { ImageGenerationPage } from './ImageGenerationPage';
-
+import { BatchWizard } from './BatchWizard';
+import { ContentGenerator } from './ContentGenerator';
 
 const CreativeStudio: React.FC = () => {
     const [topic, setTopic] = useState('');
@@ -15,14 +15,21 @@ const CreativeStudio: React.FC = () => {
     const [savedCopies, setSavedCopies] = useState<any[]>([]);
     const [showHistory, setShowHistory] = useState(false);
 
-    // Carregar histórico ao iniciar
+    // Client Filter State
+    const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+
+    // Carregar histórico ao iniciar e quando o cliente mudar
     useEffect(() => {
         fetchHistory();
-    }, []);
+    }, [selectedClientId]);
 
     const fetchHistory = async () => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/copies`, {
+            const url = selectedClientId
+                ? `${import.meta.env.VITE_API_URL}/api/copies?clientId=${selectedClientId}`
+                : `${import.meta.env.VITE_API_URL}/api/copies`;
+
+            const response = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
             });
             if (response.ok) {
@@ -52,7 +59,8 @@ const CreativeStudio: React.FC = () => {
                     topic: topic,
                     tone: tone,
                     provider: 'openai',
-                    model: 'gpt-4-turbo-preview'
+                    model: 'gpt-4-turbo-preview',
+                    clientId: selectedClientId // Send selected client ID
                 })
             });
 
@@ -80,7 +88,8 @@ const CreativeStudio: React.FC = () => {
                     topic,
                     platform,
                     tone,
-                    content: generatedContent
+                    content: generatedContent,
+                    clientId: selectedClientId
                 })
             });
 
@@ -136,7 +145,7 @@ const CreativeStudio: React.FC = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
-                body: JSON.stringify(config) // Config matches { days, topics, platform, tone, targetAudience }
+                body: JSON.stringify({ ...config, clientId: selectedClientId }) // Include clientId
             });
 
             if (response.ok) {
@@ -171,14 +180,23 @@ const CreativeStudio: React.FC = () => {
                                 <p className="text-slate-600 mt-2">Central unificada para criação de textos persuasivos e design de posts.</p>
                             </div>
 
-                            {activeTab === 'copy' && (
-                                <button
-                                    onClick={() => setShowHistory(!showHistory)}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${showHistory ? 'bg-slate-200 text-slate-800' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'}`}
-                                >
-                                    <History size={18} /> Histórico ({savedCopies.length})
-                                </button>
-                            )}
+                            <div className="flex items-center gap-4">
+                                <div className="w-64">
+                                    <ClientSelector
+                                        selectedClientId={selectedClientId}
+                                        onSelectClient={setSelectedClientId}
+                                    />
+                                </div>
+
+                                {activeTab === 'copy' && (
+                                    <button
+                                        onClick={() => setShowHistory(!showHistory)}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${showHistory ? 'bg-slate-200 text-slate-800' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'}`}
+                                    >
+                                        <History size={18} /> Histórico ({savedCopies.length})
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Tabs */}
@@ -233,11 +251,11 @@ const CreativeStudio: React.FC = () => {
 
                         {activeTab === 'images' ? (
                             <div className="h-full">
-                                <ImageGenerationPage />
+                                <ImageGenerationPage clientId={selectedClientId} />
                             </div>
                         ) : activeTab === 'batch' ? (
                             <div className="h-full">
-                                <BatchWizard onGenerate={handleBatchGenerate} loading={loading} />
+                                <BatchWizard onGenerate={handleBatchGenerate} loading={loading} clientId={selectedClientId} />
                             </div>
                         ) : activeTab === 'design' ? (
                             <div className="h-full bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">

@@ -12,7 +12,11 @@ import { ImageLightbox } from './ui/ImageLightbox';
 import { AnalyticsDashboard } from './image-generation/AnalyticsDashboard';
 import { PromptTemplate } from '../lib/prompt-templates';
 
-export const ImageGenerationPage: React.FC = () => {
+interface ImageGenerationPageProps {
+    clientId?: number | null;
+}
+
+export const ImageGenerationPage: React.FC<ImageGenerationPageProps> = ({ clientId }) => {
     const [prompt, setPrompt] = useState('');
     const [negativePrompt, setNegativePrompt] = useState('');
     const [model, setModel] = useState('flux-schnell');
@@ -43,8 +47,11 @@ export const ImageGenerationPage: React.FC = () => {
 
     useEffect(() => {
         loadModels();
-        loadGallery();
     }, []);
+
+    useEffect(() => {
+        loadGallery();
+    }, [clientId]);
 
     const loadModels = async () => {
         try {
@@ -57,7 +64,7 @@ export const ImageGenerationPage: React.FC = () => {
 
     const loadGallery = async () => {
         try {
-            const data = await apiClient.imageGeneration.list(12, 1);
+            const data = await apiClient.imageGeneration.list(12, 1, clientId);
             if (data && data.data) setGallery(data.data);
         } catch (err) {
             console.error('Erro ao carregar galeria:', err);
@@ -81,7 +88,8 @@ export const ImageGenerationPage: React.FC = () => {
                 num_inference_steps: steps,
                 guidance_scale: guidance,
                 seed: seed === '' ? undefined : Number(seed),
-                num_outputs: batchSize
+                num_outputs: batchSize,
+                clientId: clientId
             });
 
             if (result.success) {

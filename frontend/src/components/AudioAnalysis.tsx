@@ -3,6 +3,7 @@ import { Upload, FileAudio, Mic, Loader2, AlertCircle, BarChart2, History, Trash
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import { ClientSelector } from './common/ClientSelector';
 
 interface AnalysisResult {
     id?: number;
@@ -35,7 +36,8 @@ interface HistoryItem {
 }
 
 export const AudioAnalysis: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'new' | 'history'>('new');
+    const activeTabState = useState<'new' | 'history'>('new');
+    const [activeTab, setActiveTab] = activeTabState;
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -43,19 +45,26 @@ export const AudioAnalysis: React.FC = () => {
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
+    // Client Filter State
+    const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (activeTab === 'history') {
             fetchHistory();
         }
-    }, [activeTab]);
+    }, [activeTab, selectedClientId]);
 
     const fetchHistory = async () => {
         setIsLoadingHistory(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/audio/history`, {
+            const url = selectedClientId
+                ? `${import.meta.env.VITE_API_URL}/api/audio/history?clientId=${selectedClientId}`
+                : `${import.meta.env.VITE_API_URL}/api/audio/history`;
+
+            const response = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -94,6 +103,9 @@ export const AudioAnalysis: React.FC = () => {
 
         const formData = new FormData();
         formData.append('audio', file);
+        if (selectedClientId) {
+            formData.append('clientId', selectedClientId.toString());
+        }
 
         try {
             const token = localStorage.getItem('token');
@@ -254,12 +266,21 @@ export const AudioAnalysis: React.FC = () => {
     return (
         <div className="p-6 max-w-6xl mx-auto space-y-8 animate-fade-in">
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-                        <Mic className="text-primary-600" /> Análise de Áudio Inteligente
-                    </h1>
-                    <p className="text-slate-500 mt-2">Transcreva áudios e analise sentimentos com IA (Whisper + GPT-4o)</p>
+                <div className="flex items-center gap-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+                            <Mic className="text-primary-600" /> Análise de Áudio Inteligente
+                        </h1>
+                        <p className="text-slate-500 mt-2">Transcreva áudios e analise sentimentos com IA (Whisper + GPT-4o)</p>
+                    </div>
+                    <div className="w-64">
+                        <ClientSelector
+                            selectedClientId={selectedClientId}
+                            onSelectClient={setSelectedClientId}
+                        />
+                    </div>
                 </div>
+
                 <div className="flex bg-slate-100 p-1 rounded-lg">
                     <button
                         onClick={() => {

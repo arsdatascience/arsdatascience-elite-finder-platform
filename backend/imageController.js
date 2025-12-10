@@ -72,7 +72,7 @@ const getModels = async (req, res) => {
 
 const generateImage = async (req, res) => {
     try {
-        const { prompt, model, width, height, num_inference_steps, guidance_scale, seed, num_outputs = 1, negativePrompt } = req.body;
+        const { prompt, model, width, height, num_inference_steps, guidance_scale, seed, num_outputs = 1, negativePrompt, clientId } = req.body;
 
         console.log(`🎨 Generating Image with model ${model}: "${prompt}"`);
 
@@ -184,8 +184,8 @@ const generateImage = async (req, res) => {
             const imageUrl = url.toString();
 
             const insertQuery = `
-                INSERT INTO generated_images (tenant_id, user_id, url, thumbnail_url, prompt, model, width, height, provider, cost, generation_time, metadata)
-                VALUES ($1, $2, $3, $3, $4, $5, $6, $7, $8, 0, 0, $9)
+                INSERT INTO generated_images (tenant_id, user_id, url, thumbnail_url, prompt, model, width, height, provider, cost, generation_time, metadata, client_id)
+                VALUES ($1, $2, $3, $3, $4, $5, $6, $7, $8, 0, 0, $9, $10)
                 RETURNING *;
             `;
 
@@ -204,7 +204,9 @@ const generateImage = async (req, res) => {
                 width || 1024,
                 height || 1024,
                 selectedModel.provider || 'replicate',
-                JSON.stringify(metadata)
+                selectedModel.provider || 'replicate',
+                JSON.stringify(metadata),
+                clientId || null
             ]);
 
             savedImages.push(result.rows[0]);
@@ -415,23 +417,32 @@ const translate = async (req, res) => {
 // List Images from DB
 const listImages = async (req, res) => {
     try {
-        const { limit = 20, page = 1 } = req.query;
+        const { limit = 20, page = 1, clientId } = req.query;
         const tenantId = req.user.tenantId || req.user.tenant_id;
 
         const offset = (page - 1) * limit;
 
-        const countQuery = `SELECT COUNT(*) FROM generated_images WHERE tenant_id = $1`;
-        const countResult = await db.query(countQuery, [tenantId]);
-        const total = parseInt(countResult.rows[0].count);
-
-        const query = `
+        let countQuery = `SELECT COUNT(*) FROM generated_images WHERE tenant_id = $1`;
+        let query = `
             SELECT * FROM generated_images 
             WHERE tenant_id = $1 
-            ORDER BY created_at DESC 
-            LIMIT $2 OFFSET $3
         `;
+        const params = [tenantId];
 
-        const result = await db.query(query, [tenantId, limit, offset]);
+        if (clientId) {
+            countQuery += ` AND client_id = $2`;
+            query += ` AND client_id = $2`;
+            params.push(clientId);
+        }
+
+        query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+
+        // Count execution
+        const countResult = await db.query(countQuery, clientId ? [tenantId, clientId] : [tenantId]);
+        const total = parseInt(countResult.rows[0].count);
+
+        // Data execution
+        const result = await db.query(query, [...params, limit, offset]);
 
         res.json({
             success: true,

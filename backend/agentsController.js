@@ -37,9 +37,9 @@ router.post('/', async (req, res) => {
         const newAgent = await executeTransaction(async (client) => {
             // 1. Inserir Agente (Chatbot)
             const agentResult = await client.query(`
-                INSERT INTO chatbots (name, description, category, class, specialization_level, status, advanced_settings)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                RETURNING id, name, description, category, class, specialization_level, status
+                INSERT INTO chatbots (name, description, category, class, specialization_level, status, advanced_settings, client_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                RETURNING id, name, description, category, class, specialization_level, status, client_id
             `, [
                 identity.name,
                 identity.description,
@@ -47,7 +47,8 @@ router.post('/', async (req, res) => {
                 identity.class,
                 identity.specializationLevel,
                 identity.status,
-                advancedConfig || {}
+                advancedConfig || {},
+                identity.clientId || null
             ]);
             const agentId = agentResult.rows[0].id;
 
@@ -161,13 +162,25 @@ router.post('/', async (req, res) => {
 // Listar agentes (Simplificado, apenas dados básicos)
 router.get('/', async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, name, category, status, created_at FROM chatbots ORDER BY created_at DESC');
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Erro ao listar agentes:', error);
-        res.status(500).json({ error: 'Erro ao listar agentes' });
-    }
-});
+        try {
+            const { clientId } = req.query;
+            let query = 'SELECT id, name, category, status, created_at, client_id FROM chatbots';
+            const params = [];
+
+            if (clientId) {
+                query += ' WHERE client_id = $1';
+                params.push(clientId);
+            }
+
+            query += ' ORDER BY created_at DESC';
+
+            const result = await pool.query(query, params);
+            res.json(result.rows);
+        } catch (error) {
+            console.error('Erro ao listar agentes:', error);
+            res.status(500).json({ error: 'Erro ao listar agentes' });
+        }
+    });
 
 // Obter agente completo por ID
 router.get('/:id', async (req, res) => {
@@ -285,10 +298,10 @@ router.put('/:id', async (req, res) => {
             // 1. Atualizar Agente
             const agentResult = await client.query(`
                 UPDATE chatbots SET
-        name = $1, description = $2, category = $3, class = $4, specialization_level = $5, status = $6, advanced_settings = $7, updated_at = CURRENT_TIMESTAMP
-                WHERE id = $8
+        name = $1, description = $2, category = $3, class = $4, specialization_level = $5, status = $6, advanced_settings = $7, client_id = $8, updated_at = CURRENT_TIMESTAMP
+                WHERE id = $9
         RETURNING *
-            `, [identity.name, identity.description, identity.category, identity.class, identity.specializationLevel, identity.status, advancedConfig || {}, id]);
+            `, [identity.name, identity.description, identity.category, identity.class, identity.specializationLevel, identity.status, advancedConfig || {}, identity.clientId || null, id]);
 
             if (agentResult.rows.length === 0) {
                 throw new Error('Agente não encontrado');

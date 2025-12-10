@@ -1,0 +1,41 @@
+🔍 Starting Structural Analysis...
+
+📂 Analyzing folder: synthetic_data -> Target: Maglev (Ops)
+   🔸 conversion_events: Table NOT FOUND in Maglev (Ops)
+   🔸 customer_interactions: Table NOT FOUND in Maglev (Ops)
+   🔸 customer_journeys: Table NOT FOUND in Maglev (Ops)
+   🔸 identity_graph: Table NOT FOUND in Maglev (Ops)
+   🔸 journey_step_templates: Table NOT FOUND in Maglev (Ops)
+   ✅ ml_algorithm_configs: Structure OK (12 cols)
+   ✅ ml_algorithm_config_history: Structure OK (6 cols)
+   ✅ ml_classification_results: Structure OK (12 cols)
+   ✅ ml_clustering_results: Structure OK (10 cols)
+   ✅ ml_customer_analytics: Structure OK (13 cols)
+   ✅ ml_datasets: Structure OK (13 cols)
+   ✅ ml_experiments: Structure OK (20 cols)
+   ✅ ml_financial_analytics: Structure OK (12 cols)
+   ✅ ml_industry_segments: Structure OK (9 cols)
+   ✅ ml_marketing_analytics: Structure OK (14 cols)
+   ✅ ml_predictions: Structure OK (7 cols)
+   ✅ ml_prophet_holidays: Structure OK (7 cols)
+   ✅ ml_regression_results: Structure OK (12 cols)
+   ✅ ml_sales_analytics: Structure OK (12 cols)
+   ✅ ml_segment_analytics: Structure OK (14 cols)
+   ✅ ml_timeseries_results: Structure OK (11 cols)
+   ✅ ml_viz_classification: Structure OK (11 cols)
+   ✅ ml_viz_clustering: Structure OK (9 cols)
+   ✅ ml_viz_regression: Structure OK (9 cols)
+   ✅ ml_viz_timeseries: Structure OK (9 cols)
+   🔸 unified_customers: Table NOT FOUND in Maglev (Ops)
+
+📂 Analyzing folder: generated_data -> Target: Crossover (Core)
+   ⚠️  conversion_events: Mismatch!
+      CSV cols missing in DB: value
+   ⚠️  customer_interactions: Mismatch!
+      CSV cols missing in DB: content
+   ✅ customer_journeys: Structure OK (7 cols)
+   ⚠️  identity_graph: Mismatch!
+      CSV cols missing in DB: tenant_id, last_seen_at
+   ✅ journey_step_templates: Structure OK (8 cols)
+   ✅ unified_customers: Structure OK (7 cols)
+
