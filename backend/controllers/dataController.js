@@ -186,10 +186,18 @@ function calculateColumnStats(values, type) {
 const getDatasets = async (req, res) => {
     try {
         const tenantId = req.user.tenant_id || req.user.tenantId;
+        console.log(`[DEBUG] getDatasets - User Tenant: ${tenantId}, User ID: ${req.user.id}`);
+
         const result = await opsPool.query(
             'SELECT * FROM ml_datasets WHERE tenant_id = $1 OR $1 IS NULL ORDER BY created_at DESC',
             [tenantId]
         );
+
+        console.log(`[DEBUG] getDatasets - Found ${result.rows.length} rows`);
+        if (result.rows.length > 0) {
+            console.log(`[DEBUG] First row ID: ${result.rows[0].id}`);
+            console.log(`[DEBUG] First row statistics keys: ${Object.keys(result.rows[0].statistics || {})}`);
+        }
 
         // Unpack statistics and preview from the JSONB column to match frontend expectations
         const datasets = result.rows.map(row => {
