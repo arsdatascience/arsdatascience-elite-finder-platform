@@ -1116,9 +1116,18 @@ app.post('/api/financial/suppliers', authenticateToken, financialCtrl.createSupp
 app.get('/api/financial/clients', authenticateToken, financialCtrl.getClients);
 
 // --- BULLMQ DASHBOARD ---
-const serverAdapter = require('./queueBoard');
-// Note: router need to be used as a middleware
-app.use('/admin/queues', authenticateToken, checkAdmin, serverAdapter.getRouter());
+// --- BULLMQ DASHBOARD ---
+let serverAdapter; // Declare outside try-catch
+try {
+  console.log('🔌 Initializing Queue Board...');
+  serverAdapter = require('./queueBoard');
+  // Note: router need to be used as a middleware
+  app.use('/admin/queues', authenticateToken, checkAdmin, serverAdapter.getRouter());
+  console.log('✅ Queue Board initialized');
+} catch (err) {
+  console.error('⚠️ Failed to initialize Queue Board (Redis issue?):', err.message);
+  // Continue without Queue Board
+}
 
 // Rotas de Estatísticas do Sistema (Admin)
 app.get('/api/admin/usage-stats', authenticateToken, checkAdmin, adminCtrl.getSystemUsage);
