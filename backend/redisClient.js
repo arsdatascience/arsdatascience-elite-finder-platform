@@ -11,7 +11,14 @@ const getRedisClient = () => {
         }
     };
 
-    // 1. Tentar URL Pública (Estabilidade / Fallback)
+    // 1. Tentar URL Interna/Padrão (Prioridade para Railway Internal Network)
+    if (process.env.REDIS_URL) {
+        console.log('🔌 Usando REDIS_URL para conexão (Internal)...');
+        return new Redis(process.env.REDIS_URL, defaultOptions);
+    }
+
+    // 2. Tentar URL Pública (Fallback ou Desenvolvimento Local)
+    // Usar apenas se a interna não existir
     if (process.env.REDIS_PUBLIC_URL) {
         const url = process.env.REDIS_PUBLIC_URL;
         const maskedUrl = url.replace(/:[^@]+@/, ':***@');
@@ -29,12 +36,6 @@ const getRedisClient = () => {
             ...defaultOptions,
             family: 0 // Auto-detect IPv4/IPv6
         });
-    }
-
-    // 2. Tentar URL Interna/Padrão
-    if (process.env.REDIS_URL) {
-        console.log('🔌 Usando REDIS_URL para conexão...');
-        return new Redis(process.env.REDIS_URL, defaultOptions);
     }
 
     // 3. Fallback para variáveis individuais
