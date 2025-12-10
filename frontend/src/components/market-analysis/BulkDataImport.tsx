@@ -373,6 +373,28 @@ export const BulkDataImport: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Layer 0 - Infrastructure */}
+                        <div>
+                            <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                                <span className="bg-gray-200 text-gray-800 px-2 py-1 text-xs rounded-full">0ª Camada</span>
+                                Infraestrutura Global (Obrigatório)
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {[
+                                    { name: 'tenants.csv', desc: 'Tenants / Clientes', db: 'Crossover' },
+                                    { name: 'projects.csv', desc: 'Projetos', db: 'Crossover' },
+                                ].map(t => (
+                                    <div key={t.name} className="bg-amber-50 border border-amber-100 rounded-lg p-3 flex items-center gap-3">
+                                        <span className="text-lg">🏗️</span>
+                                        <div>
+                                            <code className="text-sm font-medium text-gray-900">{t.name}</code>
+                                            <p className="text-xs text-gray-500">{t.desc} • {t.db}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* Layer 1 - Base Tables */}
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
@@ -519,6 +541,7 @@ export const BulkDataImport: React.FC = () => {
                         <div className="bg-gray-100 rounded-lg p-4 mt-4">
                             <p className="font-medium text-gray-800 mb-2">📝 Resumo Rápido da Ordem:</p>
                             <ol className="text-sm text-gray-700 space-y-1 list-decimal list-inside">
+                                <li><code className="bg-white px-1 rounded">tenants</code>, <code className="bg-white px-1 rounded">projects</code> <strong>(CRÍTICO)</strong></li>
                                 <li><code className="bg-white px-1 rounded">ml_industry_segments</code>, <code className="bg-white px-1 rounded">ml_datasets</code>, <code className="bg-white px-1 rounded">unified_customers</code></li>
                                 <li><code className="bg-white px-1 rounded">ml_experiments</code>, <code className="bg-white px-1 rounded">ml_algorithm_configs</code></li>
                                 <li><code className="bg-white px-1 rounded">ml_*_results</code>, <code className="bg-white px-1 rounded">ml_*_analytics</code></li>
