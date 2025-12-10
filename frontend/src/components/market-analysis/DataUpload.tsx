@@ -136,7 +136,15 @@ export const DataUpload: React.FC = () => {
                     </tbody>
                 </table>
                 {rows.length === 0 && (
-                    <div className="p-8 text-center text-slate-400">Sem dados de preview disponíveis</div>
+                    <div className="flex flex-col items-center justify-center p-12 text-center">
+                        <Database className="w-12 h-12 text-slate-200 mb-3" />
+                        <h4 className="font-medium text-slate-600 mb-1">Prévia de linhas indisponível</h4>
+                        <p className="text-sm text-slate-400 max-w-xs">
+                            Este dataset é antigo e não possui linhas salvas para pré-visualização.
+                            <br />
+                            <span className="text-emerald-600 font-medium">As Estatísticas funcionam normalmente.</span>
+                        </p>
+                    </div>
                 )}
                 {rows.length > 20 && (
                     <p className="text-center text-sm text-slate-400 py-3">
@@ -381,32 +389,6 @@ export const DataUpload: React.FC = () => {
                         </div>
                     </div>
                 </div>
-
-                {/* DEBUG SECTION */}
-                <div className="mt-8 p-4 bg-slate-900 rounded-xl overflow-x-auto text-xs text-green-400 font-mono border border-slate-700">
-                    <h4 className="text-white font-bold mb-2 uppercase tracking-wider">Debug Info (Remover em Produção)</h4>
-                    <p className="text-slate-400 mb-2">Selecione um dataset acima para ver seus dados brutos aqui.</p>
-                    {selectedDataset ? (
-                        <pre>{JSON.stringify({
-                            id: selectedDataset.id,
-                            row_count: selectedDataset.row_count,
-                            columnsType: Array.isArray(selectedDataset.columns) ? 'Array' : typeof selectedDataset.columns,
-                            columnsSample: selectedDataset.columns,
-                            previewType: Array.isArray(selectedDataset.preview) ? 'Array' : typeof selectedDataset.preview,
-                            previewLength: selectedDataset.preview?.length,
-                            previewSample: selectedDataset.preview?.slice(0, 1),
-                            statsType: typeof selectedDataset.statistics,
-                            statsKeys: Object.keys(selectedDataset.statistics || {})
-                        }, null, 2)}</pre>
-                    ) : (
-                        <span className="text-slate-500">Nenhum dataset selecionado.</span>
-                    )}
-                    <div className="mt-4 pt-4 border-t border-slate-700">
-                        <h5 className="text-white mb-1">Raw Dataset Dump:</h5>
-                        <pre className="opacity-50 max-h-40 overflow-auto">{JSON.stringify(selectedDataset, null, 2)}</pre>
-                    </div>
-                </div>
-
             </div>
         </ErrorBoundary>
     );
