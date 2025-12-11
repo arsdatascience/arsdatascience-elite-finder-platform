@@ -25,6 +25,38 @@ interface SocialAccount {
   avatar?: string;
 }
 
+const PLATFORM_CONTENT_TYPES: Record<string, { value: string; label: string }[]> = {
+  google: [
+    { value: 'ad', label: 'Anúncio de Pesquisa (Ad)' },
+  ],
+  meta: [
+    { value: 'ad', label: 'Anúncio (Ads)' },
+    { value: 'post', label: 'Post (Feed)' },
+    { value: 'stories', label: 'Stories' },
+    { value: 'reels', label: 'Reels' }
+  ],
+  instagram: [
+    { value: 'post', label: 'Post (Feed)' },
+    { value: 'reels', label: 'Reels' },
+    { value: 'stories', label: 'Stories' },
+    { value: 'carousel', label: 'Carrossel' },
+    { value: 'caption', label: 'Legenda' }
+  ],
+  linkedin: [
+    { value: 'post', label: 'Post' },
+    { value: 'article', label: 'Artigo' },
+    { value: 'poll', label: 'Enquete' }
+  ],
+  tiktok: [
+    { value: 'video_script', label: 'Roteiro de Vídeo' },
+    { value: 'ad', label: 'Anúncio' },
+    { value: 'caption', label: 'Legenda' }
+  ],
+  blog: [
+    { value: 'article', label: 'Artigo / Blog Post' }
+  ]
+};
+
 export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
   isOpen,
   onClose,
@@ -75,6 +107,16 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
       setModel(GeminiModel.GEMINI_2_5_FLASH);
     }
   }, [provider]);
+
+  // Dynamic Type Selection
+  useEffect(() => {
+    const types = PLATFORM_CONTENT_TYPES[platform];
+    if (types && types.length > 0) {
+      // Only reset if current type is not valid for new platform? 
+      // Or always reset to first one? User requested "mudar automaticamente", usually implies defaulting to the first valid one.
+      setType(types[0].value as any);
+    }
+  }, [platform]);
 
   // Load Mock Accounts based on Client
   useEffect(() => {
@@ -301,22 +343,6 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Conteúdo</label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value as any)}
-                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-slate-500 outline-none bg-white"
-                  >
-                    <option value="ad">Anúncio Pago (Ads)</option>
-                    <option value="post">Post Orgânico (Feed)</option>
-                    <option value="reels">Reels / TikTok (Roteiro)</option>
-                    <option value="stories">Stories (Sequência)</option>
-                    <option value="carousel">Carrossel (Slide a Slide)</option>
-                    <option value="poll">Enquete Interativa</option>
-                    <option value="article">Artigo / Blog Post</option>
-                  </select>
-                </div>
-                <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Plataforma</label>
                   <select
                     value={platform}
@@ -329,6 +355,18 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                     <option value="linkedin">LinkedIn</option>
                     <option value="tiktok">TikTok</option>
                     <option value="blog">Blog / Site</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Conteúdo</label>
+                  <select
+                    value={type}
+                    onChange={(e) => setType(e.target.value as any)}
+                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-slate-500 outline-none bg-white"
+                  >
+                    {PLATFORM_CONTENT_TYPES[platform]?.map((t) => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
