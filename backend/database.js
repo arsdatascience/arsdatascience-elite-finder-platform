@@ -1,17 +1,22 @@
 // Database connection configuration
 const { Pool } = require('pg');
 
+const isRailway = (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('rlwy.net')) ||
+    (process.env.DATA_BASE_URL2 && process.env.DATA_BASE_URL2.includes('rlwy.net'));
+
+const sslConfig = (process.env.NODE_ENV === 'production' || isRailway) ? { rejectUnauthorized: false } : false;
+
 // Create PostgreSQL connection pool
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: sslConfig
 });
 
 // Create Operations connection pool (New Modules: Projects, Tasks, SOPs, Finance)
 // Railway uses DATA_BASE_URL2 for Maglev (Operations DB)
 const opsPool = new Pool({
     connectionString: process.env.DATA_BASE_URL2 || process.env.OPERATIONS_DB_URL || process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: sslConfig
 });
 
 // Handle pool errors
