@@ -128,7 +128,7 @@ app.get('/api/health', (req, res) => {
 app.post('/api/stripe/create-checkout-session', authenticateToken, stripeController.createCheckoutSession);
 
 const planController = require('./planController');
-const checkAdmin = require('./middleware/checkAdmin');
+// const checkAdmin = require('./middleware/checkAdmin'); // Removed to avoid duplicate declaration
 // Rotas de Admin - Gestão de Planos
 app.get('/api/admin/plans', authenticateToken, checkAdmin, planController.getAllPlans);
 app.post('/api/admin/plans', authenticateToken, checkAdmin, planController.createPlan);
