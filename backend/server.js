@@ -153,6 +153,10 @@ app.delete('/api/audio/analysis/:id', authenticateToken, audioController.deleteA
 const mlAgentRoutes = require('./routes/mlAgent.routes');
 app.use('/api/ml-agent', mlAgentRoutes);
 
+// Analytics Routes (Market Analysis)
+const analyticsRoutes = require('./routes/analyticsRoutes');
+app.use('/api/analytics', analyticsRoutes);
+
 // Cross-Database Unified Routes (Crossover + Maglev integration)
 const crossDatabaseController = require('./crossDatabaseController');
 app.get('/api/unified/customer/:customerId', authenticateToken, crossDatabaseController.getUnifiedCustomerView);

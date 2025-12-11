@@ -7,6 +7,7 @@ const pool = require('./database');
 const opsPool = pool.opsPool;
 const multer = require('multer');
 const csv = require('csv-parse/sync');
+const ExcelJS = require('exceljs');
 const fs = require('fs');
 const path = require('path');
 
@@ -239,10 +240,11 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage,
     fileFilter: (req, file, cb) => {
-        if (file.originalname.endsWith('.csv')) {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (['.csv', '.xlsx', '.xls', '.json'].includes(ext)) {
             cb(null, true);
         } else {
-            cb(new Error('Only CSV files are allowed'));
+            cb(new Error('Only CSV, Excel (.xlsx, .xls) and JSON files are allowed'));
         }
     },
     limits: { fileSize: 50 * 1024 * 1024 } // 50MB
@@ -373,6 +375,75 @@ const SUPPORTED_TABLES = {
         autoGenerate: ['id', 'created_at']
     }
 };
+
+/**
+ * Helper: Parse File (Auto-detect format)
+ */
+async function parseFile(filePath, originalName) {
+    const ext = path.extname(originalName).toLowerCase();
+
+    if (ext === '.csv') {
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        return csv.parse(fileContent, { columns: true, skip_empty_lines: true });
+    }
+
+    if (ext === '.xlsx' || ext === '.xls') {
+        return parseExcel(filePath);
+    }
+
+    if (ext === '.json') {
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        const data = JSON.parse(fileContent);
+        return Array.isArray(data) ? data : [data];
+    }
+
+    throw new Error(`Unsupported file extension: ${ext}`);
+}
+
+/**
+ * Helper: Parse Excel
+ */
+async function parseExcel(filePath) {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(filePath);
+
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) return [];
+
+    const records = [];
+    const headers = [];
+
+    worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) {
+            // Header row
+            row.eachCell((cell, colNumber) => {
+                headers[colNumber] = cell.text || cell.value;
+            });
+        } else {
+            // Data row
+            const record = {};
+            let hasData = false;
+
+            row.eachCell((cell, colNumber) => {
+                const header = headers[colNumber];
+                if (header) {
+                    let val = cell.value;
+                    // Handle formulas or rich text objects
+                    if (val && typeof val === 'object') {
+                        if (val.result !== undefined) val = val.result;
+                        else if (val.text !== undefined) val = val.text;
+                    }
+                    record[header] = val;
+                    hasData = true;
+                }
+            });
+
+            if (hasData) records.push(record);
+        }
+    });
+
+    return records;
+}
 
 /**
  * GET /api/import/tables
@@ -578,9 +649,8 @@ exports.previewData = async (req, res) => {
             };
         }
 
-        // Parse CSV
-        const fileContent = fs.readFileSync(file.path, 'utf8');
-        const records = csv.parse(fileContent, { columns: true, skip_empty_lines: true });
+        // Parse File (CSV, Excel, JSON)
+        const records = await parseFile(file.path, file.originalname);
 
         // Validar colunas - normalizar nomes (trim e lowercase para comparação)
         const csvColumns = records.length > 0
@@ -661,13 +731,8 @@ exports.importData = async (req, res) => {
             };
         }
 
-        // Parse CSV
-        const fileContent = fs.readFileSync(file.path, 'utf8');
-        const records = csv.parse(fileContent, {
-            columns: true,
-            skip_empty_lines: true,
-            relax_column_count: true
-        });
+        // Parse File (CSV, Excel, JSON)
+        const records = await parseFile(file.path, file.originalname);
 
         if (records.length === 0) {
             fs.unlinkSync(file.path);
@@ -811,8 +876,7 @@ exports.batchImport = async (req, res) => {
 
         // Mapear arquivos para tabelas
         const fileToTable = files.map(file => {
-            let tableName = file.originalname
-                .replace('.csv', '')
+            let tableName = path.parse(file.originalname).name
                 .replace(/^import_\d+_/, '')
                 .toLowerCase()
                 .replace(/[^a-z0-9_]/g, '_');
@@ -885,14 +949,8 @@ exports.batchImport = async (req, res) => {
                         }
                     }
 
-                    // Parse CSV
-                    const fileContent = fs.readFileSync(file.path, 'utf8');
-                    const records = csv.parse(fileContent, {
-                        columns: true,
-                        skip_empty_lines: true,
-                        relax_column_count: true,
-                        trim: true
-                    });
+                    // Parse File (CSV, Excel, JSON)
+                    const records = await parseFile(file.path, file.originalname);
 
                     if (records.length === 0) {
                         allErrors.push({
