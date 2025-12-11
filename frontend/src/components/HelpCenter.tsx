@@ -15,7 +15,8 @@ import {
     Search,
     Briefcase,
     Wallet,
-    ShoppingBag
+    ShoppingBag,
+    BarChart3
 } from 'lucide-react';
 
 interface HelpSection {
