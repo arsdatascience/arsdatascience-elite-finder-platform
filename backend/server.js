@@ -903,7 +903,12 @@ app.get('/api/workflows', dbController.getWorkflows);
 const integrationsController = require('./integrationsController');
 
 // OAuth Router (Native Integration)
-const oauthRoutes = require('./routes/oauthRoutes');
+const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes'); // New Admin Routes
+const oauthRoutes = require('./routes/oauthRoutes'); // Restored
+
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', authenticateToken, adminRoutes);
 app.use('/api/oauth', oauthRoutes);
 
 // Legacy OAuth callbacks (kept as app.get as per instruction)

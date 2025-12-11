@@ -397,7 +397,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="bg-[#1e293b] rounded-xl border border-slate-700 p-6">
                     <h3 className="text-xl font-semibold text-white mb-4">Falhas Recentes</h3>
                     <div className="space-y-3 max-h-60 overflow-y-auto">
-                        {queueStats?.recentFailures.map((job: any) => (
+                        {queueStats?.recentFailures?.map((job: any) => (
                             <div key={job.id} className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex justify-between items-center">
                                 <div>
                                     <div className="text-red-400 font-medium">{job.type}</div>

@@ -658,10 +658,15 @@ export const FlightControl: React.FC = () => {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
-            <div className="px-4 md:px-8 mb-4">
-              <div className="flex items-center gap-2 bg-primary-50 text-primary-700 px-4 py-2 rounded-lg border border-primary-100 text-sm">
-                <Info size={16} />
-                <span className="font-medium">Dica:</span> Para trocar o status, basta arrastar e soltar o card na coluna desejada.
+            <div className="flex items-center gap-3 bg-gradient-to-r from-indigo-500 to-blue-600 text-white px-6 py-4 rounded-xl shadow-lg border-l-4 border-yellow-400 mb-6 transform transition-all hover:scale-[1.01]">
+              <div className="p-2 bg-white/20 rounded-full shrink-0">
+                <Info size={24} className="text-white" />
+              </div>
+              <div>
+                <span className="font-bold text-lg block mb-0.5 text-yellow-100">Dica:</span>
+                <span className="text-base font-medium opacity-95 leading-relaxed">
+                  Para trocar o status, basta arrastar e soltar o card na coluna desejada e em poucos segundos a transferência é realizada.
+                </span>
               </div>
             </div>
 

@@ -77,7 +77,130 @@ const getSystemUsage = async (req, res) => {
     }
 };
 
+const getQueueStatus = async (req, res) => {
+    try {
+        // Mocking Queue Stats for now or query a jobs table if it exists
+        // In a real scenario, this would query BullMQ
+        res.json({
+            success: true,
+            stats: {
+                pending: 0,
+                processing: 0,
+                completed: 0,
+                failed: 0
+            },
+            recentFailures: []
+        });
+    } catch (error) {
+        console.error('Erro ao buscar status da fila:', error);
+        res.status(500).json({ error: 'Erro ao buscar status da fila' });
+    }
+};
+
+const getTenants = async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT t.*, p.name as plan_name, COUNT(u.id) as user_count 
+            FROM tenants t
+            LEFT JOIN plans p ON t.plan_id = p.id
+            LEFT JOIN users u ON u.tenant_id = t.id
+            GROUP BY t.id, p.name
+            ORDER BY t.id ASC
+        `);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Erro ao buscar tenants:', error);
+        res.status(500).json({ error: 'Erro ao buscar tenants' });
+    }
+};
+
+const createTenant = async (req, res) => {
+    const { name, cnpj, email, phone, plan_id, address, adminUser } = req.body;
+    const client = await db.pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // 1. Create Tenant
+        const tenantRes = await client.query(`
+            INSERT INTO tenants (name, cnpj, email, phone, plan_id, address, status, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, 'active', NOW())
+            RETURNING id
+        `, [name, cnpj, email, phone, plan_id, address]);
+
+        const tenantId = tenantRes.rows[0].id;
+
+        // 2. Create Admin User if provided
+        if (adminUser && adminUser.email) {
+            // Hash password (simplified for now, assumes bcrypt is available or store plain/placeholder)
+            // Ideally import bcrypt
+            const passwordHash = adminUser.password; // TODO: Hash this!
+
+            await client.query(`
+                INSERT INTO users (name, email, password_hash, role, tenant_id, status)
+                VALUES ($1, $2, $3, 'admin', $4, 'active')
+            `, [adminUser.name, adminUser.email, passwordHash, tenantId]);
+        }
+
+        await client.query('COMMIT');
+        res.status(201).json({ success: true, id: tenantId });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao criar tenant:', error);
+        res.status(500).json({ error: error.message });
+    } finally {
+        client.release();
+    }
+};
+
+const updateTenant = async (req, res) => {
+    const { id } = req.params;
+    const { name, cnpj, email, phone, plan_id, address, status } = req.body;
+
+    try {
+        await db.query(`
+            UPDATE tenants 
+            SET name = $1, cnpj = $2, email = $3, phone = $4, plan_id = $5, address = $6, status = COALESCE($7, status)
+            WHERE id = $8
+        `, [name, cnpj, email, phone, plan_id, address, status, id]);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Erro ao atualizar tenant:', error);
+        res.status(500).json({ error: 'Erro ao atualizar tenant' });
+    }
+};
+
+const deleteTenant = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Cascade delete handled by DB constraints usually, but let's be safe
+        await db.query('DELETE FROM users WHERE tenant_id = $1', [id]);
+        await db.query('DELETE FROM tenants WHERE id = $1', [id]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Erro ao excluir tenant:', error);
+        res.status(500).json({ error: 'Erro ao excluir tenant' });
+    }
+};
+
+const getPlans = async (req, res) => {
+    try {
+        const result = await db.query('SELECT * FROM plans ORDER BY price ASC');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Erro ao buscar planos:', error);
+        res.status(500).json({ error: 'Erro ao buscar planos' });
+    }
+};
+
 module.exports = {
     cleanupDatabase,
-    getSystemUsage
+    getSystemUsage,
+    getQueueStatus,
+    getTenants,
+    createTenant,
+    updateTenant,
+    deleteTenant,
+    getPlans
 };
