@@ -785,6 +785,7 @@ const getDeviceStats = async (req, res) => {
 };
 
 module.exports = {
+    pool, // Exporting pool so other controllers can use it
     getUsers,
     getClients,
     createClient,
