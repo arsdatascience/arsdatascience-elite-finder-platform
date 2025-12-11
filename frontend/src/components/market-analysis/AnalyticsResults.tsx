@@ -101,7 +101,7 @@ export const AnalyticsResults: React.FC = () => {
 
     const isMonetaryMetric = (name: string) => {
         const lowerName = name.toLowerCase();
-        return ['revenue', 'sales', 'profit', 'cost', 'price', 'ltv', 'cac', 'amount', 'budget'].some(term => lowerName.includes(term));
+        return ['revenue', 'sales', 'profit', 'cost', 'price', 'ltv', 'cac', 'amount', 'budget', 'spend', 'marketing', 'investimento'].some(term => lowerName.includes(term));
     };
 
     const getFormattedMetric = (name: string, value: number) => {
@@ -507,7 +507,7 @@ const MetricDisplay: React.FC<{ name: string; value: number }> = ({ name, value 
     let displayValue = '';
     if (isPercentage && value <= 1) {
         displayValue = `${(value * 100).toFixed(2)}%`;
-    } else if (['revenue', 'sales', 'profit', 'cost', 'price', 'ltv', 'cac', 'amount', 'budget'].some(term => name.toLowerCase().includes(term))) {
+    } else if (['revenue', 'sales', 'profit', 'cost', 'price', 'ltv', 'cac', 'amount', 'budget', 'spend', 'marketing', 'investimento'].some(term => name.toLowerCase().includes(term))) {
         displayValue = formatCurrency(value);
     } else {
         displayValue = formatNumber(value);

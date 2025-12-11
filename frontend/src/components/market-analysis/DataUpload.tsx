@@ -137,7 +137,7 @@ export const DataUpload: React.FC = () => {
                             <tr key={i} className="hover:bg-slate-50">
                                 {cols.map((col, j) => {
                                     const value = row[col.name];
-                                    const isMonetary = ['revenue', 'sales', 'profit', 'cost', 'price', 'ltv', 'cac', 'amount', 'budget', 'valor', 'preco'].some(term => col.name.toLowerCase().includes(term));
+                                    const isMonetary = ['revenue', 'sales', 'profit', 'cost', 'price', 'ltv', 'cac', 'amount', 'budget', 'valor', 'preco', 'spend', 'marketing', 'investimento'].some(term => col.name.toLowerCase().includes(term));
 
                                     let displayValue = <span className="text-slate-300 italic">null</span>;
 
@@ -189,6 +189,20 @@ export const DataUpload: React.FC = () => {
         const cols = Array.isArray(selectedDataset.columns) ? selectedDataset.columns : [];
         const statsObj = selectedDataset.statistics || {};
 
+        if (Object.keys(statsObj).length === 0) {
+            return (
+                <div className="p-12 text-center">
+                    <BarChart3 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <h4 className="font-medium text-slate-600">Estatísticas indisponíveis</h4>
+                    <p className="text-sm text-slate-400 max-w-sm mx-auto mt-1">
+                        Este dataset parece não ter estatísticas calculadas.
+                        <br />
+                        <span className="text-emerald-600 font-medium">Recomendação:</span> Tente fazer o upload do arquivo novamente.
+                    </p>
+                </div>
+            );
+        }
+
         return (
             <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -208,11 +222,11 @@ export const DataUpload: React.FC = () => {
                                 <div className="space-y-1 text-sm text-slate-600">
                                     <div className="flex justify-between">
                                         <span>Valores únicos</span>
-                                        <span className="font-medium">{stats.unique !== undefined ? stats.unique : '--'}</span>
+                                        <span className="font-medium">{stats.uniqueCount !== undefined ? stats.uniqueCount : (stats.unique !== undefined ? stats.unique : '--')}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Nulos</span>
-                                        <span className="font-medium">{stats.null_count !== undefined ? stats.null_count : '--'}</span>
+                                        <span className="font-medium">{stats.nullCount !== undefined ? stats.nullCount : (stats.null_count !== undefined ? stats.null_count : '--')}</span>
                                     </div>
                                     {['number', 'integer', 'float'].includes(col.type) && (
                                         <>
