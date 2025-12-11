@@ -1,0 +1,324 @@
+{
+  "undefined": [
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "tenant_id",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "score",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp"
+    },
+    {
+      "column_name": "id",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "tenant_id",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "project_id",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "parent_task_id",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "title",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text"
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "priority",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "assignee_id",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "reporter_id",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "due_date",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp"
+    },
+    {
+      "column_name": "start_date",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp"
+    },
+    {
+      "column_name": "completed_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp"
+    },
+    {
+      "column_name": "estimated_minutes",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "logged_minutes",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "tags",
+      "data_type": "ARRAY",
+      "udt_name": "_text"
+    },
+    {
+      "column_name": "column_order",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "metadata",
+      "data_type": "jsonb",
+      "udt_name": "jsonb"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp"
+    },
+    {
+      "column_name": "updated_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp"
+    },
+    {
+      "column_name": "workspace",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "channel",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "stage",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "stage_due_date",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz"
+    },
+    {
+      "column_name": "effort_time",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "origin",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "squad",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "task_type",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "campaign_plan",
+      "data_type": "text",
+      "udt_name": "text"
+    },
+    {
+      "column_name": "created_by",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "project_manager_id",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "delayed_stage",
+      "data_type": "boolean",
+      "udt_name": "bool"
+    },
+    {
+      "column_name": "completed_but_late",
+      "data_type": "boolean",
+      "udt_name": "bool"
+    },
+    {
+      "column_name": "reference_code",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "collaborators_ids",
+      "data_type": "ARRAY",
+      "udt_name": "_int4"
+    },
+    {
+      "column_name": "approvers_ids",
+      "data_type": "ARRAY",
+      "udt_name": "_int4"
+    },
+    {
+      "column_name": "stakeholders_ids",
+      "data_type": "ARRAY",
+      "udt_name": "_int4"
+    },
+    {
+      "column_name": "deliverable_format",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "technical_specs",
+      "data_type": "text",
+      "udt_name": "text"
+    },
+    {
+      "column_name": "brand_guidelines",
+      "data_type": "text",
+      "udt_name": "text"
+    },
+    {
+      "column_name": "percent_complete",
+      "data_type": "integer",
+      "udt_name": "int4"
+    },
+    {
+      "column_name": "checklist",
+      "data_type": "jsonb",
+      "udt_name": "jsonb"
+    },
+    {
+      "column_name": "dependency_ids",
+      "data_type": "ARRAY",
+      "udt_name": "_int4"
+    },
+    {
+      "column_name": "blockers",
+      "data_type": "text",
+      "udt_name": "text"
+    },
+    {
+      "column_name": "briefing_link",
+      "data_type": "text",
+      "udt_name": "text"
+    },
+    {
+      "column_name": "visual_references",
+      "data_type": "text",
+      "udt_name": "text"
+    },
+    {
+      "column_name": "support_materials",
+      "data_type": "text",
+      "udt_name": "text"
+    },
+    {
+      "column_name": "final_delivery_link",
+      "data_type": "text",
+      "udt_name": "text"
+    },
+    {
+      "column_name": "performance_metrics",
+      "data_type": "jsonb",
+      "udt_name": "jsonb"
+    },
+    {
+      "column_name": "feedback",
+      "data_type": "text",
+      "udt_name": "text"
+    },
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid"
+    },
+    {
+      "column_name": "tenant_id",
+      "data_type": "uuid",
+      "udt_name": "uuid"
+    },
+    {
+      "column_name": "type",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "amount",
+      "data_type": "numeric",
+      "udt_name": "numeric"
+    },
+    {
+      "column_name": "category",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text"
+    },
+    {
+      "column_name": "date",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp"
+    },
+    {
+      "column_name": "created_at",
+      "data_type": "timestamp without time zone",
+      "udt_name": "timestamp"
+    },
+    {
+      "column_name": "status",
+      "data_type": "character varying",
+      "udt_name": "varchar"
+    },
+    {
+      "column_name": "client_id",
+      "data_type": "integer",
+      "udt_name": "int4"
+    }
+  ]
+}

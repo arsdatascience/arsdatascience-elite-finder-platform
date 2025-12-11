@@ -1,36 +1,22 @@
-const { pool, opsPool } = require('../backend/database');
+
+const { Pool } = require('pg');
+require('dotenv').config({ path: 'backend/.env.import' });
+
+const opsPool = new Pool({ connectionString: process.env.OPERATIONS_DB_URL });
 
 async function checkSchema() {
     try {
-        console.log('--- TABLES IN OPSPOOL (MEGALEV) ---');
-        const opsTables = await opsPool.query(`
-            SELECT tablename FROM pg_catalog.pg_tables 
-            WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema'
-        `);
-        console.log(opsTables.rows.map(r => r.tablename).join(', '));
-
-        console.log('\n--- COLUMNS IN AI_INSIGHTS ---');
-        const aiCols = await pool.query(`
-            SELECT column_name, data_type, udt_name
+        const res = await opsPool.query(`
+            SELECT column_name, data_type 
             FROM information_schema.columns 
-            WHERE table_name = 'ai_insights';
+            WHERE table_name = 'transactions';
         `);
-        aiCols.rows.forEach(r => console.log(`${r.column_name}: ${r.data_type} (${r.udt_name})`));
-
-        console.log('\n--- COLUMNS IN USERS ---');
-        const uCols = await pool.query(`
-            SELECT column_name, data_type, udt_name
-            FROM information_schema.columns 
-            WHERE table_name = 'users';
-        `);
-        uCols.rows.forEach(r => console.log(`${r.column_name}: ${r.data_type} (${r.udt_name})`));
-
-    } catch (err) {
-        console.error('Error:', err);
-    } finally {
-        // Force exit to ensure process ends
-        setTimeout(() => process.exit(0), 100);
+        console.log('--- Transactions Schema ---');
+        console.table(res.rows);
+    } catch (e) {
+        console.log('Error checking schema:', e.message);
     }
+    await opsPool.end();
 }
 
 checkSchema();

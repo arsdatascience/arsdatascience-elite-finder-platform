@@ -4,6 +4,37 @@ const opsPool = db.opsPool;
 const { syncCampaignCosts } = require('./jobs/financialSync');
 const { getTenantScope } = require('./utils/tenantSecurity');
 
+// Helper to sync LTV to Unified Customers (Core DB) from Transactions (Ops DB)
+const updateClientLTV = async (clientId) => {
+    if (!clientId) return;
+    try {
+        console.log(`🔄 Syncing LTV for Client ${clientId}...`);
+
+        // 1. Calculate Total Lifetime Value (Paid Income)
+        const res = await opsPool.query(`
+            SELECT COALESCE(SUM(amount), 0) as ltv
+            FROM financial_transactions 
+            WHERE client_id = $1 
+              AND type = 'income' 
+              AND status = 'paid'
+        `, [clientId]);
+
+        const ltv = res.rows[0]?.ltv || 0;
+
+        // 2. Update Unified Customer Record
+        // Verify if record exists first or just update
+        await corePool.query(`
+            UPDATE unified_customers 
+            SET lifetime_value = $1, last_interaction = NOW()
+            WHERE client_id = $2
+        `, [ltv, clientId]);
+
+        console.log(`✅ LTV Synced for Client ${clientId}: ${ltv}`);
+    } catch (err) {
+        console.error(`❌ Failed to sync LTV for client ${clientId}:`, err.message);
+    }
+};
+
 const financialController = {
     // --- TRANSACTIONS ---
 
@@ -123,6 +154,11 @@ const financialController = {
                 date, due_date || null, payment_date || null, status || 'pending', payment_method, notes, user_id
             ]);
 
+            if (client_id) {
+                // Async update LTV (fire and forget)
+                updateClientLTV(client_id);
+            }
+
             res.json({ success: true, data: result.rows[0] });
         } catch (error) {
             console.error('Error creating transaction:', error);
@@ -139,6 +175,10 @@ const financialController = {
         } = req.body;
 
         try {
+            // Get previous client_id to update if it changed
+            const prevRes = await opsPool.query('SELECT client_id FROM financial_transactions WHERE id = $1', [id]);
+            const prevClientId = prevRes.rows[0]?.client_id;
+
             const result = await opsPool.query(`
                 UPDATE financial_transactions SET
                     description=$1, amount=$2, type=$3, category_id=$4, supplier_id=$5,
@@ -155,6 +195,11 @@ const financialController = {
             ]);
 
             if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Transaction not found' });
+
+            // Sync LTV
+            if (client_id) updateClientLTV(client_id);
+            if (prevClientId && prevClientId !== client_id) updateClientLTV(prevClientId);
+
             res.json({ success: true, data: result.rows[0] });
         } catch (error) {
             console.error('Error updating transaction:', error);
@@ -165,7 +210,13 @@ const financialController = {
     deleteTransaction: async (req, res) => {
         const { id } = req.params;
         try {
+            const prevRes = await opsPool.query('SELECT client_id FROM financial_transactions WHERE id = $1', [id]);
+            const prevClientId = prevRes.rows[0]?.client_id;
+
             await opsPool.query('DELETE FROM financial_transactions WHERE id = $1', [id]);
+
+            if (prevClientId) updateClientLTV(prevClientId);
+
             res.json({ success: true });
         } catch (error) {
             console.error('Error deleting transaction:', error);

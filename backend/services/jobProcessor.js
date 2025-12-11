@@ -28,6 +28,9 @@ const processJob = async (job) => {
             case 'process_whatsapp_message':
                 await handleWhatsAppMessage(payload);
                 break;
+            case 'full_session_reanalysis':
+                await handleFullSessionReanalysis(payload);
+                break;
             case 'generate_batch_content':
                 await handleBatchContentGeneration(payload);
                 break;
@@ -329,6 +332,75 @@ async function handleWhatsAppMessage(payload) {
     }
 }
 
+
+
+// --- FULL SESSION REANALYSIS ---
+async function handleFullSessionReanalysis(payload) {
+    const { sessionId, phone, clientId, tenantId } = payload;
+    const io = global.io;
+
+    console.log(`🔄 [Job] Starting Full Reanalysis for Session ${sessionId}`);
+
+    try {
+        // 1. Fetch ALL messages (No Limit)
+        const historyResult = await pool.query(
+            `SELECT sender_type as role, content FROM chat_messages 
+             WHERE session_id = $1 
+             ORDER BY created_at ASC`,
+            [sessionId]
+        );
+
+        if (historyResult.rows.length === 0) {
+            console.warn(`⚠️ [Job] No messages found for session ${sessionId}`);
+            return;
+        }
+
+        const messages = historyResult.rows.map(row => ({
+            role: row.role === 'client' ? 'user' : 'agent',
+            content: row.content
+        }));
+
+        console.log(`📊 Analyzing ${messages.length} messages...`);
+
+        // 2. AI Analysis
+        // Get API Key (System fallback if no user context)
+        const apiKey = await aiController.getEffectiveApiKey('openai', null);
+
+        if (apiKey) {
+            const analysis = await aiController.analyzeStrategyInternal(
+                messages,
+                { product: "Elite Finder Services", goal: "Qualification & Sales - Deep Dive" },
+                apiKey
+            );
+
+            // 3. Save Analysis
+            await pool.query(
+                `INSERT INTO chat_analyses (session_id, analysis_type, full_report, sentiment_label, buying_stage) 
+                 VALUES ($1, 'sales_coaching_full', $2, $3, $4)`,
+                [sessionId, JSON.stringify(analysis), analysis.sentiment, analysis.buying_stage]
+            );
+
+            // 4. Emit Update
+            if (io) {
+                console.log(`🧠 [Job] Full Reanalysis Complete for ${phone}`);
+                io.emit('sales_coaching_update', {
+                    sessionId,
+                    phone,
+                    analysis
+                });
+            }
+        }
+    } catch (error) {
+        console.error('❌ [Job] Error in Full Reanalysis:', error);
+        // Optional: Emit error event to frontend
+        if (io) {
+            io.emit('sales_coaching_error', {
+                sessionId,
+                error: 'Falha na reanálise da conversa.'
+            });
+        }
+    }
+}
 
 // --- BATCH CONTENT GENERATION ---
 async function handleBatchContentGeneration(payload) {

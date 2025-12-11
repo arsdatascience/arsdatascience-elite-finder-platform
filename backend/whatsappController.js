@@ -284,4 +284,43 @@ const deleteSession = async (req, res) => {
     }
 };
 
-module.exports = { handleWebhook, sendOutboundMessage, getSessions, getSessionMessages, deleteSession };
+/**
+ * POST /api/whatsapp/sessions/:sessionId/reanalyze
+ * Dispara uma reanálise completa da conversa via Job Queue
+ */
+const reanalyzeSession = async (req, res) => {
+    const { sessionId } = req.params;
+    try {
+        // Verificar se a sessão existe
+        const sessionRes = await db.query('SELECT * FROM chat_sessions WHERE id = $1', [sessionId]);
+        if (sessionRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Session not found' });
+        }
+
+        const session = sessionRes.rows[0];
+        const clientId = session.client_id;
+        const metadata = session.metadata || {};
+        const phone = metadata.phone || 'Unknown';
+
+        // Enfileirar Job de Reanálise Completa
+        const { jobsQueue } = require('./queueClient');
+        await jobsQueue.add('full_session_reanalysis', {
+            type: 'full_session_reanalysis',
+            payload: {
+                sessionId,
+                clientId,
+                phone,
+                tenantId: req.user.tenant_id // Assume auth middleware adds this
+            }
+        });
+
+        console.log(`🔄 Reanalysis Job Queued for Session ${sessionId}`);
+        res.json({ success: true, message: 'Reanalysis started' });
+
+    } catch (error) {
+        console.error('Error triggering reanalysis:', error);
+        res.status(500).json({ error: 'Failed to trigger reanalysis' });
+    }
+};
+
+module.exports = { handleWebhook, sendOutboundMessage, getSessions, getSessionMessages, deleteSession, reanalyzeSession };

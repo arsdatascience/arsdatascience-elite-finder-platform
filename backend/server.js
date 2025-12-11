@@ -1188,6 +1188,8 @@ app.post('/api/sop-templates', authenticateToken, async (req, res) => {
 
 // --- DATA & MARKET ANALYSIS ROUTES ---
 const dataController = require('./controllers/dataController');
+const analysisController = require('./controllers/analysisController');
+const trainingController = require('./controllers/trainingController');
 
 // Datasets
 app.post('/api/data/upload', authenticateToken, dataController.upload.single('file'), dataController.uploadDataset);
@@ -1198,6 +1200,55 @@ app.get('/api/analytics/results', authenticateToken, dataController.getAnalytics
 app.get('/api/analytics/segments', authenticateToken, dataController.getSegments);
 app.get('/api/analytics/segments/:code', authenticateToken, dataController.getSegmentData);
 app.get('/api/analytics/algorithms', authenticateToken, dataController.getAlgorithms);
+
+// --- MARKET ANALYSIS ENDPOINTS (Phase 1-5) ---
+// Phase 1: MVP
+app.post('/api/analysis/sales-forecast', authenticateToken, analysisController.salesForecast);
+app.post('/api/analysis/churn-prediction', authenticateToken, analysisController.churnPrediction);
+app.post('/api/analysis/customer-segmentation', authenticateToken, analysisController.customerSegmentation);
+app.post('/api/analysis/trend-analysis', authenticateToken, analysisController.trendAnalysis);
+app.post('/api/analysis/anomaly-detection', authenticateToken, analysisController.anomalyDetection);
+app.post('/api/analysis/marketing-roi', authenticateToken, analysisController.marketingROI);
+
+// Phase 2: Social
+app.post('/api/analysis/instagram-performance', authenticateToken, analysisController.instagramPerformance);
+app.post('/api/analysis/tiktok-performance', authenticateToken, analysisController.tiktokPerformance);
+app.post('/api/analysis/social-comparison', authenticateToken, analysisController.socialComparison);
+app.post('/api/analysis/influencer-roi', authenticateToken, analysisController.influencerROI);
+
+// Phase 3: Financial
+app.post('/api/analysis/cashflow-forecast', authenticateToken, analysisController.cashflowForecast);
+app.post('/api/analysis/profitability', authenticateToken, analysisController.profitability);
+// app.post('/api/analysis/revenue-scenarios', authenticateToken, analysisController.revenueScenarios); // Not implemented/exported yet based on file view
+
+// Phase 5: Advanced
+app.post('/api/analysis/budget-optimization', authenticateToken, analysisController.budgetOptimization);
+app.post('/api/analysis/inventory-optimization', authenticateToken, analysisController.inventoryOptimization);
+app.post('/api/analysis/demand-forecast', authenticateToken, analysisController.demandForecast);
+app.post('/api/analysis/return-analysis', authenticateToken, analysisController.returnAnalysis);
+app.post('/api/analysis/ltv-prediction', authenticateToken, analysisController.ltvPrediction);
+app.post('/api/analysis/rfm-analysis', authenticateToken, analysisController.rfmAnalysis);
+app.post('/api/analysis/purchase-propensity', authenticateToken, analysisController.purchasePropensity);
+app.post('/api/analysis/satisfaction-trends', authenticateToken, analysisController.satisfactionTrends);
+app.post('/api/analysis/funnel-optimization', authenticateToken, analysisController.funnelOptimization);
+app.post('/api/analysis/cart-abandonment', authenticateToken, analysisController.cartAbandonment);
+app.post('/api/analysis/ab-test', authenticateToken, analysisController.abTestAnalysis);
+app.post('/api/analysis/market-benchmark', authenticateToken, analysisController.marketBenchmark);
+app.post('/api/analysis/competitor-analysis', authenticateToken, analysisController.competitorAnalysis);
+app.post('/api/analysis/seasonality-forecast', authenticateToken, analysisController.seasonalityForecast);
+app.post('/api/analysis/event-impact', authenticateToken, analysisController.eventImpact);
+app.post('/api/analysis/scenario-simulator', authenticateToken, analysisController.scenarioSimulator);
+app.post('/api/analysis/time-series-prophet', authenticateToken, analysisController.timeSeriesProphet);
+
+// --- MODEL TRAINING & EXPERIMENTS ---
+app.post('/api/models/experiments', authenticateToken, trainingController.createExperiment);
+app.get('/api/models/experiments', authenticateToken, trainingController.getExperiments);
+app.get('/api/models/experiments/:id', authenticateToken, trainingController.getExperimentDetails);
+app.post('/api/models/experiments/:id/deploy', authenticateToken, trainingController.deployModel);
+
+// Predictions
+app.post('/api/predictions/custom', authenticateToken, trainingController.runPrediction);
+app.get('/api/predictions/history', authenticateToken, trainingController.getPredictionHistory);
 
 
 // Training modules
@@ -1225,6 +1276,9 @@ app.get('/api/integrations/whatsapp', authenticateToken, async (req, res) => {
     instanceName: 'elite-finder'
   });
 });
+
+// Reanalyze Session (Full History)
+app.post('/api/whatsapp/sessions/:sessionId/reanalyze', authenticateToken, whatsappController.reanalyzeSession);
 
 // Client Social Accounts
 app.get('/api/clients/:id/social-accounts', authenticateToken, async (req, res) => {

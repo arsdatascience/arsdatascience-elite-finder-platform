@@ -172,7 +172,15 @@ const kpiController = {
 
                 revenue = parseFloat(financialResult.rows[0]?.revenue) || 0;
                 expenses = parseFloat(financialResult.rows[0]?.expenses) || 0;
-                profitMargin = revenue > 0 ? Math.round(((revenue - expenses) / revenue) * 100) : 0;
+
+                // Calculate Profit with 2 decimal precision to avoid floating point errors
+                const rawProfit = revenue - expenses;
+                const profit = parseFloat(rawProfit.toFixed(2));
+
+                // Calculate Margin with 1 decimal precision (e.g. 21.3%)
+                profitMargin = revenue > 0 ? parseFloat(((profit / revenue) * 100).toFixed(1)) : 0;
+
+                console.log(`💰 Financial KPIs: Rev=${revenue}, Exp=${expenses}, Profit=${profit}, Margin=${profitMargin}%`);
             } catch (finErr) {
                 console.warn('⚠️ Financial KPIs validation failed (ignoring):', finErr.message);
                 // metrics remain 0
@@ -299,7 +307,7 @@ const kpiController = {
                     // Operational
                     revenue,
                     expenses,
-                    profit: revenue - expenses,
+                    profit: parseFloat((revenue - expenses).toFixed(2)), // Explicit consistency
 
                     // Journey
                     journeyDistribution: journeyResult.rows,

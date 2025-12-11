@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Mic, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, MessageSquare, Smartphone, Settings, Users, MessageCircle, Download, UserPlus, X, FileText, FileBarChart } from 'lucide-react';
+import { Send, Mic, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, MessageSquare, Smartphone, Settings, Users, MessageCircle, Download, UserPlus, X, FileText, FileBarChart, RefreshCw } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import socketService from '../services/socket';
 import { WhatsAppConfigModal } from './WhatsAppConfigModal';
@@ -467,6 +467,32 @@ export const SalesCoachingChat: React.FC = () => {
         doc.save(`relatorio_${type}_${activePhone || 'cliente'}.pdf`);
     };
 
+    const handleReanalyze = async () => {
+        if (!activeSessionId) return;
+
+        setIsAnalyzing(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/sessions/${activeSessionId}/reanalyze`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.ok) {
+                // Toast or notification could go here
+                console.log('Reanalysis triggered');
+            } else {
+                console.error('Failed to trigger reanalysis');
+                setIsAnalyzing(false);
+                alert('Erro ao iniciar reanálise.');
+            }
+        } catch (error) {
+            console.error('Error triggering reanalysis:', error);
+            setIsAnalyzing(false);
+            alert('Erro ao iniciar reanálise.');
+        }
+    };
+
     const handleSaveClient = async () => {
         if (!clientName || !clientPhone) return;
 
@@ -679,6 +705,14 @@ export const SalesCoachingChat: React.FC = () => {
                             title="Gerar Relatório Completo (Chat + Análise)"
                         >
                             <FileText size={16} />
+                        </button>
+                        <button
+                            onClick={handleReanalyze}
+                            disabled={!messages.length || isAnalyzing}
+                            className="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Reanalisar Conversa (Completa)"
+                        >
+                            <RefreshCw size={16} className={isAnalyzing ? 'animate-spin' : ''} />
                         </button>
                     </div>
                 </div>
