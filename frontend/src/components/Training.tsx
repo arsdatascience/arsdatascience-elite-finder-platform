@@ -214,6 +214,13 @@ export const Training: React.FC = () => {
                             ></div>
                         </div>
                     </div>
+                    <div className="hidden md:block text-right ml-6">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 backdrop-blur-sm mb-2">
+                            <Award size={32} className="text-yellow-400" />
+                        </div>
+                        <p className="font-bold">Elite Learner</p>
+                        <p className="text-xs text-slate-400">Ranking Atual</p>
+                    </div>
                 </div>
             </div>
 
