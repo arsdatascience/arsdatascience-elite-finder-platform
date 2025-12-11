@@ -77,19 +77,41 @@ const getSystemUsage = async (req, res) => {
     }
 };
 
+const { jobsQueue } = require('./queueClient');
+
 const getQueueStatus = async (req, res) => {
     try {
-        // Mocking Queue Stats for now or query a jobs table if it exists
-        // In a real scenario, this would query BullMQ
+        if (!jobsQueue) {
+            return res.json({
+                success: true,
+                stats: { pending: 0, processing: 0, completed: 0, failed: 0 },
+                recentFailures: [],
+                status: 'Queue not initialized'
+            });
+        }
+
+        // Get Real Counts from BullMQ
+        const counts = await jobsQueue.getJobCounts('wait', 'active', 'completed', 'failed');
+
+        // Get Recent Failures (last 5)
+        const failedJobs = await jobsQueue.getFailed(0, 4);
+        const recentFailures = failedJobs.map(job => ({
+            id: job.id,
+            reason: job.failedReason,
+            timestamp: job.finishedOn,
+            name: job.name,
+            data: job.data
+        }));
+
         res.json({
             success: true,
             stats: {
-                pending: 0,
-                processing: 0,
-                completed: 0,
-                failed: 0
+                pending: counts.wait,
+                processing: counts.active,
+                completed: counts.completed,
+                failed: counts.failed
             },
-            recentFailures: []
+            recentFailures
         });
     } catch (error) {
         console.error('Erro ao buscar status da fila:', error);

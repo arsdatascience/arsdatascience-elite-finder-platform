@@ -856,7 +856,7 @@ app.get('/api/health', async (req, res) => {
 // --- DATABASE ROUTES ---
 
 // Users
-app.get('/api/users', dbController.getUsers);
+app.get('/api/users', authenticateToken, dbController.getUsers);
 
 // Team Management
 app.get('/api/team', authenticateToken, userCtrl.getTeamMembers);
