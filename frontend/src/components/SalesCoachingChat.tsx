@@ -421,7 +421,7 @@ export const SalesCoachingChat: React.FC = () => {
                 body: insightsData,
                 theme: 'grid',
                 headStyles: { fillColor: [41, 98, 255] },
-                columnStyles: { 0: { fontStyle: 'bold', width: 50 } }
+                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } }
             });
 
             // @ts-ignore
