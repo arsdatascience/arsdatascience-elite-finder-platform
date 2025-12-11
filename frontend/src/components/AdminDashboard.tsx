@@ -591,6 +591,14 @@ const AdminDashboard: React.FC = () => {
                                         {errors.lastName && <span className="text-red-500 text-xs">{errors.lastName.message}</span>}
                                     </div>
                                     <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                        <input
+                                            {...register('username')}
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
+                                            placeholder="Ex: joaosilva (Opcional)"
+                                        />
+                                    </div>
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                                         <input
                                             {...register('email')}
