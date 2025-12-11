@@ -129,26 +129,26 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ onClose }) => 
     return (
         <div className="space-y-6">
             {/* Header with Generate Button */}
-            <div className="bg-gradient-to-r from-purple-900/50 to-pink-900/50 rounded-xl p-6 border border-purple-500/30">
+            <div className="bg-[#20597f] rounded-xl p-6 border border-white/10">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-3 bg-purple-500/20 rounded-xl">
-                            <Sparkles className="w-6 h-6 text-purple-400" />
+                        <div className="p-3 bg-white/20 rounded-xl">
+                            <Sparkles className="w-6 h-6 text-white" />
                         </div>
                         <div>
                             <h2 className="text-xl font-bold text-white">Insights com IA</h2>
-                            <p className="text-gray-400 text-sm">Análise inteligente da jornada do cliente</p>
+                            <p className="text-gray-200 text-sm">Análise inteligente da jornada do cliente</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <div className="flex items-center gap-2 text-xs text-gray-200">
                             <Database className="w-4 h-4" /> Qdrant + Crossover + Megalev
                         </div>
                         {onClose && (
                             <button
                                 onClick={onClose}
-                                className="text-gray-400 hover:text-white transition-colors"
+                                className="text-gray-200 hover:text-white transition-colors"
                                 title="Fechar Painel"
                             >
                                 <XCircle className="w-6 h-6" />
@@ -160,31 +160,31 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ onClose }) => 
                 {/* Model Selection */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label className="block text-xs text-gray-400 mb-1 ml-1">Provedor IA</label>
+                        <label className="block text-xs text-gray-200 mb-1 ml-1">Provedor IA</label>
                         <div className="relative">
-                            <Bot className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <Bot className="w-4 h-4 text-gray-200 absolute left-3 top-1/2 -translate-y-1/2" />
                             <select
                                 value={provider}
                                 onChange={(e) => setProvider(e.target.value as AIProvider)}
-                                className="w-full bg-gray-900/50 border border-gray-700 text-gray-200 text-sm rounded-lg pl-9 pr-3 py-2 outline-none focus:border-purple-500/50 transition-colors appearance-none"
+                                className="w-full bg-black/20 border border-white/20 text-white text-sm rounded-lg pl-9 pr-3 py-2 outline-none focus:border-white/40 transition-colors appearance-none"
                             >
-                                <option value={AIProvider.OPENAI}>OpenAI (Padrão)</option>
-                                <option value={AIProvider.ANTHROPIC}>Anthropic (Claude)</option>
-                                <option value={AIProvider.GEMINI}>Google (Gemini)</option>
+                                <option value={AIProvider.OPENAI} className="text-black">OpenAI (Padrão)</option>
+                                <option value={AIProvider.ANTHROPIC} className="text-black">Anthropic (Claude)</option>
+                                <option value={AIProvider.GEMINI} className="text-black">Google (Gemini)</option>
                             </select>
                         </div>
                     </div>
                     <div>
-                        <label className="block text-xs text-gray-400 mb-1 ml-1">Modelo</label>
+                        <label className="block text-xs text-gray-200 mb-1 ml-1">Modelo</label>
                         <div className="relative">
-                            <Brain className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <Brain className="w-4 h-4 text-gray-200 absolute left-3 top-1/2 -translate-y-1/2" />
                             <select
                                 value={model}
                                 onChange={(e) => setModel(e.target.value)}
-                                className="w-full bg-gray-900/50 border border-gray-700 text-gray-200 text-sm rounded-lg pl-9 pr-3 py-2 outline-none focus:border-purple-500/50 transition-colors appearance-none"
+                                className="w-full bg-black/20 border border-white/20 text-white text-sm rounded-lg pl-9 pr-3 py-2 outline-none focus:border-white/40 transition-colors appearance-none"
                             >
                                 {AI_MODELS[provider].map(m => (
-                                    <option key={m.id} value={m.id}>
+                                    <option key={m.id} value={m.id} className="text-black">
                                         {m.name}
                                     </option>
                                 ))}
@@ -205,8 +205,8 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ onClose }) => 
                             key={option.id}
                             onClick={() => setFocusArea(option.id as any)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${focusArea === option.id
-                                ? 'bg-purple-500 text-white'
-                                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
+                                ? 'bg-white text-[#20597f]'
+                                : 'bg-black/20 text-gray-200 hover:bg-black/30'
                                 }`}
                         >
                             <option.icon className="w-4 h-4" />
@@ -219,7 +219,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ onClose }) => 
                 <button
                     onClick={generateInsight}
                     disabled={generating}
-                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-white text-[#20597f] font-bold rounded-lg hover:bg-gray-100 transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg"
                 >
                     {generating ? (
                         <>
