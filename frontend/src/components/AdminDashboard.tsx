@@ -231,10 +231,11 @@ const AdminDashboard: React.FC = () => {
 
             const method = editingUser ? 'PUT' : 'POST';
 
-            // Se for criação, concatenar nome
+            // Se for criação, concatenar nome e gerar username
             const payload = {
                 ...data,
-                name: `${data.firstName} ${data.lastName}`
+                name: `${data.firstName} ${data.lastName}`,
+                username: data.username || data.email.split('@')[0].toLowerCase() + Math.floor(Math.random() * 1000)
             };
 
             const res = await fetch(url, {
