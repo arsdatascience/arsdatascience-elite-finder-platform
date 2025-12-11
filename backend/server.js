@@ -119,6 +119,7 @@ const stripeController = require('./stripeController');
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeController.handleWebhook);
 
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date(), version: '1.0.1' });
@@ -1261,14 +1262,12 @@ app.post('/api/predictions/custom', authenticateToken, trainingController.runPre
 app.get('/api/predictions/history', authenticateToken, trainingController.getPredictionHistory);
 
 
-// Training modules
-app.get('/api/training/modules', authenticateToken, async (req, res) => {
-  res.json({ success: true, modules: [] });
-});
+// Training modules (Real Implementation)
+const trainingModuleController = require('./controllers/trainingModuleController');
 
-app.get('/api/training/progress', authenticateToken, async (req, res) => {
-  res.json({ success: true, progress: { completed: 0, total: 0 } });
-});
+app.post('/api/training/modules', authenticateToken, trainingModuleController.upload.single('file'), trainingModuleController.createModule);
+app.get('/api/training/modules', authenticateToken, trainingModuleController.getModules);
+app.get('/api/training/progress', authenticateToken, trainingModuleController.getProgress);
 
 // Integrations N8N URL
 app.get('/api/integrations/n8n/url', authenticateToken, (req, res) => {
