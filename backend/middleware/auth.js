@@ -45,4 +45,13 @@ const authenticateToken = (req, res, next) => {
     }
 };
 
+const checkAdmin = (req, res, next) => {
+    if (req.user && (req.user.role === 'admin' || req.user.role === 'super_admin')) {
+        next();
+    } else {
+        res.status(403).json({ success: false, message: 'Acesso negado. Requer privilégios de Admin.' });
+    }
+};
+
 module.exports = authenticateToken;
+module.exports.checkAdmin = checkAdmin;

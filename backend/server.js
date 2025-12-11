@@ -45,6 +45,7 @@ app.use((req, res, next) => {
 });
 
 const authenticateToken = require('./middleware/auth');
+const checkAdmin = authenticateToken.checkAdmin; // Fix ReferenceError
 const helmet = require('helmet');
 
 // =========================================================
