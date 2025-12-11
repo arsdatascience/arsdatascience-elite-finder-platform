@@ -16,7 +16,8 @@ import {
     Briefcase,
     Wallet,
     ShoppingBag,
-    BarChart3
+    BarChart3,
+    Brain
 } from 'lucide-react';
 
 interface HelpSection {
@@ -26,11 +27,105 @@ interface HelpSection {
     description: string;
     steps: {
         title: string;
-        content: string;
+        content: string | React.ReactNode;
     }[];
 }
 
 const HELP_SECTIONS: HelpSection[] = [
+    {
+        id: 'agent_builder',
+        title: 'Agent Builder & IA (Manual Completo)',
+        icon: Brain,
+        description: 'Guia definitivo de configuração de Agentes, Engenharia de Prompt e RAG.',
+        steps: [
+            {
+                title: 'Parâmetros de IA (LLM)',
+                content: (
+                    <div className="space-y-2">
+                        <p>Customize o comportamento do "cérebro" do seu agente:</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Modelo:</strong>
+                                <ul className="list-circle pl-5 mt-1 text-gray-500">
+                                    <li><em>GPT-5 Mini (256K):</em> Balanceado (Recomendado).</li>
+                                    <li><em>GPT-4.1:</em> Para tarefas ultra-complexas.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Temperatura (0-2):</strong> 0.7 é o padrão. <br />Use <em>0</em> para determinismo (Jurídico/Suporte) e <em>1.2+</em> para criatividade (Marketing).</li>
+                            <li><strong>Top-P (0.95):</strong> Controla diversidade. Reduza para focar em respostas mais óbvias.</li>
+                            <li><strong>Max Tokens (2000):</strong> Limite de tamanho da resposta. Aumente para artigos longos.</li>
+                            <li><strong>Timeout (60s):</strong> Tempo máximo de espera pela resposta.</li>
+                        </ul>
+                    </div>
+                )
+            },
+            {
+                title: 'Parâmetros Avançados',
+                content: (
+                    <div className="space-y-2">
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Frequency Penalty (0):</strong> Aumente para evitar repetição de frases.</li>
+                            <li><strong>Presence Penalty (0):</strong> Aumente para forçar novos tópicos/vocabulário.</li>
+                            <li><strong>Candidate Count (1):</strong> Quantas variações de resposta gerar (mais custoso).</li>
+                            <li><strong>Seed:</strong> Defina um número fixo (ex: 12345) para garantir que a mesma pergunta gere sempre á mesma resposta (Reprodutibilidade).</li>
+                            <li><strong>Modo JSON:</strong> Força a saída em formato de código JSON (útil para integrações).</li>
+                        </ul>
+                    </div>
+                )
+            },
+            {
+                title: 'Base Vetorial (RAG Avançado)',
+                content: (
+                    <div className="space-y-2">
+                        <p>Como o agente lê e busca seus documentos:</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Chunking (Fragmentação):</strong>
+                                <ul className="list-circle pl-5 mt-1 text-gray-500">
+                                    <li><em>Semântico (Recomendado):</em> Quebra o texto por sentido/ideias.</li>
+                                    <li><em>Tamanho Ótimo:</em> 300-500 palavras por bloco.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Estratégia de Busca:</strong> Híbrida (Keyword + Semântica) oferece a melhor precisão.</li>
+                            <li><strong>Reranking:</strong> Reordena os resultados da busca para garantir que o mais relevante venha primeiro (Ativar para Jurídico/Suporte).</li>
+                            <li><strong>Sensibilidade (5/10):</strong> Ajuste o quanto a busca deve ser estrita.</li>
+                            <li><strong>Threshold (0.7):</strong> Nota mínima de relevância para usar um documento.</li>
+                        </ul>
+                    </div>
+                )
+            },
+            {
+                title: 'Engenharia de Prompt (Templates)',
+                content: (
+                    <div className="space-y-2">
+                        <p>Estrutura profissional de instrução da IA:</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>System Prompt:</strong> A "alma" do agente. Define expertise e tom.</li>
+                            <li><strong>Response Structure:</strong> O esqueleto da resposta (ex: Saudação -> Resposta -> CTA).</li>
+                            <li><strong>Complex Cases:</strong> Regras "Se/Então" para situações difíceis.</li>
+                            <li><strong>Validation (Guardrails):</strong> Checklist de segurança (ex: "Verificar se inventou fatos").</li>
+                            <li><strong>Script:</strong> Roteiro passo-a-passo (ideal para Vendas).</li>
+                        </ul>
+                    </div>
+                )
+            },
+            {
+                title: 'Otimização Técnica',
+                content: (
+                    <div className="space-y-2">
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Chunking Strategy:</strong> Use "Parágrafo" (\n\n) para textos legais ou estruturados.</li>
+                            <li><strong>Overlap (100 chars):</strong> Mantém o contexto entre fragmentos.</li>
+                            <li><strong>Embeddings Híbridos:</strong> Combina precisão semântica (0.85) com peso contextual (0.25).</li>
+                            <li><strong>Multi-Modelo:</strong> Usa 3 modelos em paralelo para validar a resposta (Custo x3).</li>
+                        </ul>
+                    </div>
+                )
+            },
+            {
+                title: 'KPIs e Objetivos',
+                content: 'Defina metas claras para o agente (ex: "Capturar e-mail", "Agendar Reunião"). O sistema rastreará o sucesso dessas ações nas conversas.'
+            }
+        ]
+    },
     {
         id: 'dashboard',
         title: 'Gestão Estratégica (Dashboard)',
@@ -300,7 +395,7 @@ export const HelpCenter: React.FC = () => {
     const filteredSections = HELP_SECTIONS.filter(section =>
         section.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         section.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        section.steps.some(step => step.title.toLowerCase().includes(searchTerm.toLowerCase()) || step.content.toLowerCase().includes(searchTerm.toLowerCase()))
+        section.steps.some(step => step.title.toLowerCase().includes(searchTerm.toLowerCase()) || (typeof step.content === 'string' && step.content.toLowerCase().includes(searchTerm.toLowerCase())))
     );
 
     const toggleSection = (id: string) => {
@@ -374,9 +469,9 @@ export const HelpCenter: React.FC = () => {
                                                     </span>
                                                     {step.title}
                                                 </h4>
-                                                <p className="text-sm text-gray-600 leading-relaxed pl-8">
+                                                <div className="text-sm text-gray-600 leading-relaxed pl-8">
                                                     {step.content}
-                                                </p>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
