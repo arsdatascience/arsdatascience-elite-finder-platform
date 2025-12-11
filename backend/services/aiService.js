@@ -103,7 +103,10 @@ class AIService {
             model,
             messages: finalMessages,
             temperature,
-            max_tokens
+            model,
+            messages: finalMessages,
+            temperature,
+            max_completion_tokens: max_tokens
         };
 
         if (response_format) params.response_format = response_format;
