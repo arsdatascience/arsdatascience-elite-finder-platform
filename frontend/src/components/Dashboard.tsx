@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+
 import { AreaChart, Area, PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList, Legend } from 'recharts';
 import { CLIENTS_LIST, KPIS, COMPARATIVE_FUNNEL_DATA, DEVICE_DATA } from '../constants';
 import { ArrowUpRight, ArrowDownRight, Info, Users, Smartphone, Monitor, Tablet, Loader2, LayoutGrid, List as ListIcon, Table as TableIcon, FileText, FileSpreadsheet, Target, DollarSign, MousePointer, TrendingUp, Layers } from 'lucide-react';

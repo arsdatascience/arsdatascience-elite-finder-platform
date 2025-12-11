@@ -327,6 +327,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                     <option value="meta">Meta (FB/IG)</option>
                     <option value="instagram">Instagram</option>
                     <option value="linkedin">LinkedIn</option>
+                    <option value="tiktok">TikTok</option>
                     <option value="blog">Blog / Site</option>
                   </select>
                 </div>

@@ -97,7 +97,7 @@ export interface AnalysisResult {
 // Content Generation Types
 export interface ContentRequest {
   type: 'ad' | 'post' | 'reels' | 'stories' | 'carousel' | 'poll' | 'article';
-  platform: 'google' | 'meta' | 'instagram' | 'linkedin' | 'blog' | 'site';
+  platform: 'google' | 'meta' | 'instagram' | 'linkedin' | 'tiktok' | 'blog' | 'site';
   topic: string;
   tone: 'professional' | 'persuasive' | 'urgent' | 'friendly';
   provider?: 'gemini' | 'openai';

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { PenTool, Send, Copy, Check, Sparkles, Instagram, Linkedin, Mail, MessageCircle, Save, History, Trash2, Layout, FileText, Layers, Image } from 'lucide-react';
+import { Sparkles, Layout, FileText, Layers, Trash2, PenTool, Instagram, Linkedin, Mail, MessageCircle, Send, Save, Check, Copy, Music, History as HistoryIcon, Image as ImageIcon } from 'lucide-react';
+
 import { ClientSelector } from './common/ClientSelector';
 import { ImageGenerationPage } from './ImageGenerationPage';
 import { BatchWizard } from './BatchWizard';
@@ -54,7 +55,7 @@ const CreativeStudio: React.FC = () => {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
-                    type: platform === 'instagram' ? 'post' : platform === 'linkedin' ? 'article' : 'email',
+                    type: platform === 'instagram' ? 'post' : platform === 'linkedin' ? 'article' : platform === 'tiktok' ? 'reels' : 'email',
                     platform: platform,
                     topic: topic,
                     tone: tone,
@@ -193,7 +194,7 @@ const CreativeStudio: React.FC = () => {
                                         onClick={() => setShowHistory(!showHistory)}
                                         className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${showHistory ? 'bg-slate-200 text-slate-800' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'}`}
                                     >
-                                        <History size={18} /> Histórico ({savedCopies.length})
+                                        <HistoryIcon size={18} /> Histórico ({savedCopies.length})
                                     </button>
                                 )}
                             </div>
@@ -238,7 +239,7 @@ const CreativeStudio: React.FC = () => {
                                     : 'text-slate-500 hover:text-slate-700'
                                     }`}
                             >
-                                <Image size={18} />
+                                <ImageIcon size={18} />
                                 Geração de Imagens (IA)
                             </button>
                         </div>
@@ -272,7 +273,7 @@ const CreativeStudio: React.FC = () => {
                                     <div className="lg:col-span-3 space-y-4 animate-fade-in">
                                         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-[calc(100vh-200px)] overflow-y-auto">
                                             <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                                                <History size={16} /> Copys Salvas
+                                                <HistoryIcon size={16} /> Copys Salvas
                                             </h3>
                                             {savedCopies.length === 0 ? (
                                                 <p className="text-sm text-slate-400 text-center py-8">Nenhuma copy salva ainda.</p>
@@ -352,6 +353,12 @@ const CreativeStudio: React.FC = () => {
                                                         className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'whatsapp' ? 'bg-green-50 border-green-500 text-green-700' : 'hover:bg-slate-50'}`}
                                                     >
                                                         <MessageCircle size={20} /> <span className="text-xs font-medium">WhatsApp</span>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setPlatform('tiktok')}
+                                                        className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'tiktok' ? 'bg-black/5 border-black text-black' : 'hover:bg-slate-50'}`}
+                                                    >
+                                                        <Music size={20} /> <span className="text-xs font-medium">TikTok</span>
                                                     </button>
                                                 </div>
                                             </div>

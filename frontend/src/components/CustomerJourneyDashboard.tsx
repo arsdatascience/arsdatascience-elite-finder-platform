@@ -141,7 +141,7 @@ const CustomerJourneyDashboard: React.FC = () => {
         { id: 'journey' as const, label: 'Jornada', icon: TrendingUp, color: 'from-blue-600 to-blue-800' },
         { id: 'list' as const, label: 'Explorar', icon: List, color: 'from-gray-600 to-gray-800' },
         { id: 'team' as const, label: 'Equipe', icon: Users, color: 'from-amber-600 to-amber-800' },
-        { id: 'insights' as const, label: 'Insights IA', icon: Sparkles, color: 'from-pink-600 to-purple-600' },
+        { id: 'insights' as const, label: 'Insights IA', icon: Sparkles, color: 'from-[#20597f] to-[#20597f]' },
     ];
 
     if (loading) {

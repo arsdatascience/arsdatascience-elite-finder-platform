@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+
 import { CheckCircle, AlertCircle, Loader2, ExternalLink, Users, Plus, Trash2, Zap } from 'lucide-react';
 
 // Ícones SVG manuais (removidos do lucide-react em versões recentes)
