@@ -359,93 +359,115 @@ const createTeamMember = async (req, res) => {
 
 const updateTeamMember = async (req, res) => {
     const { id } = req.params;
-    const {
-        avatarUrl, username, firstName, lastName, email, phone, cpf,
-        registrationDate, role, status, address, permissions,
-        oldPassword, newPassword
-    } = req.body;
+    const updates = req.body;
 
     try {
-        const duplicateCheck = await db.query(
-            'SELECT id, email, username FROM users WHERE (email = $1 OR username = $2) AND id != $3',
-            [email, username, id]
-        );
+        // 1. Fetch current user data
+        const currentUserRes = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+        if (currentUserRes.rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Membro não encontrado' });
+        }
+        const currentUser = currentUserRes.rows[0];
 
-        if (duplicateCheck.rows.length > 0) {
-            const conflict = duplicateCheck.rows[0];
-            if (conflict.email === email) return res.status(400).json({ success: false, error: 'Email em uso.' });
-            if (conflict.username === username) return res.status(400).json({ success: false, error: 'Username em uso.' });
+        // 2. Prepare dynamic update fields
+        const fieldsToUpdate = [];
+        const values = [];
+        let paramIndex = 1;
+
+        const addField = (col, val) => {
+            if (val !== undefined) {
+                fieldsToUpdate.push(`${col} = $${paramIndex++}`);
+                values.push(val);
+            }
+        };
+
+        // 3. Check duplicates ONLY if critical fields are changing
+        // Email
+        if (updates.email && updates.email !== currentUser.email) {
+            const check = await db.query('SELECT id FROM users WHERE email = $1 AND id != $2', [updates.email, id]);
+            if (check.rows.length > 0) return res.status(400).json({ success: false, error: 'Email já está em uso.' });
+            addField('email', updates.email);
         }
 
-        if (cpf) {
-            const cpfCheck = await db.query('SELECT id FROM users WHERE cpf = $1 AND id != $2', [cpf, id]);
-            if (cpfCheck.rows.length > 0) return res.status(400).json({ success: false, error: 'CPF em uso.' });
+        // Username
+        if (updates.username && updates.username !== currentUser.username) {
+            const check = await db.query('SELECT id FROM users WHERE username = $1 AND id != $2', [updates.username, id]);
+            if (check.rows.length > 0) return res.status(400).json({ success: false, error: 'Username já está em uso.' });
+            addField('username', updates.username);
         }
 
-        if (newPassword) {
-            // Se for admin/super_admin, permite alterar sem senha antiga
-            const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin' || req.user.role === 'Super Admin' || req.user.role === 'super_user';
+        // CPF
+        if (updates.cpf && updates.cpf !== currentUser.cpf) {
+            const check = await db.query('SELECT id FROM users WHERE cpf = $1 AND id != $2', [updates.cpf, id]);
+            if (check.rows.length > 0) return res.status(400).json({ success: false, error: 'CPF já está em uso.' });
+            addField('cpf', updates.cpf);
+        }
 
-            // Se NÃO for admin, exige senha antiga
+        // Other fields
+        if (updates.firstName || updates.lastName) {
+            const fName = updates.firstName || currentUser.first_name;
+            const lName = updates.lastName || currentUser.last_name;
+            addField('first_name', fName);
+            addField('last_name', lName);
+            addField('name', `${fName} ${lName}`);
+        }
+
+        addField('phone', updates.phone);
+        addField('registration_date', updates.registrationDate);
+        addField('role', updates.role);
+        addField('status', updates.status);
+        addField('avatar_url', updates.avatarUrl);
+
+        if (updates.address) {
+            addField('address_street', updates.address.street);
+            addField('address_number', updates.address.number);
+            addField('address_complement', updates.address.complement);
+            addField('address_district', updates.address.district);
+            addField('address_city', updates.address.city);
+            addField('address_state', updates.address.state);
+            addField('address_zip', updates.address.zip);
+        }
+
+        if (updates.permissions) {
+            addField('permissions', JSON.stringify(updates.permissions));
+        }
+
+        // Password Logic
+        if (updates.newPassword) {
+            const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin' || req.user.role === 'Super Admin';
+
             if (!isAdmin) {
-                if (!oldPassword) return res.status(400).json({ success: false, error: 'Senha antiga obrigatória.' });
-                const userResult = await db.query('SELECT password_hash FROM users WHERE id = $1', [id]);
-                if (userResult.rows.length === 0) return res.status(404).json({ success: false, error: 'Usuário não encontrado' });
-                const isOldPasswordValid = await bcrypt.compare(oldPassword, userResult.rows[0].password_hash);
-                if (!isOldPasswordValid) return res.status(400).json({ success: false, error: 'Senha antiga incorreta' });
+                if (!updates.oldPassword) return res.status(400).json({ success: false, error: 'Senha antiga obrigatória.' });
+                const isValid = await bcrypt.compare(updates.oldPassword, currentUser.password_hash);
+                if (!isValid) return res.status(400).json({ success: false, error: 'Senha antiga incorreta.' });
             }
 
             const salt = await bcrypt.genSalt(10);
-            const password_hash = await bcrypt.hash(newPassword, salt);
-
-            const result = await db.query(`
-                UPDATE users SET
-                username = $1, first_name = $2, last_name = $3, email = $4, phone = $5, cpf = $6,
-                registration_date = $7, role = $8, status = $9, avatar_url = $10,
-                address_street = $11, address_number = $12, address_complement = $13,
-                address_district = $14, address_city = $15, address_state = $16, address_zip = $17,
-                permissions = $18, name = $19, password_hash = $20, updated_at = NOW()
-                WHERE id = $21
-                RETURNING id, username, first_name, last_name, email, phone, cpf,
-                registration_date, role, status, avatar_url, updated_at
-            `, [
-                username, firstName, lastName, email, phone, cpf,
-                registrationDate, role, status, avatarUrl,
-                address?.street, address?.number, address?.complement,
-                address?.district, address?.city, address?.state, address?.zip,
-                JSON.stringify(permissions || []),
-                `${firstName} ${lastName} `,
-                password_hash,
-                id
-            ]);
-            if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Membro não encontrado' });
-            res.json({ success: true, member: result.rows[0], message: 'Senha alterada com sucesso' });
-        } else {
-            const result = await db.query(`
-                UPDATE users SET
-                username = $1, first_name = $2, last_name = $3, email = $4, phone = $5, cpf = $6,
-                registration_date = $7, role = $8, status = $9, avatar_url = $10,
-                address_street = $11, address_number = $12, address_complement = $13,
-                address_district = $14, address_city = $15, address_state = $16, address_zip = $17,
-                permissions = $18, name = $19, updated_at = NOW()
-                WHERE id = $20
-                RETURNING id, username, first_name, last_name, email, phone, cpf,
-                registration_date, role, status, avatar_url, updated_at
-            `, [
-                username, firstName, lastName, email, phone, cpf,
-                registrationDate, role, status, avatarUrl,
-                address?.street, address?.number, address?.complement,
-                address?.district, address?.city, address?.state, address?.zip,
-                JSON.stringify(permissions || []),
-                `${firstName} ${lastName} `,
-                id
-            ]);
-            if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Membro não encontrado' });
-            res.json({ success: true, member: result.rows[0] });
+            const hash = await bcrypt.hash(updates.newPassword, salt);
+            addField('password_hash', hash);
         }
+
+        addField('updated_at', new Date());
+
+        if (fieldsToUpdate.length === 0) {
+            return res.json({ success: true, member: currentUser, message: 'Nada a atualizar' });
+        }
+
+        // Execute Update
+        const query = `
+            UPDATE users 
+            SET ${fieldsToUpdate.join(', ')}
+            WHERE id = $${paramIndex}
+            RETURNING id, username, first_name, last_name, email, phone, cpf, role, status, updated_at
+        `;
+        values.push(id);
+
+        const result = await db.query(query, values);
+        res.json({ success: true, member: result.rows[0], message: 'Usuário atualizado com sucesso' });
+
     } catch (err) {
         console.error('Error updating team member:', err);
-        if (err.code === '23505') return res.status(400).json({ success: false, error: 'Dados duplicados.' });
+        if (err.code === '23505') return res.status(400).json({ success: false, error: 'Dados duplicados (db constraint).' });
         res.status(500).json({ success: false, error: 'Database error: ' + err.message });
     }
 };
