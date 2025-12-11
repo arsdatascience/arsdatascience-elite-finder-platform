@@ -25,6 +25,7 @@ import { Login } from '@/components/Login';
 import { Register } from '@/components/Register';
 import { PrivacyPolicy } from '@/components/PrivacyPolicy';
 import { TermsOfService } from '@/components/TermsOfService';
+import { PublicAgentChat } from '@/components/PublicAgentChat';
 import { Footer } from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -188,6 +189,9 @@ const App: React.FC = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms-of-service" element={<TermsOfService />} />
+
+      {/* Public Agent Route */}
+      <Route path="/agent/:slug" element={<PublicAgentChat />} />
 
       <Route element={<PrivateRoute />}>
         <Route element={<Layout />}>

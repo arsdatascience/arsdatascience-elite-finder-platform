@@ -1316,6 +1316,37 @@ export const AgentBuilder: React.FC = () => {
                             <div className="space-y-6 animate-fade-in">
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <Globe className="text-blue-600" /> Link Público do Agente
+                                    </h3>
+                                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center justify-between gap-4">
+                                        <div className="flex-1 truncate">
+                                            <span className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1 block">URL de Acesso Eterno</span>
+                                            <code className="text-sm font-mono text-blue-700 bg-blue-50 px-2 py-1 rounded block truncate">
+                                                {(config as any).slug ? `${window.location.origin}/agent/${(config as any).slug}` : 'Salve o agente para gerar o link'}
+                                            </code>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                onClick={() => (config as any).slug && window.open(`/agent/${(config as any).slug}`, '_blank')}
+                                                disabled={!(config as any).slug}
+                                                title="Abrir página"
+                                            >
+                                                <ExternalLink size={20} />
+                                            </button>
+                                            <button
+                                                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                onClick={() => (config as any).slug && navigator.clipboard.writeText(`${window.location.origin}/agent/${(config as any).slug}`)}
+                                                disabled={!(config as any).slug}
+                                                title="Copiar link"
+                                            >
+                                                <Copy size={20} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                         <Smartphone className="text-green-600" /> Integração WhatsApp
                                     </h3>
                                     <div className="mb-6">
