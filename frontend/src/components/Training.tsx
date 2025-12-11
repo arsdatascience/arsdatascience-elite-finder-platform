@@ -243,6 +243,77 @@ export const Training: React.FC = () => {
                 </div>
             </div>
 
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <CheckCircle className="text-green-600" size={24} />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-gray-900">{completedModules}</p>
+                            <p className="text-sm text-gray-500">Módulos Concluídos</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                            <Clock className="text-primary-600" size={24} />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-gray-900">
+                                {modules.reduce((acc, m) => acc + m.duration_minutes, 0)} min
+                            </p>
+                            <p className="text-sm text-gray-500">Tempo Total de Conteúdo</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
+                            <TrendingUp className="text-slate-600" size={24} />
+                        </div>
+                        <div>
+                            <p className="text-2xl font-bold text-gray-900">{overallProgress}%</p>
+                            <p className="text-sm text-gray-500">Progresso Geral</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex gap-2 border-b border-gray-200">
+                <button
+                    onClick={() => setFilter('all')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'all' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    Todos
+                </button>
+                <button
+                    onClick={() => setFilter('not_started')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'not_started' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    Não Iniciados
+                </button>
+                <button
+                    onClick={() => setFilter('in_progress')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'in_progress' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    Em Progresso
+                </button>
+                <button
+                    onClick={() => setFilter('completed')}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${filter === 'completed' ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    Concluídos
+                </button>
+            </div>
+
             {/* Content Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredModules.map(module => {
@@ -280,6 +351,18 @@ export const Training: React.FC = () => {
                                 </div>
                                 <h3 className="font-bold text-gray-800 mb-1 line-clamp-2">{module.title}</h3>
                                 <p className="text-xs text-gray-500 mb-3 line-clamp-2">{module.description}</p>
+
+                                {/* Progress Bar */}
+                                {progressPercent > 0 && !isCompleted && (
+                                    <div className="mb-3">
+                                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                            <div
+                                                className="bg-primary-600 h-1.5 rounded-full transition-all"
+                                                style={{ width: `${progressPercent}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                )}
                                 <button
                                     className="w-full mt-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium py-2 rounded-lg transition-colors"
                                     onClick={(e) => {
@@ -396,6 +479,13 @@ export const Training: React.FC = () => {
                             </div>
                         </form>
                     </div>
+                </div>
+            )}
+
+            {filteredModules.length === 0 && (
+                <div className="text-center py-12">
+                    <BookOpen size={48} className="mx-auto text-gray-300 mb-4" />
+                    <p className="text-gray-500">Nenhum módulo encontrado nesta categoria.</p>
                 </div>
             )}
         </div>
