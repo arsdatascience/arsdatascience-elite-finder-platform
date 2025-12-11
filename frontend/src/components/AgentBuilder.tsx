@@ -4,7 +4,8 @@ import { useMutation } from '@tanstack/react-query';
 import {
     Brain, Save, Database, MessageSquare,
     Shield, Fingerprint, Wand2, Smartphone, Check,
-    LayoutTemplate, X, Loader2, RefreshCw, Zap
+    LayoutTemplate, X, Loader2, RefreshCw, Zap,
+    Globe, Copy, ExternalLink
 } from 'lucide-react';
 import { ClientSelector } from './common/ClientSelector';
 // Tipos baseados na especificação do usuário

@@ -288,6 +288,25 @@ const AdminDashboard: React.FC = () => {
                 icon={<AlertTriangle className="w-6 h-6 text-red-400" />}
                 isAlert={(queueStats?.stats?.failed || 0) > 0}
             />
+
+            {/* Universal AI Control Plane Shortcut */}
+            <div
+                onClick={() => window.location.href = '/admin/ai-control-plane'}
+                className="col-span-1 md:col-span-2 lg:col-span-4 bg-gradient-to-r from-blue-900/50 to-slate-900/50 border border-blue-500/30 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:bg-blue-900/30 transition-colors group"
+            >
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-500/20 rounded-lg group-hover:scale-110 transition-transform">
+                        <Shield className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-semibold text-white">Universal AI Control Plane</h3>
+                        <p className="text-sm text-slate-400">Manage System Agents, Prompts, and Knowledge Bases</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 text-blue-400 font-medium">
+                    Access Control Plane <Activity className="w-4 h-4" />
+                </div>
+            </div>
         </div>
     );
 

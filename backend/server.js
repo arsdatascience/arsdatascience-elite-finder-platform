@@ -144,6 +144,11 @@ app.put('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantControlle
 app.delete('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantController.deleteTenant);
 app.put('/api/tenant/me', authenticateToken, tenantController.updateMyTenant);
 
+// Rota de Admin - Gestão de Data Sources (Conexões DB)
+const dataSourceController = require('./controllers/dataSourceController');
+app.get('/api/admin/datasources', authenticateToken, checkAdmin, dataSourceController.listSources);
+app.get('/api/admin/datasources/:sourceId/introspect', authenticateToken, checkAdmin, dataSourceController.introspectSource);
+
 // Rota de Análise de Áudio (Whisper + GPT-4o)
 const audioController = require('./audioController');
 app.post('/api/audio/analyze', authenticateToken, audioController.uploadMiddleware, audioController.analyzeAudio);
@@ -153,7 +158,9 @@ app.delete('/api/audio/analysis/:id', authenticateToken, audioController.deleteA
 
 // ML Agent Routes (AI-powered analytics via natural language)
 const mlAgentRoutes = require('./routes/mlAgent.routes');
+const agentsController = require('./agentsController'); // Chatbot/Agent Management
 app.use('/api/ml-agent', mlAgentRoutes);
+app.use('/api/chatbots', authenticateToken, agentsController);
 
 // Analytics Routes (Market Analysis)
 const analyticsRoutes = require('./routes/analyticsRoutes');

@@ -31,6 +31,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 import { ImageGenerationPage } from '@/components/ImageGenerationPage';
 import AdminDashboard from '@/components/AdminDashboard';
+import AIControlPlane from '@/components/admin/AIControlPlane';
 import { AudioAnalysis } from '@/components/AudioAnalysis';
 import FinancialModule from '@/components/FinancialModule';
 import CreativeStudio from '@/components/CreativeStudio';
@@ -55,7 +56,8 @@ const PATH_MAP: Record<ViewState, string> = {
   [ViewState.SOCIAL]: '/social',
   [ViewState.SOCIAL_CALENDAR]: '/social-calendar',
   [ViewState.SOCIAL_INTEGRATIONS]: '/social-integrations',
-  // IMAGE_GENERATION removed - available inside CREATIVE_STUDIO
+  [ViewState.CAMPAIGNS]: '/campaigns',
+  [ViewState.IMAGE_GENERATION]: '/images/generate',
   [ViewState.AUDIO_ANALYSIS]: '/audio-analysis',
   [ViewState.FINANCIAL_MODULE]: '/financial',
   [ViewState.AUTOMATION]: '/automation',
@@ -223,6 +225,7 @@ const App: React.FC = () => {
           <Route path="/templates" element={<TemplateManager />} />
           <Route path="/whatsapp-simulator" element={<WhatsAppSimulator />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/ai-control-plane" element={<AdminRoute><AIControlPlane /></AdminRoute>} />
           <Route path="/creative-studio" element={<CreativeStudio />} />
           <Route path="/sales-coaching" element={<SalesCoachingChat />} />
           <Route path="/help-center" element={<HelpCenter />} />

@@ -7,6 +7,47 @@ const db = require('./database');
 const { decrypt } = require('./utils/crypto');
 const { getTenantScope } = require('./utils/tenantSecurity');
 
+// Helper to fetch dynamic agent config
+const getAgentConfig = async (slug, tenantId) => {
+  try {
+    // 1. Fetch Agent by Slug
+    const agentRes = await db.query("SELECT * FROM chatbots WHERE slug = $1 AND status = 'active'", [slug]);
+    if (agentRes.rows.length === 0) return null;
+    const agent = agentRes.rows[0];
+
+    // 2. Fetch AI Config
+    const aiConfigRes = await db.query('SELECT * FROM agent_ai_configs WHERE chatbot_id = $1', [agent.id]);
+    const aiConfig = aiConfigRes.rows[0] || {};
+
+    // 3. Fetch Prompts
+    const promptsRes = await db.query('SELECT * FROM agent_prompts WHERE chatbot_id = $1', [agent.id]);
+    const prompts = promptsRes.rows[0] || {};
+
+    // 4. Fetch Enabled Data Sources (For RAG Context)
+    // Assuming a mapping table exists or we filter by checking connection params
+    // For MVP phase 1.5, we will return empty list unless implemented
+    // const sourcesRes = await db.query('SELECT * FROM agent_data_sources WHERE chatbot_id = $1', [agent.id]);
+
+    return {
+      ...agent,
+      aiConfig: {
+        model: aiConfig.model || 'gpt-4o',
+        temperature: parseFloat(aiConfig.temperature) || 0.7,
+        provider: aiConfig.provider || 'openai',
+        jsonMode: aiConfig.json_mode || false
+      },
+      prompts: {
+        system: prompts.system_prompt || '',
+        analysis: prompts.analysis_prompt || '',
+        responseStructure: prompts.response_structure_prompt || ''
+      }
+    };
+  } catch (err) {
+    console.error(`Error fetching agent config for ${slug}:`, err);
+    return null;
+  }
+};
+
 const getEffectiveApiKey = async (provider = 'openai', userId = null) => {
   // 1. Try to get from User DB (SaaS Multi-tenant)
   if (userId) {
@@ -422,7 +463,50 @@ const generateMarketingContent = async (req, res) => {
     default: typeDescription = "Post de Marketing Digital.";
   }
 
-  const prompt = `
+  // --- DYNAMIC CONTENT AGENT ---
+  let dynamicPrompt = '';
+  let dynamicModel = model;
+  let dynamicProvider = provider;
+
+  const agentConfig = await getAgentConfig('agent-creative-director');
+
+  if (agentConfig) {
+    console.log('🎨 Using Dynamic Creative Director Config');
+    dynamicModel = agentConfig.aiConfig.model;
+    dynamicProvider = agentConfig.aiConfig.provider;
+
+    // Inserir variáveis no prompt dinâmico
+    // O prompt do DB deve ter placeholders ou ser genérico o suficiente
+    // Vamos assumir que o System Prompt define a Persona, e montamos a tarefa aqui.
+    dynamicPrompt = `
+      ${agentConfig.prompts.system}
+
+      TAREFA: Criar conteúdo de marketing de alta conversão.
+      FORMATO: ${typeDescription}
+      PLATAFORMA: ${request.platform}
+      TÓPICO/PRODUTO: ${request.topic}
+      TOM DE VOZ: ${request.tone}
+      IDIOMA: Português do Brasil (PT-BR)
+      CLIENTE_ID: ${request.clientId || 'N/A'}
+
+      Retorne JSON estrito com a seguinte estrutura:
+      {
+        "headlines": ["Titulo 1", "Titulo 2", "Titulo 3"],
+        "body": "Texto do conteúdo...",
+        "cta": "Chamada para ação...",
+        "hashtags": ["#tag1", "#tag2"],
+        "imageIdea": "Descrição da imagem/vídeo..."
+      }
+      `;
+  } else {
+    // Hardcoded Fallback
+    dynamicPrompt = `
+       Você é um Copywriter de Elite de classe mundial (nível Ogilvy/Gary Halbert).
+       ...
+       `;
+  }
+
+  const prompt = dynamicPrompt || `
       Você é um Copywriter de Elite de classe mundial (nível Ogilvy/Gary Halbert).
       
       TAREFA: Criar conteúdo de marketing de alta conversão.
@@ -587,25 +671,38 @@ const askEliteAssistant = async (req, res) => {
       `;
   }
 
-  const prompt = `
+  // --- DYNAMIC AGENT CONFIGURATION ---
+  let systemPrompt = '';
+  let modelToUse = model;
+  let providerToUse = provider;
+
+  // Try to load dynamic config
+  const agentConfig = await getAgentConfig('agent-elite-assistant');
+
+  if (agentConfig) {
+    console.log('🤖 Using Dynamic Agent Config:', agentConfig.name);
+    systemPrompt = agentConfig.prompts.system;
+    modelToUse = agentConfig.aiConfig.model;
+    providerToUse = agentConfig.aiConfig.provider;
+
+    // Append Contexts dynamically
+    // We append context at the END of the system prompt or as User Context?
+    // Usually System Prompt is fixed identity. Context is injected into the prompt.
+  } else {
+    // Fallback to Hardcoded
+    systemPrompt = `
     Você é o **Elite Strategist**, um Especialista Sênior em Marketing Digital e Vendas da plataforma 'EliteFinder'.
+    ... (fallback content) ...
+    `;
+  }
+
+  const prompt = `
+    ${systemPrompt}
     
     ${churnContext}
     ${financialContext}
     ${ragContext}
     ${internetContext}
-
-    🧠 **SUAS ESPECIALIDADES:**
-    1. **Tráfego Pago:** Estratégias avançadas para Google Ads, Meta Ads (Facebook/Instagram), LinkedIn Ads e TikTok Ads.
-    2. **Social Media:** Criação de calendários editoriais, roteiros para Reels/TikTok, e estratégias de engajamento.
-    3. **Copywriting:** Escrita persuasiva para anúncios, landing pages e e-mails (AIDA, PAS, etc).
-    4. **Funis de Vendas:** Otimização de conversão (CRO) e jornadas do cliente.
-
-    🎯 **DIRETRIZES DE RESPOSTA:**
-    - Atue como um consultor experiente: seja estratégico, direto e prático.
-    - Quando o usuário pedir ideias, forneça listas estruturadas (ex: "3 Ideias de Hooks para Reels").
-    - Se perguntarem sobre métricas, explique o que significam (CTR, ROAS, CPA) e qual o benchmark ideal.
-    - Responda sempre em **Português do Brasil** com tom profissional mas acessível.
 
     Contexto da Conversa Atual:
     ${conversationContext}
@@ -630,11 +727,47 @@ const askEliteAssistant = async (req, res) => {
   }
 };
 
+
+
+/**
+ * Analisa uma conversa e gera insights estratégicos de Vendas e Marketing
+ */
+const analyzeConversationStrategy = async (req, res) => {
+  const { messages, agentContext } = req.body;
+
+  // --- DYNAMIC SALES COACH CONFIG ---
+  const agentConfig = await getAgentConfig('agent-sales-coach');
+  let providerToUse = 'openai';
+  let modelToUse = 'gpt-4o';
+  let systemPrompt = '';
+
+  if (agentConfig) {
+    console.log('🧐 Using Dynamic Sales Coach Config');
+    providerToUse = agentConfig.aiConfig.provider;
+    modelToUse = agentConfig.aiConfig.model;
+    systemPrompt = agentConfig.prompts.system; // We can pass this to internal analyzer if needed
+  }
+
+  const userId = req.user ? req.user.id : null;
+  const apiKey = await getEffectiveApiKey(providerToUse, userId);
+
+  try {
+    // Pass config/prompt to internal function if refactored to accept it
+    // For now, check if analyzeStrategyInternal uses hardcoded prompt.
+    // Yes it does. We should modify analyzeStrategyInternal too or pass prompt.
+    const analysis = await analyzeStrategyInternal(messages, agentContext, apiKey, systemPrompt, modelToUse);
+    res.json(analysis);
+  } catch (error) {
+    console.error('Error analyzing strategy:', error);
+    res.status(500).json({ error: 'Failed to analyze conversation' });
+  }
+};
+
 /**
  * Internal function to analyze conversation strategy
  */
-const analyzeStrategyInternal = async (messages, agentContext, apiKey) => {
-  const prompt = `
+const analyzeStrategyInternal = async (messages, agentContext, apiKey, customPrompt, model) => {
+  const basePrompt = customPrompt || `
         Atue como um Diretor de Estratégia Comercial e Marketing Sênior. Analise a seguinte conversa entre um Agente (Bot) e um Cliente (Prospect).
         
         CONTEXTO DO AGENTE:
@@ -672,27 +805,9 @@ const analyzeStrategyInternal = async (messages, agentContext, apiKey) => {
         Responda APENAS o JSON.
         `;
 
-  const text = await callOpenAI(prompt, apiKey, "gpt-4-turbo-preview", true);
+  const text = await callOpenAI(basePrompt, apiKey, model || "gpt-4-turbo-preview", true);
   const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
   return JSON.parse(cleanText);
-};
-
-/**
- * Analisa uma conversa e gera insights estratégicos de Vendas e Marketing
- */
-const analyzeConversationStrategy = async (req, res) => {
-  const { messages, agentContext } = req.body;
-  const provider = 'openai';
-  const userId = req.user ? req.user.id : null;
-  const apiKey = await getEffectiveApiKey(provider, userId);
-
-  try {
-    const analysis = await analyzeStrategyInternal(messages, agentContext, apiKey);
-    res.json(analysis);
-  } catch (error) {
-    console.error('Error analyzing strategy:', error);
-    res.status(500).json({ error: 'Failed to analyze conversation' });
-  }
 };
 
 /**

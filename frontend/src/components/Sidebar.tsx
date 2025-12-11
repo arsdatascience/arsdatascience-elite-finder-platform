@@ -47,8 +47,8 @@ const NavGroupComponent: React.FC<{
       <button
         onClick={() => onNavigate(item.id as ViewState)}
         className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 mb-4 ${isActive
-            ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/50'
-            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+          ? 'bg-primary-600 text-white shadow-lg shadow-primary-900/50'
+          : 'text-slate-400 hover:bg-slate-800 hover:text-white'
           }`}
       >
         <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-slate-500'}`} />
@@ -63,8 +63,8 @@ const NavGroupComponent: React.FC<{
       <button
         onClick={onToggle}
         className={`flex items-center justify-between w-full px-3 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all duration-200 ${hasActiveItem
-            ? 'text-primary-400 bg-primary-900/20'
-            : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
+          ? 'text-primary-400 bg-primary-900/20'
+          : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
           }`}
       >
         <div className="flex items-center gap-2">
@@ -93,8 +93,8 @@ const NavGroupComponent: React.FC<{
                 key={item.id}
                 onClick={() => onNavigate(item.id as ViewState)}
                 className={`flex items-center w-full px-3 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ${isActive
-                    ? 'bg-primary-600 text-white shadow-md shadow-primary-900/50'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-primary-600 text-white shadow-md shadow-primary-900/50'
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   }`}
               >
                 <Icon className={`w-4 h-4 mr-3 ${isActive ? 'text-white' : 'text-slate-500'}`} />
@@ -166,6 +166,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeView, onNavigate, isOpen
             >
               <Shield className="w-5 h-5 mr-3" />
               Admin Panel
+            </button>
+          )}
+
+          {/* AI Control Plane - Super Admin Only */}
+          {user?.role === 'super_admin' && (
+            <button
+              onClick={() => window.location.href = '/admin/ai-control-plane'} // Using href for now to bypass ViewState enum constraint or add new ViewState
+              className="flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 text-blue-400 hover:bg-blue-900/20 hover:text-blue-300 mt-2 border border-blue-500/30"
+            >
+              <Activity className="w-5 h-5 mr-3" /> {/* Or Brain icon if available */}
+              AI Control Plane
             </button>
           )}
 
