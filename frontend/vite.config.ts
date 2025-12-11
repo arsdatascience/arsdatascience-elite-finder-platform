@@ -11,11 +11,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  define: {
-    'process.env': {}
-  },
+
   build: {
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1600,
     rollupOptions: {
       output: {
         manualChunks: {

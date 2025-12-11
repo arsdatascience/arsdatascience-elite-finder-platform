@@ -1,0 +1,7 @@
+id,tenant_id,journey_type,step_order,channel,action_type,is_active,created_at
+1,1,onboarding,1,email,send_email,true,2025-12-09T03:18:14.431Z
+2,1,onboarding,2,whatsapp,send_message,true,2025-12-09T03:18:14.431Z
+3,1,abandoned_cart,1,email,send_email,true,2025-12-09T03:18:14.431Z
+4,1,abandoned_cart,2,whatsapp,send_message,true,2025-12-09T03:18:14.431Z
+5,1,reactivation,1,email,send_email,true,2025-12-09T03:18:14.431Z
+6,1,reactivation,2,whatsapp,send_message,true,2025-12-09T03:18:14.431Z

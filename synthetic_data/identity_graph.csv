@@ -1,0 +1,301 @@
+id,customer_id,identifier_type,identifier_value,confidence_score,source_channel,is_verified,verified_at
+1,e23b60a3-db63-494b-ade7-e51cf1875aaa,email,nmachado@example.org,1.0,email,True,2025-11-11 13:50:49.063862
+2,e23b60a3-db63-494b-ade7-e51cf1875aaa,phone,+55 (011) 0830-1689,0.95,whatsapp,True,2025-09-26 13:50:49.063889
+3,e23b60a3-db63-494b-ade7-e51cf1875aaa,facebook_id,fb_225878,0.85,facebook,False,
+4,80d9e10b-bc2f-4e6a-ac30-b833c9e8c1fa,email,carvalhoisadora@example.com,1.0,email,True,2025-10-21 13:50:49.063894
+5,80d9e10b-bc2f-4e6a-ac30-b833c9e8c1fa,phone,+55 (081) 4580 7191,0.95,whatsapp,True,2025-10-02 13:50:49.063897
+6,80d9e10b-bc2f-4e6a-ac30-b833c9e8c1fa,facebook_id,fb_270190,0.85,facebook,False,
+7,55f4ddcd-ab62-4e03-bd50-2b2c0053dbf7,email,sarah01@example.com,1.0,email,True,2025-10-12 13:50:49.063900
+8,55f4ddcd-ab62-4e03-bd50-2b2c0053dbf7,phone,+55 (084) 1502 6085,0.95,whatsapp,True,2025-07-23 13:50:49.063902
+9,55f4ddcd-ab62-4e03-bd50-2b2c0053dbf7,facebook_id,fb_985482,0.85,facebook,False,
+10,1526aef5-28ac-41b2-bc83-2f5d131804d8,email,barroscaua@example.org,1.0,email,True,2025-11-01 13:50:49.063906
+11,1526aef5-28ac-41b2-bc83-2f5d131804d8,phone,(041) 2878-3451,0.95,whatsapp,True,2025-06-28 13:50:49.063908
+12,1526aef5-28ac-41b2-bc83-2f5d131804d8,facebook_id,fb_259666,0.85,facebook,False,
+13,7adea4f4-fc19-415a-a11a-109abbb05b85,email,biancada-mota@example.org,1.0,email,True,2025-10-30 13:50:49.063911
+14,7adea4f4-fc19-415a-a11a-109abbb05b85,phone,+55 61 8430 6369,0.95,whatsapp,True,2025-10-03 13:50:49.063914
+15,7adea4f4-fc19-415a-a11a-109abbb05b85,facebook_id,fb_691056,0.85,facebook,False,
+16,5ec0340a-b744-4278-9362-a20cd3c598fc,email,hcirino@example.net,1.0,email,True,2025-09-28 13:50:49.063917
+17,5ec0340a-b744-4278-9362-a20cd3c598fc,phone,0900-609-0543,0.95,whatsapp,True,2025-10-21 13:50:49.063919
+18,5ec0340a-b744-4278-9362-a20cd3c598fc,facebook_id,fb_918926,0.85,facebook,False,
+19,a7266949-e60f-4e87-98b3-c0debd91593a,email,da-rochasara@example.org,1.0,email,True,2025-07-14 13:50:49.063923
+20,a7266949-e60f-4e87-98b3-c0debd91593a,phone,+55 (071) 1977 5986,0.95,whatsapp,True,2025-09-13 13:50:49.063925
+21,a7266949-e60f-4e87-98b3-c0debd91593a,facebook_id,fb_790198,0.85,facebook,False,
+22,55667ff3-9902-4372-967e-368e5d5cb29a,email,renanviana@example.org,1.0,email,True,2025-11-11 13:50:49.063929
+23,55667ff3-9902-4372-967e-368e5d5cb29a,phone,11 3934-7645,0.95,whatsapp,True,2025-09-03 13:50:49.063931
+24,55667ff3-9902-4372-967e-368e5d5cb29a,facebook_id,fb_267529,0.85,facebook,False,
+25,2ddfa179-95c5-425f-8576-3f82c26f5e2b,email,gomesgustavo@example.net,1.0,email,True,2025-10-07 13:50:49.063935
+26,2ddfa179-95c5-425f-8576-3f82c26f5e2b,phone,61 5710 6156,0.95,whatsapp,True,2025-07-21 13:50:49.063937
+27,2ddfa179-95c5-425f-8576-3f82c26f5e2b,facebook_id,fb_790887,0.85,facebook,False,
+28,59915c15-8556-405c-bb1e-6d836ee88c3f,email,gomesgabriel@example.org,1.0,email,True,2025-09-22 13:50:49.063940
+29,59915c15-8556-405c-bb1e-6d836ee88c3f,phone,84 4252 2869,0.95,whatsapp,True,2025-11-13 13:50:49.063942
+30,59915c15-8556-405c-bb1e-6d836ee88c3f,facebook_id,fb_176066,0.85,facebook,False,
+31,367ded8c-91a1-4135-aba5-2d71fcf5b950,email,asafe51@example.org,1.0,email,True,2025-11-27 13:50:49.063945
+32,367ded8c-91a1-4135-aba5-2d71fcf5b950,phone,(011) 1957-9384,0.95,whatsapp,True,2025-10-23 13:50:49.063947
+33,367ded8c-91a1-4135-aba5-2d71fcf5b950,facebook_id,fb_412758,0.85,facebook,False,
+34,1144bf0c-da8d-4b1b-8248-b91a4c6afefc,email,hellena51@example.com,1.0,email,True,2025-09-19 13:50:49.063951
+35,1144bf0c-da8d-4b1b-8248-b91a4c6afefc,phone,(084) 7555 0173,0.95,whatsapp,True,2025-11-30 13:50:49.063954
+36,1144bf0c-da8d-4b1b-8248-b91a4c6afefc,facebook_id,fb_760471,0.85,facebook,False,
+37,ac5b4982-2fd6-459a-bcb6-42fcd1cbd814,email,erickguerra@example.net,1.0,email,True,2025-07-07 13:50:49.063957
+38,ac5b4982-2fd6-459a-bcb6-42fcd1cbd814,phone,(071) 7604 8069,0.95,whatsapp,True,2025-08-06 13:50:49.063959
+39,ac5b4982-2fd6-459a-bcb6-42fcd1cbd814,facebook_id,fb_939664,0.85,facebook,False,
+40,8951ec6b-1bc3-4d9c-9546-74c80a367390,email,anna-liz85@example.net,1.0,email,True,2025-09-18 13:50:49.063963
+41,8951ec6b-1bc3-4d9c-9546-74c80a367390,phone,(011) 1203-4783,0.95,whatsapp,True,2025-10-21 13:50:49.063964
+42,8951ec6b-1bc3-4d9c-9546-74c80a367390,facebook_id,fb_665840,0.85,facebook,False,
+43,5077e927-4ea9-427e-a047-df89949a668d,email,antony52@example.net,1.0,email,True,2025-08-28 13:50:49.063968
+44,5077e927-4ea9-427e-a047-df89949a668d,phone,(041) 5328-5683,0.95,whatsapp,True,2025-12-01 13:50:49.063970
+45,5077e927-4ea9-427e-a047-df89949a668d,facebook_id,fb_558573,0.85,facebook,False,
+46,60566ea1-f6f4-4611-90ce-4c3a7c574a24,email,zpastor@example.com,1.0,email,True,2025-06-14 13:50:49.063973
+47,60566ea1-f6f4-4611-90ce-4c3a7c574a24,phone,0800-218-9764,0.95,whatsapp,True,2025-08-28 13:50:49.063983
+48,60566ea1-f6f4-4611-90ce-4c3a7c574a24,facebook_id,fb_850401,0.85,facebook,False,
+49,1dc1de97-d46d-4dd4-aff0-45a358b33607,email,ycassiano@example.org,1.0,email,True,2025-08-24 13:50:49.063987
+50,1dc1de97-d46d-4dd4-aff0-45a358b33607,phone,(021) 5172-1179,0.95,whatsapp,True,2025-09-04 13:50:49.063989
+51,1dc1de97-d46d-4dd4-aff0-45a358b33607,facebook_id,fb_788073,0.85,facebook,False,
+52,fcab9c62-5bc0-4ece-b641-ca42463379c4,email,carvalhoclarice@example.org,1.0,email,True,2025-06-14 13:50:49.063992
+53,fcab9c62-5bc0-4ece-b641-ca42463379c4,phone,31 5558 4235,0.95,whatsapp,True,2025-09-30 13:50:49.063994
+54,fcab9c62-5bc0-4ece-b641-ca42463379c4,facebook_id,fb_864616,0.85,facebook,False,
+55,a44bf349-d1c1-46d1-9423-2e794054f14d,email,dom17@example.org,1.0,email,True,2025-10-13 13:50:49.063997
+56,a44bf349-d1c1-46d1-9423-2e794054f14d,phone,61 3266-6162,0.95,whatsapp,True,2025-11-06 13:50:49.063999
+57,a44bf349-d1c1-46d1-9423-2e794054f14d,facebook_id,fb_106226,0.85,facebook,False,
+58,8b9cb984-f7a6-4092-966b-452543f53453,email,da-luzjosue@example.net,1.0,email,True,2025-11-12 13:50:49.064002
+59,8b9cb984-f7a6-4092-966b-452543f53453,phone,(011) 8429-4263,0.95,whatsapp,True,2025-10-11 13:50:49.064004
+60,8b9cb984-f7a6-4092-966b-452543f53453,facebook_id,fb_272919,0.85,facebook,False,
+61,0ec502de-fdc6-4364-936c-fbccebb8ca44,email,snovaes@example.org,1.0,email,True,2025-06-27 13:50:49.064010
+62,0ec502de-fdc6-4364-936c-fbccebb8ca44,phone,(081) 1062 8437,0.95,whatsapp,True,2025-12-07 13:50:49.064016
+63,0ec502de-fdc6-4364-936c-fbccebb8ca44,facebook_id,fb_585981,0.85,facebook,False,
+64,93d8df7b-911a-4a24-ab62-4e6028ecd0d7,email,ana-julia26@example.net,1.0,email,True,2025-07-01 13:50:49.064019
+65,93d8df7b-911a-4a24-ab62-4e6028ecd0d7,phone,(061) 7173 6452,0.95,whatsapp,True,2025-08-25 13:50:49.064021
+66,93d8df7b-911a-4a24-ab62-4e6028ecd0d7,facebook_id,fb_525873,0.85,facebook,False,
+67,79015ff4-e2d7-4b12-8d25-bf7381d13b80,email,samateus@example.net,1.0,email,True,2025-10-07 13:50:49.064024
+68,79015ff4-e2d7-4b12-8d25-bf7381d13b80,phone,+55 (061) 9949-5649,0.95,whatsapp,True,2025-08-17 13:50:49.064027
+69,79015ff4-e2d7-4b12-8d25-bf7381d13b80,facebook_id,fb_525831,0.85,facebook,False,
+70,ae129e04-36b4-4a7a-ba45-6079d3781943,email,nsa@example.com,1.0,email,True,2025-08-07 13:50:49.064029
+71,ae129e04-36b4-4a7a-ba45-6079d3781943,phone,+55 (031) 7559 5208,0.95,whatsapp,True,2025-09-23 13:50:49.064031
+72,ae129e04-36b4-4a7a-ba45-6079d3781943,facebook_id,fb_178699,0.85,facebook,False,
+73,fc6cd42e-7196-4bd7-8b2e-82122a257c1d,email,benjamim29@example.net,1.0,email,True,2025-11-22 13:50:49.064037
+74,fc6cd42e-7196-4bd7-8b2e-82122a257c1d,phone,51 5728 1538,0.95,whatsapp,True,2025-06-20 13:50:49.064039
+75,fc6cd42e-7196-4bd7-8b2e-82122a257c1d,facebook_id,fb_229032,0.85,facebook,False,
+76,43c18b6e-c318-4e5b-9bef-c64518ea8609,email,pintoheloisa@example.net,1.0,email,True,2025-06-30 13:50:49.064044
+77,43c18b6e-c318-4e5b-9bef-c64518ea8609,phone,(061) 2219-1646,0.95,whatsapp,True,2025-11-16 13:50:49.064046
+78,43c18b6e-c318-4e5b-9bef-c64518ea8609,facebook_id,fb_477362,0.85,facebook,False,
+79,fe10967e-1718-4edc-88a8-ababd828b233,email,joaoda-conceicao@example.com,1.0,email,True,2025-07-05 13:50:49.064070
+80,fe10967e-1718-4edc-88a8-ababd828b233,phone,+55 61 5736-4309,0.95,whatsapp,True,2025-10-01 13:50:49.064073
+81,fe10967e-1718-4edc-88a8-ababd828b233,facebook_id,fb_596393,0.85,facebook,False,
+82,6ff6e731-e40d-4480-9821-8c4c5ff41471,email,vitor-gabrielda-cunha@example.net,1.0,email,True,2025-10-24 13:50:49.064076
+83,6ff6e731-e40d-4480-9821-8c4c5ff41471,phone,(081) 9205-4503,0.95,whatsapp,True,2025-10-27 13:50:49.064077
+84,6ff6e731-e40d-4480-9821-8c4c5ff41471,facebook_id,fb_719697,0.85,facebook,False,
+85,3d656a0b-1434-49c0-a5d1-06cebe42ef71,email,valentina35@example.com,1.0,email,True,2025-07-30 13:50:49.064081
+86,3d656a0b-1434-49c0-a5d1-06cebe42ef71,phone,+55 61 3717-2064,0.95,whatsapp,True,2025-09-07 13:50:49.064083
+87,3d656a0b-1434-49c0-a5d1-06cebe42ef71,facebook_id,fb_972769,0.85,facebook,False,
+88,4757f76f-86cd-4539-83c5-36a0c9d15acc,email,rochaguilherme@example.com,1.0,email,True,2025-11-04 13:50:49.064089
+89,4757f76f-86cd-4539-83c5-36a0c9d15acc,phone,(081) 1312 8399,0.95,whatsapp,True,2025-10-24 13:50:49.064090
+90,4757f76f-86cd-4539-83c5-36a0c9d15acc,facebook_id,fb_479066,0.85,facebook,False,
+91,2cf50922-edde-41f0-8e87-00ae877bbee3,email,icamara@example.net,1.0,email,True,2025-11-28 13:50:49.064093
+92,2cf50922-edde-41f0-8e87-00ae877bbee3,phone,81 4681 8310,0.95,whatsapp,True,2025-09-19 13:50:49.064095
+93,2cf50922-edde-41f0-8e87-00ae877bbee3,facebook_id,fb_102537,0.85,facebook,False,
+94,8f7008a3-34ed-4cd0-b4ea-4dceff503b32,email,anna-liz95@example.net,1.0,email,True,2025-10-17 13:50:49.064099
+95,8f7008a3-34ed-4cd0-b4ea-4dceff503b32,phone,+55 (041) 0919-4653,0.95,whatsapp,True,2025-10-09 13:50:49.064101
+96,8f7008a3-34ed-4cd0-b4ea-4dceff503b32,facebook_id,fb_840363,0.85,facebook,False,
+97,e74d2b48-9a75-4376-b101-da10b5eef5d4,email,soliveira@example.org,1.0,email,True,2025-12-05 13:50:49.064104
+98,e74d2b48-9a75-4376-b101-da10b5eef5d4,phone,+55 (084) 1198-8555,0.95,whatsapp,True,2025-06-27 13:50:49.064106
+99,e74d2b48-9a75-4376-b101-da10b5eef5d4,facebook_id,fb_209397,0.85,facebook,False,
+100,05cc2312-25c0-4a02-b46e-b8296151342c,email,cavalcantebenjamim@example.org,1.0,email,True,2025-12-06 13:50:49.064112
+101,05cc2312-25c0-4a02-b46e-b8296151342c,phone,+55 21 9891 2862,0.95,whatsapp,True,2025-08-30 13:50:49.064114
+102,05cc2312-25c0-4a02-b46e-b8296151342c,facebook_id,fb_628498,0.85,facebook,False,
+103,b3790edd-c7cf-447e-acbd-54914fe2e6f0,email,gfernandes@example.org,1.0,email,True,2025-10-24 13:50:49.064117
+104,b3790edd-c7cf-447e-acbd-54914fe2e6f0,phone,51 7455 6595,0.95,whatsapp,True,2025-10-09 13:50:49.064119
+105,b3790edd-c7cf-447e-acbd-54914fe2e6f0,facebook_id,fb_820055,0.85,facebook,False,
+106,9cbadf12-84ad-4af6-90ed-0ec9222c9ad0,email,allana78@example.com,1.0,email,True,2025-11-22 13:50:49.064122
+107,9cbadf12-84ad-4af6-90ed-0ec9222c9ad0,phone,(071) 7404 3264,0.95,whatsapp,True,2025-09-17 13:50:49.064124
+108,9cbadf12-84ad-4af6-90ed-0ec9222c9ad0,facebook_id,fb_473637,0.85,facebook,False,
+109,b6e4f47c-42f6-4638-9ae4-33c84787a48c,email,sanatalia@example.net,1.0,email,True,2025-11-30 13:50:49.064127
+110,b6e4f47c-42f6-4638-9ae4-33c84787a48c,phone,+55 (061) 9339-3980,0.95,whatsapp,True,2025-09-30 13:50:49.064131
+111,b6e4f47c-42f6-4638-9ae4-33c84787a48c,facebook_id,fb_474775,0.85,facebook,False,
+112,3c3f1afd-28b9-4ee2-92aa-bd1856fba8a7,email,ada-luz@example.com,1.0,email,True,2025-08-17 13:50:49.064133
+113,3c3f1afd-28b9-4ee2-92aa-bd1856fba8a7,phone,+55 21 5150-8297,0.95,whatsapp,True,2025-07-22 13:50:49.064139
+114,3c3f1afd-28b9-4ee2-92aa-bd1856fba8a7,facebook_id,fb_574622,0.85,facebook,False,
+115,ab846f7e-a7c9-4857-a8a8-d8f4f677937f,email,levi76@example.org,1.0,email,True,2025-11-02 13:50:49.064142
+116,ab846f7e-a7c9-4857-a8a8-d8f4f677937f,phone,71 5552 9671,0.95,whatsapp,True,2025-08-09 13:50:49.064144
+117,ab846f7e-a7c9-4857-a8a8-d8f4f677937f,facebook_id,fb_598734,0.85,facebook,False,
+118,52ebee7d-461c-44f1-b468-f429028a89d7,email,saisis@example.net,1.0,email,True,2025-08-04 13:50:49.064146
+119,52ebee7d-461c-44f1-b468-f429028a89d7,phone,+55 71 5158-0044,0.95,whatsapp,True,2025-10-18 13:50:49.064148
+120,52ebee7d-461c-44f1-b468-f429028a89d7,facebook_id,fb_809708,0.85,facebook,False,
+121,17d50bb4-cc42-4f46-b451-0d7b28cd2406,email,joaoribeiro@example.com,1.0,email,True,2025-09-20 13:50:49.064151
+122,17d50bb4-cc42-4f46-b451-0d7b28cd2406,phone,+55 (061) 0201-2563,0.95,whatsapp,True,2025-09-10 13:50:49.064153
+123,17d50bb4-cc42-4f46-b451-0d7b28cd2406,facebook_id,fb_338401,0.85,facebook,False,
+124,ff1515e0-2425-4cb0-ab3b-20e26060fe9f,email,bernardo49@example.net,1.0,email,True,2025-08-11 13:50:49.064156
+125,ff1515e0-2425-4cb0-ab3b-20e26060fe9f,phone,+55 21 2122-9431,0.95,whatsapp,True,2025-06-11 13:50:49.064161
+126,ff1515e0-2425-4cb0-ab3b-20e26060fe9f,facebook_id,fb_266905,0.85,facebook,False,
+127,fcdd628e-528f-47bf-8ee3-e8f1b510b1c2,email,yfogaca@example.org,1.0,email,True,2025-10-17 13:50:49.064167
+128,fcdd628e-528f-47bf-8ee3-e8f1b510b1c2,phone,+55 (031) 5964 9767,0.95,whatsapp,True,2025-06-28 13:50:49.064169
+129,fcdd628e-528f-47bf-8ee3-e8f1b510b1c2,facebook_id,fb_814480,0.85,facebook,False,
+130,baf5ffe0-e44c-42d0-84ca-c6ee6f68cc70,email,limaalice@example.net,1.0,email,True,2025-09-26 13:50:49.064173
+131,baf5ffe0-e44c-42d0-84ca-c6ee6f68cc70,phone,11 1600-1530,0.95,whatsapp,True,2025-08-21 13:50:49.064175
+132,baf5ffe0-e44c-42d0-84ca-c6ee6f68cc70,facebook_id,fb_224829,0.85,facebook,False,
+133,ca2eae0e-cdf6-42f4-b3d8-de3679768e52,email,cunhabenjamin@example.net,1.0,email,True,2025-06-18 13:50:49.064178
+134,ca2eae0e-cdf6-42f4-b3d8-de3679768e52,phone,(051) 2479-7056,0.95,whatsapp,True,2025-09-18 13:50:49.064180
+135,ca2eae0e-cdf6-42f4-b3d8-de3679768e52,facebook_id,fb_541156,0.85,facebook,False,
+136,d4646780-ef0c-402a-bece-110937323756,email,fernandocassiano@example.org,1.0,email,True,2025-10-31 13:50:49.064259
+137,d4646780-ef0c-402a-bece-110937323756,phone,(061) 1084 6067,0.95,whatsapp,True,2025-08-19 13:50:49.064264
+138,d4646780-ef0c-402a-bece-110937323756,facebook_id,fb_263110,0.85,facebook,False,
+139,eb0f8944-08c8-4438-b662-5869ff2c71e3,email,lorena94@example.net,1.0,email,True,2025-08-06 13:50:49.064266
+140,eb0f8944-08c8-4438-b662-5869ff2c71e3,phone,+55 31 8699 4299,0.95,whatsapp,True,2025-06-23 13:50:49.064272
+141,eb0f8944-08c8-4438-b662-5869ff2c71e3,facebook_id,fb_612181,0.85,facebook,False,
+142,ea2f1b78-577e-4a56-9511-3f396e056917,email,fnunes@example.net,1.0,email,True,2025-06-19 13:50:49.064275
+143,ea2f1b78-577e-4a56-9511-3f396e056917,phone,0900-455-2402,0.95,whatsapp,True,2025-09-19 13:50:49.064277
+144,ea2f1b78-577e-4a56-9511-3f396e056917,facebook_id,fb_582598,0.85,facebook,False,
+145,dd933d0a-c810-4952-a790-7dff328bad4f,email,vmoraes@example.com,1.0,email,True,2025-07-02 13:50:49.064283
+146,dd933d0a-c810-4952-a790-7dff328bad4f,phone,+55 (021) 0610-4824,0.95,whatsapp,True,2025-07-07 13:50:49.064285
+147,dd933d0a-c810-4952-a790-7dff328bad4f,facebook_id,fb_198161,0.85,facebook,False,
+148,d85cfd15-a486-4eb5-9072-a647d746850a,email,jalves@example.net,1.0,email,True,2025-07-19 13:50:49.064288
+149,d85cfd15-a486-4eb5-9072-a647d746850a,phone,0800-441-9192,0.95,whatsapp,True,2025-07-28 13:50:49.064289
+150,d85cfd15-a486-4eb5-9072-a647d746850a,facebook_id,fb_886486,0.85,facebook,False,
+151,6c6bdbc9-7d88-4329-9c64-4042ef90899f,email,martinsthiago@example.net,1.0,email,True,2025-10-06 13:50:49.064292
+152,6c6bdbc9-7d88-4329-9c64-4042ef90899f,phone,+55 (081) 2606-5253,0.95,whatsapp,True,2025-09-12 13:50:49.064294
+153,6c6bdbc9-7d88-4329-9c64-4042ef90899f,facebook_id,fb_543818,0.85,facebook,False,
+154,bcd907be-03d7-47ff-a1ca-fb1cd0adae21,email,bernardomoura@example.com,1.0,email,True,2025-11-14 13:50:49.064300
+155,bcd907be-03d7-47ff-a1ca-fb1cd0adae21,phone,31 3838 3094,0.95,whatsapp,True,2025-07-01 13:50:49.064302
+156,bcd907be-03d7-47ff-a1ca-fb1cd0adae21,facebook_id,fb_686741,0.85,facebook,False,
+157,606edd94-44b8-4c6d-9c1d-6d4633a2e53d,email,arthur-miguelfarias@example.net,1.0,email,True,2025-07-07 13:50:49.064305
+158,606edd94-44b8-4c6d-9c1d-6d4633a2e53d,phone,41 5476 4978,0.95,whatsapp,True,2025-11-06 13:50:49.064307
+159,606edd94-44b8-4c6d-9c1d-6d4633a2e53d,facebook_id,fb_987681,0.85,facebook,False,
+160,df87b529-f140-47c5-a0a8-a20ad2df851e,email,marcelo94@example.com,1.0,email,True,2025-08-14 13:50:49.064310
+161,df87b529-f140-47c5-a0a8-a20ad2df851e,phone,(021) 7198-4122,0.95,whatsapp,True,2025-08-16 13:50:49.064311
+162,df87b529-f140-47c5-a0a8-a20ad2df851e,facebook_id,fb_198611,0.85,facebook,False,
+163,4dd187e6-862d-4fdd-b671-848106e9cc58,email,ana-vitoriaguerra@example.com,1.0,email,True,2025-10-05 13:50:49.064314
+164,4dd187e6-862d-4fdd-b671-848106e9cc58,phone,+55 81 5263-7800,0.95,whatsapp,True,2025-08-10 13:50:49.064316
+165,4dd187e6-862d-4fdd-b671-848106e9cc58,facebook_id,fb_311059,0.85,facebook,False,
+166,c5355be8-35a7-4f86-913e-9cb698fedb2c,email,maria-sophia02@example.org,1.0,email,True,2025-08-19 13:50:49.064324
+167,c5355be8-35a7-4f86-913e-9cb698fedb2c,phone,(021) 2031-1299,0.95,whatsapp,True,2025-08-26 13:50:49.064326
+168,c5355be8-35a7-4f86-913e-9cb698fedb2c,facebook_id,fb_133629,0.85,facebook,False,
+169,00921b76-b3af-409c-80ad-d17fcd072f4f,email,claracostela@example.com,1.0,email,True,2025-12-04 13:50:49.064329
+170,00921b76-b3af-409c-80ad-d17fcd072f4f,phone,+55 51 6082 6261,0.95,whatsapp,True,2025-08-20 13:50:49.064331
+171,00921b76-b3af-409c-80ad-d17fcd072f4f,facebook_id,fb_953805,0.85,facebook,False,
+172,fee1f188-ad03-4b99-b38b-c1fd1c5a074b,email,luanaduarte@example.com,1.0,email,True,2025-10-26 13:50:49.064334
+173,fee1f188-ad03-4b99-b38b-c1fd1c5a074b,phone,+55 41 4981-7512,0.95,whatsapp,True,2025-09-04 13:50:49.064336
+174,fee1f188-ad03-4b99-b38b-c1fd1c5a074b,facebook_id,fb_695183,0.85,facebook,False,
+175,f8b8a537-d01e-45f4-863c-3d781539f42a,email,pda-luz@example.net,1.0,email,True,2025-07-08 13:50:49.064339
+176,f8b8a537-d01e-45f4-863c-3d781539f42a,phone,(051) 3220-7458,0.95,whatsapp,True,2025-10-16 13:50:49.064341
+177,f8b8a537-d01e-45f4-863c-3d781539f42a,facebook_id,fb_816540,0.85,facebook,False,
+178,018b1eaa-52aa-4434-a4ae-6534fe7e3732,email,cpastor@example.net,1.0,email,True,2025-08-12 13:50:49.064344
+179,018b1eaa-52aa-4434-a4ae-6534fe7e3732,phone,+55 (081) 1007 3968,0.95,whatsapp,True,2025-08-04 13:50:49.064349
+180,018b1eaa-52aa-4434-a4ae-6534fe7e3732,facebook_id,fb_830524,0.85,facebook,False,
+181,008faa8c-ba12-4639-a1c1-f12bbef5f925,email,caleb35@example.com,1.0,email,True,2025-10-28 13:50:49.064352
+182,008faa8c-ba12-4639-a1c1-f12bbef5f925,phone,+55 (084) 3425-0324,0.95,whatsapp,True,2025-09-25 13:50:49.064354
+183,008faa8c-ba12-4639-a1c1-f12bbef5f925,facebook_id,fb_710582,0.85,facebook,False,
+184,06a754bd-f8ee-4bc4-9e77-14addcc4592c,email,larissaalbuquerque@example.org,1.0,email,True,2025-09-17 13:50:49.064357
+185,06a754bd-f8ee-4bc4-9e77-14addcc4592c,phone,(084) 8603 3067,0.95,whatsapp,True,2025-08-14 13:50:49.064359
+186,06a754bd-f8ee-4bc4-9e77-14addcc4592c,facebook_id,fb_978552,0.85,facebook,False,
+187,8531fd0b-790d-4589-b3e4-2aa4c6204a76,email,asafe07@example.com,1.0,email,True,2025-09-26 13:50:49.064361
+188,8531fd0b-790d-4589-b3e4-2aa4c6204a76,phone,(061) 4140 9858,0.95,whatsapp,True,2025-10-01 13:50:49.064367
+189,8531fd0b-790d-4589-b3e4-2aa4c6204a76,facebook_id,fb_926551,0.85,facebook,False,
+190,219435b9-d9d3-4db3-868d-e68193e43a7b,email,vianagabriel@example.net,1.0,email,True,2025-11-07 13:50:49.064369
+191,219435b9-d9d3-4db3-868d-e68193e43a7b,phone,+55 (031) 5621 4612,0.95,whatsapp,True,2025-09-09 13:50:49.064372
+192,219435b9-d9d3-4db3-868d-e68193e43a7b,facebook_id,fb_797134,0.85,facebook,False,
+193,f2f3eeb2-51e3-4fe0-b777-a17552d723c5,email,castroisaac@example.net,1.0,email,True,2025-10-15 13:50:49.064378
+194,f2f3eeb2-51e3-4fe0-b777-a17552d723c5,phone,+55 71 8583-4185,0.95,whatsapp,True,2025-07-03 13:50:49.064380
+195,f2f3eeb2-51e3-4fe0-b777-a17552d723c5,facebook_id,fb_449444,0.85,facebook,False,
+196,36f2977d-aff1-48c0-b2c0-d00cdcb99a75,email,gabriel12@example.com,1.0,email,True,2025-09-02 13:50:49.064382
+197,36f2977d-aff1-48c0-b2c0-d00cdcb99a75,phone,(061) 9379 5617,0.95,whatsapp,True,2025-08-28 13:50:49.064384
+198,36f2977d-aff1-48c0-b2c0-d00cdcb99a75,facebook_id,fb_755450,0.85,facebook,False,
+199,04f0aa33-4293-428c-a4ce-75e097e1c881,email,lunna97@example.net,1.0,email,True,2025-11-29 13:50:49.064387
+200,04f0aa33-4293-428c-a4ce-75e097e1c881,phone,(071) 3564 4729,0.95,whatsapp,True,2025-07-26 13:50:49.064389
+201,04f0aa33-4293-428c-a4ce-75e097e1c881,facebook_id,fb_920779,0.85,facebook,False,
+202,2fdec865-1360-43f4-bfea-da4f797adc74,email,lucca18@example.net,1.0,email,True,2025-08-25 13:50:49.064392
+203,2fdec865-1360-43f4-bfea-da4f797adc74,phone,+55 (081) 3097 8796,0.95,whatsapp,True,2025-11-26 13:50:49.064394
+204,2fdec865-1360-43f4-bfea-da4f797adc74,facebook_id,fb_507117,0.85,facebook,False,
+205,7dd023a2-ebdc-4c20-aeb4-33c8b99a5997,email,esthergoncalves@example.org,1.0,email,True,2025-09-20 13:50:49.064397
+206,7dd023a2-ebdc-4c20-aeb4-33c8b99a5997,phone,+55 11 7180 2787,0.95,whatsapp,True,2025-07-30 13:50:49.064402
+207,7dd023a2-ebdc-4c20-aeb4-33c8b99a5997,facebook_id,fb_664553,0.85,facebook,False,
+208,a08e9b51-23b0-461c-8da8-1d93d0d62468,email,rebecavasconcelos@example.org,1.0,email,True,2025-07-08 13:50:49.064405
+209,a08e9b51-23b0-461c-8da8-1d93d0d62468,phone,(011) 0350-6420,0.95,whatsapp,True,2025-07-13 13:50:49.064407
+210,a08e9b51-23b0-461c-8da8-1d93d0d62468,facebook_id,fb_824705,0.85,facebook,False,
+211,b6e02747-f812-4782-a5e3-e563e170e3f9,email,guerraliz@example.com,1.0,email,True,2025-10-03 13:50:49.064410
+212,b6e02747-f812-4782-a5e3-e563e170e3f9,phone,(051) 8376 3467,0.95,whatsapp,True,2025-12-06 13:50:49.064412
+213,b6e02747-f812-4782-a5e3-e563e170e3f9,facebook_id,fb_410942,0.85,facebook,False,
+214,5960a867-6fec-4401-ac81-77e7537e027c,email,sarah55@example.net,1.0,email,True,2025-06-27 13:50:49.064414
+215,5960a867-6fec-4401-ac81-77e7537e027c,phone,+55 81 3878-4677,0.95,whatsapp,True,2025-11-18 13:50:49.064416
+216,5960a867-6fec-4401-ac81-77e7537e027c,facebook_id,fb_677454,0.85,facebook,False,
+217,e3592f4d-888b-4b31-b49f-93f2fba342dd,email,souzalais@example.com,1.0,email,True,2025-07-17 13:50:49.064419
+218,e3592f4d-888b-4b31-b49f-93f2fba342dd,phone,41 0219 9475,0.95,whatsapp,True,2025-09-05 13:50:49.064421
+219,e3592f4d-888b-4b31-b49f-93f2fba342dd,facebook_id,fb_539628,0.85,facebook,False,
+220,1bd7ad4b-aef6-4932-8534-1418ea2873b9,email,antonellaaparecida@example.com,1.0,email,True,2025-11-15 13:50:49.064427
+221,1bd7ad4b-aef6-4932-8534-1418ea2873b9,phone,+55 (011) 2132 7067,0.95,whatsapp,True,2025-09-23 13:50:49.064429
+222,1bd7ad4b-aef6-4932-8534-1418ea2873b9,facebook_id,fb_149870,0.85,facebook,False,
+223,1c7c3324-f1e9-4e23-bab8-389c00eb9a53,email,manuelafonseca@example.org,1.0,email,True,2025-07-12 13:50:49.064431
+224,1c7c3324-f1e9-4e23-bab8-389c00eb9a53,phone,(011) 1350 3477,0.95,whatsapp,True,2025-08-21 13:50:49.064433
+225,1c7c3324-f1e9-4e23-bab8-389c00eb9a53,facebook_id,fb_263511,0.85,facebook,False,
+226,8544133d-5401-4f18-95c5-3b27f52ae0a8,email,edas-neves@example.com,1.0,email,True,2025-07-21 13:50:49.064436
+227,8544133d-5401-4f18-95c5-3b27f52ae0a8,phone,(051) 9941 8334,0.95,whatsapp,True,2025-08-12 13:50:49.064438
+228,8544133d-5401-4f18-95c5-3b27f52ae0a8,facebook_id,fb_586466,0.85,facebook,False,
+229,2237314e-36dc-41c7-b592-ccbde1dc201b,email,joao-felipe48@example.net,1.0,email,True,2025-10-19 13:50:49.064441
+230,2237314e-36dc-41c7-b592-ccbde1dc201b,phone,+55 (011) 6906 4110,0.95,whatsapp,True,2025-08-29 13:50:49.064443
+231,2237314e-36dc-41c7-b592-ccbde1dc201b,facebook_id,fb_350444,0.85,facebook,False,
+232,f841df81-7206-4dff-88ab-917ddd79c7f9,email,joao-miguelda-paz@example.org,1.0,email,True,2025-07-21 13:50:49.064449
+233,f841df81-7206-4dff-88ab-917ddd79c7f9,phone,(084) 3805 4639,0.95,whatsapp,True,2025-06-11 13:50:49.064451
+234,f841df81-7206-4dff-88ab-917ddd79c7f9,facebook_id,fb_795687,0.85,facebook,False,
+235,42573acf-1f92-4f51-a2db-d5ec7378b3cc,email,rafaelabreu@example.net,1.0,email,True,2025-07-05 13:50:49.064454
+236,42573acf-1f92-4f51-a2db-d5ec7378b3cc,phone,+55 (041) 7471-3251,0.95,whatsapp,True,2025-09-23 13:50:49.064456
+237,42573acf-1f92-4f51-a2db-d5ec7378b3cc,facebook_id,fb_211114,0.85,facebook,False,
+238,46269a82-8c9e-4084-a285-1480c463acf7,email,ana-carolinasiqueira@example.com,1.0,email,True,2025-09-17 13:50:49.064459
+239,46269a82-8c9e-4084-a285-1480c463acf7,phone,+55 81 2580-9059,0.95,whatsapp,True,2025-09-01 13:50:49.064461
+240,46269a82-8c9e-4084-a285-1480c463acf7,facebook_id,fb_785673,0.85,facebook,False,
+241,c9dc0805-7f9f-4036-a21d-29a67b7bbe7c,email,oda-cruz@example.net,1.0,email,True,2025-11-15 13:50:49.064463
+242,c9dc0805-7f9f-4036-a21d-29a67b7bbe7c,phone,31 8355-8349,0.95,whatsapp,True,2025-07-28 13:50:49.064465
+243,c9dc0805-7f9f-4036-a21d-29a67b7bbe7c,facebook_id,fb_276685,0.85,facebook,False,
+244,e0669a80-3882-46bc-bcb2-e63105b7698e,email,fariasalexia@example.com,1.0,email,True,2025-07-05 13:50:49.064468
+245,e0669a80-3882-46bc-bcb2-e63105b7698e,phone,(041) 2637-6025,0.95,whatsapp,True,2025-06-19 13:50:49.064470
+246,e0669a80-3882-46bc-bcb2-e63105b7698e,facebook_id,fb_339256,0.85,facebook,False,
+247,c7d3bdff-ecbc-46f1-8d98-6a7761ad7faa,email,emanuellajesus@example.com,1.0,email,True,2025-11-21 13:50:49.064476
+248,c7d3bdff-ecbc-46f1-8d98-6a7761ad7faa,phone,0900 239 6247,0.95,whatsapp,True,2025-10-08 13:50:49.064478
+249,c7d3bdff-ecbc-46f1-8d98-6a7761ad7faa,facebook_id,fb_666702,0.85,facebook,False,
+250,98f72a41-6378-4502-9cf4-0cf1e322a776,email,rocharavi-lucca@example.net,1.0,email,True,2025-09-25 13:50:49.064481
+251,98f72a41-6378-4502-9cf4-0cf1e322a776,phone,+55 (031) 7404-6212,0.95,whatsapp,True,2025-07-02 13:50:49.064483
+252,98f72a41-6378-4502-9cf4-0cf1e322a776,facebook_id,fb_772723,0.85,facebook,False,
+253,35e9cceb-536b-4671-8f51-b64731c473a0,email,theofogaca@example.org,1.0,email,True,2025-10-18 13:50:49.064504
+254,35e9cceb-536b-4671-8f51-b64731c473a0,phone,+55 (071) 9326 3621,0.95,whatsapp,True,2025-11-14 13:50:49.064506
+255,35e9cceb-536b-4671-8f51-b64731c473a0,facebook_id,fb_616934,0.85,facebook,False,
+256,8101dcc8-3353-4906-9aef-3bb0974d26d1,email,ottopires@example.net,1.0,email,True,2025-09-01 13:50:49.064509
+257,8101dcc8-3353-4906-9aef-3bb0974d26d1,phone,+55 41 5329-6702,0.95,whatsapp,True,2025-08-09 13:50:49.064511
+258,8101dcc8-3353-4906-9aef-3bb0974d26d1,facebook_id,fb_574320,0.85,facebook,False,
+259,905fd858-53c2-4fad-8673-1e0322e44c95,email,joao-lucas56@example.org,1.0,email,True,2025-09-04 13:50:49.064517
+260,905fd858-53c2-4fad-8673-1e0322e44c95,phone,+55 84 7150 5703,0.95,whatsapp,True,2025-09-16 13:50:49.064519
+261,905fd858-53c2-4fad-8673-1e0322e44c95,facebook_id,fb_978039,0.85,facebook,False,
+262,7c495786-f8f9-4159-a70e-0d1a4bae5dae,email,gustavo-henriquearagao@example.net,1.0,email,True,2025-06-12 13:50:49.064522
+263,7c495786-f8f9-4159-a70e-0d1a4bae5dae,phone,(071) 3348-6765,0.95,whatsapp,True,2025-11-30 13:50:49.064524
+264,7c495786-f8f9-4159-a70e-0d1a4bae5dae,facebook_id,fb_454457,0.85,facebook,False,
+265,7ca71b63-0163-4b99-8918-51e35c00f418,email,tmendes@example.com,1.0,email,True,2025-06-26 13:50:49.064526
+266,7ca71b63-0163-4b99-8918-51e35c00f418,phone,31 1827-8967,0.95,whatsapp,True,2025-10-15 13:50:49.064528
+267,7ca71b63-0163-4b99-8918-51e35c00f418,facebook_id,fb_246066,0.85,facebook,False,
+268,2dcdd05a-06d3-455b-9d5a-72ed8f8b28eb,email,maria-lauraalmeida@example.org,1.0,email,True,2025-06-22 13:50:49.064531
+269,2dcdd05a-06d3-455b-9d5a-72ed8f8b28eb,phone,+55 41 1020-4377,0.95,whatsapp,True,2025-11-10 13:50:49.064533
+270,2dcdd05a-06d3-455b-9d5a-72ed8f8b28eb,facebook_id,fb_352432,0.85,facebook,False,
+271,2ec50957-f840-405e-9212-a59507daccf0,email,peixotodavi-luiz@example.org,1.0,email,True,2025-12-07 13:50:49.064541
+272,2ec50957-f840-405e-9212-a59507daccf0,phone,0500-756-3056,0.95,whatsapp,True,2025-07-04 13:50:49.064546
+273,2ec50957-f840-405e-9212-a59507daccf0,facebook_id,fb_704456,0.85,facebook,False,
+274,ba4d21f3-f911-4479-b38b-2d113e29c6a7,email,nogueiradante@example.org,1.0,email,True,2025-10-17 13:50:49.064549
+275,ba4d21f3-f911-4479-b38b-2d113e29c6a7,phone,0900 194 3610,0.95,whatsapp,True,2025-07-25 13:50:49.064551
+276,ba4d21f3-f911-4479-b38b-2d113e29c6a7,facebook_id,fb_571331,0.85,facebook,False,
+277,2d752cc8-5a58-4f96-8f04-5f186906abcc,email,anna-liz95@example.com,1.0,email,True,2025-07-21 13:50:49.064554
+278,2d752cc8-5a58-4f96-8f04-5f186906abcc,phone,(021) 5210 5465,0.95,whatsapp,True,2025-07-29 13:50:49.064556
+279,2d752cc8-5a58-4f96-8f04-5f186906abcc,facebook_id,fb_893705,0.85,facebook,False,
+280,45936016-6895-4c2b-ac1d-a3173f5c62dc,email,mendoncaandre@example.org,1.0,email,True,2025-10-22 13:50:49.064559
+281,45936016-6895-4c2b-ac1d-a3173f5c62dc,phone,+55 71 6183-2378,0.95,whatsapp,True,2025-07-02 13:50:49.064561
+282,45936016-6895-4c2b-ac1d-a3173f5c62dc,facebook_id,fb_263451,0.85,facebook,False,
+283,3e5f241e-0d3f-42bd-9451-3f1c5ddf36d4,email,maria-sophia53@example.net,1.0,email,True,2025-09-05 13:50:49.064564
+284,3e5f241e-0d3f-42bd-9451-3f1c5ddf36d4,phone,+55 (081) 2240 2373,0.95,whatsapp,True,2025-09-02 13:50:49.064566
+285,3e5f241e-0d3f-42bd-9451-3f1c5ddf36d4,facebook_id,fb_331389,0.85,facebook,False,
+286,762546bd-75be-4a25-ae5b-b1d8fd02aea8,email,sophie79@example.com,1.0,email,True,2025-10-19 13:50:49.064571
+287,762546bd-75be-4a25-ae5b-b1d8fd02aea8,phone,+55 41 8193-6037,0.95,whatsapp,True,2025-08-13 13:50:49.064573
+288,762546bd-75be-4a25-ae5b-b1d8fd02aea8,facebook_id,fb_756795,0.85,facebook,False,
+289,af01ea74-eb84-4073-9954-bfaaace181af,email,britoeloah@example.com,1.0,email,True,2025-07-02 13:50:49.064576
+290,af01ea74-eb84-4073-9954-bfaaace181af,phone,0300-787-6639,0.95,whatsapp,True,2025-08-08 13:50:49.064578
+291,af01ea74-eb84-4073-9954-bfaaace181af,facebook_id,fb_942875,0.85,facebook,False,
+292,334549a5-661e-4150-a1e3-9250c5e11d59,email,fernanda85@example.net,1.0,email,True,2025-10-10 13:50:49.064581
+293,334549a5-661e-4150-a1e3-9250c5e11d59,phone,+55 (081) 8511 8570,0.95,whatsapp,True,2025-08-27 13:50:49.064583
+294,334549a5-661e-4150-a1e3-9250c5e11d59,facebook_id,fb_717276,0.85,facebook,False,
+295,77a9629e-ea92-45c6-a598-32db62cac7e3,email,amanda69@example.org,1.0,email,True,2025-08-05 13:50:49.064586
+296,77a9629e-ea92-45c6-a598-32db62cac7e3,phone,0300 891 4625,0.95,whatsapp,True,2025-07-25 13:50:49.064589
+297,77a9629e-ea92-45c6-a598-32db62cac7e3,facebook_id,fb_845497,0.85,facebook,False,
+298,25e747d5-0286-466d-9198-2ddc19a2e227,email,vitoria54@example.net,1.0,email,True,2025-07-15 13:50:49.064592
+299,25e747d5-0286-466d-9198-2ddc19a2e227,phone,+55 (011) 5232 4134,0.95,whatsapp,True,2025-06-20 13:50:49.064597
+300,25e747d5-0286-466d-9198-2ddc19a2e227,facebook_id,fb_833200,0.85,facebook,False,

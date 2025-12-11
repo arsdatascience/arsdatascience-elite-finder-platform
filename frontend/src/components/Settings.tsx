@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Save, Shield, Globe, CreditCard, LogOut, User, Search, MessageSquare, BrainCircuit, Brain, Eye, EyeOff, Cpu, Check, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock } from 'lucide-react';
+import { Save, Shield, CreditCard, LogOut, User, BrainCircuit, Brain, Eye, EyeOff, Cpu, Plus, LinkIcon, Trash2, Edit2, X, MapPin, Lock, Mail, Send, AlertCircle, CheckCircle } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import { useAuth } from '@/contexts/AuthContext';
 import { UsageStats } from './UsageStats';
 import { AdminPlans } from './AdminPlans';
+import IntegrationsManager from './IntegrationsManager';
 
 // Schema de Validação com Zod
 const memberSchema = z.object({
@@ -44,7 +45,7 @@ const memberSchema = z.object({
 
 type MemberFormData = z.infer<typeof memberSchema>;
 
-type SettingsTab = 'profile' | 'integrations' | 'team' | 'billing' | 'notifications' | 'security' | 'subscription' | 'admin';
+type SettingsTab = 'profile' | 'integrations' | 'team' | 'billing' | 'notifications' | 'security' | 'subscription' | 'admin' | 'email';
 
 interface TeamMember {
   id: number;
@@ -159,6 +160,40 @@ export const Settings: React.FC = () => {
   const [showAnthropicKey, setShowAnthropicKey] = useState(false);
   const [isEditingAnthropic, setIsEditingAnthropic] = useState(false);
 
+  // Estados para Email SMTP (suporta múltiplos)
+  interface EmailConfigType {
+    id?: number;
+    name: string;
+    smtpHost: string;
+    smtpPort: string;
+    smtpUser: string;
+    smtpPassword: string;
+    smtpFrom: string;
+    smtpFromName: string;
+    smtpSecure: boolean;
+    isDefault: boolean;
+    useFor: string;
+  }
+  const emptyEmailConfig: EmailConfigType = {
+    name: '',
+    smtpHost: '',
+    smtpPort: '587',
+    smtpUser: '',
+    smtpPassword: '',
+    smtpFrom: '',
+    smtpFromName: '',
+    smtpSecure: true,
+    isDefault: false,
+    useFor: 'all'
+  };
+  const [emailConfigs, setEmailConfigs] = useState<EmailConfigType[]>([]);
+  const [currentEmailConfig, setCurrentEmailConfig] = useState<EmailConfigType>(emptyEmailConfig);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isEditingEmailConfig, setIsEditingEmailConfig] = useState(false);
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
+  const [emailTestStatus, setEmailTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [emailTestMessage, setEmailTestMessage] = useState('');
+
   // Estados para Perfil
   // Estados para Perfil (Removido profileData pois usamos currentUser)
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -184,7 +219,26 @@ export const Settings: React.FC = () => {
     if (activeTab === 'team' || activeTab === 'profile') {
       fetchMembers();
     }
-  }, [activeTab]);
+
+    // Carregar configs de email
+    if (activeTab === 'email' && user) {
+      const fetchEmailConfigs = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/email/config?userId=${user.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (data.success) {
+            setEmailConfigs(data.configs || []);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar configs de email:', error);
+        }
+      };
+      fetchEmailConfigs();
+    }
+  }, [activeTab, user]);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [currentMember, setCurrentMember] = useState<TeamMember>(INITIAL_MEMBER_STATE);
   const [isEditingMember, setIsEditingMember] = useState(false);
@@ -453,17 +507,14 @@ export const Settings: React.FC = () => {
 
 
 
-  // Real Integrations Data (Mockado para UI)
-  const [integrations] = useState([
-    { id: 1, dbId: 1, name: 'Google Ads', platform: 'google_ads', status: 'connected', icon: Search, lastSync: '10 min atrás' },
-    { id: 2, dbId: 2, name: 'Meta Ads', platform: 'meta_ads', status: 'connected', icon: Globe, lastSync: '1 hora atrás' },
-    { id: 3, dbId: 3, name: 'WhatsApp Business', platform: 'whatsapp', status: 'disconnected', icon: MessageSquare, lastSync: '-' },
-  ]);
+  // State removed as it is unused.
+  // const [integrations] = useState([...]);
 
   const SETTINGS_TABS = [
     { id: 'profile', label: 'Perfil', icon: User },
     { id: 'subscription', label: 'Planos e Limites', icon: CreditCard },
     { id: 'integrations', label: 'Integrações', icon: LinkIcon },
+    { id: 'email', label: 'Email', icon: Mail },
     { id: 'team', label: 'Equipe', icon: User },
     { id: 'security', label: 'Segurança', icon: Shield },
   ];
@@ -494,7 +545,7 @@ export const Settings: React.FC = () => {
                 <img
                   src={currentUser.avatarUrl || "https://github.com/shadcn.png"}
                   alt="Avatar"
-                  className="w-24 h-24 rounded-full border-4 border-blue-100 object-cover group-hover:opacity-80 transition-opacity"
+                  className="w-24 h-24 rounded-full border-4 border-primary-100 object-cover group-hover:opacity-80 transition-opacity"
                 />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="bg-black/50 text-white p-1 rounded-full">
@@ -514,7 +565,7 @@ export const Settings: React.FC = () => {
                 <p className="text-sm text-gray-500">{currentUser.role}</p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  className="mt-2 text-sm text-primary-600 hover:text-primary-700 font-medium"
                 >
                   Alterar foto
                 </button>
@@ -535,7 +586,7 @@ export const Settings: React.FC = () => {
                     const lastName = parts.slice(1).join(' ');
                     setTeamMembers(prev => prev.map(m => m.id === currentUser.id ? { ...m, firstName, lastName } : m));
                   }}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -544,7 +595,7 @@ export const Settings: React.FC = () => {
                   type="email"
                   value={currentUser.email}
                   onChange={(e) => setTeamMembers(prev => prev.map(m => m.id === currentUser.id ? { ...m, email: e.target.value } : m))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -557,7 +608,7 @@ export const Settings: React.FC = () => {
                     setTeamMembers(prev => prev.map(m => m.id === currentUser.id ? { ...m, phone: masked } : m));
                   }}
                   maxLength={15}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -572,7 +623,7 @@ export const Settings: React.FC = () => {
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+              <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2">
                 <Save size={16} />
                 Salvar Alterações
               </button>
@@ -590,12 +641,12 @@ export const Settings: React.FC = () => {
               </div>
             </div>
 
-            <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg flex items-start gap-3">
-              <Shield className="text-blue-600 mt-0.5" size={20} />
+            <div className="p-4 bg-blue-50 border border-primary-100 rounded-lg flex items-start gap-3">
+              <Shield className="text-primary-600 mt-0.5" size={20} />
               <div>
-                <h4 className="font-bold text-blue-900 text-sm">Autenticação de Dois Fatores (2FA)</h4>
-                <p className="text-xs text-blue-700 mt-1">Adicione uma camada extra de segurança à sua conta.</p>
-                <button className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-800 uppercase tracking-wide">Ativar 2FA</button>
+                <h4 className="font-bold text-primary-900 text-sm">Autenticação de Dois Fatores (2FA)</h4>
+                <p className="text-xs text-primary-700 mt-1">Adicione uma camada extra de segurança à sua conta.</p>
+                <button className="mt-2 text-xs font-bold text-primary-600 hover:text-blue-800 uppercase tracking-wide">Ativar 2FA</button>
               </div>
             </div>
 
@@ -605,7 +656,7 @@ export const Settings: React.FC = () => {
                 <div className="relative">
                   <input
                     type="password"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     placeholder="••••••••"
                   />
                   <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -616,7 +667,7 @@ export const Settings: React.FC = () => {
                 <div className="relative">
                   <input
                     type="password"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     placeholder="••••••••"
                   />
                   <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -627,7 +678,7 @@ export const Settings: React.FC = () => {
                 <div className="relative">
                   <input
                     type="password"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     placeholder="••••••••"
                   />
                   <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -637,6 +688,354 @@ export const Settings: React.FC = () => {
                 Atualizar Senha
               </button>
             </form>
+          </div>
+        );
+
+      case 'email':
+        return (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Configurações de Email</h3>
+                <p className="text-sm text-gray-500">Gerencie múltiplos servidores SMTP para diferentes tipos de envio.</p>
+              </div>
+              <button
+                onClick={() => {
+                  setCurrentEmailConfig(emptyEmailConfig);
+                  setIsEditingEmailConfig(false);
+                  setIsEmailModalOpen(true);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+              >
+                <Plus size={16} />
+                Adicionar Email
+              </button>
+            </div>
+
+            {/* Status Card */}
+            {emailTestStatus !== 'idle' && (
+              <div className={`p-4 rounded-lg flex items-start gap-3 ${emailTestStatus === 'success' ? 'bg-green-50 border border-green-200' :
+                emailTestStatus === 'error' ? 'bg-red-50 border border-red-200' :
+                  'bg-blue-50 border border-blue-200'
+                }`}>
+                {emailTestStatus === 'testing' && <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600" />}
+                {emailTestStatus === 'success' && <CheckCircle className="text-green-600" size={20} />}
+                {emailTestStatus === 'error' && <AlertCircle className="text-red-600" size={20} />}
+                <div>
+                  <h4 className={`font-bold text-sm ${emailTestStatus === 'success' ? 'text-green-800' :
+                    emailTestStatus === 'error' ? 'text-red-800' : 'text-blue-800'
+                    }`}>
+                    {emailTestStatus === 'testing' ? 'Testando conexão...' :
+                      emailTestStatus === 'success' ? 'Conexão estabelecida!' : 'Erro na conexão'}
+                  </h4>
+                  <p className="text-xs mt-1">{emailTestMessage}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Email Configs List */}
+            <div className="space-y-4">
+              {emailConfigs.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                  <Mail size={48} className="mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-500">Nenhuma configuração de email cadastrada.</p>
+                  <p className="text-sm text-gray-400 mt-1">Clique em "Adicionar Email" para configurar seu primeiro SMTP.</p>
+                </div>
+              ) : (
+                emailConfigs.map((config) => (
+                  <div key={config.id} className={`border rounded-xl p-5 ${config.isDefault ? 'border-blue-300 bg-blue-50/50' : 'border-gray-200 bg-white'}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${config.isDefault ? 'bg-blue-600' : 'bg-gray-400'}`}>
+                          <Mail size={20} className="text-white" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900 flex items-center gap-2">
+                            {config.name || 'Sem nome'}
+                            {config.isDefault && (
+                              <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">Padrão</span>
+                            )}
+                          </h4>
+                          <p className="text-sm text-gray-500">{config.smtpHost}:{config.smtpPort}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {!config.isDefault && (
+                          <button
+                            onClick={async () => {
+                              try {
+                                await fetch(`${import.meta.env.VITE_API_URL}/api/email/config/${config.id}/default`, {
+                                  method: 'PUT',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ userId: user?.id })
+                                });
+                                setEmailConfigs(prev => prev.map(c => ({ ...c, isDefault: c.id === config.id })));
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
+                            className="px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded-lg"
+                          >
+                            Definir Padrão
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setCurrentEmailConfig(config);
+                            setIsEditingEmailConfig(true);
+                            setIsEmailModalOpen(true);
+                          }}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (window.confirm('Tem certeza que deseja remover esta configuração?')) {
+                              try {
+                                await fetch(`${import.meta.env.VITE_API_URL}/api/email/config/${config.id}?userId=${user?.id}`, {
+                                  method: 'DELETE'
+                                });
+                                setEmailConfigs(prev => prev.filter(c => c.id !== config.id));
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }
+                          }}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
+                      <span>Usuário: {config.smtpUser}</span>
+                      <span>De: {config.smtpFrom || config.smtpUser}</span>
+                      <span className={`px-2 py-0.5 rounded-full ${config.useFor === 'all' ? 'bg-gray-100' : 'bg-purple-100 text-purple-700'}`}>
+                        {config.useFor === 'all' ? 'Todos os envios' :
+                          config.useFor === 'alerts' ? 'Alertas' :
+                            config.useFor === 'reports' ? 'Relatórios' : 'Marketing'}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Info Card */}
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h4 className="font-bold text-amber-800 text-sm flex items-center gap-2">
+                <AlertCircle size={16} />
+                Dica para Gmail
+              </h4>
+              <p className="text-xs text-amber-700 mt-1">
+                Para usar o Gmail como SMTP, você precisa criar uma "Senha de App" nas configurações de segurança da sua conta Google.
+                Use smtp.gmail.com, porta 587, e a senha de app gerada (não sua senha normal).
+              </p>
+            </div>
+
+            {/* Email Config Modal */}
+            {isEmailModalOpen && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+                <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                      <Mail size={24} className="text-blue-600" />
+                      {isEditingEmailConfig ? 'Editar Configuração SMTP' : 'Nova Configuração SMTP'}
+                    </h3>
+                    <button onClick={() => setIsEmailModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                      <X size={24} />
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Nome da Configuração</label>
+                        <input
+                          type="text"
+                          value={currentEmailConfig.name}
+                          onChange={(e) => setCurrentEmailConfig(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="Ex: Gmail Principal, Alertas, Marketing"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Host SMTP</label>
+                        <input
+                          type="text"
+                          value={currentEmailConfig.smtpHost}
+                          onChange={(e) => setCurrentEmailConfig(prev => ({ ...prev, smtpHost: e.target.value }))}
+                          placeholder="smtp.gmail.com"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Porta</label>
+                        <input
+                          type="text"
+                          value={currentEmailConfig.smtpPort}
+                          onChange={(e) => setCurrentEmailConfig(prev => ({ ...prev, smtpPort: e.target.value }))}
+                          placeholder="587"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Usuário/Email</label>
+                        <input
+                          type="email"
+                          value={currentEmailConfig.smtpUser}
+                          onChange={(e) => setCurrentEmailConfig(prev => ({ ...prev, smtpUser: e.target.value }))}
+                          placeholder="seu-email@gmail.com"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Senha/App Password</label>
+                        <div className="relative">
+                          <input
+                            type={showSmtpPassword ? 'text' : 'password'}
+                            value={currentEmailConfig.smtpPassword}
+                            onChange={(e) => setCurrentEmailConfig(prev => ({ ...prev, smtpPassword: e.target.value }))}
+                            placeholder="••••••••••••••••"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowSmtpPassword(!showSmtpPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            {showSmtpPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Email Remetente</label>
+                        <input
+                          type="email"
+                          value={currentEmailConfig.smtpFrom}
+                          onChange={(e) => setCurrentEmailConfig(prev => ({ ...prev, smtpFrom: e.target.value }))}
+                          placeholder="noreply@suaempresa.com"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Nome Remetente</label>
+                        <input
+                          type="text"
+                          value={currentEmailConfig.smtpFromName}
+                          onChange={(e) => setCurrentEmailConfig(prev => ({ ...prev, smtpFromName: e.target.value }))}
+                          placeholder="Elite Finder"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Usar para</label>
+                        <select
+                          value={currentEmailConfig.useFor}
+                          onChange={(e) => setCurrentEmailConfig(prev => ({ ...prev, useFor: e.target.value }))}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="all">Todos os envios</option>
+                          <option value="alerts">Apenas Alertas</option>
+                          <option value="reports">Apenas Relatórios</option>
+                          <option value="marketing">Apenas Marketing</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-6 pt-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={currentEmailConfig.smtpSecure}
+                          onChange={(e) => setCurrentEmailConfig(prev => ({ ...prev, smtpSecure: e.target.checked }))}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">Usar TLS/SSL</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={currentEmailConfig.isDefault}
+                          onChange={(e) => setCurrentEmailConfig(prev => ({ ...prev, isDefault: e.target.checked }))}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-700">Definir como padrão</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between gap-3 mt-8 pt-4 border-t">
+                    <button
+                      onClick={async () => {
+                        setEmailTestStatus('testing');
+                        setEmailTestMessage('Enviando email de teste...');
+                        try {
+                          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/email/test`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(currentEmailConfig)
+                          });
+                          const data = await res.json();
+                          if (data.success) {
+                            setEmailTestStatus('success');
+                            setEmailTestMessage('Email de teste enviado! Verifique sua caixa.');
+                          } else {
+                            setEmailTestStatus('error');
+                            setEmailTestMessage(data.error || 'Falha ao enviar email de teste.');
+                          }
+                        } catch (err: any) {
+                          setEmailTestStatus('error');
+                          setEmailTestMessage(err.message || 'Erro de conexão.');
+                        }
+                        setTimeout(() => setEmailTestStatus('idle'), 5000);
+                      }}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2"
+                    >
+                      <Send size={16} />
+                      Testar Conexão
+                    </button>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setIsEmailModalOpen(false)}
+                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/email/config`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ ...currentEmailConfig, userId: user?.id })
+                            });
+                            if (res.ok) {
+                              alert('Configuração salva com sucesso!');
+                              setIsEmailModalOpen(false);
+                              // Reload configs
+                              const configRes = await fetch(`${import.meta.env.VITE_API_URL}/api/email/config?userId=${user?.id}`);
+                              const data = await configRes.json();
+                              if (data.success) setEmailConfigs(data.configs);
+                            } else {
+                              const data = await res.json();
+                              alert('Erro: ' + (data.error || 'Falha ao salvar'));
+                            }
+                          } catch (err) {
+                            alert('Erro ao salvar configuração.');
+                          }
+                        }}
+                        className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                      >
+                        <Save size={16} />
+                        {isEditingEmailConfig ? 'Atualizar' : 'Salvar'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
 
@@ -662,7 +1061,7 @@ export const Settings: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setIsEditingOpenAi(!isEditingOpenAi)}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                 >
                   {isEditingOpenAi ? 'Cancelar' : 'Editar'}
                 </button>
@@ -709,7 +1108,7 @@ export const Settings: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setIsEditingGemini(!isEditingGemini)}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                 >
                   {isEditingGemini ? 'Cancelar' : 'Editar'}
                 </button>
@@ -756,7 +1155,7 @@ export const Settings: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setIsEditingAnthropic(!isEditingAnthropic)}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                 >
                   {isEditingAnthropic ? 'Cancelar' : 'Editar'}
                 </button>
@@ -789,38 +1188,15 @@ export const Settings: React.FC = () => {
               </div>
             </div>
 
-            {/* Lista de Integrações */}
-            <div className="grid grid-cols-1 gap-4">
-              <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mt-2">Plataformas Nativas</h4>
-              {integrations.map(integ => {
-                const Icon = integ.icon;
-                const isConnected = integ.status === 'connected';
-                return (
-                  <div key={integ.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-lg ${isConnected ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
-                        <Icon size={24} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-gray-900">{integ.name}</h4>
-                          {isConnected && (
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                              <Check size={10} /> Conectado
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-0.5">Última sincronização: {integ.lastSync}</p>
-                      </div>
-                    </div>
-                    <button className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${isConnected ? 'bg-white border-red-200 text-red-600 hover:bg-red-50' : 'bg-blue-600 border-transparent text-white hover:bg-blue-700 shadow-sm'}`}>
-                      {isConnected ? 'Desconectar' : 'Conectar Agora'}
-                    </button>
-                  </div>
-                );
-              })}
+            {/* Lista de Integrações Nativas */}
+            <div className="mt-8">
+              <IntegrationsManager />
             </div>
-          </div>
+
+            {/* Lista de Integrações Mock (Legado - Mantido se necessário) */}
+            {/* <div className="grid grid-cols-1 gap-4"> */}
+
+          </div >
         );
 
       case 'team':
@@ -834,7 +1210,7 @@ export const Settings: React.FC = () => {
               <div className="flex gap-2">
                 <button
                   onClick={handleOpenAddMember}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
                 >
                   <Plus size={18} />
                   Adicionar Membro
@@ -874,7 +1250,7 @@ export const Settings: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-primary-100 text-primary-800">
                             {member.role}
                           </span>
                         </td>
@@ -886,7 +1262,7 @@ export const Settings: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button
                             onClick={() => handleEditMember(member)}
-                            className="text-blue-600 hover:text-blue-900 mr-3"
+                            className="text-primary-600 hover:text-primary-900 mr-3"
                           >
                             <Edit2 size={18} />
                           </button>
@@ -914,14 +1290,14 @@ export const Settings: React.FC = () => {
               <p className="text-sm text-gray-500">Gerencie seu plano, pagamentos e histórico de faturas.</p>
             </div>
             {/* Conteúdo de Billing mantido simplificado para focar nas mudanças solicitadas */}
-            <div className="border-2 border-blue-200 bg-blue-50 rounded-xl p-6">
+            <div className="border-2 border-primary-200 bg-primary-50 rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h4 className="text-xl font-bold text-gray-900">Plano Pro</h4>
                   <p className="text-sm text-gray-600">Renovação automática em 15 de Dezembro de 2025</p>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-bold text-blue-600">R$ 997</div>
+                  <div className="text-3xl font-bold text-primary-600">R$ 997</div>
                   <div className="text-sm text-gray-600">/mês</div>
                 </div>
               </div>
@@ -981,7 +1357,7 @@ export const Settings: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm border border-blue-100' : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-primary-600 shadow-sm border border-primary-100' : 'text-gray-600 hover:bg-gray-100 border border-transparent'
                 }`}
             >
               <tab.icon size={16} />
@@ -991,7 +1367,7 @@ export const Settings: React.FC = () => {
           {user?.role === 'Admin' && (
             <button
               onClick={() => setActiveTab('admin')}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'admin' ? 'bg-white text-blue-600 shadow-sm border border-blue-100' : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === 'admin' ? 'bg-white text-primary-600 shadow-sm border border-primary-100' : 'text-gray-600 hover:bg-gray-100 border border-transparent'
                 }`}
             >
               <Shield size={16} className="text-purple-600" />
@@ -1012,7 +1388,7 @@ export const Settings: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === tab.id ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <tab.icon size={18} /> {tab.label}
             </button>
@@ -1021,7 +1397,7 @@ export const Settings: React.FC = () => {
           {user?.role === 'Admin' && (
             <button
               onClick={() => setActiveTab('admin')}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'admin' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${activeTab === 'admin' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
               <Shield size={18} className="text-purple-600" /> Admin
             </button>
@@ -1082,29 +1458,29 @@ export const Settings: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
-                  <input {...register('firstName')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="João" />
+                  <input {...register('firstName')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="João" />
                   {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName.message}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sobrenome *</label>
-                  <input {...register('lastName')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Silva" />
+                  <input {...register('lastName')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="Silva" />
                   {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName.message}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Username *</label>
-                  <input {...register('username')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="joaosilva" />
+                  <input {...register('username')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="joaosilva" />
                   {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                  <input {...register('email')} type="email" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="joao@exemplo.com" />
+                  <input {...register('email')} type="email" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="joao@exemplo.com" />
                   {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Telefone *</label>
                   <input
                     {...register('phone')}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="(11) 99999-9999"
                     onChange={(e) => {
                       e.target.value = maskPhone(e.target.value);
@@ -1117,7 +1493,7 @@ export const Settings: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">CPF *</label>
                   <input
                     {...register('cpf')}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                     placeholder="000.000.000-00"
                     onChange={(e) => {
                       e.target.value = maskCPF(e.target.value);
@@ -1128,7 +1504,7 @@ export const Settings: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
-                  <select {...register('role')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                  <select {...register('role')} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white">
                     <option value="Vendedor">Vendedor</option>
                     <option value="Gerente">Gerente</option>
                     <option value="Suporte">Suporte</option>
@@ -1137,14 +1513,14 @@ export const Settings: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Data de Registro</label>
-                  <input {...register('registrationDate')} type="date" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <input {...register('registrationDate')} type="date" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" />
                 </div>
               </div>
 
               {/* Endereço */}
               <section>
                 <h4 className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
-                  <MapPin size={16} className="text-blue-600" /> Endereço
+                  <MapPin size={16} className="text-primary-600" /> Endereço
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="md:col-span-3">
@@ -1194,7 +1570,7 @@ export const Settings: React.FC = () => {
               {/* Permissões */}
               <section>
                 <h4 className="flex items-center gap-2 text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
-                  <Lock size={16} className="text-blue-600" /> Permissões e Acesso
+                  <Lock size={16} className="text-primary-600" /> Permissões e Acesso
                 </h4>
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <div className="mb-4">
@@ -1212,7 +1588,7 @@ export const Settings: React.FC = () => {
                     <div className="grid grid-cols-2 gap-2">
                       {['Visualizar Dashboard', 'Gerenciar Campanhas', 'Gerenciar Leads', 'Exportar Relatórios', 'Configurações do Sistema', 'Gerenciar Equipe'].map((perm, idx) => (
                         <label key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                          <input type="checkbox" className="rounded text-blue-600 focus:ring-blue-500" defaultChecked={currentMember.role === 'Admin'} />
+                          <input type="checkbox" className="rounded text-primary-600 focus:ring-primary-500" defaultChecked={currentMember.role === 'Admin'} />
                           {perm}
                         </label>
                       ))}
@@ -1224,12 +1600,12 @@ export const Settings: React.FC = () => {
               {/* Senha e Segurança */}
               <section className="border-t pt-4 mt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-sm uppercase tracking-wider"><Lock size={16} className="text-blue-600" /> Segurança</h4>
+                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-sm uppercase tracking-wider"><Lock size={16} className="text-primary-600" /> Segurança</h4>
                   {isEditingMember && (
                     <button
                       type="button"
                       onClick={() => setWantsToChangePassword(!wantsToChangePassword)}
-                      className="text-xs text-blue-600 font-medium hover:underline"
+                      className="text-xs text-primary-600 font-medium hover:underline"
                     >
                       {wantsToChangePassword ? 'Cancelar alteração de senha' : 'Alterar senha'}
                     </button>
@@ -1244,7 +1620,7 @@ export const Settings: React.FC = () => {
                         <input
                           type="password"
                           {...register('oldPassword')}
-                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
                           placeholder="Sua senha atual"
                         />
                       </div>
@@ -1269,7 +1645,7 @@ export const Settings: React.FC = () => {
                         <input
                           type={showPassword ? "text" : "password"}
                           {...register(isEditingMember ? 'newPassword' : 'password')}
-                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none pr-10"
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none pr-10"
                           placeholder="Mínimo de 8 caracteres"
                         />
                         <button
@@ -1291,7 +1667,7 @@ export const Settings: React.FC = () => {
                 <button type="button" onClick={() => setIsMemberModalOpen(false)} className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50">
                   Cancelar
                 </button>
-                <button type="submit" className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-lg shadow-blue-200">
+                <button type="submit" className="px-6 py-2.5 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 shadow-lg shadow-primary-200">
                   {isEditingMember ? 'Salvar Alterações' : 'Adicionar Membro'}
                 </button>
               </div>

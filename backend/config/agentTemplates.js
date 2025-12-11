@@ -1,946 +1,702 @@
 /**
- * Templates de Agentes Pré-configurados
- * Define configurações base para diferentes tipos de agentes
+ * Templates de Agentes Pré-configurados (Elite Finder Enterprise)
+ * Define configurações base para diferentes tipos de agentes com Otimização Avançada
+ * Version 3.0 - Full Enterprise Capabilities (RAG, Hybrid Search, Multi-Model Validation)
  */
 
 const agentTemplates = {
     // ==========================================
-    // TEMPLATE 1: VENDEDOR
+    // TEMPLATE 1: VENDEDOR DE ELITE
     // ==========================================
     sales_agent: {
         meta: {
             templateId: 'sales_agent',
-            templateName: 'Agente de Vendas',
-            templateDescription: 'Agente especializado em vendas com estratégias personalizáveis',
-            version: '1.0.0',
+            templateName: 'Agente de Vendas Elite',
+            templateDescription: 'Especialista em vendas consultivas de alta performance com estratégias psicológicas e fechamento.',
+            version: '3.0.0',
             category: 'sales'
         },
         baseConfig: {
             identity: {
-                name: 'Agente de Vendas',
+                name: 'Consultor de Vendas Premium',
                 category: 'sales',
-                class: 'specialist',
-                specializationLevel: 3,
+                class: 'SalesAgent',
+                specializationLevel: 5,
+                description: 'Especialista em vendas consultivas, negociação complexa e fechamento de contratos de alto valor.',
                 status: 'active'
             },
             aiConfig: {
-                provider: 'gemini',
-                model: 'gemini-2.0-flash-exp',
-                temperature: 0.7,
+                provider: 'openai',
+                model: 'gpt-4-turbo-preview',
+                temperature: 0.75, // Criatividade controlada para persuasão
                 topP: 0.9,
-                topK: 40,
+                topK: 50,
                 maxTokens: 2048,
-                timeout: 30000,
+                timeout: 45000,
                 retries: 3,
-                frequencyPenalty: 0.3,
-                presencePenalty: 0.2,
-                responseMode: 'balanced'
+                frequencyPenalty: 0.3, // Evitar repetição de argumentos
+                presencePenalty: 0.2, // Incentivar novos tópicos
+                responseMode: 'balanced',
+                candidateCount: 1,
+                jsonMode: false,
+                stopSequences: ["Cliente:", "Fim."]
             },
             vectorConfig: {
                 enableRag: true,
                 chunkingMode: 'semantic',
                 chunkSize: 512,
-                sensitivity: 'balanced',
-                contextWindow: 3,
+                chunkOverlap: 50,
+                sensitivity: 8, // Alta sensibilidade para captar nuances de produto
+                contextWindow: 8,
                 relevanceThreshold: 0.75,
+                searchMode: 'hybrid', // Híbrido: Palavra-chave (preço) + Semântica (benefício)
+                enableReranking: true,
                 chunkingStrategy: 'semantic',
-                maxRetrievedChunks: 5,
-                searchMode: 'hybrid'
+                maxRetrievedChunks: 6,
+                hybridConfig: {
+                    semanticPrecision: 0.70,
+                    contextualWeight: 0.30
+                },
+                rerankConfig: {
+                    topK: 5,
+                    threshold: 0.80
+                },
+                filters: ['Vendas', 'Produtos', 'Objeções']
+            },
+            advancedConfig: {
+                multiModelValidation: {
+                    enabled: false, // Vendas precisa de velocidade, não consenso estrito
+                    minConsensus: 0.6,
+                    parallelModels: 2
+                },
+                promptEngineering: {
+                    analysisDepth: 3,
+                    chainOfThought: 'basic'
+                },
+                qualitySafety: {
+                    hallucinationCheck: {
+                        enabled: true,
+                        sensitivity: 0.7,
+                        method: 'self-consistency'
+                    },
+                    semanticCache: {
+                        enabled: true,
+                        similarityThreshold: 0.95,
+                        ttlHours: 24
+                    },
+                    monitoring: {
+                        logFrequency: 'errors',
+                        confidenceThreshold: 0.6
+                    }
+                }
+            },
+            whatsappConfig: {
+                enabled: true,
+                provider: 'evolution_api', // Padrão recomendado
+                evolution: {
+                    baseUrl: '',
+                    apiKey: '',
+                    instanceName: ''
+                },
+                official: {
+                    phoneNumberId: '',
+                    accessToken: '',
+                    verifyToken: ''
+                }
+            },
+            prompts: {
+                system: `Você é um Vendedor de Elite especializado em vendas consultivas.
+                
+## Seus Princípios:
+1. **Empatia Radical**: Entenda a dor real antes de vender.
+2. **Autoridade**: Demonstre conhecimento profundo sem ser arrogante.
+3. **Escassez Ética**: Use urgência real para motivar ação.
+4. **Benefício > Característica**: Nunca venda o produto, venda a transformação.
+
+## Checklist de Segurança:
+- Não invente funcionalidades que não existem.
+- Não prometa preços fora da tabela sem aprovação.
+- Se não souber, diga "vou verificar com o especialista".`,
+
+                responseStructure: `1. **Reconhecimento**: Valide o que o cliente disse.
+2. **Link de Valor**: Conecte a necessidade ao benefício do produto.
+3. **Prova Social/Autoridade**: Cite um caso ou dado relevante.
+4. **CTA (Call to Action)**: Pergunta aberta ou passo para fechamento.`,
+
+                vectorSearch: `Busque por: Tabela de preços atualizada, Cases de sucesso semelhantes ao cliente, Diferenciais competitivos vs concorrentes, Scripts de objeções específicas.`,
+
+                analysis: `Analise a última mensagem do cliente para: 
+- Nível de interesse (Quente/Morno/Frio)
+- Objeção oculta (Preço, Tempo, Confiança)
+- Próximo passo lógico no funil de vendas.`,
+
+                validation: `Verifique se a oferta condiz com a tabela de preços recuperada no contexto. Se houver discrepância > 10%, corrija.`
             }
         },
         parameters: [
             {
                 key: 'target_market',
-                label: 'Mercado Alvo',
+                label: 'Mercado Alvo (ICP)',
                 type: 'text',
-                category: 'sales_strategy',
-                defaultValue: 'B2B - Empresas de médio porte',
-                helperText: 'Descreva o perfil do cliente ideal',
+                category: 'strategy',
+                defaultValue: 'B2B - Pequenas e Médias Empresas',
                 required: true,
                 displayOrder: 1
             },
             {
-                key: 'sales_strategy',
-                label: 'Estratégia de Vendas',
+                key: 'sales_methodology',
+                label: 'Metodologia de Vendas',
                 type: 'select',
-                category: 'sales_strategy',
-                defaultValue: 'consultative',
+                category: 'strategy',
+                defaultValue: 'spin_selling',
                 options: [
-                    { value: 'consultative', label: 'Consultiva' },
-                    { value: 'solution', label: 'Solução' },
-                    { value: 'transactional', label: 'Transacional' },
-                    { value: 'relationship', label: 'Relacionamento' }
+                    { value: 'spin_selling', label: 'SPIN Selling (Situação, Problema, Implicação, Necessidade)' },
+                    { value: 'challenger', label: 'The Challenger Sale (Venda Desafiadora)' },
+                    { value: 'solution', label: 'Solution Selling (Venda de Solução)' },
+                    { value: 'sandler', label: 'Sandler Training (Psicologia Reversa)' }
                 ],
-                required: true,
                 displayOrder: 2
             },
             {
-                key: 'opening_approach',
-                label: 'Abordagem Inicial',
+                key: 'main_offer',
+                label: 'Oferta Principal',
                 type: 'textarea',
-                category: 'communication',
-                defaultValue: 'Olá! Obrigado pelo contato. Sou especialista em soluções para [seu segmento]. Como posso ajudá-lo hoje?',
-                helperText: 'Mensagem de abertura padrão do agente',
+                category: 'product',
+                defaultValue: 'Consultoria de Transformação Digital com ROI garantido em 6 meses.',
                 required: true,
                 displayOrder: 3
             },
             {
                 key: 'objection_handling_price',
-                label: 'Tratamento de Objeção: Preço',
+                label: 'Script: Objeção de Preço',
                 type: 'textarea',
-                category: 'objection_handling',
-                defaultValue: 'Entendo sua preocupação com o investimento. Vamos conversar sobre o ROI e como nossa solução pode gerar valor para seu negócio.',
+                category: 'scripts',
+                defaultValue: 'Entendo que o investimento pareça alto inicialmente. Porém, se compararmos com o custo de [PROBLEMA], nossa solução se paga em X meses. Vamos focar no retorno?',
                 displayOrder: 4
-            },
-            {
-                key: 'objection_handling_competition',
-                label: 'Tratamento de Objeção: Concorrência',
-                type: 'textarea',
-                category: 'objection_handling',
-                defaultValue: 'Ótimo que está pesquisando! Nossos diferenciais são X, Y e Z. Gostaria de entender melhor suas necessidades?',
-                displayOrder: 5
-            },
-            {
-                key: 'objection_handling_timing',
-                label: 'Tratamento de Objeção: Timing',
-                type: 'textarea',
-                category: 'objection_handling',
-                defaultValue: 'Compreendo. Quando seria um bom momento para retomarmos? Posso enviar material para análise?',
-                displayOrder: 6
-            },
-            {
-                key: 'qualification_questions',
-                label: 'Perguntas de Qualificação',
-                type: 'textarea',
-                category: 'sales_process',
-                defaultValue: '1. Qual o principal desafio que está enfrentando?\n2. Qual o prazo para implementação?\n3. Quem mais está envolvido na decisão?',
-                displayOrder: 7
             }
         ],
         groups: [
-            { id: 'sales_strategy', label: 'Estratégia de Vendas', order: 1 },
-            { id: 'communication', label: 'Comunicação', order: 2 },
-            { id: 'objection_handling', label: 'Tratamento de Objeções', order: 3 },
-            { id: 'sales_process', label: 'Processo de Vendas', order: 4 }
+            { id: 'strategy', label: 'Estratégia Comercial', order: 1 },
+            { id: 'product', label: 'Produto & Oferta', order: 2 },
+            { id: 'scripts', label: 'Scripts de Conversão', order: 3 }
         ]
     },
 
     // ==========================================
-    // TEMPLATE 2: SAC (Serviço de Atendimento ao Cliente)
+    // TEMPLATE 2: SAC & ATENDIMENTO 24/7
     // ==========================================
     customer_service: {
         meta: {
             templateId: 'customer_service',
-            templateName: 'SAC - Atendimento ao Cliente',
-            templateDescription: 'Suporte 24/7 com políticas de atendimento personalizáveis',
-            version: '1.0.0',
+            templateName: 'SAC Humanizado 24/7',
+            templateDescription: 'Atendimento empático e resolutivo com escalação inteligente.',
+            version: '3.0.0',
             category: 'support'
         },
         baseConfig: {
             identity: {
-                name: 'Assistente SAC',
-                category: 'support',
-                class: 'generalist',
-                specializationLevel: 2,
-                status: 'active'
-            },
-            aiConfig: {
-                provider: 'gemini',
-                model: 'gemini-2.0-flash-exp',
-                temperature: 0.5,
-                topP: 0.85,
-                topK: 30,
-                maxTokens: 1536,
-                timeout: 25000,
-                retries: 3,
-                frequencyPenalty: 0.2,
-                presencePenalty: 0.1,
-                responseMode: 'concise'
-            },
-            vectorConfig: {
-                enableRag: true,
-                chunkingMode: 'adaptive',
-                chunkSize: 384,
-                sensitivity: 'high',
-                contextWindow: 5,
-                relevanceThreshold: 0.80,
-                chunkingStrategy: 'adaptive',
-                maxRetrievedChunks: 7,
-                searchMode: 'semantic'
-            }
-        },
-        parameters: [
-            {
-                key: 'support_availability',
-                label: 'Disponibilidade de Suporte',
-                type: 'select',
-                category: 'service_config',
-                defaultValue: '24_7',
-                options: [
-                    { value: '24_7', label: '24/7 - Sempre disponível' },
-                    { value: 'business_hours', label: 'Horário comercial' },
-                    { value: 'extended', label: 'Horário estendido (8h-22h)' }
-                ],
-                required: true,
-                displayOrder: 1
-            },
-            {
-                key: 'greeting_message',
-                label: 'Mensagem de Boas-Vindas',
-                type: 'textarea',
-                category: 'communication',
-                defaultValue: 'Olá! Bem-vindo ao nosso SAC. Estou aqui para ajudá-lo. Como posso auxiliar hoje?',
-                required: true,
-                displayOrder: 2
-            },
-            {
-                key: 'service_policy',
-                label: 'Política de Atendimento',
-                type: 'textarea',
-                category: 'policies',
-                defaultValue: 'Nosso compromisso é resolver sua solicitação no primeiro contato sempre que possível.',
-                displayOrder: 3
-            },
-            {
-                key: 'escalation_threshold',
-                label: 'Critério de Escalação',
-                type: 'select',
-                category: 'escalation',
-                defaultValue: 'complex',
-                options: [
-                    { value: 'immediate', label: 'Imediata - Para qualquer questão complexa' },
-                    { value: 'complex', label: 'Problemas complexos ou recorrentes' },
-                    { value: 'critical', label: 'Apenas casos críticos' }
-                ],
-                displayOrder: 4
-            },
-            {
-                key: 'escalation_message',
-                label: 'Mensagem de Escalação',
-                type: 'textarea',
-                category: 'escalation',
-                defaultValue: 'Vou transferir você para um especialista que poderá ajudá-lo melhor com essa questão.',
-                displayOrder: 5
-            },
-            {
-                key: 'refund_policy',
-                label: 'Política de Reembolso',
-                type: 'textarea',
-                category: 'policies',
-                defaultValue: 'Reembolsos são processados em até 7 dias úteis após aprovação.',
-                displayOrder: 6
-            },
-            {
-                key: 'max_response_time',
-                label: 'Tempo Máximo de Resposta (segundos)',
-                type: 'number',
-                category: 'service_config',
-                defaultValue: '30',
-                validation: { min: 5, max: 120 },
-                displayOrder: 7
-            }
-        ],
-        groups: [
-            { id: 'service_config', label: 'Configurações de Serviço', order: 1 },
-            { id: 'communication', label: 'Comunicação', order: 2 },
-            { id: 'policies', label: 'Políticas', order: 3 },
-            { id: 'escalation', label: 'Escalação', order: 4 }
-        ]
-    },
-
-    // ==========================================
-    // TEMPLATE 3: SUPORTE TÉCNICO
-    // ==========================================
-    technical_support: {
-        meta: {
-            templateId: 'technical_support',
-            templateName: 'Suporte Técnico',
-            templateDescription: 'Suporte técnico multi-nível com base de conhecimento',
-            version: '1.0.0',
-            category: 'technical'
-        },
-        baseConfig: {
-            identity: {
-                name: 'Assistente Técnico',
-                category: 'technical_support',
-                class: 'specialist',
-                specializationLevel: 4,
-                status: 'active'
-            },
-            aiConfig: {
-                provider: 'gemini',
-                model: 'gemini-2.0-flash-exp',
-                temperature: 0.3,
-                topP: 0.8,
-                topK: 20,
-                maxTokens: 2048,
-                timeout: 35000,
-                retries: 3,
-                frequencyPenalty: 0.1,
-                presencePenalty: 0.1,
-                responseMode: 'detailed'
-            },
-            vectorConfig: {
-                enableRag: true,
-                chunkingMode: 'recursive',
-                chunkSize: 768,
-                sensitivity: 'very_high',
-                contextWindow: 7,
-                relevanceThreshold: 0.85,
-                chunkingStrategy: 'recursive',
-                maxRetrievedChunks: 10,
-                searchMode: 'hybrid',
-                enableReranking: true
-            }
-        },
-        parameters: [
-            {
-                key: 'support_tier',
-                label: 'Nível de Suporte',
-                type: 'select',
-                category: 'support_config',
-                defaultValue: 'tier_1',
-                options: [
-                    { value: 'tier_1', label: 'Tier 1 - Suporte Básico' },
-                    { value: 'tier_2', label: 'Tier 2 - Suporte Intermediário' },
-                    { value: 'tier_3', label: 'Tier 3 - Suporte Avançado' }
-                ],
-                required: true,
-                displayOrder: 1
-            },
-            {
-                key: 'tech_stack',
-                label: 'Stack Tecnológico',
-                type: 'textarea',
-                category: 'knowledge',
-                defaultValue: 'JavaScript, React, Node.js, PostgreSQL, AWS',
-                helperText: 'Tecnologias que o agente domina',
-                required: true,
-                displayOrder: 2
-            },
-            {
-                key: 'knowledge_base_url',
-                label: 'URL da Base de Conhecimento',
-                type: 'text',
-                category: 'knowledge',
-                defaultValue: 'https://docs.exemplo.com',
-                displayOrder: 3
-            },
-            {
-                key: 'diagnostic_tools',
-                label: 'Ferramentas de Diagnóstico',
-                type: 'textarea',
-                category: 'tools',
-                defaultValue: 'Logs, Health Check, Network Analyzer',
-                helperText: 'Ferramentas disponíveis para diagnóstico',
-                displayOrder: 4
-            },
-            {
-                key: 'common_issues',
-                label: 'Problemas Comuns',
-                type: 'textarea',
-                category: 'knowledge',
-                defaultValue: '1. Erro de conexão\n2. Timeout de API\n3. Falha de autenticação',
-                displayOrder: 5
-            },
-            {
-                key: 'escalation_to_engineer',
-                label: 'Critérios para Escalar a Engenharia',
-                type: 'textarea',
-                category: 'escalation',
-                defaultValue: 'Bugs críticos, problemas de arquitetura, falhas de sistema',
-                displayOrder: 6
-            },
-            {
-                key: 'response_format',
-                label: 'Formato de Resposta',
-                type: 'select',
-                category: 'support_config',
-                defaultValue: 'step_by_step',
-                options: [
-                    { value: 'step_by_step', label: 'Passo a passo detalhado' },
-                    { value: 'quick_fix', label: 'Solução rápida' },
-                    { value: 'diagnostic_first', label: 'Diagnóstico primeiro' }
-                ],
-                displayOrder: 7
-            }
-        ],
-        groups: [
-            { id: 'support_config', label: 'Configurações de Suporte', order: 1 },
-            { id: 'knowledge', label: 'Base de Conhecimento', order: 2 },
-            { id: 'tools', label: 'Ferramentas', order: 3 },
-            { id: 'escalation', label: 'Escalação', order: 4 }
-        ]
-    },
-
-    // ==========================================
-    // TEMPLATE 4: CRM
-    // ==========================================
-    crm_agent: {
-        meta: {
-            templateId: 'crm_agent',
-            templateName: 'Agente CRM',
-            templateDescription: 'Gerenciamento de leads e oportunidades com automação',
-            version: '1.0.0',
-            category: 'automation'
-        },
-        baseConfig: {
-            identity: {
-                name: 'Assistente CRM',
-                category: 'crm',
-                class: 'generalist',
+                name: 'Assistente de Atendimento',
+                category: 'service',
+                class: 'CSRAgent',
                 specializationLevel: 3,
-                status: 'active'
-            },
-            aiConfig: {
-                provider: 'gemini',
-                model: 'gemini-2.0-flash-exp',
-                temperature: 0.6,
-                topP: 0.9,
-                topK: 35,
-                maxTokens: 1792,
-                timeout: 30000,
-                retries: 3,
-                frequencyPenalty: 0.2,
-                presencePenalty: 0.2,
-                responseMode: 'balanced'
-            },
-            vectorConfig: {
-                enableRag: true,
-                chunkingMode: 'semantic',
-                chunkSize: 512,
-                sensitivity: 'balanced',
-                contextWindow: 4,
-                relevanceThreshold: 0.75,
-                chunkingStrategy: 'semantic',
-                maxRetrievedChunks: 6,
-                searchMode: 'hybrid'
-            }
-        },
-        parameters: [
-            {
-                key: 'lead_scoring_criteria',
-                label: 'Critérios de Pontuação de Leads',
-                type: 'textarea',
-                category: 'lead_management',
-                defaultValue: 'Budget: 30pts, Authority: 25pts, Need: 25pts, Timeline: 20pts',
-                helperText: 'Sistema de pontuação BANT',
-                required: true,
-                displayOrder: 1
-            },
-            {
-                key: 'lead_qualification',
-                label: 'Perguntas de Qualificação',
-                type: 'textarea',
-                category: 'lead_management',
-                defaultValue: '1. Qual seu orçamento?\n2. Você é o decisor?\n3. Qual a urgência?',
-                displayOrder: 2
-            },
-            {
-                key: 'opportunity_stages',
-                label: 'Estágios da Oportunidade',
-                type: 'textarea',
-                category: 'pipeline',
-                defaultValue: 'Prospecção → Qualificação → Proposta → Negociação → Fechamento',
-                required: true,
-                displayOrder: 3
-            },
-            {
-                key: 'auto_follow_up',
-                label: 'Follow-up Automático',
-                type: 'select',
-                category: 'automation',
-                defaultValue: 'enabled',
-                options: [
-                    { value: 'enabled', label: 'Habilitado' },
-                    { value: 'disabled', label: 'Desabilitado' },
-                    { value: 'scheduled', label: 'Apenas agendado' }
-                ],
-                displayOrder: 4
-            },
-            {
-                key: 'follow_up_interval',
-                label: 'Intervalo de Follow-up (horas)',
-                type: 'number',
-                category: 'automation',
-                defaultValue: '48',
-                validation: { min: 24, max: 168 },
-                displayOrder: 5
-            },
-            {
-                key: 'workflow_triggers',
-                label: 'Gatilhos de Workflow',
-                type: 'textarea',
-                category: 'automation',
-                defaultValue: 'Lead qualificado, Proposta enviada, Sem resposta por 3 dias',
-                helperText: 'Eventos que acionam ações automáticas',
-                displayOrder: 6
-            },
-            {
-                key: 'data_analysis_metrics',
-                label: 'Métricas de Análise',
-                type: 'textarea',
-                category: 'analytics',
-                defaultValue: 'Taxa de conversão, Tempo médio de fechamento, Valor médio do negócio',
-                displayOrder: 7
-            },
-            {
-                key: 'integration_crm',
-                label: 'CRM Integrado',
-                type: 'select',
-                category: 'integrations',
-                defaultValue: 'native',
-                options: [
-                    { value: 'native', label: 'CRM Nativo' },
-                    { value: 'salesforce', label: 'Salesforce' },
-                    { value: 'hubspot', label: 'HubSpot' },
-                    { value: 'pipedrive', label: 'Pipedrive' }
-                ],
-                displayOrder: 8
-            }
-        ],
-        groups: [
-            { id: 'lead_management', label: 'Gerenciamento de Leads', order: 1 },
-            { id: 'pipeline', label: 'Pipeline de Vendas', order: 2 },
-            { id: 'automation', label: 'Automação', order: 3 },
-            { id: 'analytics', label: 'Análise de Dados', order: 4 },
-            { id: 'integrations', label: 'Integrações', order: 5 }
-        ]
-    },
-
-    // ==========================================
-    // TEMPLATE 5: WHATSAPP SALES & ANALYTICS
-    // ==========================================
-    whatsapp_analytics: {
-        meta: {
-            templateId: 'whatsapp_analytics',
-            templateName: 'WhatsApp Sales & Analytics',
-            templateDescription: 'Agente de WhatsApp com inteligência de análise de conversas e estratégia de vendas em tempo real.',
-            version: '1.0.0',
-            category: 'whatsapp'
-        },
-        baseConfig: {
-            identity: {
-                name: 'WhatsApp Strategist',
-                category: 'sales',
-                class: 'SalesAgent',
-                specializationLevel: 5,
+                description: 'Agente focado em resolução rápida de problemas, rastreio de pedidos e dúvidas frequentes.',
                 status: 'active'
             },
             aiConfig: {
                 provider: 'openai',
                 model: 'gpt-4-turbo-preview',
-                temperature: 0.7,
-                maxTokens: 1000,
-                responseMode: 'balanced'
-            },
-            whatsappConfig: {
-                enabled: true,
-                provider: 'evolution_api'
+                temperature: 0.4, // Mais baixo para consistência
+                topP: 0.85,
+                maxTokens: 1024,
+                frequencyPenalty: 0.1,
+                presencePenalty: 0,
+                responseMode: 'concise',
+                stopSequences: ["Atendente:", "Cliente:"]
             },
             vectorConfig: {
                 enableRag: true,
                 chunkingMode: 'semantic',
-                chunkSize: 512,
-                sensitivity: 'balanced',
-                contextWindow: 5
+                chunkSize: 300, // Chunks menores para respostas precisas de FAQ
+                sensitivity: 9,
+                searchMode: 'hybrid',
+                enableReranking: true,
+                rerankConfig: {
+                    topK: 3, // Apenas os top 3 mais relevantes
+                    threshold: 0.85
+                },
+                filters: ['FAQ', 'Políticas', 'Procedimentos']
+            },
+            advancedConfig: {
+                multiModelValidation: {
+                    enabled: false,
+                    minConsensus: 0.7,
+                    parallelModels: 2
+                },
+                promptEngineering: {
+                    analysisDepth: 2,
+                    chainOfThought: 'none'
+                },
+                qualitySafety: {
+                    hallucinationCheck: {
+                        enabled: true,
+                        sensitivity: 0.9, // Alta sensibilidade para não inventar políticas
+                        method: 'cross-reference'
+                    },
+                    semanticCache: {
+                        enabled: true,
+                        similarityThreshold: 0.98, // Cache agressivo para perguntas repetidas
+                        ttlHours: 48
+                    }
+                }
+            },
+            prompts: {
+                system: `Você é um agente de SAC exemplar. Sua prioridade é a satisfação do cliente.
+
+## Diretrizes:
+1. Use tom calmo, empático e resolutivo.
+2. Peça desculpas por inconvenientes *uma* vez, depois foque na solução.
+3. Nunca culpe o cliente.
+4. Se não souber a resposta, escale para humano imediatamente.
+
+## Procedimentos Críticos:
+- Reembolsos: Só confirme se estiver na política explícita.
+- Prazos: Cite sempre dias úteis.`,
+
+                responseStructure: `1. **Empatia**: "Sinto muito que isso tenha acontecido..."
+2. **Ação Imediata**: "O que já fiz/Vou fazer agora é..."
+3. **Resolução/Prazo**: "Isso será resolvido até..."
+4. **Verificação**: "Isso ajuda você?"`,
+
+                vectorSearch: `Busque: Política específica para o problema relatado, Status do pedido (se fornecido ID), Procedimento de troca/devolução.`,
+
+                validation: `Verifique se a solução proposta viola alguma política da empresa recuperada no contexto.`
             }
         },
         parameters: [
             {
-                key: 'evolution_instance',
-                label: 'Nome da Instância (Evolution API)',
+                key: 'service_hours',
+                label: 'Horário de Atendimento',
                 type: 'text',
-                category: 'whatsapp_config',
-                defaultValue: 'minha_instancia',
+                category: 'config',
+                defaultValue: 'Segunda a Sexta, 9h às 18h',
                 required: true,
                 displayOrder: 1
             },
             {
-                key: 'evolution_apikey',
-                label: 'API Key (Evolution API)',
-                type: 'password',
-                category: 'whatsapp_config',
-                required: true,
+                key: 'escalation_trigger',
+                label: 'Gatilho de Escalação',
+                type: 'textarea',
+                category: 'automation',
+                defaultValue: 'Se o cliente usar palavras: "processo", "procon", "advogado", "falar com gerente" ou expressar raiva extrema.',
                 displayOrder: 2
             },
             {
-                key: 'auto_analysis',
-                label: 'Análise Automática de Conversa',
-                type: 'boolean',
-                category: 'analytics',
-                defaultValue: 'true',
-                helperText: 'Gerar insights estratégicos após cada interação significativa',
-                displayOrder: 3
-            },
-            {
-                key: 'sales_script',
-                label: 'Script de Vendas Base',
+                key: 'refund_policy_summary',
+                label: 'Resumo Política de Reembolso',
                 type: 'textarea',
-                category: 'strategy',
-                defaultValue: '1. Saudação\n2. Qualificação\n3. Apresentação\n4. Fechamento',
-                displayOrder: 4
+                category: 'policy',
+                defaultValue: '7 dias para arrependimento, 30 dias para defeito. Reembolso no mesmo meio de pagamento.',
+                displayOrder: 3
             }
         ],
         groups: [
-            { id: 'whatsapp_config', label: 'Configuração WhatsApp', order: 1 },
-            { id: 'analytics', label: 'Inteligência & Análise', order: 2 },
-            { id: 'strategy', label: 'Estratégia de Vendas', order: 3 }
+            { id: 'config', label: 'Configuração', order: 1 },
+            { id: 'automation', label: 'Automação', order: 2 },
+            { id: 'policy', label: 'Políticas', order: 3 }
         ]
     },
 
     // ==========================================
-    // TEMPLATE 6: ADVOGADO VIRTUAL
+    // TEMPLATE 3: SUPORTE TÉCNICO (TIER 2)
+    // ==========================================
+    technical_support: {
+        meta: {
+            templateId: 'technical_support',
+            templateName: 'Suporte Técnico Avançado',
+            templateDescription: 'Diagnóstico técnico, troubleshooting e resolução passo-a-passo.',
+            version: '3.0.0',
+            category: 'technical'
+        },
+        baseConfig: {
+            identity: {
+                name: 'Engenheiro de Suporte',
+                category: 'specialist',
+                class: 'SupportAgent',
+                specializationLevel: 5,
+                description: 'Especialista em resolver problemas técnicos complexos, bugs e configurações de sistema.',
+                status: 'active'
+            },
+            aiConfig: {
+                provider: 'openai',
+                model: 'gpt-4-turbo-preview', // Necessário para raciocínio lógico
+                temperature: 0.1, // Quase determinístico para precisão técnica
+                topP: 0.7,
+                responseMode: 'detailed'
+            },
+            vectorConfig: {
+                enableRag: true,
+                chunkingMode: 'hierarchical', // Hierárquico: Documento -> Seção -> Parágrafo
+                chunkSize: 1024,
+                chunkOverlap: 200,
+                sensitivity: 9,
+                searchMode: 'hybrid',
+                enableReranking: true,
+                chunkingStrategy: 'paragraph',
+                filters: ['Docs Técnicos', 'API Rerefence', 'Known Issues']
+            },
+            advancedConfig: {
+                multiModelValidation: {
+                    enabled: true, // Validar soluções técnicas
+                    minConsensus: 0.8,
+                    parallelModels: 2
+                },
+                promptEngineering: {
+                    analysisDepth: 5, // Análise profunda
+                    chainOfThought: 'advanced' // "Let's think step by step"
+                },
+                qualitySafety: {
+                    hallucinationCheck: {
+                        enabled: true,
+                        sensitivity: 0.95, // Tolerância zero para comandos inexistentes
+                        method: 'cross-reference'
+                    }
+                }
+            },
+            prompts: {
+                system: `Você é um Engenheiro de Suporte Sênior.
+
+## Metodologia de Diagnóstico:
+1. **Isolamento**: Identifique a variável única que causa o erro.
+2. **Reprodução**: Tente reproduzir mentalmente o cenário.
+3. **Resolução**: Proponha a correção menos invasiva primeiro.
+
+## Regras de Segurança:
+- NUNCA sugira comandos destrutivos (rm -rf, DROP TABLE) sem avisos de backup gigantes.
+- Peça logs antes de adivinhar.`,
+
+                responseStructure: `1. **Diagnóstico Preliminar**: "Parece ser um problema de DNS..."
+2. **Coleta de Dados**: "Por favor, rode o comando X e me mostre a saída."
+3. **Possível Solução**: Passo-a-passo numerado (Markdown).
+4. **Validação**: "O erro persistiu?"`,
+
+                vectorSearch: `Busque: Mensagens de erro exatas, Configurações padrão do componente, Compatibilidade de versões.`,
+
+                complexCases: `Se o erro não for encontrado na base de conhecimento, use raciocínio de primeiros princípios para deduzir a causa baseado nos sintomas.`
+            }
+        },
+        parameters: [
+            {
+                key: 'tech_stack',
+                label: 'Stack Tecnológico Suportado',
+                type: 'textarea',
+                category: 'technical',
+                defaultValue: 'React, Node.js, Python, AWS, Docker, Kubernetes',
+                required: true,
+                displayOrder: 1
+            },
+            {
+                key: 'response_style',
+                label: 'Estilo de Resposta',
+                type: 'select',
+                category: 'config',
+                defaultValue: 'didactic',
+                options: [
+                    { value: 'didactic', label: 'Didático (Explica o porquê)' },
+                    { value: 'direct', label: 'Direto (Apenas comandos)' },
+                    { value: 'investigative', label: 'Investigativo (Socrático)' }
+                ],
+                displayOrder: 2
+            }
+        ],
+        groups: [
+            { id: 'technical', label: 'Tecnologia', order: 1 },
+            { id: 'config', label: 'Configuração', order: 2 }
+        ]
+    },
+
+    // ==========================================
+    // TEMPLATE 4: ADVOGADO VIRTUAL (LEGAL)
     // ==========================================
     legal_assistant: {
         meta: {
             templateId: 'legal_assistant',
-            templateName: 'Advogado Virtual',
-            templateDescription: 'Assistente jurídico para triagem inicial, agendamento e respostas a dúvidas frequentes com base legal.',
-            version: '1.0.0',
+            templateName: 'Assistente Jurídico (Compliance)',
+            templateDescription: 'Agente para triagem jurídica e análise preliminar de contratos.',
+            version: '3.0.0',
             category: 'legal'
         },
         baseConfig: {
             identity: {
                 name: 'Assistente Jurídico',
-                category: 'legal',
-                class: 'specialist',
-                specializationLevel: 4,
+                category: 'specialist',
+                class: 'LegalAgent',
+                specializationLevel: 5,
+                description: 'Assistente paralegal focado em análise contratual, compliance e triagem de casos.',
                 status: 'active'
             },
             aiConfig: {
                 provider: 'openai',
-                model: 'gpt-4-turbo-preview',
-                temperature: 0.2,
-                topP: 0.8,
-                maxTokens: 2048,
+                model: 'gpt-4-turbo-preview', // Necessário para nuance linguística
+                temperature: 0.1, // Baixíssima criatividade
+                topP: 0.5,
+                maxTokens: 3000,
                 responseMode: 'formal'
             },
             vectorConfig: {
                 enableRag: true,
-                chunkingMode: 'recursive',
-                chunkSize: 1024,
-                sensitivity: 'high',
-                contextWindow: 5,
-                relevanceThreshold: 0.85
+                chunkingMode: 'semantic',
+                chunkSize: 800,
+                chunkOverlap: 150,
+                sensitivity: 10, // Máxima sensibilidade
+                relevanceThreshold: 0.88, // Só aceita documentos muito relevantes
+                searchMode: 'hybrid',
+                enableReranking: true,
+                rerankConfig: {
+                    topK: 8,
+                    threshold: 0.85
+                },
+                filters: ['Lei', 'Jurisprudência', 'Contratos']
+            },
+            advancedConfig: {
+                multiModelValidation: {
+                    enabled: true, // CRÍTICO: Validar citações de leis
+                    minConsensus: 0.9,
+                    parallelModels: 2
+                },
+                qualitySafety: {
+                    hallucinationCheck: {
+                        enabled: true,
+                        sensitivity: 1.0, // Tolerância ZERO a alucinação de leis
+                        method: 'cross-reference'
+                    }
+                }
+            },
+            prompts: {
+                system: `Você é um Assistente Jurídico Sênior.
+
+## AVISO IMPORTANTE:
+Você NÃO é um advogado e NÃO pode dar consultoria jurídica final. Você fornece informações e análises preliminares.
+
+## Diretrizes:
+1. Cite a fonte (Lei, Artigo, Cláusula) para cada afirmação.
+2. Seja formal, preciso e impessoal.
+3. Se houver ambiguidade, apresente as duas interpretações.
+
+## Disclaimer Obrigatório:
+Finalize TODA resposta com: "Esta análise é preliminar e não substitui consulta com advogado habilitado."`,
+
+                responseStructure: `1. **Resumo dos Fatos**: Entendimento do caso.
+2. **Fundamentação Legal**: Artigos e Leis aplicáveis.
+3. **Análise**: Aplicação da lei aos fatos.
+4. **Recomendação**: Próximos passos sugeridos.
+5. **DISCLAIMER LEGAL**.`,
+
+                vectorSearch: `Busque: Texto integral da Lei mencionada, Jurisprudência recente (últimos 5 anos) sobre o tema, Cláusulas padrão para contratos deste tipo.`,
+
+                validation: `Verifique se os artigos de lei citados realmente existem e se o texto corresponde à realidade na base vetorial.`
             }
         },
         parameters: [
             {
-                key: 'legal_area',
-                label: 'Área de Atuação',
+                key: 'legal_domain',
+                label: 'Área do Direito',
                 type: 'select',
-                category: 'config',
                 defaultValue: 'civil',
                 options: [
-                    { value: 'civil', label: 'Direito Civil' },
-                    { value: 'trabalhista', label: 'Direito Trabalhista' },
-                    { value: 'consumidor', label: 'Direito do Consumidor' },
-                    { value: 'criminal', label: 'Direito Criminal' },
-                    { value: 'familia', label: 'Direito de Família' }
+                    { value: 'civil', label: 'Cível e Contratos' },
+                    { value: 'labor', label: 'Trabalhista' },
+                    { value: 'tax', label: 'Tributário' },
+                    { value: 'gdpr', label: 'LGPD / Privacidade' }
                 ],
                 required: true,
                 displayOrder: 1
             },
             {
-                key: 'disclaimer_message',
-                label: 'Aviso Legal (Disclaimer)',
-                type: 'textarea',
-                category: 'compliance',
-                defaultValue: 'Este assistente fornece informações gerais e não substitui uma consulta jurídica formal com um advogado.',
-                required: true,
-                displayOrder: 2
-            },
-            {
-                key: 'scheduling_link',
-                label: 'Link para Agendamento',
+                key: 'jurisdiction',
+                label: 'Jurisdição',
                 type: 'text',
-                category: 'config',
-                defaultValue: 'https://calendly.com/seu-escritorio',
-                displayOrder: 3
+                defaultValue: 'Brasil (Federal)',
+                displayOrder: 2
             }
         ],
         groups: [
-            { id: 'config', label: 'Configuração Geral', order: 1 },
-            { id: 'compliance', label: 'Compliance & Legal', order: 2 }
+            { id: 'config', label: 'Configuração', order: 1 }
         ]
     },
 
     // ==========================================
-    // TEMPLATE 7: FAQ DINÂMICO POR CATEGORIA
+    // TEMPLATE 5: WHATSAPP ANALYTICS
+    // ==========================================
+    whatsapp_analytics: {
+        meta: {
+            templateId: 'whatsapp_analytics',
+            templateName: 'WhatsApp Intelligence Spy',
+            templateDescription: 'Analisa conversas de WhatsApp em tempo real para extrair insights de vendas.',
+            version: '3.0.0',
+            category: 'analytics'
+        },
+        baseConfig: {
+            identity: {
+                name: 'Spyglass Analytics',
+                category: 'assistant',
+                class: 'AnalystAgent',
+                specializationLevel: 4,
+                description: 'Observador silencioso que analisa intenção de compra e sentimento em chats.',
+                status: 'active'
+            },
+            aiConfig: {
+                provider: 'openai',
+                model: 'gpt-4o', // Modelo rápido e inteligente para real-time
+                temperature: 0.2,
+                responseMode: 'json', // Saída puramente estruturada
+                jsonMode: true
+            },
+            whatsappConfig: {
+                enabled: true,
+                provider: 'evolution_api',
+                evolution: { baseUrl: '', apiKey: '', instanceName: '' }
+            },
+            prompts: {
+                system: `Você é um Analista de Inteligência de Vendas.
+Sua função NÃO é responder o cliente, mas analisar a conversa entre (Vendedor) e (Cliente).
+
+Analise cada mensagem buscando:
+1. Intenção de Compra (0-100)
+2. Sentimento (-1 a 1)
+3. Objeções Detectadas
+4. Momentos de "Fechamento" perdidos`,
+
+                responseStructure: `{
+  "intention_score": 85,
+  "sentiment": "positive",
+  "objections": ["price", "competitor_mention"],
+  "suggestion": "O cliente deu um sinal de compra. Sugira fechar o contrato agora."
+}`,
+
+                analysis: `Extraia entidades chaves: Produtos mencionados, Valores discutidos, Datas de agendamento.`
+            }
+        },
+        parameters: [
+            {
+                key: 'alert_threshold',
+                label: 'Alerta de Intenção Alta (%)',
+                type: 'number',
+                defaultValue: '80',
+                helperText: 'Notificar vendedor quando intenção passar deste valor',
+                displayOrder: 1
+            },
+            {
+                key: 'monitor_competitors',
+                label: 'Monitorar Concorrência',
+                type: 'textarea',
+                defaultValue: 'Concorrente A, Concorrente B',
+                helperText: 'Lista de concorrentes para alertar se mencionados',
+                displayOrder: 2
+            }
+        ],
+        groups: [
+            { id: 'config', label: 'Configuração', order: 1 }
+        ]
+    },
+
+    // ==========================================
+    // TEMPLATE 6: CRM AUTOMATION
+    // ==========================================
+    crm_agent: {
+        meta: {
+            templateId: 'crm_agent',
+            templateName: 'CRM Autopilot',
+            templateDescription: 'Gestão automática de pipeline, qualificação de leads e follow-up.',
+            version: '3.0.0',
+            category: 'automation'
+        },
+        baseConfig: {
+            identity: {
+                name: 'Gerente de Contas Virtual',
+                category: 'assistant',
+                class: 'StandardAgent',
+                specializationLevel: 3,
+                description: 'Agente administrativo para gestão de CRM e tarefas repetitivas de vendas.',
+                status: 'active'
+            },
+            aiConfig: {
+                provider: 'openai',
+                model: 'gpt-4-turbo-preview',
+                temperature: 0.5,
+                responseMode: 'balanced'
+            },
+            vectorConfig: {
+                enableRag: true,
+                chunkingMode: 'semantic',
+                filters: ['Histórico do Cliente', 'Emails Anteriores']
+            },
+            prompts: {
+                system: `Você é o CRM Autopilot.
+Sua função é garantir que nenhum lead seja esquecido.
+
+## Tarefas:
+1. Classificar novos leads (BANT).
+2. Agendar follow-ups.
+3. Atualizar status no CRM.`,
+
+                vectorSearch: `Busque: Histórico completo de interações com este lead em todos os canais.`
+            }
+        },
+        parameters: [
+            {
+                key: 'bant_criteria',
+                label: 'Critérios BANT',
+                type: 'textarea',
+                defaultValue: 'Budget: >R$5k\nAuthority: Diretor/Gerente\nNeed: Imediata\nTimeline: <30 dias',
+                displayOrder: 1
+            }
+        ],
+        groups: [
+            { id: 'config', label: 'Configuração', order: 1 }
+        ]
+    },
+
+    // ==========================================
+    // TEMPLATE 7: FAQ DINÂMICO
     // ==========================================
     dynamic_faq: {
         meta: {
             templateId: 'dynamic_faq',
             templateName: 'FAQ Dinâmico Inteligente',
-            templateDescription: 'Responde dúvidas categorizadas automaticamente com base em sua base de conhecimento, adaptando-se ao contexto.',
-            version: '1.0.0',
+            templateDescription: 'Transforma documentos estáticos em um especialista de Tira-Dúvidas.',
+            version: '3.0.0',
             category: 'support'
         },
         baseConfig: {
             identity: {
-                name: 'FAQ Bot Inteligente',
-                category: 'support',
-                class: 'generalist',
-                specializationLevel: 2,
+                name: 'Knowledge Bot',
+                category: 'service',
+                class: 'StandardAgent',
+                specializationLevel: 3,
                 status: 'active'
             },
             aiConfig: {
-                provider: 'gemini',
-                model: 'gemini-2.0-flash-exp',
                 temperature: 0.3,
-                topP: 0.85,
+                provider: 'openai',
+                model: 'gpt-4-turbo-preview',
                 responseMode: 'concise'
             },
             vectorConfig: {
                 enableRag: true,
                 chunkingMode: 'semantic',
-                chunkSize: 512,
-                sensitivity: 'high',
-                relevanceThreshold: 0.80
-            }
-        },
-        parameters: [
-            {
-                key: 'faq_categories',
-                label: 'Categorias de FAQ',
-                type: 'textarea',
-                category: 'content',
-                defaultValue: 'Financeiro, Técnico, Comercial, Logística',
-                helperText: 'Liste as categorias separadas por vírgula',
-                required: true,
-                displayOrder: 1
+                chunkSize: 400,
+                sensitivity: 8,
+                relevanceThreshold: 0.82
             },
-            {
-                key: 'fallback_behavior',
-                label: 'Comportamento de Fallback',
-                type: 'select',
-                category: 'behavior',
-                defaultValue: 'human_handoff',
-                options: [
-                    { value: 'human_handoff', label: 'Transferir para Humano' },
-                    { value: 'search_web', label: 'Buscar na Web (se permitido)' },
-                    { value: 'ask_rephrase', label: 'Pedir para reformular' }
-                ],
-                displayOrder: 2
-            },
-            {
-                key: 'fallback_message',
-                label: 'Mensagem de Não Encontrado',
-                type: 'textarea',
-                category: 'behavior',
-                defaultValue: 'Não encontrei essa informação específica. Deseja falar com um de nossos especialistas?',
-                displayOrder: 3
-            }
-        ],
-        groups: [
-            { id: 'content', label: 'Conteúdo & Categorias', order: 1 },
-            { id: 'behavior', label: 'Comportamento', order: 2 }
-        ]
-    },
+            prompts: {
+                system: `Você responde perguntas baseado EXCLUSIVAMENTE na base de conhecimento fornecida.
+Se a informação não estiver nos documentos, diga: "Desculpe, não encontrei essa informação na minha base oficial."`,
 
-    // ==========================================
-    // TEMPLATE 8: RECUPERAÇÃO DE CARRINHO
-    // ==========================================
-    cart_recovery: {
-        meta: {
-            templateId: 'cart_recovery',
-            templateName: 'Recuperação de Carrinho',
-            templateDescription: 'Especialista em converter carrinhos abandonados com ofertas persuasivas e gatilhos mentais de urgência.',
-            version: '1.0.0',
-            category: 'sales'
-        },
-        baseConfig: {
-            identity: {
-                name: 'Recuperador de Vendas',
-                category: 'sales',
-                class: 'specialist',
-                specializationLevel: 4,
-                status: 'active'
-            },
-            aiConfig: {
-                provider: 'openai',
-                model: 'gpt-4-turbo-preview',
-                temperature: 0.8,
-                topP: 0.95,
-                responseMode: 'persuasive'
-            },
-            whatsappConfig: {
-                enabled: true,
-                provider: 'evolution_api'
+                validation: `Verifique se a resposta contém alguma informação que não está nos chunks recuperados. Se sim, remova.`
             }
         },
-        parameters: [
-            {
-                key: 'discount_percentage',
-                label: 'Oferta de Desconto (%)',
-                type: 'number',
-                category: 'strategy',
-                defaultValue: '5',
-                validation: { min: 0, max: 100 },
-                displayOrder: 1
-            },
-            {
-                key: 'urgency_trigger',
-                label: 'Gatilho de Urgência',
-                type: 'textarea',
-                category: 'strategy',
-                defaultValue: 'Seu carrinho expira em 1 hora! Garanta seus itens agora.',
-                displayOrder: 2
-            },
-            {
-                key: 'message_sequence',
-                label: 'Sequência de Mensagens',
-                type: 'select',
-                category: 'automation',
-                defaultValue: 'aggressive',
-                options: [
-                    { value: 'soft', label: 'Suave (1 lembrete)' },
-                    { value: 'moderate', label: 'Moderada (2 lembretes)' },
-                    { value: 'aggressive', label: 'Agressiva (3 lembretes + oferta final)' }
-                ],
-                displayOrder: 3
-            }
-        ],
-        groups: [
-            { id: 'strategy', label: 'Estratégia de Recuperação', order: 1 },
-            { id: 'automation', label: 'Automação', order: 2 }
-        ]
-    },
-
-    // ==========================================
-    // TEMPLATE 9: VENDAS COM UPSELL/CROSS-SELL
-    // ==========================================
-    upsell_cross_sell: {
-        meta: {
-            templateId: 'upsell_cross_sell',
-            templateName: 'Vendas Inteligentes (Upsell/Cross-sell)',
-            templateDescription: 'Analisa o perfil e histórico do cliente para sugerir produtos complementares ou upgrades.',
-            version: '1.0.0',
-            category: 'sales'
-        },
-        baseConfig: {
-            identity: {
-                name: 'Consultor de Ofertas',
-                category: 'sales',
-                class: 'specialist',
-                specializationLevel: 4,
-                status: 'active'
-            },
-            aiConfig: {
-                provider: 'gemini',
-                model: 'gemini-2.0-flash-exp',
-                temperature: 0.6,
-                topP: 0.9,
-                responseMode: 'balanced'
-            },
-            vectorConfig: {
-                enableRag: true,
-                chunkingMode: 'semantic'
-            }
-        },
-        parameters: [
-            {
-                key: 'product_catalog_url',
-                label: 'URL do Catálogo de Produtos',
-                type: 'text',
-                category: 'products',
-                required: true,
-                displayOrder: 1
-            },
-            {
-                key: 'recommendation_logic',
-                label: 'Lógica de Recomendação',
-                type: 'select',
-                category: 'strategy',
-                defaultValue: 'hybrid',
-                options: [
-                    { value: 'complementary', label: 'Cross-sell (Produtos Complementares)' },
-                    { value: 'premium', label: 'Upsell (Upgrade de Versão)' },
-                    { value: 'hybrid', label: 'Híbrido (Ambos)' }
-                ],
-                displayOrder: 2
-            },
-            {
-                key: 'min_ticket_increase',
-                label: 'Aumento Mínimo de Ticket (%)',
-                type: 'number',
-                category: 'strategy',
-                defaultValue: '15',
-                displayOrder: 3
-            }
-        ],
-        groups: [
-            { id: 'products', label: 'Catálogo & Produtos', order: 1 },
-            { id: 'strategy', label: 'Estratégia de Oferta', order: 2 }
-        ]
-    },
-
-    // ==========================================
-    // TEMPLATE 10: MULTI-CANAL (OMNICHANNEL)
-    // ==========================================
-    omnichannel_support: {
-        meta: {
-            templateId: 'omnichannel_support',
-            templateName: 'Suporte Multi-canal',
-            templateDescription: 'Atendimento unificado para WhatsApp, Webchat e Telegram, mantendo o contexto entre canais.',
-            version: '1.0.0',
-            category: 'support'
-        },
-        baseConfig: {
-            identity: {
-                name: 'Atendente Omni',
-                category: 'support',
-                class: 'generalist',
-                specializationLevel: 3,
-                status: 'active'
-            },
-            aiConfig: {
-                provider: 'anthropic',
-                model: 'claude-3-5-sonnet-20240620',
-                temperature: 0.5,
-                maxTokens: 2048,
-                responseMode: 'empathetic'
-            },
-            whatsappConfig: {
-                enabled: true,
-                provider: 'evolution_api'
-            }
-        },
-        parameters: [
-            {
-                key: 'active_channels',
-                label: 'Canais Ativos',
-                type: 'textarea',
-                category: 'config',
-                defaultValue: 'WhatsApp, Webchat, Telegram',
-                helperText: 'Canais onde o bot atuará',
-                required: true,
-                displayOrder: 1
-            },
-            {
-                key: 'unify_history',
-                label: 'Unificar Histórico de Conversa',
-                type: 'boolean',
-                category: 'data',
-                defaultValue: 'true',
-                helperText: 'Permite que o bot lembre do que foi dito em outro canal',
-                displayOrder: 2
-            },
-            {
-                key: 'channel_tone_adaptation',
-                label: 'Adaptação de Tom por Canal',
-                type: 'boolean',
-                category: 'config',
-                defaultValue: 'true',
-                helperText: 'Ex: Mais formal no Email, mais informal no WhatsApp',
-                displayOrder: 3
-            }
-        ],
-        groups: [
-            { id: 'config', label: 'Configuração de Canais', order: 1 },
-            { id: 'data', label: 'Dados & Contexto', order: 2 }
-        ]
+        parameters: [],
+        groups: []
     }
 };
 

@@ -1,30 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import {
-    DollarSign, Plus,
-    ArrowUpCircle, ArrowDownCircle, Edit2,
-    BarChart3, Wallet, Tag, Loader2, Users, Calendar, Filter, Download
+    Wallet, Calendar, Download, Filter,
+    Plus, Edit2, X,
+    ArrowUpCircle, ArrowDownCircle, DollarSign, BarChart3, Tag, Users,
+    Loader2
 } from 'lucide-react';
-import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    PieChart, Pie, Cell
-} from 'recharts';
+import ReactECharts from 'echarts-for-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
+
+
 interface Transaction {
-    id: number;
+    id: string;
     description: string;
-    amount: number;
+    amount: number | string;
     type: 'income' | 'expense';
-    date: string;
-    status: 'pending' | 'paid' | 'overdue' | 'cancelled';
-    category_id?: number;
+    category_id: number;
     category_name: string;
     category_color: string;
-    supplier_name?: string;
     client_id?: number;
     client_name?: string;
-    notes?: string;
+    date: string;
+    status: 'paid' | 'pending' | 'overdue' | 'cancelled';
+    payment_method?: string;
 }
 
 interface Category {
@@ -51,42 +50,29 @@ interface DashboardData {
     clientExpenses: { name: string; value: number }[];
 }
 
-interface NewTransactionState {
-    description: string;
-    amount: number;
-    type: 'income' | 'expense';
-    category_id: string;
-    client_id: string;
-    date: string;
-    status: 'pending' | 'paid';
-}
-
-export const FinancialModule: React.FC = () => {
+const FinancialModule: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'dashboard' | 'transactions' | 'settings'>('dashboard');
+    const [loading, setLoading] = useState(true);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [clients, setClients] = useState<Client[]>([]);
 
     // Filtros
-    const [selectedClient, setSelectedClient] = useState<string>('');
-    const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [dateRange, setDateRange] = useState({
         start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
         end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0]
     });
+    const [selectedClient, setSelectedClient] = useState<string>('');
+    const [selectedCategory, setSelectedCategory] = useState<string>('');
 
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [clients, setClients] = useState<Client[]>([]);
-
-    // Estado de Edição
-    const [editingId, setEditingId] = useState<number | null>(null);
-    const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
-
-    const [newTransaction, setNewTransaction] = useState<NewTransactionState>({
+    // Modal e Edição
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [newTransaction, setNewTransaction] = useState({
         description: '',
         amount: 0,
-        type: 'expense',
+        type: 'expense' as 'income' | 'expense',
         category_id: '',
         client_id: '',
         date: new Date().toISOString().split('T')[0],
@@ -94,6 +80,7 @@ export const FinancialModule: React.FC = () => {
     });
 
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+    const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
     const [newCategory, setNewCategory] = useState({
         name: '',
         type: 'expense' as 'income' | 'expense',
@@ -101,21 +88,17 @@ export const FinancialModule: React.FC = () => {
     });
 
     useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            await Promise.all([
-                fetchCategories(),
-                fetchClients()
-            ]);
-            // Fetch data based on filters
-            await Promise.all([
-                fetchDashboard(),
-                activeTab === 'transactions' ? fetchTransactions() : Promise.resolve()
-            ]);
+        fetchDashboard();
+        fetchTransactions();
+        fetchCategories();
+        fetchClients();
+    }, [dateRange, selectedClient, selectedCategory]);
+
+    useEffect(() => {
+        if (dashboardData || transactions.length > 0) {
             setLoading(false);
-        };
-        loadData();
-    }, [activeTab, selectedClient, selectedCategory, dateRange]);
+        }
+    }, [dashboardData, transactions]);
 
     const fetchDashboard = async () => {
         const token = localStorage.getItem('token');
@@ -276,33 +259,49 @@ export const FinancialModule: React.FC = () => {
 
     const exportDashboardToPDF = async () => {
         const element = document.getElementById('financial-dashboard-content');
+        const btn = document.getElementById('btn-export-pdf');
         if (!element) return;
 
+        // Feedback visual
+        const originalText = btn ? btn.innerText : 'PDF';
+        if (btn) {
+            btn.innerText = 'Gerando...';
+            (btn as HTMLButtonElement).disabled = true;
+        }
+
         try {
+            // Aguardar renderização final dos gráficos
+            await new Promise(resolve => setTimeout(resolve, 800));
+
             const canvas = await html2canvas(element, {
-                scale: 2,
+                scale: 2, // Alta resolução
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#f8fafc' // bg-slate-50
+                backgroundColor: '#ffffff', // Fundo branco
+                windowWidth: 1200 // Forçar largura desktop para evitar layout móvel
             });
 
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
             const pdfHeight = pdf.internal.pageSize.getHeight();
+
             const imgWidth = pdfWidth;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
             let heightLeft = imgHeight;
-            let position = 0;
+            let page = 0;
 
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            // Adicionar primeira página
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
             heightLeft -= pdfHeight;
 
-            while (heightLeft >= 0) {
-                position = heightLeft - imgHeight;
+            // Adicionar páginas subsequentes se necessário
+            while (heightLeft > 0) {
                 pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                page++;
+                // Posicionar a imagem deslocada para cima (negativo) para mostrar a próxima seção
+                pdf.addImage(imgData, 'PNG', 0, -(pdfHeight * page), imgWidth, imgHeight);
                 heightLeft -= pdfHeight;
             }
 
@@ -310,13 +309,217 @@ export const FinancialModule: React.FC = () => {
         } catch (error) {
             console.error("Erro ao gerar PDF:", error);
             alert("Erro ao gerar PDF. Tente novamente.");
+        } finally {
+            if (btn) {
+                btn.innerText = originalText;
+                (btn as HTMLButtonElement).disabled = false;
+            }
         }
     };
+
+    // --- ECharts Options Generators ---
+
+    const getClientExpensesOption = () => {
+        if (!dashboardData?.clientExpenses) return {};
+
+        const data = dashboardData.clientExpenses.length > 0 ? dashboardData.clientExpenses : [{ name: 'Sem dados', value: 0 }];
+
+        return {
+            animation: false,
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                formatter: (params: any) => {
+                    const val = params[0].value;
+                    return `${params[0].name}<br/><b>${formatCurrency(val)}</b>`;
+                }
+            },
+            grid: { left: '3%', right: '10%', bottom: '3%', top: '3%', containLabel: true },
+            xAxis: {
+                type: 'value',
+                axisLabel: { formatter: (val: number) => `R$${val / 1000}k` },
+                splitLine: { lineStyle: { type: 'dashed', color: '#e2e8f0' } }
+            },
+            yAxis: {
+                type: 'category',
+                data: data.map(d => d.name),
+                axisLabel: { width: 120, overflow: 'truncate' },
+                axisLine: { show: false },
+                axisTick: { show: false }
+            },
+            series: [{
+                name: 'Despesas',
+                type: 'bar',
+                data: data.map((d, i) => ({
+                    value: Number(d.value),
+                    itemStyle: {
+                        color: ['#f97316', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#f59e0b', '#06b6d4', '#ec4899', '#6366f1', '#14b8a6'][i % 10],
+                        borderRadius: [0, 4, 4, 0]
+                    }
+                })),
+                label: {
+                    show: true,
+                    position: 'insideRight',
+                    formatter: (params: any) => formatCurrency(params.value),
+                    color: '#fff',
+                    fontWeight: 'bold',
+                    fontSize: 11
+                },
+                barWidth: 25
+            }]
+        };
+    };
+
+    const getCategoryExpensesOption = () => {
+        if (!dashboardData?.categoryExpenses) return {};
+
+        const data = dashboardData.categoryExpenses.length > 0
+            ? dashboardData.categoryExpenses.map(d => ({ value: Number(d.value), name: d.name, itemStyle: { color: d.color } }))
+            : [{ value: 0, name: 'Sem dados', itemStyle: { color: '#e2e8f0' } }];
+
+        return {
+            animation: false,
+            tooltip: {
+                trigger: 'item',
+                formatter: (params: any) => `${params.name}<br/><b>${formatCurrency(params.value)}</b> (${params.percent}%)`
+            },
+            legend: {
+                orient: 'horizontal',
+                bottom: '0',
+                left: 'center',
+                itemWidth: 10,
+                itemHeight: 10,
+                textStyle: { fontSize: 11 }
+            },
+            series: [
+                {
+                    name: 'Despesas por Categoria',
+                    type: 'pie',
+                    radius: ['45%', '70%'],
+                    center: ['50%', '45%'],
+                    avoidLabelOverlap: true,
+                    itemStyle: {
+                        borderRadius: 5,
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    },
+                    label: {
+                        show: true,
+                        formatter: (params: any) => {
+                            return `${params.name}\n${formatCurrency(params.value)}`;
+                        },
+                        fontSize: 11,
+                        lineHeight: 14
+                    },
+                    emphasis: {
+                        label: {
+                            show: true,
+                            fontSize: 14,
+                            fontWeight: 'bold',
+                            formatter: (params: any) => {
+                                return `${params.name}\n${formatCurrency(params.value)}`;
+                            }
+                        },
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    },
+                    data: data
+                }
+            ]
+        };
+    };
+
+    const getCashFlowOption = () => {
+        if (!dashboardData?.cashFlow) return {};
+
+        const data = dashboardData.cashFlow.length > 0 ? dashboardData.cashFlow : [{ day: new Date().toISOString(), income: 0, expense: 0 }];
+        const days = data.map(d => new Date(d.day).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }));
+        const income = data.map(d => Number(d.income));
+        const expense = data.map(d => Number(d.expense));
+
+        return {
+            animation: false,
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'cross', label: { backgroundColor: '#6a7985' } },
+                formatter: (params: any) => {
+                    let res = `${params[0].axisValue}<br/>`;
+                    params.forEach((param: any) => {
+                        res += `${param.marker} ${param.seriesName}: <b>${formatCurrency(param.value)}</b><br/>`;
+                    });
+                    return res;
+                }
+            },
+            legend: {
+                data: ['Receitas', 'Despesas'],
+                bottom: 0
+            },
+            grid: { left: '3%', right: '4%', bottom: '10%', top: '10%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: days,
+                axisLine: { lineStyle: { color: '#94a3b8' } },
+                axisTick: { show: false }
+            },
+            yAxis: {
+                type: 'value',
+                axisLabel: { formatter: (val: number) => `R$${val / 1000}k` },
+                splitLine: { lineStyle: { type: 'dashed', color: '#e2e8f0' } }
+            },
+            series: [
+                {
+                    name: 'Receitas',
+                    type: 'line',
+                    smooth: true,
+                    showSymbol: false,
+                    itemStyle: { color: '#22c55e' },
+                    lineStyle: { width: 3, color: '#22c55e' },
+                    areaStyle: {
+                        opacity: 0.8,
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(34, 197, 94, 0.5)' },
+                                { offset: 1, color: 'rgba(34, 197, 94, 0)' }
+                            ]
+                        }
+                    },
+                    data: income
+                },
+                {
+                    name: 'Despesas',
+                    type: 'line',
+                    smooth: true,
+                    showSymbol: false,
+                    itemStyle: { color: '#ef4444' },
+                    lineStyle: { width: 3, color: '#ef4444' },
+                    areaStyle: {
+                        opacity: 0.8,
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(239, 68, 68, 0.5)' },
+                                { offset: 1, color: 'rgba(239, 68, 68, 0)' }
+                            ]
+                        }
+                    },
+                    data: expense
+                }
+            ]
+        };
+    };
+
 
     if (loading && !dashboardData && transactions.length === 0) {
         return (
             <div className="flex items-center justify-center h-screen bg-slate-50">
-                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
             </div>
         );
     }
@@ -327,7 +530,7 @@ export const FinancialModule: React.FC = () => {
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                        <Wallet className="text-blue-600" /> Gestão Financeira
+                        <Wallet className="text-primary-600" /> Gestão Financeira <span className="text-xs bg-slate-100 text-slate-500 px-2 py-1 rounded-full">v3.1 (ECharts)</span>
                     </h1>
                     <p className="text-slate-500">Controle completo de receitas, despesas e fluxo de caixa.</p>
                 </div>
@@ -341,14 +544,16 @@ export const FinancialModule: React.FC = () => {
                                 type="date"
                                 value={dateRange.start}
                                 onChange={e => setDateRange({ ...dateRange, start: e.target.value })}
-                                className="text-xs text-slate-600 focus:outline-none"
+                                onClick={(e) => e.currentTarget.showPicker()}
+                                className="text-xs text-slate-600 focus:outline-none cursor-pointer min-w-[110px]"
                             />
                             <span className="text-slate-400">-</span>
                             <input
                                 type="date"
                                 value={dateRange.end}
                                 onChange={e => setDateRange({ ...dateRange, end: e.target.value })}
-                                className="text-xs text-slate-600 focus:outline-none"
+                                onClick={(e) => e.currentTarget.showPicker()}
+                                className="text-xs text-slate-600 focus:outline-none cursor-pointer min-w-[110px]"
                             />
                         </div>
 
@@ -385,19 +590,20 @@ export const FinancialModule: React.FC = () => {
                     <div className="flex gap-1 bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
                         <button
                             onClick={() => setActiveTab('dashboard')}
-                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'dashboard' ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
                             <BarChart3 size={14} className="inline mr-1" /> Visão Geral
                         </button>
                         <button
                             onClick={() => setActiveTab('transactions')}
-                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'transactions' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'transactions' ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
                             <DollarSign size={14} className="inline mr-1" /> Transações
                         </button>
+
                         <button
                             onClick={() => setActiveTab('settings')}
-                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'settings' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                            className={`px-3 py-1.5 rounded-md font-medium text-xs transition-colors ${activeTab === 'settings' ? 'bg-primary-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
                         >
                             <Tag size={14} className="inline mr-1" /> Categorias
                         </button>
@@ -446,90 +652,35 @@ export const FinancialModule: React.FC = () => {
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <p className="text-sm font-medium text-slate-500">Saldo (Caixa)</p>
-                                    <h3 className={`text-2xl font-bold ${dashboardData.summary.total_income - dashboardData.summary.total_expense >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                    <h3 className={`text-2xl font-bold ${dashboardData.summary.total_income - dashboardData.summary.total_expense >= 0 ? 'text-primary-600' : 'text-red-600'}`}>
                                         {formatCurrency(dashboardData.summary.total_income - dashboardData.summary.total_expense)}
                                     </h3>
                                 </div>
-                                <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Wallet size={24} /></div>
+                                <div className="p-2 bg-primary-50 rounded-lg text-primary-600"><Wallet size={24} /></div>
                             </div>
                             <p className="text-xs text-slate-400">Lucratividade: {dashboardData.summary.total_income > 0 ? ((dashboardData.summary.total_income - dashboardData.summary.total_expense) / dashboardData.summary.total_income * 100).toFixed(1) : 0}%</p>
                         </div>
                     </div>
 
-                    {/* Charts Row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Fluxo de Caixa */}
-                        <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                            <h3 className="text-lg font-bold text-slate-800 mb-6">Fluxo de Caixa (Diário)</h3>
-                            <div style={{ width: '100%', height: 320, minWidth: 0 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={dashboardData.cashFlow && dashboardData.cashFlow.length > 0 ? dashboardData.cashFlow : [{ day: new Date().toISOString(), income: 0, expense: 0 }]}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                        <XAxis dataKey="day" tick={{ fontSize: 12 }} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })} />
-                                        <YAxis tick={{ fontSize: 12 }} tickFormatter={(val) => `R$${val / 1000}k`} />
-                                        <Tooltip
-                                            formatter={(value: number) => formatCurrency(value)}
-                                            contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                                        />
-                                        <Legend />
-                                        <Bar dataKey="income" name="Receitas" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                                        <Bar dataKey="expense" name="Despesas" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-
-                        {/* Despesas por Categoria */}
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                            <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Categoria</h3>
-                            <div style={{ width: '100%', height: 320, minWidth: 0 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={dashboardData.categoryExpenses && dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                            nameKey="name"
-                                        >
-                                            {(dashboardData.categoryExpenses && dashboardData.categoryExpenses.length > 0 ? dashboardData.categoryExpenses : [{ name: 'Sem dados', value: 1, color: '#e2e8f0' }]).map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color || '#cbd5e1'} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip formatter={(value: number) => typeof value === 'number' ? formatCurrency(value) : value} />
-                                        <Legend verticalAlign="bottom" height={36} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Despesas por Cliente (Novo) */}
+                    {/* Charts Column - Stacked Vertical Layout */}
                     <div className="grid grid-cols-1 gap-6">
+
+                        {/* 1. Despesas por Cliente */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                             <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Cliente</h3>
-                            <div style={{ width: '100%', height: 320, minWidth: 0 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart
-                                        data={dashboardData.clientExpenses && dashboardData.clientExpenses.length > 0 ? dashboardData.clientExpenses : [{ name: 'Sem dados', value: 0 }]}
-                                        layout="vertical"
-                                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                                    >
-                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                                        <XAxis type="number" tickFormatter={(val) => `R$${val / 1000}k`} />
-                                        <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 12 }} />
-                                        <Tooltip
-                                            formatter={(value: number) => formatCurrency(value)}
-                                            cursor={{ fill: 'transparent' }}
-                                            contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                                        />
-                                        <Bar dataKey="value" name="Despesas" fill="#f97316" radius={[0, 4, 4, 0]} barSize={30} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
+                            <ReactECharts option={getClientExpensesOption()} style={{ height: 400, width: '100%' }} />
+                        </div>
+
+                        {/* 2. Despesas por Categoria */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6">Despesas por Categoria</h3>
+                            <ReactECharts option={getCategoryExpensesOption()} style={{ height: 450, width: '100%' }} />
+                        </div>
+
+                        {/* 3. Fluxo de Caixa (Diário) */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800 mb-6">Fluxo de Caixa (Diário)</h3>
+                            <ReactECharts option={getCashFlowOption()} style={{ height: 400, width: '100%' }} />
                         </div>
                     </div>
                 </div>
@@ -555,7 +706,7 @@ export const FinancialModule: React.FC = () => {
                                     });
                                     setIsModalOpen(true);
                                 }}
-                                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
                             >
                                 <Plus size={18} /> Nova Transação
                             </button>
@@ -605,7 +756,7 @@ export const FinancialModule: React.FC = () => {
                                         <td className="p-4 text-right">
                                             <button
                                                 onClick={() => handleEditTransaction(t)}
-                                                className="text-slate-400 hover:text-blue-600 p-1"
+                                                className="text-slate-400 hover:text-primary-600 p-1"
                                             >
                                                 <Edit2 size={16} />
                                             </button>
@@ -625,6 +776,10 @@ export const FinancialModule: React.FC = () => {
                 </div>
             )}
 
+
+
+
+
             {/* Settings Tab - Gerenciar Categorias */}
             {activeTab === 'settings' && (
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -639,7 +794,7 @@ export const FinancialModule: React.FC = () => {
                                 setNewCategory({ name: '', type: 'expense', color: '#ef4444' });
                                 setIsCategoryModalOpen(true);
                             }}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-2"
                         >
                             <Plus size={18} /> Nova Categoria
                         </button>
@@ -660,7 +815,7 @@ export const FinancialModule: React.FC = () => {
                                         </div>
                                         <button
                                             onClick={() => handleEditCategory(c)}
-                                            className="text-slate-400 hover:text-blue-600"
+                                            className="text-slate-400 hover:text-primary-600"
                                         >
                                             <Edit2 size={16} />
                                         </button>
@@ -686,7 +841,7 @@ export const FinancialModule: React.FC = () => {
                                         </div>
                                         <button
                                             onClick={() => handleEditCategory(c)}
-                                            className="text-slate-400 hover:text-blue-600"
+                                            className="text-slate-400 hover:text-primary-600"
                                         >
                                             <Edit2 size={16} />
                                         </button>
@@ -701,181 +856,188 @@ export const FinancialModule: React.FC = () => {
                 </div>
             )}
 
-            {/* Modal de Nova Transação */}
+            {/* Modal de Transação */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95 duration-200">
-                        <h3 className="text-xl font-bold text-slate-900 mb-4">
-                            {editingId ? 'Editar Transação' : 'Nova Transação'}
-                        </h3>
-
-                        <div className="space-y-4">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="font-bold text-slate-800">
+                                {editingId ? 'Editar Transação' : 'Nova Transação'}
+                            </h3>
+                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Descrição</label>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">Tipo</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewTransaction({ ...newTransaction, type: 'income' })}
+                                        className={`p-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors ${newTransaction.type === 'income' ? 'bg-green-50 border-green-200 text-green-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                    >
+                                        <ArrowUpCircle size={16} /> Receita
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewTransaction({ ...newTransaction, type: 'expense' })}
+                                        className={`p-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors ${newTransaction.type === 'expense' ? 'bg-red-50 border-red-200 text-red-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                    >
+                                        <ArrowDownCircle size={16} /> Despesa
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">Descrição</label>
                                 <input
+                                    type="text"
                                     value={newTransaction.description}
                                     onChange={e => setNewTransaction({ ...newTransaction, description: e.target.value })}
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
-                                    placeholder="Ex: Pagamento Google Ads"
+                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                    placeholder="Ex: Consultoria de Marketing"
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Valor (R$)</label>
+                                    <label className="block text-xs font-medium text-slate-700 mb-1">Valor (R$)</label>
                                     <input
                                         type="number"
+                                        step="0.01"
                                         value={newTransaction.amount}
-                                        onChange={e => setNewTransaction({ ...newTransaction, amount: Number(e.target.value) })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
+                                        onChange={e => setNewTransaction({ ...newTransaction, amount: parseFloat(e.target.value) })}
+                                        className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Data</label>
+                                    <label className="block text-xs font-medium text-slate-700 mb-1">Data</label>
                                     <input
                                         type="date"
                                         value={newTransaction.date}
                                         onChange={e => setNewTransaction({ ...newTransaction, date: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
+                                        className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                     />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
-                                    <select
-                                        value={newTransaction.type}
-                                        onChange={e => setNewTransaction({ ...newTransaction, type: e.target.value as 'income' | 'expense' })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
-                                    >
-                                        <option value="income">Receita</option>
-                                        <option value="expense">Despesa</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-                                    <select
-                                        value={newTransaction.status}
-                                        onChange={e => setNewTransaction({ ...newTransaction, status: e.target.value as 'paid' | 'pending' })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
-                                    >
-                                        <option value="paid">Pago</option>
-                                        <option value="pending">Pendente</option>
-                                    </select>
-                                </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">Categoria</label>
+                                <select
+                                    value={newTransaction.category_id}
+                                    onChange={e => setNewTransaction({ ...newTransaction, category_id: e.target.value })}
+                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                >
+                                    <option value="">Selecione...</option>
+                                    {categories.filter(c => c.type === newTransaction.type).map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Categoria</label>
-                                    <select
-                                        value={newTransaction.category_id}
-                                        onChange={e => setNewTransaction({ ...newTransaction, category_id: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
-                                    >
-                                        <option value="">Selecione...</option>
-                                        {categories
-                                            .filter(c => c.type === newTransaction.type)
-                                            .map(c => (
-                                                <option key={c.id} value={c.id}>{c.name}</option>
-                                            ))
-                                        }
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">Cliente (Opcional)</label>
-                                    <select
-                                        value={newTransaction.client_id}
-                                        onChange={e => setNewTransaction({ ...newTransaction, client_id: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
-                                    >
-                                        <option value="">Selecione...</option>
-                                        {clients.map(c => (
-                                            <option key={c.id} value={c.id}>{c.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">Cliente (Opcional)</label>
+                                <select
+                                    value={newTransaction.client_id}
+                                    onChange={e => setNewTransaction({ ...newTransaction, client_id: e.target.value })}
+                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                >
+                                    <option value="">Selecione...</option>
+                                    {clients.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
                             </div>
 
-                            <div className="flex justify-end gap-2 mt-6">
-                                <button
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                            <div>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">Status</label>
+                                <select
+                                    value={newTransaction.status}
+                                    onChange={e => setNewTransaction({ ...newTransaction, status: e.target.value as any })}
+                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
                                 >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={handleSaveTransaction}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                                >
-                                    {editingId ? 'Atualizar' : 'Salvar Transação'}
-                                </button>
+                                    <option value="paid">Pago</option>
+                                    <option value="pending">Pendente</option>
+                                </select>
                             </div>
+
+                            <button
+                                onClick={handleSaveTransaction}
+                                className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 transition-colors mt-2"
+                            >
+                                Salvar Transação
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Modal de Nova Categoria */}
+            {/* Modal de Categoria */}
             {isCategoryModalOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 animate-in zoom-in-95 duration-200">
-                        <h3 className="text-xl font-bold text-slate-900 mb-4">
-                            {editingCategoryId ? 'Editar Categoria' : 'Nova Categoria'}
-                        </h3>
-
-                        <div className="space-y-4">
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="font-bold text-slate-800">
+                                {editingCategoryId ? 'Editar Categoria' : 'Nova Categoria'}
+                            </h3>
+                            <button onClick={() => setIsCategoryModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Nome da Categoria</label>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">Tipo</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewCategory({ ...newCategory, type: 'income' })}
+                                        className={`p-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors ${newCategory.type === 'income' ? 'bg-green-50 border-green-200 text-green-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                    >
+                                        <ArrowUpCircle size={16} /> Receita
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setNewCategory({ ...newCategory, type: 'expense' })}
+                                        className={`p-2 rounded-lg border text-sm font-medium flex items-center justify-center gap-2 transition-colors ${newCategory.type === 'expense' ? 'bg-red-50 border-red-200 text-red-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                                    >
+                                        <ArrowDownCircle size={16} /> Despesa
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">Nome da Categoria</label>
                                 <input
+                                    type="text"
                                     value={newCategory.name}
                                     onChange={e => setNewCategory({ ...newCategory, name: e.target.value })}
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
-                                    placeholder="Ex: Consultoria, Marketing..."
+                                    className="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                                    placeholder="Ex: Marketing, Vendas, etc."
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Tipo</label>
-                                <select
-                                    value={newCategory.type}
-                                    onChange={e => setNewCategory({ ...newCategory, type: e.target.value as 'income' | 'expense' })}
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
-                                >
-                                    <option value="income">Receita</option>
-                                    <option value="expense">Despesa</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Cor</label>
+                                <label className="block text-xs font-medium text-slate-700 mb-1">Cor</label>
                                 <div className="flex gap-2 flex-wrap">
-                                    {['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#ec4899', '#64748b'].map(color => (
+                                    {['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e', '#64748b'].map(color => (
                                         <button
                                             key={color}
+                                            type="button"
                                             onClick={() => setNewCategory({ ...newCategory, color })}
-                                            className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${newCategory.color === color ? 'border-slate-900 scale-110' : 'border-transparent'}`}
+                                            className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${newCategory.color === color ? 'border-slate-900 scale-110' : 'border-transparent'}`}
                                             style={{ backgroundColor: color }}
                                         />
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-2 mt-6">
-                                <button
-                                    onClick={() => setIsCategoryModalOpen(false)}
-                                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={handleSaveCategory}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                                >
-                                    {editingCategoryId ? 'Atualizar' : 'Salvar'}
-                                </button>
-                            </div>
+                            <button
+                                onClick={handleSaveCategory}
+                                className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 transition-colors mt-2"
+                            >
+                                Salvar Categoria
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -883,3 +1045,5 @@ export const FinancialModule: React.FC = () => {
         </div>
     );
 };
+
+export default FinancialModule;

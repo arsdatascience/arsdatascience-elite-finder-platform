@@ -4,8 +4,10 @@ import { useMutation } from '@tanstack/react-query';
 import {
     Brain, Save, Database, MessageSquare,
     Shield, Fingerprint, Wand2, Smartphone, Check,
-    LayoutTemplate, X, Loader2, RefreshCw, Zap
+    LayoutTemplate, X, Loader2, RefreshCw, Zap,
+    Globe, Copy, ExternalLink
 } from 'lucide-react';
+import { ClientSelector } from './common/ClientSelector';
 // Tipos baseados na especificação do usuário
 interface AgentConfig {
     identity: {
@@ -66,6 +68,7 @@ interface AgentConfig {
         };
     };
     advancedConfig?: {
+        kpis?: { name: string; target: string }[];
         multiModelValidation: {
             enabled: boolean;
             minConsensus: number;
@@ -99,6 +102,7 @@ interface AgentConfig {
         analysis: string;
         complexCases: string;
         validation: string;
+        scriptContent?: string;
     };
     whatsappConfig: {
         enabled: boolean;
@@ -168,6 +172,7 @@ const INITIAL_CONFIG: AgentConfig = {
         }
     },
     advancedConfig: {
+        kpis: [],
         multiModelValidation: {
             enabled: true,
             minConsensus: 0.75,
@@ -195,6 +200,7 @@ const INITIAL_CONFIG: AgentConfig = {
         }
     },
     prompts: {
+        scriptContent: '',
         system: '',
         responseStructure: '',
         vectorSearch: '',
@@ -220,7 +226,8 @@ const INITIAL_CONFIG: AgentConfig = {
 export const AgentBuilder: React.FC = () => {
     const [searchParams] = useSearchParams();
     const templateId = searchParams.get('template');
-    const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'vector' | 'prompts' | 'channels' | 'advanced'>('identity');
+    const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'vector' | 'prompts' | 'channels' | 'advanced' | 'deploy'>('identity');
+    const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
     const [config, setConfig] = useState<AgentConfig>(INITIAL_CONFIG);
 
     const TABS = [
@@ -230,6 +237,7 @@ export const AgentBuilder: React.FC = () => {
         { id: 'prompts', label: 'Engenharia de Prompt', icon: MessageSquare },
         { id: 'channels', label: 'Canais & Integrações', icon: Smartphone },
         { id: 'advanced', label: 'Otimização Avançada', icon: Zap },
+        { id: 'deploy', label: 'Deploy & Widget', icon: LayoutTemplate },
     ];
 
     // Estado para Qdrant
@@ -254,7 +262,7 @@ export const AgentBuilder: React.FC = () => {
             const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agents`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(agentConfig)
+                body: JSON.stringify({ ...agentConfig, clientId: selectedClientId })
             });
             if (!response.ok) {
                 const errorData = await response.json();
@@ -351,7 +359,7 @@ export const AgentBuilder: React.FC = () => {
         if (templateId) {
             const loadTemplate = async () => {
                 try {
-                    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates/${templateId}`);
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agent-templates/${templateId}`);
                     const data = await response.json();
                     if (data.base_config) {
                         // Merge robusto para garantir que novos campos (como advancedConfig ou prompts) não quebrem com templates antigos
@@ -380,7 +388,7 @@ export const AgentBuilder: React.FC = () => {
             return;
         }
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agent-templates`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -439,7 +447,7 @@ export const AgentBuilder: React.FC = () => {
     const fetchTemplates = async () => {
         setLoadingTemplates(true);
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates`);
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agent-templates`);
             const data = await response.json();
 
             // Garantir que data é um array válido
@@ -470,7 +478,7 @@ export const AgentBuilder: React.FC = () => {
     const handleSetupTemplates = async () => {
         try {
             setLoadingTemplates(true);
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates/setup-db`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agent-templates/setup-db`, {
                 method: 'POST'
             });
             const data = await response.json();
@@ -491,7 +499,7 @@ export const AgentBuilder: React.FC = () => {
 
     const handleSelectTemplate = async (templateId: string) => {
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/templates/${templateId}`);
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agent-templates/${templateId}`);
             const data = await response.json();
             if (data.base_config) {
                 setConfig({
@@ -536,20 +544,40 @@ export const AgentBuilder: React.FC = () => {
         let newPrompts = { ...config.prompts };
         switch (preset) {
             case 'sales':
-                newPrompts.system = "Você é um especialista em vendas persuasivas. Use gatilhos mentais como escassez e urgência de forma ética. Seu objetivo é entender a dor do cliente e oferecer a solução ideal. Mantenha o foco em benefícios, não apenas características.";
-                newPrompts.responseStructure = "1. Empatia com a dor do cliente\n2. Apresentação da solução como alívio\n3. Prova social ou autoridade\n4. Call to Action (CTA) claro";
+                newPrompts.system = "Você é um especialista em vendas persuasivas e consultivas. Sua missão é entender profundamente as necessidades do cliente e apresentar a solução ideal focando em benefícios tangíveis, não apenas características. Use gatilhos mentais (escassez, urgência, prova social) de forma ética. Mantenha um tom profissional, confiante e empático.";
+                newPrompts.responseStructure = "1. **Acolhimento & Validação**: Confirme que entendeu a dor/necessidade.\\n2. **Apresentação da Solução**: Conecte o produto/serviço à resolução do problema.\\n3. **Prova de Valor**: Cite casos de sucesso ou dados que reforcem a confiança.\\n4. **Call to Action (CTA)**: Direcione para o próximo passo (agendar, comprar, testar).";
+                newPrompts.vectorSearch = "Busque por: especificações técnicas do produto, comparativos com concorrentes, argumentos para superação de objeções (preço, tempo, confiança), e casos de uso semelhantes.";
+                newPrompts.analysis = "Analise a mensagem do cliente para identificar: Nível de interesse (Quente/Morno/Frio), Objeções ocultas, Orçamento estimado e Momento de compra (BANT Sales Framework).";
+                newPrompts.complexCases = "Se o cliente pedir desconto agressivo: Explique o valor agregado antes de falar de preço. Se o cliente estiver indeciso: Ofereça uma garantia ou teste sem risco. Se o produto não atender: Seja honesto e recomende a melhor alternativa (consultoria ética).";
+                newPrompts.validation = "Verifique: Os preços citados estão na tabela atual? As promessas de prazo são viáveis? A solução técnica é compatível com o cenário do cliente?";
+                newPrompts.scriptContent = "1. **Introdução**: Apresentação e Quebra-gelo.\\n2. **Qualificação**: Perguntas para entender o cenário (SPIN Selling).\\n3. **Proposta de Valor**: Apresentação da solução personalizada.\\n4. **Negociação**: Tratamento de objeções.\\n5. **Fechamento**: Acordo e próximos passos.";
                 break;
             case 'support':
-                newPrompts.system = "Você é um agente de suporte técnico paciente e claro. Forneça instruções passo-a-passo numeradas. Valide se o usuário entendeu cada etapa antes de prosseguir. Mantenha um tom empático e profissional.";
-                newPrompts.responseStructure = "1. Confirmação do entendimento do problema\n2. Passo-a-passo da solução\n3. Verificação de sucesso\n4. Encerramento cordial";
+                newPrompts.system = "Você é um agente de suporte técnico altamente capacitado, paciente e didático. Seu objetivo é resolver o problema do cliente na primeira interação (FCR). Use linguagem clara, evite tecnês desnecessário e demonstre empatia com a frustração do usuário.";
+                newPrompts.responseStructure = "1. **Empatia & Confirmação**: 'Sinto muito que esteja passando por isso, entendi que seu problema é X'.\\n2. **Diagnóstico Rápido**: Explique a provável causa.\\n3. **Passo-a-Passo**: Instruções numeradas, claras e diretas.\\n4. **Validação**: 'Isso funcionou para você?'.\\n5. **Encerramento**: Coloque-se à disposição.";
+                newPrompts.vectorSearch = "Busque por: manuais de instalação, códigos de erro conhecidos, guias de troubleshooting, FAQs relacionadas e tickets resolvidos anteriormente.";
+                newPrompts.analysis = "Identifique: Gravidade do problema (Bloqueante vs Cosmético), Nível técnico do usuário, Sentimento (Frustração, Raiva, Confusão).";
+                newPrompts.complexCases = "Se o usuário estiver irritado: peça desculpas sinceras e priorize a solução. Se não houver solução documentada: escale para o suporte humano nível 2 imediatamente. Se for um bug crítico: registre para a equipe de engenharia.";
+                newPrompts.validation = "Verifique: As instruções correspondem à versão do software do usuário? O procedimento é seguro (não causa perda de dados)?";
+                newPrompts.scriptContent = "1. **Triagem**: Identificação do cliente e do problema.\\n2. **Diagnóstico**: Perguntas de sondagem técnica.\\n3. **Resolução**: Execução do procedimento de correção.\\n4. **Testes**: Confirmação da correção.\\n5. **Documentação**: Registro do atendimento.";
                 break;
             case 'legal':
-                newPrompts.system = "Você é um assistente jurídico preciso. Baseie suas respostas estritamente na legislação vigente e nos documentos fornecidos. Use linguagem formal e cite fontes quando possível. Evite opiniões pessoais e deixe claro que é uma IA.";
-                newPrompts.responseStructure = "1. Resumo da questão legal\n2. Base legal aplicável (Lei/Artigo)\n3. Aplicação ao caso concreto\n4. Disclaimer de responsabilidade";
+                newPrompts.system = "Você é um assistente jurídico sênior, preciso e formal. Baseie todas as suas respostas estritamente na legislação vigente, jurisprudência e documentos fornecidos. Nunca invente leis. Use linguagem culta, mas explique termos complexos quando necessário. Sempre inclua um disclaimer de que você é uma IA e não substitui um advogado humano.";
+                newPrompts.responseStructure = "1. **Resumo dos Fatos**: Breve síntese do entendimento do caso.\\n2. **Fundamentação Legal**: Artigos de lei e doutrina aplicáveis.\\n3. **Aplicação ao Caso**: Como a lei se aplica aos fatos narrados.\\n4. **Conclusão/Recomendação**: Orientação prática.\\n5. **Disclaimer Obrigatório**: 'Esta informação não constitui aconselhamento jurídico formal'.";
+                newPrompts.vectorSearch = "Busque por: Legislação federal/estadual (Códigos, Leis), Jurisprudência atualizada (STF, STJ), Cláusulas contratuais padrão e Pareceres internos.";
+                newPrompts.analysis = "Analise: Riscos jurídicos envolvidos, Prazos processuais/prescricionais, Competência territorial, Possíveis conflitos de interesse.";
+                newPrompts.complexCases = "Se a lei for ambígua: apresente as duas correntes interpretativas. Se houver risco penal: recomende imediatamente a consulta a um advogado criminalista. Se faltarem dados: liste exatamente quais documentos são necessários para análise.";
+                newPrompts.validation = "Verifique: A lei citada ainda está em vigor? A jurisprudência não foi superada? Há conflito com normas internas da empresa?";
+                newPrompts.scriptContent = "1. **Coleta de Fatos**: O que, quando, onde e quem.\\n2. **Análise Preliminar**: Identificação da área do direito.\\n3. **Pesquisa Jurídica**: Busca na base legal.\\n4. **Elaboração de Parecer**: Redação da resposta fundamentada.\\n5. **Revisão de Compliance**: Checagem de conformidade.";
                 break;
             case 'marketing':
-                newPrompts.system = "Você é um copywriter criativo e estrategista de marketing. Use storytelling e linguagem envolvente para capturar a atenção do público. Crie conexões emocionais e use metáforas relevantes.";
-                newPrompts.responseStructure = "1. Gancho (Hook) para capturar atenção\n2. Desenvolvimento da história/argumento\n3. Conexão emocional\n4. Fechamento memorável";
+                newPrompts.system = "Você é um estrategista de Marketing e Copywriter criativo de classe mundial. Sua escrita deve ser envolvente, persuasiva e centrada no público-alvo. Use storytelling, metáforas e linguagem sensorial para criar conexão emocional. Domine estruturas como AIDA, PAS e Hero's Journey.";
+                newPrompts.responseStructure = "1. **Hook (Gancho)**: Uma frase inicial impossível de ignorar.\\n2. **Contexto/História**: Desenvolvimento envolvente do tema.\\n3. **Entrega de Valor**: O 'ouro' do conteúdo.\\n4. **Call to Action**: O que o leitor deve fazer agora.";
+                newPrompts.vectorSearch = "Busque por: Brand Persona, Diretrizes de Tom de Voz, Campanhas anteriores de sucesso, Dados demográficos do público-alvo e Tendências de mercado.";
+                newPrompts.analysis = "Analise: Potencial de viralização, Clareza da mensagem, Tom de voz (está alinhado com a marca?), Apelo emocional vs Racional.";
+                newPrompts.complexCases = "Se o tema for polêmico: mantenha a neutralidade da marca ou posicione-se conforme os valores da empresa. Se houver crise de imagem: foque em transparência e empatia. Se o público for técnico: ajuste o tom para ser mais direto e menos lúdico.";
+                newPrompts.validation = "Verifique: O texto fere alguma diretriz de marca? Há promessas exageradas (clickbait)? A gramática e o estilo estão impecáveis?";
+                newPrompts.scriptContent = "1. **Briefing**: Definição do objetivo e público.\\n2. **Brainstorming**: Geração de ideias sem filtro.\\n3. **Estruturação**: Definição do esqueleto do conteúdo.\\n4. **Redação**: Escrita criativa.\\n5. **Polimento**: Refinamento e corte de excessos.";
                 break;
         }
         setConfig({ ...config, prompts: newPrompts });
@@ -562,11 +590,17 @@ export const AgentBuilder: React.FC = () => {
                 <div>
                     <div className="flex items-center gap-3">
                         <h2 className="text-2xl font-bold text-gray-800">Construtor de Agentes IA</h2>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase">Enterprise Edition</span>
+                        <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full uppercase">Enterprise Edition</span>
                     </div>
                     <p className="text-sm text-gray-500">Configure agentes especializados com parâmetros avançados de RAG e Engenharia de Prompt.</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 items-center">
+                    <div className="w-64">
+                        <ClientSelector
+                            selectedClientId={selectedClientId}
+                            onSelectClient={setSelectedClientId}
+                        />
+                    </div>
                     <button
                         onClick={() => window.open('/whatsapp-simulator', '_blank')}
                         className="px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg font-medium flex items-center gap-2 border border-green-200"
@@ -581,7 +615,7 @@ export const AgentBuilder: React.FC = () => {
                     </button>
                     <button
                         onClick={fetchTemplates}
-                        className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium flex items-center gap-2 border border-blue-200"
+                        className="px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg font-medium flex items-center gap-2 border border-primary-200"
                     >
                         <LayoutTemplate size={18} /> Carregar Template
                     </button>
@@ -594,7 +628,7 @@ export const AgentBuilder: React.FC = () => {
                     <button
                         onClick={handleSaveAgent}
                         disabled={saveAgentMutation.isPending}
-                        className={`px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-200 ${saveAgentMutation.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        className={`px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 flex items-center gap-2 shadow-lg shadow-primary-200 ${saveAgentMutation.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
                         <Save size={18} /> {saveAgentMutation.isPending ? 'Salvando...' : 'Salvar Agente'}
                     </button>
@@ -608,7 +642,7 @@ export const AgentBuilder: React.FC = () => {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-600 hover:bg-gray-50 border border-transparent'
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${activeTab === tab.id ? 'bg-primary-50 text-primary-700 border border-primary-200' : 'text-gray-600 hover:bg-gray-50 border border-transparent'
                                     }`}
                             >
                                 <tab.icon size={16} />
@@ -625,7 +659,7 @@ export const AgentBuilder: React.FC = () => {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
-                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
+                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
                                 <tab.icon size={18} />
@@ -642,16 +676,16 @@ export const AgentBuilder: React.FC = () => {
                             <div className="space-y-6 animate-fade-in">
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <Fingerprint className="text-blue-500" /> Identidade do Agente
+                                        <Fingerprint className="text-primary-500" /> Identidade do Agente
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label htmlFor="agent-name" className="block text-sm font-medium text-gray-700 mb-1">Nome do Agente</label>
-                                            <input id="agent-name" type="text" value={config.identity.name} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, name: e.target.value } })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+                                            <input id="agent-name" type="text" value={config.identity.name} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, name: e.target.value } })} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500" />
                                         </div>
                                         <div>
                                             <label htmlFor="agent-category" className="block text-sm font-medium text-gray-700 mb-1">Categoria Jurídica</label>
-                                            <select id="agent-category" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white">
+                                            <select id="agent-category" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white">
                                                 <option value="service">Atendimento ao Cliente</option>
                                                 <option value="sales">Vendas & Comercial</option>
                                                 <option value="specialist">Especialista Técnico</option>
@@ -660,7 +694,7 @@ export const AgentBuilder: React.FC = () => {
                                         </div>
                                         <div className="md:col-span-2">
                                             <label htmlFor="agent-description" className="block text-sm font-medium text-gray-700 mb-1">Descrição do Agente</label>
-                                            <textarea id="agent-description" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" rows={2} value={config.identity.description} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, description: e.target.value } })} />
+                                            <textarea id="agent-description" className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500" rows={2} value={config.identity.description} onChange={(e) => setConfig({ ...config, identity: { ...config.identity, description: e.target.value } })} />
                                         </div>
                                         <div>
                                             <label htmlFor="agent-class" className="block text-sm font-medium text-gray-700 mb-1">Classe do Agente</label>
@@ -668,7 +702,7 @@ export const AgentBuilder: React.FC = () => {
                                                 id="agent-class"
                                                 value={config.identity.class}
                                                 onChange={(e) => setConfig({ ...config, identity: { ...config.identity, class: e.target.value } })}
-                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
                                             >
                                                 <option value="StandardAgent">Standard Agent (Padrão)</option>
                                                 <option value="SalesAgent">Vendedor / Comercial</option>
@@ -694,7 +728,7 @@ export const AgentBuilder: React.FC = () => {
                                                     })}
                                                     className="flex-1"
                                                 />
-                                                <span className="font-bold text-blue-600">
+                                                <span className="font-bold text-primary-600">
                                                     {config.identity.specializationLevel} - {
                                                         config.identity.specializationLevel === 1 ? 'Iniciante' :
                                                             config.identity.specializationLevel === 2 ? 'Básico' :
@@ -712,19 +746,19 @@ export const AgentBuilder: React.FC = () => {
                         {activeTab === 'ai' && (
                             <div className="space-y-6 animate-fade-in">
                                 {/* Presets de Comportamento */}
-                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-center justify-between">
+                                <div className="bg-primary-50 p-4 rounded-xl border border-primary-100 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Wand2 className="text-blue-600" size={20} />
+                                        <Wand2 className="text-primary-600" size={20} />
                                         <div>
-                                            <h4 className="text-sm font-bold text-blue-900">Configuração Rápida</h4>
-                                            <p className="text-xs text-blue-700">Aplique as melhores práticas para seu caso de uso.</p>
+                                            <h4 className="text-sm font-bold text-primary-900">Configuração Rápida</h4>
+                                            <p className="text-xs text-primary-700">Aplique as melhores práticas para seu caso de uso.</p>
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => applyAiPreset('precise')} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">Preciso</button>
-                                        <button onClick={() => applyAiPreset('balanced')} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">Equilibrado</button>
-                                        <button onClick={() => applyAiPreset('creative')} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">Criativo</button>
-                                        <button onClick={() => applyAiPreset('coding')} className="px-3 py-1.5 bg-white text-blue-700 text-xs font-bold rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors">Técnico/Code</button>
+                                        <button onClick={() => applyAiPreset('precise')} className="px-3 py-1.5 bg-white text-primary-700 text-xs font-bold rounded-lg border border-primary-200 hover:bg-primary-50 transition-colors">Preciso</button>
+                                        <button onClick={() => applyAiPreset('balanced')} className="px-3 py-1.5 bg-white text-primary-700 text-xs font-bold rounded-lg border border-primary-200 hover:bg-primary-50 transition-colors">Equilibrado</button>
+                                        <button onClick={() => applyAiPreset('creative')} className="px-3 py-1.5 bg-white text-primary-700 text-xs font-bold rounded-lg border border-primary-200 hover:bg-primary-50 transition-colors">Criativo</button>
+                                        <button onClick={() => applyAiPreset('coding')} className="px-3 py-1.5 bg-white text-primary-700 text-xs font-bold rounded-lg border border-primary-200 hover:bg-primary-50 transition-colors">Técnico/Code</button>
                                     </div>
                                 </div>
 
@@ -738,7 +772,7 @@ export const AgentBuilder: React.FC = () => {
                                             <select
                                                 value={config.aiConfig.provider}
                                                 onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, provider: e.target.value } })}
-                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
                                             >
                                                 <option value="openai">OpenAI (GPT-5 / GPT-4.1)</option>
                                                 <option value="google">Google (Gemini 3 / 2.5)</option>
@@ -750,7 +784,7 @@ export const AgentBuilder: React.FC = () => {
                                             <select
                                                 value={config.aiConfig.model}
                                                 onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, model: e.target.value } })}
-                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
                                             >
                                                 {config.aiConfig.provider === 'openai' && (
                                                     <>
@@ -824,7 +858,7 @@ export const AgentBuilder: React.FC = () => {
                                                 onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, temperature: parseFloat(e.target.value) } })}
                                                 className="w-full"
                                             />
-                                            <p className="text-xs text-gray-500 mt-1">0 = Determin��stico, 2 = Muito Criativo</p>
+                                            <p className="text-xs text-gray-500 mt-1">0 = Determinístico, 2 = Muito Criativo</p>{/* Fixed encoding */}
                                         </div>
                                         <div className="grid grid-cols-2 gap-6">
                                             <div>
@@ -911,7 +945,7 @@ export const AgentBuilder: React.FC = () => {
                                                     <select
                                                         value={config.aiConfig.responseMode || 'balanced'}
                                                         onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, responseMode: e.target.value } })}
-                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
                                                     >
                                                         <option value="concise">Conciso</option>
                                                         <option value="balanced">Balanceado</option>
@@ -961,7 +995,7 @@ export const AgentBuilder: React.FC = () => {
                                                                 onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, jsonMode: e.target.checked } })}
                                                                 className="sr-only peer"
                                                             />
-                                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
                                                             <span className="ml-3 text-sm font-medium text-gray-700">Forçar saída JSON</span>
                                                         </label>
                                                     </div>
@@ -993,7 +1027,7 @@ export const AgentBuilder: React.FC = () => {
                         {activeTab === 'vector' && (
                             <div className="space-y-6 animate-fade-in">
                                 {/* Qdrant Connection Section */}
-                                <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-xl border border-purple-200 shadow-sm">
+                                <div className="bg-gradient-to-r from-purple-50 to-primary-50 p-6 rounded-xl border border-purple-200 shadow-sm">
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                                             <Database className="text-purple-600" /> Qdrant Vector Database
@@ -1282,6 +1316,18 @@ export const AgentBuilder: React.FC = () => {
                                                 </div>
                                             </div>
                                         </div>
+                                        {/* Novo Campo: Script / Roteiro */}
+                                        <div className="mt-6 border-t pt-6">
+                                            <label className="block text-sm font-bold text-gray-800 mb-1">Script / Roteiro de Conversa</label>
+                                            <p className="text-xs text-gray-500 mb-2">Defina um roteiro passo-a-passo ou script de vendas que o agente deve seguir.</p>
+                                            <textarea
+                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 font-mono text-sm bg-yellow-50"
+                                                rows={6}
+                                                placeholder="Ex: 1. Saudação e qualificação... 2. Apresentação do produto... 3. Tratamento de objeções..."
+                                                value={config.prompts.scriptContent || ''}
+                                                onChange={(e) => setConfig({ ...config, prompts: { ...config.prompts, scriptContent: e.target.value } })}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1289,6 +1335,37 @@ export const AgentBuilder: React.FC = () => {
                         {/* TAB: CHANNELS */}
                         {activeTab === 'channels' && (
                             <div className="space-y-6 animate-fade-in">
+                                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <Globe className="text-blue-600" /> Link Público do Agente
+                                    </h3>
+                                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex items-center justify-between gap-4">
+                                        <div className="flex-1 truncate">
+                                            <span className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1 block">URL de Acesso Eterno</span>
+                                            <code className="text-sm font-mono text-blue-700 bg-blue-50 px-2 py-1 rounded block truncate">
+                                                {(config as any).slug ? `${window.location.origin}/agent/${(config as any).slug}` : 'Salve o agente para gerar o link'}
+                                            </code>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                onClick={() => (config as any).slug && window.open(`/agent/${(config as any).slug}`, '_blank')}
+                                                disabled={!(config as any).slug}
+                                                title="Abrir página"
+                                            >
+                                                <ExternalLink size={20} />
+                                            </button>
+                                            <button
+                                                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                onClick={() => (config as any).slug && navigator.clipboard.writeText(`${window.location.origin}/agent/${(config as any).slug}`)}
+                                                disabled={!(config as any).slug}
+                                                title="Copiar link"
+                                            >
+                                                <Copy size={20} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                         <Smartphone className="text-green-600" /> Integração WhatsApp
@@ -1330,7 +1407,7 @@ export const AgentBuilder: React.FC = () => {
                                                             ...config,
                                                             whatsappConfig: { ...config.whatsappConfig, provider: 'official' }
                                                         })}
-                                                        className={`p-4 border rounded-lg text-left transition-all ${config.whatsappConfig.provider === 'official' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'hover:border-gray-300'}`}
+                                                        className={`p-4 border rounded-lg text-left transition-all ${config.whatsappConfig.provider === 'official' ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-500' : 'hover:border-gray-300'}`}
                                                     >
                                                         <div className="font-bold text-gray-800 mb-1">WhatsApp Cloud API (Meta)</div>
                                                         <div className="text-xs text-gray-500">API Oficial da Meta. Alta estabilidade, mas requer verificação de negócio.</div>
@@ -1407,7 +1484,7 @@ export const AgentBuilder: React.FC = () => {
                                                                         official: { ...config.whatsappConfig.official, phoneNumberId: e.target.value }
                                                                     }
                                                                 })}
-                                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
                                                             />
                                                         </div>
                                                         <div>
@@ -1422,7 +1499,7 @@ export const AgentBuilder: React.FC = () => {
                                                                         official: { ...config.whatsappConfig.official, accessToken: e.target.value }
                                                                     }
                                                                 })}
-                                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
                                                             />
                                                         </div>
                                                         <div>
@@ -1437,7 +1514,7 @@ export const AgentBuilder: React.FC = () => {
                                                                         official: { ...config.whatsappConfig.official, verifyToken: e.target.value }
                                                                     }
                                                                 })}
-                                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
                                                             />
                                                         </div>
                                                     </div>
@@ -1467,7 +1544,7 @@ export const AgentBuilder: React.FC = () => {
                                 {/* Chunking Otimizado */}
                                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <Database className="text-blue-600" /> Configuração de Fragmentação (Chunking)
+                                        <Database className="text-primary-600" /> Configuração de Fragmentação (Chunking)
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
@@ -1557,7 +1634,7 @@ export const AgentBuilder: React.FC = () => {
                                                         type="range" min="0.5" max="1" step="0.05"
                                                         value={config.advancedConfig?.multiModelValidation.minConsensus ?? 0.75}
                                                         onChange={(e) => setConfig({ ...config, advancedConfig: { ...(config.advancedConfig || INITIAL_CONFIG.advancedConfig!), multiModelValidation: { ...(config.advancedConfig?.multiModelValidation || INITIAL_CONFIG.advancedConfig!.multiModelValidation), minConsensus: parseFloat(e.target.value) } } })}
-                                                        className="w-full accent-blue-600"
+                                                        className="w-full accent-primary-600"
                                                     />
                                                 </div>
                                                 <div>
@@ -1602,156 +1679,288 @@ export const AgentBuilder: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
+                                {/* KPIs e Metas */}
+                                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <Zap className="text-yellow-500" /> KPIs e Metas do Agente
+                                    </h3>
+                                    <p className="text-sm text-gray-600 mb-4">Defina os objetivos que o agente deve perseguir (ex: agendar reunião, capturar email).</p>
+
+                                    <div className="space-y-3">
+                                        {config.advancedConfig?.kpis?.map((kpi, index) => (
+                                            <div key={index} className="flex gap-2 items-start">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Nome do KPI (ex: Taxa de Conversão)"
+                                                    className="flex-1 px-3 py-2 border rounded-lg text-sm"
+                                                    value={kpi.name}
+                                                    onChange={(e) => {
+                                                        const newKpis = [...(config.advancedConfig?.kpis || [])];
+                                                        newKpis[index] = { ...newKpis[index], name: e.target.value };
+                                                        setConfig({ ...config, advancedConfig: { ...(config.advancedConfig || INITIAL_CONFIG.advancedConfig!), kpis: newKpis } });
+                                                    }}
+                                                />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Meta (ex: 10%)"
+                                                    className="w-24 px-3 py-2 border rounded-lg text-sm"
+                                                    value={kpi.target}
+                                                    onChange={(e) => {
+                                                        const newKpis = [...(config.advancedConfig?.kpis || [])];
+                                                        newKpis[index] = { ...newKpis[index], target: e.target.value };
+                                                        setConfig({ ...config, advancedConfig: { ...(config.advancedConfig || INITIAL_CONFIG.advancedConfig!), kpis: newKpis } });
+                                                    }}
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        const newKpis = config.advancedConfig?.kpis?.filter((_, i) => i !== index);
+                                                        setConfig({ ...config, advancedConfig: { ...(config.advancedConfig || INITIAL_CONFIG.advancedConfig!), kpis: newKpis || [] } });
+                                                    }}
+                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <button
+                                            onClick={() => {
+                                                const newKpis = [...(config.advancedConfig?.kpis || []), { name: '', target: '' }];
+                                                setConfig({ ...config, advancedConfig: { ...(config.advancedConfig || INITIAL_CONFIG.advancedConfig!), kpis: newKpis } });
+                                            }}
+                                            className="text-sm text-primary-600 font-medium hover:text-blue-800 flex items-center gap-1"
+                                        >
+                                            + Adicionar KPI
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {/* TAB: DEPLOY */}
+                        {activeTab === 'deploy' && (
+                            <div className="space-y-6 animate-fade-in">
+                                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <LayoutTemplate className="text-primary-600" /> Widget & Deploy
+                                    </h3>
+                                    <p className="text-gray-600 mb-6">
+                                        Incorpore seu agente em qualquer site usando o código abaixo.
+                                    </p>
+
+                                    <div className="bg-gray-900 rounded-lg p-4 relative group">
+                                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => {
+                                                    const code = `<script>
+  (function(w,d,s,o,f,js,fjs){
+    w['AgentWidget']=o;w[o]=w[o]||function(){(w[o].q=w[o].q||[]).push(arguments)};
+    js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];
+    js.id=o;js.src=f;js.async=1;fjs.parentNode.insertBefore(js,fjs);
+  }(window,document,'script','mw','${window.location.origin}/widget.js'));
+  
+  mw('init', { 
+    agentId: '${config.identity.name || 'AGENT_ID'}',
+    primaryColor: '#2563EB'
+  });
+<\/script>`;
+                                                    navigator.clipboard.writeText(code);
+                                                    alert('Código copiado!');
+                                                }}
+                                                className="bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs font-bold backdrop-blur-sm"
+                                            >
+                                                Copiar Código
+                                            </button>
+                                        </div>
+                                        <code className="text-green-400 font-mono text-sm block whitespace-pre-wrap">
+                                            {`<script>
+  (function(w,d,s,o,f,js,fjs){
+    w['AgentWidget']=o;w[o]=w[o]||function(){(w[o].q=w[o].q||[]).push(arguments)};
+    js=d.createElement(s),fjs=d.getElementsByTagName(s)[0];
+    js.id=o;js.src=f;js.async=1;fjs.parentNode.insertBefore(js,fjs);
+  }(window,document,'script','mw','${window.location.origin}/widget.js'));
+  
+  mw('init', { 
+    agentId: '${config.identity.name || 'AGENT_ID'}',
+    primaryColor: '#2563EB'
+  });
+<\/script>`}
+                                        </code>
+                                    </div>
+
+                                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="p-4 bg-primary-50 rounded-lg border border-primary-100">
+                                            <h4 className="font-bold text-blue-800 mb-2">1. Copie o Código</h4>
+                                            <p className="text-sm text-primary-600">Copie o snippet acima e substitua 'SEU_AGENT_ID_AQUI' pelo ID do seu agente após salvar.</p>
+                                        </div>
+                                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-100">
+                                            <h4 className="font-bold text-purple-800 mb-2">2. Cole no Site</h4>
+                                            <p className="text-sm text-purple-600">Cole o código antes da tag &lt;/body&gt; em todas as páginas onde deseja que o chat apareça.</p>
+                                        </div>
+                                        <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+                                            <h4 className="font-bold text-green-800 mb-2">3. Personalize</h4>
+                                            <p className="text-sm text-green-600">Você pode passar parâmetros adicionais como 'primaryColor' para ajustar a aparência.</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
+
             {/* Modal Salvar Template */}
-            {showSaveTemplateModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl animate-fade-in">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <Save className="text-purple-600" /> Salvar como Template
-                        </h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Template</label>
-                                <input
-                                    type="text"
-                                    value={templateName}
-                                    onChange={(e) => setTemplateName(e.target.value)}
-                                    placeholder="Ex: Bot Imobiliária Premium"
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-                                <textarea
-                                    value={templateDescription}
-                                    onChange={(e) => setTemplateDescription(e.target.value)}
-                                    placeholder="Descreva o propósito deste template..."
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 h-24 resize-none"
-                                />
-                            </div>
-                            <div className="flex justify-end gap-3 mt-6">
-                                <button
-                                    onClick={() => setShowSaveTemplateModal(false)}
-                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={handleSaveTemplate}
-                                    className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700"
-                                >
-                                    Salvar Template
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {/* Modal Configuração Mágica */}
-            {showMagicModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-2xl animate-fade-in">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <Wand2 className="text-indigo-600" /> Configuração Mágica de IA
-                        </h3>
-                        <p className="text-gray-600 mb-4">
-                            Descreva o agente que você deseja criar e nossa IA irá gerar a configuração perfeita (identidade, prompts e parâmetros) para você.
-                        </p>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Descrição do Agente</label>
-                                <textarea
-                                    value={magicDescription}
-                                    onChange={(e) => setMagicDescription(e.target.value)}
-                                    placeholder="Ex: Um especialista em vendas de imóveis de luxo que seja persuasivo, educado e focado em agendar visitas. Ele deve saber lidar com objeções de preço."
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 h-32 resize-none"
-                                />
-                            </div>
-                            <div className="flex justify-end gap-3 mt-6">
-                                <button
-                                    onClick={() => setShowMagicModal(false)}
-                                    disabled={isGeneratingConfig}
-                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={handleMagicConfig}
-                                    disabled={isGeneratingConfig || !magicDescription}
-                                    className={`px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2 ${isGeneratingConfig ? 'opacity-70 cursor-not-allowed' : ''}`}
-                                >
-                                    {isGeneratingConfig ? (
-                                        <><Loader2 className="animate-spin" size={18} /> Gerando Mágica...</>
-                                    ) : (
-                                        <><Wand2 size={18} /> Gerar Configuração</>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {/* Modal Carregar Template */}
-            {showLoadTemplateModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-6 w-full max-w-3xl shadow-2xl animate-fade-in max-h-[80vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                                <LayoutTemplate className="text-blue-600" /> Carregar Template
+            {
+                showSaveTemplateModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl animate-fade-in">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <Save className="text-purple-600" /> Salvar como Template
                             </h3>
-                            <button onClick={() => setShowLoadTemplateModal(false)} className="text-gray-400 hover:text-gray-600">
-                                <X size={24} />
-                            </button>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Template</label>
+                                    <input
+                                        type="text"
+                                        value={templateName}
+                                        onChange={(e) => setTemplateName(e.target.value)}
+                                        placeholder="Ex: Bot Imobiliária Premium"
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                                    <textarea
+                                        value={templateDescription}
+                                        onChange={(e) => setTemplateDescription(e.target.value)}
+                                        placeholder="Descreva o propósito deste template..."
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 h-24 resize-none"
+                                    />
+                                </div>
+                                <div className="flex justify-end gap-3 mt-6">
+                                    <button
+                                        onClick={() => setShowSaveTemplateModal(false)}
+                                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={handleSaveTemplate}
+                                        className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700"
+                                    >
+                                        Salvar Template
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        {!loadingTemplates && availableTemplates.length > 0 && (
-                            <div className="mb-4 flex justify-end">
-                                <button
-                                    onClick={handleSetupTemplates}
-                                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
-                                    title="Recarregar templates do sistema"
-                                >
-                                    <RefreshCw size={12} /> Atualizar Lista
+                    </div>
+                )
+            }
+
+            {/* Modal Configuração Mágica */}
+            {
+                showMagicModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-2xl animate-fade-in">
+                            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                <Wand2 className="text-indigo-600" /> Configuração Mágica de IA
+                            </h3>
+                            <p className="text-gray-600 mb-4">
+                                Descreva o agente que você deseja criar e nossa IA irá gerar a configuração perfeita (identidade, prompts e parâmetros) para você.
+                            </p>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Descrição do Agente</label>
+                                    <textarea
+                                        value={magicDescription}
+                                        onChange={(e) => setMagicDescription(e.target.value)}
+                                        placeholder="Ex: Um especialista em vendas de imóveis de luxo que seja persuasivo, educado e focado em agendar visitas. Ele deve saber lidar com objeções de preço."
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 h-32 resize-none"
+                                    />
+                                </div>
+                                <div className="flex justify-end gap-3 mt-6">
+                                    <button
+                                        onClick={() => setShowMagicModal(false)}
+                                        disabled={isGeneratingConfig}
+                                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={handleMagicConfig}
+                                        disabled={isGeneratingConfig || !magicDescription}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 flex items-center gap-2"
+                                    >
+                                        {isGeneratingConfig ? (
+                                            <><Loader2 className="animate-spin" size={18} /> Gerando Mágica...</>
+                                        ) : (
+                                            <><Wand2 size={18} /> Gerar Configuração</>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+
+            {/* Modal Carregar Template */}
+            {
+                showLoadTemplateModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl p-6 w-full max-w-3xl shadow-2xl animate-fade-in max-h-[80vh] overflow-y-auto">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                    <LayoutTemplate className="text-primary-600" /> Carregar Template
+                                </h3>
+                                <button onClick={() => setShowLoadTemplateModal(false)} className="text-gray-400 hover:text-gray-600">
+                                    <X size={24} />
                                 </button>
                             </div>
-                        )}
-                        {loadingTemplates ? (
-                            <div className="flex justify-center py-12">
-                                <Loader2 className="animate-spin text-blue-600" size={32} />
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {availableTemplates.map(template => (
-                                    <div key={template.id} className="border border-gray-200 rounded-lg p-4 hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer group" onClick={() => handleSelectTemplate(template.template_id)}>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h4 className="font-bold text-gray-800 group-hover:text-blue-700">{template.template_name}</h4>
-                                            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{template.category}</span>
+                            {!loadingTemplates && availableTemplates.length > 0 && (
+                                <div className="mb-4 flex justify-end">
+                                    <button
+                                        onClick={handleSetupTemplates}
+                                        className="text-xs text-primary-600 hover:text-blue-800 flex items-center gap-1 bg-primary-50 px-2 py-1 rounded hover:bg-primary-100 transition-colors"
+                                        title="Recarregar templates do sistema"
+                                    >
+                                        <RefreshCw size={12} /> Atualizar Lista
+                                    </button>
+                                </div>
+                            )}
+                            {loadingTemplates ? (
+                                <div className="flex justify-center py-12">
+                                    <Loader2 className="animate-spin text-primary-600" size={32} />
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {availableTemplates.map(template => (
+                                        <div key={template.id} className="border border-gray-200 rounded-lg p-4 hover:border-primary-500 hover:bg-primary-50 transition-all cursor-pointer group" onClick={() => handleSelectTemplate(template.template_id)}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <h4 className="font-bold text-gray-800 group-hover:text-primary-700">{template.template_name}</h4>
+                                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{template.category}</span>
+                                            </div>
+                                            <p className="text-sm text-gray-500 line-clamp-2">{template.template_description || 'Sem descrição.'}</p>
                                         </div>
-                                        <p className="text-sm text-gray-500 line-clamp-2">{template.template_description || 'Sem descrição.'}</p>
-                                    </div>
-                                ))}
-                                {availableTemplates.length === 0 && (
-                                    <div className="col-span-full text-center py-8 text-gray-400 flex flex-col items-center gap-4">
-                                        <p>Nenhum template encontrado.</p>
-                                        {showSetupButton && (
-                                            <button
-                                                onClick={handleSetupTemplates}
-                                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                                            >
-                                                <Database size={18} /> Inicializar Templates Padrão
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                    ))}
+                                    {availableTemplates.length === 0 && (
+                                        <div className="col-span-full text-center py-8 text-gray-400 flex flex-col items-center gap-4">
+                                            <p>Nenhum template encontrado.</p>
+                                            {showSetupButton && (
+                                                <button
+                                                    onClick={handleSetupTemplates}
+                                                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
+                                                >
+                                                    <Database size={18} /> Inicializar Templates Padrão
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+
+        </div >
     );
 };

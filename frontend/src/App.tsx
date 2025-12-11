@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { Dashboard } from '@/components/Dashboard';
-import { Campaigns } from '@/components/Campaigns';
+
 import { FlightControl } from '@/components/FlightControl';
 import { ClientRegistration } from '@/components/ClientRegistration';
 import { AnalysisMode } from '@/components/AnalysisMode';
@@ -21,38 +21,64 @@ import { SocialCalendar } from '@/components/SocialCalendar';
 import { SocialIntegrations } from '@/components/SocialIntegrations';
 import { ViewState } from '@/types';
 import { Menu, Loader2 } from 'lucide-react';
-import { ContentGenerator } from '@/components/ContentGenerator';
 import { Login } from '@/components/Login';
 import { Register } from '@/components/Register';
+import { PrivacyPolicy } from '@/components/PrivacyPolicy';
+import { TermsOfService } from '@/components/TermsOfService';
+import { PublicAgentChat } from '@/components/PublicAgentChat';
+import { Footer } from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { ImageGenerationPage } from '@/components/ImageGenerationPage';
 import AdminDashboard from '@/components/AdminDashboard';
+import AIControlPlane from '@/components/admin/AIControlPlane';
 import { AudioAnalysis } from '@/components/AudioAnalysis';
-import { FinancialModule } from '@/components/FinancialModule';
+import FinancialModule from '@/components/FinancialModule';
+import CreativeStudio from '@/components/CreativeStudio';
+import { SalesCoachingChat } from '@/components/SalesCoachingChat';
+import { ProjectCenter } from '@/components/ProjectCenter';
+import { AssetLibrary } from '@/components/AssetLibrary';
+import { ApprovalCenter } from '@/components/ApprovalCenter';
+import { HelpCenter } from '@/components/HelpCenter';
+import { ServiceCatalog } from '@/components/ServiceCatalog';
+import SOPManager from '@/components/SOPManager';
+import MarketAnalysisDashboard from '@/components/market-analysis/MarketAnalysisDashboard';
+import CustomerJourneyDashboard from '@/components/CustomerJourneyDashboard';
+
 
 const PATH_MAP: Record<ViewState, string> = {
   [ViewState.HOME]: '/',
   [ViewState.DASHBOARD]: '/dashboard',
-  [ViewState.CAMPAIGNS]: '/campaigns',
+
   [ViewState.FLIGHT_CONTROL]: '/flight-control',
   [ViewState.CLIENTS]: '/clients',
   [ViewState.CHAT_AI]: '/chat-ai',
   [ViewState.SOCIAL]: '/social',
   [ViewState.SOCIAL_CALENDAR]: '/social-calendar',
   [ViewState.SOCIAL_INTEGRATIONS]: '/social-integrations',
+  [ViewState.CAMPAIGNS]: '/campaigns',
   [ViewState.IMAGE_GENERATION]: '/images/generate',
   [ViewState.AUDIO_ANALYSIS]: '/audio-analysis',
-  [ViewState.FINANCIAL_MODULE]: '/financial', // Adicionado
+  [ViewState.FINANCIAL_MODULE]: '/financial',
   [ViewState.AUTOMATION]: '/automation',
   [ViewState.TRAINING]: '/training',
   [ViewState.REPORTS]: '/reports',
-  [ViewState.AI_AGENT]: '/ai-agent',
   [ViewState.ELITE_ASSISTANT]: '/elite-assistant',
   [ViewState.SETTINGS]: '/settings',
   [ViewState.AGENT_BUILDER]: '/agent-builder',
   [ViewState.ADMIN]: '/admin',
+  [ViewState.CREATIVE_STUDIO]: '/creative-studio',
+  [ViewState.SALES_COACHING]: '/sales-coaching',
+  [ViewState.HELP_CENTER]: '/help-center',
+  [ViewState.PROJECTS]: '/projects',
+  [ViewState.ASSETS]: '/assets',
+  [ViewState.APPROVALS]: '/approvals',
+  [ViewState.SERVICE_CATALOG]: '/services',
+  [ViewState.PROCESSES]: '/processes',
+  [ViewState.MARKET_ANALYSIS]: '/market-analysis',
+  [ViewState.CUSTOMER_JOURNEY]: '/customer-journey',
 };
+
 
 
 
@@ -62,7 +88,7 @@ const PrivateRoute: React.FC = () => {
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-100">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
       </div>
     );
   }
@@ -72,7 +98,6 @@ const PrivateRoute: React.FC = () => {
 
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  // Aceitar 'super_admin' ou 'Super Admin'
   if (user?.role !== 'super_admin' && user?.role !== 'Super Admin') {
     return <Navigate to="/" replace />;
   }
@@ -81,7 +106,6 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const SettingsRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  // Aceitar 'super_admin', 'admin', 'Super Admin', 'Admin'
   const allowedRoles = ['super_admin', 'admin', 'Super Admin', 'Admin'];
   if (!user?.role || !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
@@ -120,7 +144,6 @@ const Layout: React.FC = () => {
       />
 
       <div className="flex-1 flex flex-col h-full relative w-full">
-        {/* Mobile Header */}
         <div className="md:hidden bg-white border-b border-gray-200 p-4 flex items-center justify-between z-20">
           <h1 className="text-lg font-bold text-gray-800">Elite Finder</h1>
           <button onClick={() => setSidebarOpen(true)} className="p-2 text-gray-600">
@@ -128,23 +151,27 @@ const Layout: React.FC = () => {
           </button>
         </div>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 w-full">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              variants={pageVariants}
-              transition={{ duration: 0.2 }}
-              className="h-full"
-            >
-              <Outlet />
-            </motion.div>
-          </AnimatePresence>
+        <main className={`flex-1 relative z-10 w-full bg-gray-100 ${location.pathname === '/automation' ? 'overflow-hidden' : 'overflow-auto'}`}>
+          <div className={`flex flex-col ${location.pathname === '/automation' ? 'h-full' : 'min-h-full'}`}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                variants={pageVariants}
+                transition={{ duration: 0.2 }}
+                className={`flex-1 ${location.pathname === '/automation' ? 'p-0' : 'p-4 md:p-8'}`}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
+            {location.pathname !== '/automation' && <Footer className="mt-auto" />}
+          </div>
         </main>
       </div>
     </div>
+
   );
 };
 
@@ -162,12 +189,17 @@ const App: React.FC = () => {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
+
+      {/* Public Agent Route */}
+      <Route path="/agent/:slug" element={<PublicAgentChat />} />
 
       <Route element={<PrivateRoute />}>
         <Route element={<Layout />}>
           <Route path="/" element={<Home onSelect={handleNavigate} />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/campaigns" element={<Campaigns />} />
+
           <Route path="/flight-control" element={<FlightControl />} />
           <Route path="/clients" element={<ClientRegistration />} />
           <Route path="/chat-ai" element={<AnalysisMode />} />
@@ -187,16 +219,26 @@ const App: React.FC = () => {
           />
           <Route path="/training" element={<Training />} />
           <Route path="/reports" element={<Reports />} />
-          <Route path="/ai-agent" element={<ContentGenerator isOpen={true} onClose={() => { }} mode="page" />} />
           <Route path="/elite-assistant" element={<AIChatBot mode="page" />} />
           <Route path="/settings" element={<SettingsRoute><Settings /></SettingsRoute>} />
           <Route path="/agent-builder" element={<AgentBuilder />} />
           <Route path="/templates" element={<TemplateManager />} />
-          <Route path="/templates" element={<TemplateManager />} />
           <Route path="/whatsapp-simulator" element={<WhatsAppSimulator />} />
           <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/ai-control-plane" element={<AdminRoute><AIControlPlane /></AdminRoute>} />
+          <Route path="/creative-studio" element={<CreativeStudio />} />
+          <Route path="/sales-coaching" element={<SalesCoachingChat />} />
+          <Route path="/help-center" element={<HelpCenter />} />
+          <Route path="/projects" element={<ProjectCenter />} />
+          <Route path="/assets" element={<AssetLibrary />} />
+          <Route path="/approvals" element={<ApprovalCenter />} />
+          <Route path="/services" element={<ServiceCatalog />} />
+          <Route path="/processes" element={<SOPManager />} />
+          <Route path="/market-analysis" element={<MarketAnalysisDashboard />} />
+          <Route path="/customer-journey" element={<CustomerJourneyDashboard />} />
         </Route>
       </Route>
+
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

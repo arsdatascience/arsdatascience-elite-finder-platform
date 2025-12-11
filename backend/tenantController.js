@@ -100,4 +100,35 @@ const deleteTenant = async (req, res) => {
     }
 };
 
-module.exports = { getAllTenants, createTenant, updateTenant, deleteTenant };
+const updateMyTenant = async (req, res) => {
+    const id = req.user.tenant_id; // Use ID from authenticated user
+    const { name, email, phone, address } = req.body;
+
+    if (!id) {
+        return res.status(400).json({ error: 'Tenant ID not found for user' });
+    }
+
+    try {
+        await db.query(`
+            UPDATE tenants SET 
+            name=COALESCE($1, name), email=COALESCE($2, email), phone=COALESCE($3, phone), 
+            address_street=COALESCE($4, address_street), address_number=COALESCE($5, address_number), 
+            address_complement=COALESCE($6, address_complement), 
+            address_district=COALESCE($7, address_district), address_city=COALESCE($8, address_city), 
+            address_state=COALESCE($9, address_state), address_zip=COALESCE($10, address_zip),
+            updated_at=NOW()
+            WHERE id=$11
+        `, [
+            name, email, phone,
+            address?.street, address?.number, address?.complement,
+            address?.district, address?.city, address?.state, address?.zip,
+            id
+        ]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Erro ao atualizar dados da empresa:', error);
+        res.status(500).json({ error: 'Erro ao atualizar dados da empresa' });
+    }
+};
+
+module.exports = { getAllTenants, createTenant, updateTenant, deleteTenant, updateMyTenant };

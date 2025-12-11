@@ -108,7 +108,7 @@ export const AdminPlans: React.FC = () => {
                         });
                         setIsCreating(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                 >
                     <Plus size={18} /> Novo Plano
                 </button>
@@ -118,7 +118,7 @@ export const AdminPlans: React.FC = () => {
                 {plans.map(plan => (
                     <div key={plan.id} className="border border-gray-200 rounded-xl p-6 relative group hover:shadow-md transition-shadow bg-gray-50">
                         <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => setEditingPlan(plan)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">
+                            <button onClick={() => setEditingPlan(plan)} className="p-2 text-primary-600 hover:bg-primary-100 rounded-lg transition-colors">
                                 <Edit2 size={16} />
                             </button>
                             <button onClick={() => handleDelete(plan.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">
@@ -127,7 +127,7 @@ export const AdminPlans: React.FC = () => {
                         </div>
 
                         <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
-                        <div className="text-2xl font-bold text-blue-600 my-2">
+                        <div className="text-2xl font-bold text-primary-600 my-2">
                             R$ {plan.price}<span className="text-sm text-gray-500 font-normal">/mês</span>
                         </div>
 
@@ -163,7 +163,7 @@ export const AdminPlans: React.FC = () => {
                                     <input
                                         value={editingPlan.name}
                                         onChange={e => setEditingPlan({ ...editingPlan, name: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                         placeholder="Ex: Pro, Enterprise"
                                     />
                                 </div>
@@ -173,7 +173,7 @@ export const AdminPlans: React.FC = () => {
                                         type="number"
                                         value={editingPlan.price}
                                         onChange={e => setEditingPlan({ ...editingPlan, price: Number(e.target.value) })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                     />
                                 </div>
                             </div>
@@ -190,7 +190,7 @@ export const AdminPlans: React.FC = () => {
                                                 ...editingPlan,
                                                 limits: { ...editingPlan.limits, social_posts_per_day: Number(e.target.value) }
                                             })}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                         />
                                     </div>
                                     <div>
@@ -202,7 +202,7 @@ export const AdminPlans: React.FC = () => {
                                                 ...editingPlan,
                                                 limits: { ...editingPlan.limits, ai_generations_per_day: Number(e.target.value) }
                                             })}
-                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                         />
                                     </div>
                                 </div>
@@ -347,7 +347,7 @@ export const AdminPlans: React.FC = () => {
 
                             <button
                                 onClick={() => handleSave(editingPlan)}
-                                className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 mt-4 shadow-lg shadow-blue-200 transition-all"
+                                className="w-full py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 mt-4 shadow-lg shadow-primary-200 transition-all"
                             >
                                 Salvar Plano
                             </button>

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, Loader2, ArrowRight, ArrowLeft, Key, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiClient } from '@/services/apiClient';
+import { Footer } from '@/components/Footer';
 
 export const Login: React.FC = () => {
     const [email, setEmail] = useState('');
@@ -107,7 +108,7 @@ export const Login: React.FC = () => {
                         </button>
 
                         <div className="text-center mb-8">
-                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-4">
+                            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-100 text-primary-600 mb-4">
                                 <Key size={24} />
                             </div>
                             <h1 className="text-2xl font-bold text-gray-900">Recuperar Senha</h1>
@@ -140,7 +141,7 @@ export const Login: React.FC = () => {
                                             type="email"
                                             value={forgotEmail}
                                             onChange={(e) => setForgotEmail(e.target.value)}
-                                            className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                                             placeholder="seu@email.com"
                                             required
                                         />
@@ -149,7 +150,7 @@ export const Login: React.FC = () => {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-all disabled:opacity-70"
+                                    className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-4 rounded-lg transition-all disabled:opacity-70"
                                 >
                                     {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'Enviar Instruções'}
                                 </button>
@@ -166,7 +167,7 @@ export const Login: React.FC = () => {
                                             type={showNewPassword ? "text" : "password"}
                                             value={newPassword}
                                             onChange={(e) => setNewPassword(e.target.value)}
-                                            className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                                             placeholder="Nova senha segura"
                                             required
                                             minLength={6}
@@ -205,7 +206,7 @@ export const Login: React.FC = () => {
             >
                 <div className="p-8 md:p-10">
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-4">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-100 text-primary-600 mb-4">
                             <Lock size={24} />
                         </div>
                         <h1 className="text-2xl font-bold text-gray-900">Bem-vindo de volta</h1>
@@ -233,7 +234,7 @@ export const Login: React.FC = () => {
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
                                     placeholder="seu@email.com"
                                     required
                                 />
@@ -250,7 +251,7 @@ export const Login: React.FC = () => {
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                    className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
                                     placeholder="••••••••"
                                     required
                                 />
@@ -267,7 +268,7 @@ export const Login: React.FC = () => {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-blue-500/30"
+                            className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-4 rounded-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-primary-500/30"
                         >
                             {isSubmitting ? (
                                 <Loader2 className="animate-spin" size={20} />
@@ -282,15 +283,13 @@ export const Login: React.FC = () => {
                     <div className="mt-6 text-center">
                         <button
                             onClick={() => setShowForgot(true)}
-                            className="text-sm text-blue-600 hover:underline bg-transparent border-none cursor-pointer"
+                            className="text-sm text-primary-600 hover:underline bg-transparent border-none cursor-pointer"
                         >
                             Esqueceu sua senha?
                         </button>
                     </div>
                 </div>
-                <div className="bg-gray-50 p-4 text-center text-xs text-gray-500 border-t border-gray-100">
-                    &copy; 2025 Elite Finder. Todos os direitos reservados.
-                </div>
+                <Footer />
             </motion.div>
         </div>
     );

@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: './.env' });
 const { Pool } = require('pg');
 const agentTemplates = require('./config/agentTemplates');
 
@@ -58,7 +58,7 @@ async function seedTemplates() {
                         $1, $2, $3, $4, $5, $6, $7, $8, $9
                     WHERE NOT EXISTS (
                         SELECT 1 FROM agent_custom_parameters 
-                        WHERE chatbot_id IS NULL AND parameter_key = $1
+                        WHERE chatbot_id IS NULL AND parameter_key = $10
                     )
                 `, [
                     `${template.meta.templateId}.${param.key}`,
@@ -69,7 +69,8 @@ async function seedTemplates() {
                     param.displayOrder || 0,
                     param.helperText || '',
                     param.required || false,
-                    JSON.stringify(param.validation || {})
+                    JSON.stringify(param.validation || {}),
+                    `${template.meta.templateId}.${param.key}` // $10 para evitar ambiguidade de tipo
                 ]);
             }
 
@@ -85,12 +86,13 @@ async function seedTemplates() {
                         SELECT NULL, $1, $2, $3
                         WHERE NOT EXISTS (
                             SELECT 1 FROM agent_parameter_groups 
-                            WHERE chatbot_id IS NULL AND group_id = $1
+                            WHERE chatbot_id IS NULL AND group_id = $4
                         )
                     `, [
                         `${template.meta.templateId}.${group.id}`,
                         group.label,
-                        group.order
+                        group.order,
+                        `${template.meta.templateId}.${group.id}` // $4 for WHERE clause
                     ]);
                 }
             }

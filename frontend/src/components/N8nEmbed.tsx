@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface N8nEmbedProps {
     width?: string
@@ -15,10 +15,46 @@ export function N8nEmbed({
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
-    // URL com locale PT-BR forçado
-    const n8nUrl = 'https://arsdatascience-n8n.aiiam.com.br?locale=pt_BR'
+    const baseUrl = 'https://arsdatascience-n8n.aiiam.com.br';
+    const defaultUrl = `${baseUrl}?locale=pt_BR`;
+
+    // Optimistic loading: Start with default URL immediately
+    const [n8nUrl, setN8nUrl] = useState(defaultUrl)
 
     useEffect(() => {
+        const loadUrl = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return; // Keep default
+
+                const res = await fetch(`${import.meta.env.VITE_API_URL}/api/integrations/n8n/url`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.success && data.url) {
+                        let finalUrl = data.url;
+                        if (!finalUrl.startsWith('http')) finalUrl = `https://${finalUrl}`;
+
+                        // Append locale
+                        const separator = finalUrl.includes('?') ? '&' : '?';
+                        const newUrl = `${finalUrl}${separator}locale=pt_BR`;
+
+                        // Only update if different to avoid reloading iframe
+                        if (newUrl !== defaultUrl) {
+                            setN8nUrl(newUrl);
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Background fetch of n8n URL failed, using default:', err);
+                // No action needed, default is already set
+            }
+        };
+
+        loadUrl();
+
         // Timeout de 15 segundos
         const timeout = setTimeout(() => {
             if (isLoading) {
@@ -65,7 +101,7 @@ export function N8nEmbed({
             {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
                     <div className="text-center">
-                        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+                        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto mb-4"></div>
                         <p className="text-gray-700 font-medium">Carregando editor de workflows...</p>
                         <p className="text-gray-500 text-sm mt-2">Configurando ambiente em português</p>
                     </div>
@@ -109,7 +145,6 @@ export function N8nEmbed({
                 className="border-0 w-full h-full"
                 title="N8N Workflow Editor - Automação de Marketing"
                 allow="clipboard-read; clipboard-write; fullscreen"
-                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads"
                 referrerPolicy="strict-origin-when-cross-origin"
                 loading="eager"
                 onLoad={handleLoad}

@@ -1,0 +1,4 @@
+src/components/market-analysis/BulkDataImport.tsx(279,10): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/market-analysis/BulkDataImport.tsx(1075,18): error TS1005: '}' expected.
+src/components/market-analysis/BulkDataImport.tsx(1076,1): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+src/components/market-analysis/BulkDataImport.tsx(1079,1): error TS1005: '</' expected.

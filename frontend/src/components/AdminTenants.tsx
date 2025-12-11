@@ -125,7 +125,7 @@ export const AdminTenants: React.FC = () => {
         <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                    <Building className="text-blue-600" /> Gestão de Clientes (Tenants)
+                    <Building className="text-primary-600" /> Gestão de Clientes (Tenants)
                 </h2>
                 <button
                     onClick={() => {
@@ -136,7 +136,7 @@ export const AdminTenants: React.FC = () => {
                         });
                         setIsCreating(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                 >
                     <Plus size={18} /> Novo Cliente
                 </button>
@@ -163,7 +163,7 @@ export const AdminTenants: React.FC = () => {
                                 </td>
                                 <td className="p-4 text-sm text-gray-600">{tenant.cnpj}</td>
                                 <td className="p-4">
-                                    <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-bold">
+                                    <span className="px-2 py-1 bg-primary-50 text-primary-700 rounded text-xs font-bold">
                                         {tenant.plan_name || 'Sem Plano'}
                                     </span>
                                 </td>
@@ -178,7 +178,7 @@ export const AdminTenants: React.FC = () => {
                                     )}
                                 </td>
                                 <td className="p-4 text-right flex justify-end gap-2">
-                                    <button onClick={() => { setEditingTenant(tenant); setIsCreating(false); }} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg">
+                                    <button onClick={() => { setEditingTenant(tenant); setIsCreating(false); }} className="p-2 text-primary-600 hover:bg-primary-100 rounded-lg">
                                         <Edit2 size={16} />
                                     </button>
                                     <button onClick={() => handleDelete(tenant.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-lg">
@@ -207,7 +207,7 @@ export const AdminTenants: React.FC = () => {
                                     <input
                                         value={editingTenant.name}
                                         onChange={e => setEditingTenant({ ...editingTenant, name: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                     />
                                 </div>
                                 <div>
@@ -215,7 +215,7 @@ export const AdminTenants: React.FC = () => {
                                     <input
                                         value={editingTenant.cnpj}
                                         onChange={e => setEditingTenant({ ...editingTenant, cnpj: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                     />
                                 </div>
                             </div>
@@ -226,7 +226,7 @@ export const AdminTenants: React.FC = () => {
                                     <input
                                         value={editingTenant.email}
                                         onChange={e => setEditingTenant({ ...editingTenant, email: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                     />
                                 </div>
                                 <div>
@@ -234,7 +234,7 @@ export const AdminTenants: React.FC = () => {
                                     <input
                                         value={editingTenant.phone}
                                         onChange={e => setEditingTenant({ ...editingTenant, phone: e.target.value })}
-                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                     />
                                 </div>
                             </div>
@@ -244,7 +244,7 @@ export const AdminTenants: React.FC = () => {
                                 <select
                                     value={editingTenant.plan_id}
                                     onChange={e => setEditingTenant({ ...editingTenant, plan_id: Number(e.target.value) })}
-                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-900"
+                                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none text-gray-900"
                                 >
                                     {plans.map(p => (
                                         <option key={p.id} value={p.id}>{p.name}</option>
@@ -274,8 +274,8 @@ export const AdminTenants: React.FC = () => {
                             </div>
 
                             {isCreating && (
-                                <div className="border-t pt-4 mt-4 bg-blue-50 p-4 rounded-lg">
-                                    <h4 className="font-bold text-blue-800 mb-2">Criar Administrador Inicial</h4>
+                                <div className="border-t pt-4 mt-4 bg-primary-50 p-4 rounded-lg">
+                                    <h4 className="font-bold text-primary-800 mb-2">Criar Administrador Inicial</h4>
                                     <div className="space-y-3">
                                         <input placeholder="Nome do Admin" value={editingTenant.adminUser?.name || ''} onChange={e => setEditingTenant({ ...editingTenant, adminUser: { ...editingTenant.adminUser, name: e.target.value } })} className="w-full p-2 border rounded-lg text-sm text-gray-900" />
                                         <input placeholder="Email do Admin" value={editingTenant.adminUser?.email || ''} onChange={e => setEditingTenant({ ...editingTenant, adminUser: { ...editingTenant.adminUser, email: e.target.value } })} className="w-full p-2 border rounded-lg text-sm text-gray-900" />
@@ -286,7 +286,7 @@ export const AdminTenants: React.FC = () => {
 
                             <button
                                 onClick={() => handleSave(editingTenant)}
-                                className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 mt-4 shadow-lg shadow-blue-200 transition-all"
+                                className="w-full py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 mt-4 shadow-lg shadow-primary-200 transition-all"
                             >
                                 Salvar Cliente
                             </button>

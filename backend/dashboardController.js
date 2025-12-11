@@ -1,4 +1,5 @@
 const db = require('./database');
+const { getTenantScope } = require('./utils/tenantSecurity');
 
 // Função auxiliar para gerar dados sintéticos determinísticos baseados no ID do cliente
 const generateMockData = (clientId) => {
@@ -42,78 +43,145 @@ const generateMockData = (clientId) => {
     };
 };
 
+const redis = require('./redisClient');
+
 /**
- * Get Dashboard KPIs
+ * Get Dashboard KPIs (Cached)
  */
 const getKPIs = async (req, res) => {
     const { client, startDate, endDate } = req.query;
-    const clientId = client && client !== 'all' ? parseInt(client) : 1;
+    const clientId = client && client !== 'all' ? parseInt(client) : null;
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
+
+    // Cache Key Strategy: tenant:client:dates
+    const cacheKey = `kpis:${tenantId}:${clientId || 'all'}:${startDate || 'all'}:${endDate || 'all'}`;
 
     try {
+        // 1. Tentar pegar do Cache
+        const cachedData = await redis.get(cacheKey);
+        if (cachedData) {
+            console.log('⚡ Serving KPIs from Redis Cache');
+            return res.json(JSON.parse(cachedData));
+        }
+
+        // 2. Se não tiver no cache, processa normalmente (lógica original)
+
         let params = [];
-        let paramCount = 1;
-        let clientFilter = '';
+        let conditions = ['1=1'];
 
-        if (client && client !== 'all') {
-            clientFilter = `AND c.client_id = $${paramCount}`;
-            params.push(client);
-            paramCount++;
+        // Tenant Filter
+        if (!isSuperAdmin && tenantId) {
+            conditions.push(`c.tenant_id = $${params.length + 1}`);
+            params.push(tenantId);
         }
 
-        let dateFilter = '';
+        // Client Filter
+        if (clientId) {
+            conditions.push(`c.id = $${params.length + 1}`); // Assuming join with clients c
+            params.push(clientId);
+        }
+
+        // Date Filter
         if (startDate && endDate) {
-            dateFilter = `AND m.date BETWEEN $${paramCount} AND $${paramCount + 1}`;
+            conditions.push(`m.date BETWEEN $${params.length + 1} AND $${params.length + 2}`);
             params.push(startDate, endDate);
-            paramCount += 2;
         }
 
-        // Query de Investimento (usando metrics para suportar filtro de data)
+        const whereClause = conditions.join(' AND ');
+
+        // Query de Investimento
         const spentQuery = await db.query(`
             SELECT COALESCE(SUM(m.spend), 0) as total_spent 
             FROM campaign_daily_metrics m
             JOIN campaigns c ON m.campaign_id = c.id
-            WHERE 1=1 ${clientFilter} ${dateFilter}
+            WHERE ${whereClause}
         `, params);
 
         let totalSpent = parseFloat(spentQuery.rows[0]?.total_spent || 0);
 
         // Fallback se não usar filtro de data (pegar total acumulado)
         if (totalSpent === 0 && !startDate) {
-            const fallbackParams = client && client !== 'all' ? [client] : [];
-            const fallbackSpent = await db.query(`SELECT COALESCE(SUM(spent), 0) as total_spent FROM campaigns c WHERE 1=1 ${client && client !== 'all' ? 'AND client_id = $1' : ''}`, fallbackParams);
+            let fallbackParams = [];
+            let fallbackConditions = ['1=1'];
+
+            if (!isSuperAdmin && tenantId) {
+                fallbackConditions.push(`c.tenant_id = $${fallbackParams.length + 1}`);
+                fallbackParams.push(tenantId);
+            }
+            if (clientId) {
+                fallbackConditions.push(`c.id = $${fallbackParams.length + 1}`); // c is clients joined? No, campaigns has client_id
+                // Wait, campaigns table has client_id.
+                // Let's check schema. campaigns(client_id). clients(id, tenant_id).
+                // So we need to join clients if filtering by tenant.
+            }
+
+            // Simplified fallback query logic
+            let fallbackQuery = `
+                SELECT COALESCE(SUM(cmp.spent), 0) as total_spent 
+                FROM campaigns cmp
+                JOIN clients c ON cmp.client_id = c.id
+            `;
+
+            // Rebuild conditions for fallback
+            let fbConditions = ['1=1'];
+            let fbParams = [];
+            if (!isSuperAdmin && tenantId) {
+                fbConditions.push(`c.tenant_id = $${fbParams.length + 1}`);
+                fbParams.push(tenantId);
+            }
+            if (clientId) {
+                fbConditions.push(`cmp.client_id = $${fbParams.length + 1}`);
+                fbParams.push(clientId);
+            }
+
+            fallbackQuery += ' WHERE ' + fbConditions.join(' AND ');
+
+            const fallbackSpent = await db.query(fallbackQuery, fbParams);
             totalSpent = parseFloat(fallbackSpent.rows[0]?.total_spent || 0);
         }
 
-        // Query de Receita (Leads) - Leads tem created_at, não date
-        // Ajustando filtro de data para leads
-        let leadDateFilter = '';
+        // Query de Receita (Leads)
+        let leadParams = [];
+        let leadConditions = ["status IN ('won', 'closed', 'venda')"];
+
+        if (!isSuperAdmin && tenantId) {
+            leadConditions.push(`c.tenant_id = $${leadParams.length + 1}`);
+            leadParams.push(tenantId);
+        }
+        if (clientId) {
+            leadConditions.push(`l.client_id = $${leadParams.length + 1}`);
+            leadParams.push(clientId);
+        }
         if (startDate && endDate) {
-            // Reusando params, mas cuidado com índices. Melhor refazer params para leads ou usar named params (pg não suporta nativo fácil).
-            // Simplificando: vou usar os mesmos valores de data
-            leadDateFilter = `AND created_at BETWEEN '${startDate}' AND '${endDate}'`; // Atenção: SQL Injection risk se não validar. Mas assumindo input controlado.
+            leadConditions.push(`l.created_at BETWEEN $${leadParams.length + 1} AND $${leadParams.length + 2}`);
+            leadParams.push(startDate, endDate);
         }
 
         const revenueQuery = await db.query(`
-            SELECT COALESCE(SUM(value), 0) as total_revenue 
-            FROM leads 
-            WHERE status IN ('won', 'closed', 'venda') 
-            ${client && client !== 'all' ? `AND client_id = ${client}` : ''} 
-            ${leadDateFilter}
-        `);
+            SELECT COALESCE(SUM(l.value), 0) as total_revenue 
+            FROM leads l
+            JOIN clients c ON l.client_id = c.id
+            WHERE ${leadConditions.join(' AND ')}
+        `, leadParams);
+
         const totalRevenue = parseFloat(revenueQuery.rows[0]?.total_revenue || 0);
 
         // Se não houver dados reais significativos, retornar mock
         if (totalSpent === 0 && totalRevenue === 0) {
-            return res.json(generateMockData(clientId).kpis);
+            return res.json(generateMockData(clientId || 1).kpis);
         }
+
+        // Query de Leads Total (reusing lead conditions but removing status filter)
+        let totalLeadsConditions = [...leadConditions];
+        totalLeadsConditions[0] = '1=1'; // Remove status filter
 
         const leadsQuery = await db.query(`
             SELECT COUNT(*) as total_leads 
-            FROM leads 
-            WHERE 1=1 
-            ${client && client !== 'all' ? `AND client_id = ${client}` : ''} 
-            ${leadDateFilter}
-        `);
+            FROM leads l
+            JOIN clients c ON l.client_id = c.id
+            WHERE ${totalLeadsConditions.join(' AND ')}
+        `, leadParams);
+
         const totalLeads = parseInt(leadsQuery.rows[0]?.total_leads || 0);
 
         const roas = totalSpent > 0 ? (totalRevenue / totalSpent).toFixed(2) : 0;
@@ -127,12 +195,17 @@ const getKPIs = async (req, res) => {
         const change3 = getChange();
         const change4 = getChange();
 
-        res.json([
+        const responseData = [
             { label: 'Investimento Total', value: `R$ ${(totalSpent / 1000).toFixed(1)}k`, change: change1, trend: getTrend(change1) },
             { label: 'Receita Gerada', value: `R$ ${(totalRevenue / 1000).toFixed(1)}k`, change: change2, trend: getTrend(change2) },
             { label: 'ROAS Médio', value: `${roas}x`, change: change3, trend: getTrend(change3) },
             { label: 'Total de Leads', value: totalLeads.toString(), change: change4, trend: getTrend(change4) }
-        ]);
+        ];
+
+        // 3. Salvar no Cache por 5 minutos (300 segundos)
+        await redis.set(cacheKey, JSON.stringify(responseData), 'EX', 300);
+
+        res.json(responseData);
 
     } catch (error) {
         console.error('Error fetching KPIs:', error);
@@ -146,15 +219,24 @@ const getKPIs = async (req, res) => {
 const getChartData = async (req, res) => {
     const { client } = req.query;
     const clientId = client && client !== 'all' ? parseInt(client) : 1;
+    const { tenantId } = getTenantScope(req);
+    const cacheKey = `chart_data:${tenantId}:${clientId}`;
 
     try {
+        const cached = await redis.get(cacheKey);
+        if (cached) return res.json(JSON.parse(cached));
+
         const campaignsCheck = await db.query('SELECT COUNT(*) as count FROM campaigns');
+        let data;
         if (parseInt(campaignsCheck.rows[0].count) === 0) {
-            return res.json(generateMockData(clientId).chartData);
+            data = generateMockData(clientId).chartData;
+        } else {
+            // Se tiver dados mas não implementamos histórico real ainda, usamos mock
+            data = generateMockData(clientId).chartData;
         }
 
-        // Se tiver dados mas não implementamos histórico real ainda, usamos mock
-        return res.json(generateMockData(clientId).chartData);
+        await redis.set(cacheKey, JSON.stringify(data), 'EX', 300); // 5 min
+        return res.json(data);
 
     } catch (error) {
         console.error('Error fetching chart data:', error);
@@ -168,17 +250,25 @@ const getChartData = async (req, res) => {
 const getFunnelData = async (req, res) => {
     const { client } = req.query;
     const clientId = client && client !== 'all' ? parseInt(client) : 1;
+    const { tenantId } = getTenantScope(req);
+    const cacheKey = `funnel_data:${tenantId}:${clientId}`;
 
     try {
+        const cached = await redis.get(cacheKey);
+        if (cached) return res.json(JSON.parse(cached));
+
         const result = await db.query(`SELECT COUNT(*) as count FROM leads`);
+        let data;
 
         if (parseInt(result.rows[0].count) === 0) {
-            return res.json(generateMockData(clientId).funnelData);
+            data = generateMockData(clientId).funnelData;
+        } else {
+            // Se tiver dados reais, tentar usar (simplificado)
+            data = generateMockData(clientId).funnelData;
         }
 
-        // Se tiver dados reais, tentar usar (simplificado)
-        // ... (lógica existente mantida se necessário, mas priorizando mock dinâmico se vazio)
-        return res.json(generateMockData(clientId).funnelData);
+        await redis.set(cacheKey, JSON.stringify(data), 'EX', 300);
+        return res.json(data);
 
     } catch (error) {
         console.error('Error fetching funnel data:', error);
@@ -192,8 +282,13 @@ const getFunnelData = async (req, res) => {
 const getDeviceData = async (req, res) => {
     const { client } = req.query;
     const clientId = client && client !== 'all' ? parseInt(client) : 1;
+    const { tenantId } = getTenantScope(req);
+    const cacheKey = `device_data:${tenantId}:${clientId}`;
 
     try {
+        const cached = await redis.get(cacheKey);
+        if (cached) return res.json(JSON.parse(cached));
+
         // Tentar buscar por client_id primeiro
         let result = await db.query('SELECT device_type as name, percentage as value FROM device_stats WHERE client_id = $1', [clientId]);
 
@@ -202,16 +297,19 @@ const getDeviceData = async (req, res) => {
             result = await db.query('SELECT device_type as name, percentage as value FROM device_stats WHERE client_id IS NULL');
         }
 
+        let data;
         if (result.rows.length === 0) {
-            return res.json(generateMockData(clientId).deviceData);
+            data = generateMockData(clientId).deviceData;
+        } else {
+            data = result.rows.map(row => ({
+                ...row,
+                value: parseFloat(row.value),
+                color: row.name === 'Mobile' ? '#3b82f6' : row.name === 'Desktop' ? '#10b981' : '#f59e0b'
+            }));
         }
 
-        const dataWithColors = result.rows.map(row => ({
-            ...row,
-            value: parseFloat(row.value),
-            color: row.name === 'Mobile' ? '#3b82f6' : row.name === 'Desktop' ? '#10b981' : '#f59e0b'
-        }));
-        res.json(dataWithColors);
+        await redis.set(cacheKey, JSON.stringify(data), 'EX', 300);
+        res.json(data);
 
     } catch (error) {
         console.error('Error fetching device data:', error);
@@ -221,28 +319,64 @@ const getDeviceData = async (req, res) => {
 
 const getConversionSources = async (req, res) => {
     const { client } = req.query;
-    const clientId = client && client !== 'all' ? parseInt(client) : 1;
+    const { isSuperAdmin, tenantId } = getTenantScope(req);
+    const cacheKey = `conversion_sources:${tenantId}:${client || 'all'}`;
 
     try {
-        const result = await db.query('SELECT source_name as label, percentage as val FROM conversion_sources WHERE client_id = $1 ORDER BY percentage DESC', [clientId]);
+        const cached = await redis.get(cacheKey);
+        if (cached) return res.json(JSON.parse(cached));
+
+        let query = 'SELECT source_name as label, SUM(percentage) as val FROM conversion_sources';
+        let params = [];
+        let conditions = [];
+
+        if (client && client !== 'all') {
+            conditions.push(`client_id = $${params.length + 1}`);
+            params.push(parseInt(client));
+        } else if (!isSuperAdmin && tenantId) {
+            // If all clients but not super admin, filter by tenant
+            // Need to join with clients table to filter by tenant
+            query = `
+                SELECT cs.source_name as label, SUM(cs.percentage) as val 
+                FROM conversion_sources cs
+                JOIN clients c ON cs.client_id = c.id
+            `;
+            conditions.push(`c.tenant_id = $${params.length + 1}`);
+            params.push(tenantId);
+        } else {
+            // Super admin viewing all: simple select from conversion_sources (implicit aggregation needed if multiple clients have same source)
+            // The original query was per client. If we aggregate, we need to handle percentages correctly (avg or sum?). 
+            // Assuming 'percentage' is share of voice per client. Averaging makes more sense for "Global Share".
+            query = 'SELECT source_name as label, AVG(percentage) as val FROM conversion_sources';
+        }
+
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
+        }
+
+        query += ' GROUP BY source_name ORDER BY val DESC';
+
+        const result = await db.query(query, params);
+        let data;
 
         if (result.rows.length === 0) {
             // Mock default
-            return res.json([
+            data = [
                 { label: 'Google Ads', val: 45, color: 'bg-blue-500' },
                 { label: 'Meta Ads', val: 32, color: 'bg-purple-500' },
                 { label: 'Busca Orgânica', val: 15, color: 'bg-green-500' },
                 { label: 'Direto/Indicação', val: 8, color: 'bg-yellow-500' }
-            ]);
+            ];
+        } else {
+            const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-indigo-500'];
+            data = result.rows.map((row, index) => ({
+                ...row,
+                val: parseFloat(row.val),
+                color: colors[index % colors.length]
+            }));
         }
 
-        const colors = ['bg-blue-500', 'bg-purple-500', 'bg-green-500', 'bg-yellow-500', 'bg-red-500', 'bg-indigo-500'];
-        const data = result.rows.map((row, index) => ({
-            ...row,
-            val: parseFloat(row.val),
-            color: colors[index % colors.length]
-        }));
-
+        await redis.set(cacheKey, JSON.stringify(data), 'EX', 300);
         res.json(data);
     } catch (error) {
         console.error('Error fetching conversion sources:', error);

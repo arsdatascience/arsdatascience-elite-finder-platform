@@ -105,8 +105,8 @@ export const TemplateManager: React.FC = () => {
                             <div key={template.id} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow p-6 flex flex-col">
                                 <div className="flex items-start justify-between mb-4">
                                     <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${template.category === 'sales' ? 'bg-green-100 text-green-700' :
-                                            template.category === 'support' ? 'bg-blue-100 text-blue-700' :
-                                                'bg-purple-100 text-purple-700'
+                                        template.category === 'support' ? 'bg-primary-100 text-primary-700' :
+                                            'bg-purple-100 text-purple-700'
                                         }`}>
                                         {template.category}
                                     </div>

@@ -1,0 +1,18 @@
+id,tenant_id,holiday_name,holiday_date,lower_window,upper_window,is_recurring
+d65710ae-12f8-49d7-93d8-8b2227f0408d,,Ano Novo,2024-01-01,-1,1,True
+eaf72080-afd5-4e96-ab55-cee20a42f40e,,Carnaval,2024-02-21,-3,1,True
+c3809c5c-ca55-4ba2-b034-a55db897943b,,Páscoa,2024-04-09,-2,1,True
+8be490f4-7eee-46b1-b91f-96febd6dcaf6,,Tiradentes,2024-04-21,0,0,True
+57f9f85e-2ccd-47a6-b5f4-d396827074c8,,Dia do Trabalho,2024-05-01,0,0,True
+e968001f-6e02-4b31-90fe-391c7dc81c21,,Dia das Mães,2024-05-12,-7,0,True
+147253e8-87a2-488c-a579-f4caa908d0b8,,Corpus Christi,2024-06-08,0,0,True
+1e6f9db9-37df-4df4-94d4-a3bdb5f69a8a,,Dia dos Namorados,2024-06-12,-3,0,True
+7423f7c0-0b83-4ec8-b2ac-9ba881bbaaf1,,Dia dos Pais,2024-08-11,-7,0,True
+efcfe0bb-8b3f-42db-9fcb-868beb1d92e9,,Independência,2024-09-07,0,0,True
+da991647-de39-4a51-ae2b-2aaad2a5b3fd,,Nossa Senhora Aparecida,2024-10-12,0,0,True
+905ca091-005e-40cb-9782-da78c7b97646,,Dia das Crianças,2024-10-12,-3,0,True
+9c67cc5f-6573-4ca0-b014-586429001f28,,Finados,2024-11-02,0,0,True
+66e0be4d-1d7c-4e6e-8ad8-b69c5723b1e2,,Proclamação da República,2024-11-15,0,0,True
+96361e14-6e6f-499e-8f73-013a27aa45b3,,Black Friday,2024-11-29,-7,0,True
+0673c7df-4677-4c15-b77b-1758ccfe611f,,Natal,2024-12-25,-10,0,True
+e90dbc5b-659b-49dd-8e86-10a2ae6ac60e,,Reveillon,2024-12-31,-3,0,True

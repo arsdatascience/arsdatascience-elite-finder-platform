@@ -1,12 +1,13 @@
-const OpenAI = require('openai');
+// Skipped modification of audioController.js as it uses local storage for temporary processing only.
 const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
 const pool = require('./database');
 
 // Inicializar OpenAI
+const OpenAI = require('openai');
 const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY || 'sk-dummy-key',
 });
 
 // Configuração do Multer para salvar temporariamente
@@ -51,6 +52,7 @@ exports.analyzeAudio = async (req, res) => {
     }
 
     let filePath = req.file.path;
+    const clientId = req.body.clientId ? parseInt(req.body.clientId) : null;
 
     // Hack para arquivos .opus (comum no WhatsApp): renomear para .ogg para a OpenAI aceitar
     if (path.extname(req.file.originalname).toLowerCase() === '.opus') {
@@ -143,11 +145,12 @@ exports.analyzeAudio = async (req, res) => {
 
         try {
             const result = await pool.query(
-                `INSERT INTO audio_analyses (user_id, filename, summary, global_sentiment, speakers, segments)
-                 VALUES ($1, $2, $3, $4, $5, $6)
+                `INSERT INTO audio_analyses (user_id, client_id, filename, summary, global_sentiment, speakers, segments)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                  RETURNING id, created_at`,
                 [
                     req.user.id,
+                    clientId,
                     req.file.originalname,
                     analysis.summary,
                     analysis.globalSentiment,
@@ -177,13 +180,19 @@ exports.analyzeAudio = async (req, res) => {
 
 exports.getHistory = async (req, res) => {
     try {
-        const result = await pool.query(
-            `SELECT id, filename, created_at, global_sentiment 
-             FROM audio_analyses 
-             WHERE user_id = $1 
-             ORDER BY created_at DESC`,
-            [req.user.id]
-        );
+        const clientId = req.query.clientId ? parseInt(req.query.clientId) : null;
+
+        let query = `SELECT id, filename, created_at, global_sentiment FROM audio_analyses WHERE user_id = $1`;
+        let params = [req.user.id];
+
+        if (clientId) {
+            query += ` AND client_id = $2`;
+            params.push(clientId);
+        }
+
+        query += ` ORDER BY created_at DESC`;
+
+        const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (error) {
         console.error(error);

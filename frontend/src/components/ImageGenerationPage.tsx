@@ -12,7 +12,11 @@ import { ImageLightbox } from './ui/ImageLightbox';
 import { AnalyticsDashboard } from './image-generation/AnalyticsDashboard';
 import { PromptTemplate } from '../lib/prompt-templates';
 
-export const ImageGenerationPage: React.FC = () => {
+interface ImageGenerationPageProps {
+    clientId?: number | null;
+}
+
+export const ImageGenerationPage: React.FC<ImageGenerationPageProps> = ({ clientId }) => {
     const [prompt, setPrompt] = useState('');
     const [negativePrompt, setNegativePrompt] = useState('');
     const [model, setModel] = useState('flux-schnell');
@@ -43,8 +47,11 @@ export const ImageGenerationPage: React.FC = () => {
 
     useEffect(() => {
         loadModels();
-        loadGallery();
     }, []);
+
+    useEffect(() => {
+        loadGallery();
+    }, [clientId]);
 
     const loadModels = async () => {
         try {
@@ -57,7 +64,7 @@ export const ImageGenerationPage: React.FC = () => {
 
     const loadGallery = async () => {
         try {
-            const data = await apiClient.imageGeneration.list(12, 1);
+            const data = await apiClient.imageGeneration.list(12, 1, clientId);
             if (data && data.data) setGallery(data.data);
         } catch (err) {
             console.error('Erro ao carregar galeria:', err);
@@ -81,7 +88,8 @@ export const ImageGenerationPage: React.FC = () => {
                 num_inference_steps: steps,
                 guidance_scale: guidance,
                 seed: seed === '' ? undefined : Number(seed),
-                num_outputs: batchSize
+                num_outputs: batchSize,
+                clientId: clientId
             });
 
             if (result.success) {
@@ -92,7 +100,15 @@ export const ImageGenerationPage: React.FC = () => {
                 setError('Falha na geração da imagem.');
             }
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Erro ao conectar com servidor.');
+            const errorMessage = err.response?.data?.error || 'Erro ao conectar com servidor.';
+            console.error('API Error:', errorMessage);
+
+            // Map technical/DB errors to user-friendly messages
+            if (errorMessage.includes('column') || errorMessage.includes('relation') || errorMessage.includes('SQL')) {
+                setError('Erro interno no servidor. Por favor, tente novamente em alguns instantes. Se persistir, contate o suporte.');
+            } else {
+                setError(errorMessage);
+            }
         } finally {
             setLoading(false);
         }
@@ -166,7 +182,7 @@ export const ImageGenerationPage: React.FC = () => {
         <div className="p-6 max-w-7xl mx-auto space-y-8 animate-fade-in">
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-purple-100 rounded-xl text-purple-600">
+                    <div className="p-3 bg-slate-100 rounded-xl text-slate-600">
                         <Sparkles size={24} />
                     </div>
                     <div>
@@ -195,7 +211,7 @@ export const ImageGenerationPage: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={() => setShowHistory(true)}
-                                            className="text-xs flex items-center gap-1 text-purple-600 hover:text-purple-700 font-medium"
+                                            className="text-xs flex items-center gap-1 text-gray-700 hover:text-gray-900 font-medium"
                                         >
                                             <Clock size={14} /> Histórico
                                         </button>
@@ -206,7 +222,7 @@ export const ImageGenerationPage: React.FC = () => {
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder="Descreva a imagem detalhadamente..."
-                                    className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none resize-none text-sm"
+                                    className="w-full h-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none resize-none text-sm"
                                     maxLength={1000}
                                     required
                                 />
@@ -215,7 +231,7 @@ export const ImageGenerationPage: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={() => handleTranslate('en')}
-                                            className="text-xs text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1 hover:bg-purple-50 px-2 py-1 rounded transition-colors"
+                                            className="text-xs text-slate-600 hover:text-slate-800 font-medium flex items-center gap-1 hover:bg-slate-100 px-2 py-1 rounded transition-colors"
                                             disabled={loading}
                                             title="Traduzir para Inglês (Melhor para IAs)"
                                         >
@@ -224,7 +240,7 @@ export const ImageGenerationPage: React.FC = () => {
                                         <button
                                             type="button"
                                             onClick={() => handleTranslate('pt')}
-                                            className="text-xs text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1 hover:bg-purple-50 px-2 py-1 rounded transition-colors"
+                                            className="text-xs text-slate-600 hover:text-slate-800 font-medium flex items-center gap-1 hover:bg-slate-100 px-2 py-1 rounded transition-colors"
                                             disabled={loading}
                                             title="Traduzir para Português"
                                         >
@@ -243,7 +259,7 @@ export const ImageGenerationPage: React.FC = () => {
                                             key={m.id}
                                             type="button"
                                             onClick={() => setModel(m.id)}
-                                            className={`p-3 border rounded-lg text-left transition-all ${model === m.id ? 'border-purple-500 bg-purple-50 ring-1 ring-purple-500' : 'border-gray-200 hover:bg-gray-50'}`}
+                                            className={`p-3 border rounded-lg text-left transition-all ${model === m.id ? 'border-slate-500 bg-slate-50 ring-1 ring-slate-500' : 'border-gray-200 hover:bg-gray-50'}`}
                                         >
                                             <div className="font-medium text-sm text-gray-900">{m.name}</div>
                                             <div className="text-xs text-gray-500">{m.description}</div>
@@ -257,7 +273,7 @@ export const ImageGenerationPage: React.FC = () => {
                                 <select
                                     value={SIZES.findIndex(s => s.label === size.label) !== -1 ? SIZES.findIndex(s => s.label === size.label) : 4}
                                     onChange={(e) => setSize(SIZES[parseInt(e.target.value)])}
-                                    className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                    className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-500 outline-none"
                                 >
                                     {SIZES.map((s, i) => (
                                         <option key={i} value={i}>{s.label}</option>
@@ -273,7 +289,7 @@ export const ImageGenerationPage: React.FC = () => {
                                                 value={size.width}
                                                 onChange={(e) => setSize({ ...size, width: Number(e.target.value) })}
                                                 step="64" min="256" max="2048"
-                                                className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                                className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-500 outline-none"
                                             />
                                         </div>
                                         <div>
@@ -283,7 +299,7 @@ export const ImageGenerationPage: React.FC = () => {
                                                 value={size.height}
                                                 onChange={(e) => setSize({ ...size, height: Number(e.target.value) })}
                                                 step="64" min="256" max="2048"
-                                                className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                                className="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-slate-500 outline-none"
                                             />
                                         </div>
                                     </div>
@@ -291,7 +307,7 @@ export const ImageGenerationPage: React.FC = () => {
                             </div>
 
                             <details className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                <summary className="cursor-pointer font-medium hover:text-purple-600 flex items-center justify-between">
+                                <summary className="cursor-pointer font-medium hover:text-slate-600 flex items-center justify-between">
                                     <span>Opções Avançadas</span>
                                     <span className="text-xs text-gray-400">(Steps, Guidance, Seed, Batch)</span>
                                 </summary>
@@ -308,32 +324,32 @@ export const ImageGenerationPage: React.FC = () => {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1" title="Mais passos = maior qualidade (e tempo)">Passos (Steps): {steps}</label>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1" title="Mais passos = maior qualidade (e tempo)">Passos: {steps}</label>
                                             <input
                                                 type="range" min="1" max="50" value={steps}
                                                 onChange={(e) => setSteps(Number(e.target.value))}
-                                                className="w-full accent-purple-600"
+                                                className="w-full accent-slate-600"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-500 mb-1" title="Quão fiel ao prompt (7-10 é ideal)">Guidance Scale: {guidance}</label>
+                                            <label className="block text-xs font-medium text-gray-500 mb-1" title="Quão fiel ao prompt (7-10 é ideal)">Fidelidade (Guidance): {guidance}</label>
                                             <input
                                                 type="range" min="1" max="20" step="0.5" value={guidance}
                                                 onChange={(e) => setGuidance(Number(e.target.value))}
-                                                className="w-full accent-purple-600"
+                                                className="w-full accent-slate-600"
                                             />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-500 mb-1">Quantidade (Batch Size): {batchSize}</label>
+                                        <label className="block text-xs font-medium text-gray-500 mb-1">Quantidade: {batchSize}</label>
                                         <div className="flex items-center gap-4">
                                             <input
                                                 type="range" min="1" max="4" value={batchSize}
                                                 onChange={(e) => setBatchSize(Number(e.target.value))}
-                                                className="flex-1 accent-purple-600"
+                                                className="flex-1 accent-slate-600"
                                             />
-                                            <span className="text-sm font-bold text-purple-600 w-6 text-center">{batchSize}</span>
+                                            <span className="text-sm font-bold text-slate-800 w-6 text-center">{batchSize}</span>
                                         </div>
                                         <p className="text-[10px] text-gray-400 mt-1">Gera múltiplas imagens de uma vez (Max 4).</p>
                                     </div>
@@ -363,7 +379,7 @@ export const ImageGenerationPage: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={loading || !prompt.trim()}
-                                className="w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                                className="w-full py-3 bg-slate-800 text-white font-bold rounded-lg hover:bg-slate-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                             >
                                 {loading ? <RefreshCw className="animate-spin" size={20} /> : <Sparkles size={20} />}
                                 {loading ? 'Gerando...' : 'Gerar Imagem'}
@@ -407,7 +423,7 @@ export const ImageGenerationPage: React.FC = () => {
 
                                     <button
                                         onClick={() => setActiveTool(activeTool === 'edit' ? 'none' : 'edit')}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${activeTool === 'edit' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'}`}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${activeTool === 'edit' ? 'bg-slate-100 text-slate-700 border border-slate-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'}`}
                                     >
                                         <Edit2 className="w-4 h-4" />
                                         Editar
@@ -415,7 +431,7 @@ export const ImageGenerationPage: React.FC = () => {
 
                                     <button
                                         onClick={() => setActiveTool(activeTool === 'variations' ? 'none' : 'variations')}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${activeTool === 'variations' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'}`}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${activeTool === 'variations' ? 'bg-slate-100 text-slate-700 border border-slate-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'}`}
                                     >
                                         <Copy className="w-4 h-4" />
                                         Variações
@@ -423,7 +439,7 @@ export const ImageGenerationPage: React.FC = () => {
 
                                     <button
                                         onClick={() => setActiveTool(activeTool === 'upscale' ? 'none' : 'upscale')}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${activeTool === 'upscale' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'}`}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${activeTool === 'upscale' ? 'bg-slate-100 text-slate-700 border border-slate-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'}`}
                                     >
                                         <Maximize className="w-4 h-4" />
                                         Upscale
@@ -431,7 +447,7 @@ export const ImageGenerationPage: React.FC = () => {
 
                                     <button
                                         onClick={() => setActiveTool(activeTool === 'remove-bg' ? 'none' : 'remove-bg')}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${activeTool === 'remove-bg' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'}`}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${activeTool === 'remove-bg' ? 'bg-slate-100 text-slate-700 border border-slate-200' : 'bg-white border border-gray-200 hover:bg-gray-50 text-gray-700'}`}
                                     >
                                         <Scissors className="w-4 h-4" />
                                         Remover Fundo
@@ -509,7 +525,7 @@ export const ImageGenerationPage: React.FC = () => {
                                             setActiveTool('none');
                                             window.scrollTo({ top: 0, behavior: 'smooth' });
                                         }}
-                                        className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all relative group aspect-square ${generatedImage?.id === img.id ? 'border-purple-500 ring-2 ring-purple-200' : 'border-transparent hover:border-gray-300'}`}
+                                        className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all relative group aspect-square ${generatedImage?.id === img.id ? 'border-slate-500 ring-2 ring-slate-200' : 'border-transparent hover:border-gray-300'}`}
                                     >
                                         <img src={img.thumbnailUrl || img.url} alt={img.prompt} className="w-full h-full object-cover" />
                                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
@@ -527,17 +543,19 @@ export const ImageGenerationPage: React.FC = () => {
 
             <ImageLightbox image={lightboxImage} onClose={() => setLightboxImage(null)} />
 
-            {showHistory && (
-                <PromptHistory
-                    onSelect={(p) => {
-                        setPrompt(p);
-                        setShowHistory(false);
-                    }}
-                    onClose={() => setShowHistory(false)}
-                />
-            )}
+            {
+                showHistory && (
+                    <PromptHistory
+                        onSelect={(p) => {
+                            setPrompt(p);
+                            setShowHistory(false);
+                        }}
+                        onClose={() => setShowHistory(false)}
+                    />
+                )
+            }
 
             {showAnalytics && <AnalyticsDashboard onClose={() => setShowAnalytics(false)} />}
-        </div>
+        </div >
     );
 };

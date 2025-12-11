@@ -1,0 +1,117 @@
+{
+    "name": "Agente Copywriter Sniper - Elite Finder",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "generate-copy",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook (Receber Pedido)",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ],
+            "webhookId": "generate-copy-webhook"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://elite-finder.up.railway.app/api/ai/generate",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "x-api-key",
+                            "value": "gS89Q17kr):1_8rm8sLiw"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "topic",
+                            "value": "={{ $json.body.topic }}"
+                        },
+                        {
+                            "name": "platform",
+                            "value": "={{ $json.body.platform || 'instagram' }}"
+                        },
+                        {
+                            "name": "type",
+                            "value": "={{ $json.body.type || 'post' }}"
+                        },
+                        {
+                            "name": "tone",
+                            "value": "={{ $json.body.tone || 'persuasive' }}"
+                        },
+                        {
+                            "name": "provider",
+                            "value": "openai"
+                        },
+                        {
+                            "name": "model",
+                            "value": "gpt-4-turbo-preview"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "generate-content",
+            "name": "Gerar Copy (Backend API)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify($json) }}",
+                "options": {}
+            },
+            "id": "respond-webhook",
+            "name": "Responder Webhook",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                900,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "webhook-trigger": {
+            "main": [
+                [
+                    {
+                        "node": "generate-content",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "generate-content": {
+            "main": [
+                [
+                    {
+                        "node": "respond-webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

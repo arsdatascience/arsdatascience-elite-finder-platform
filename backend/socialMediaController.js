@@ -2,21 +2,10 @@ const db = require('./db');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const storageService = require('./services/storageService');
 
-// Configure storage for uploaded files
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        const uploadDir = 'uploads';
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir);
-        }
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// Configure storage for uploaded files - Use Memory Storage for S3
+const storage = multer.memoryStorage();
 
 const upload = multer({ storage: storage });
 
@@ -27,9 +16,13 @@ const createPost = async (req, res) => {
         let media_url = null;
 
         if (req.file) {
-            // In production, you would upload this to S3 or similar
-            // For now, we'll serve it statically
-            media_url = `/uploads/${req.file.filename}`;
+            // Upload to S3
+            media_url = await storageService.uploadFile(
+                req.file.buffer,
+                req.file.originalname,
+                req.file.mimetype,
+                'posts'
+            );
         } else if (req.body.media_url) {
             media_url = req.body.media_url;
         }
@@ -56,35 +49,37 @@ const createPost = async (req, res) => {
         const result = await db.query(query, values);
         const newPost = result.rows[0];
 
+        const { jobsQueue } = require('./queueClient');
+
+        // ... (imports)
+
+        // ... (inside createPost function)
         // Se for agendado, criar Job na fila (SaaS Queue)
         if ((status === 'scheduled' || status === 'published') && scheduled_at) {
             // Buscar Integration ID
-            // TODO: Usar req.user.id quando autenticação estiver habilitada nesta rota
-            const userId = req.user ? req.user.id : 1;
-
+            // Buscar Integration ID using new schema (client_id, provider)
+            // Use finalClientId determined above
             const intResult = await db.query(
-                'SELECT id FROM integrations WHERE user_id = $1 AND platform = $2 AND status = $3',
-                [userId, platform, 'connected']
+                'SELECT id FROM integrations WHERE client_id = $1 AND provider = $2',
+                [finalClientId, platform]
             );
 
             if (intResult.rows.length > 0) {
                 const integrationId = intResult.rows[0].id;
 
-                await db.query(`
-                    INSERT INTO jobs (type, payload, scheduled_for)
-                    VALUES ($1, $2, $3)
-                `, [
-                    'publish_social_post',
-                    JSON.stringify({
-                        postId: newPost.id,
-                        integrationId,
-                        platform,
-                        content,
-                        mediaUrl: media_url
-                    }),
-                    scheduled_at
-                ]);
-                console.log(`📅 Job de publicação agendado para ${scheduled_at}`);
+                // Adicionar à fila do BullMQ
+                await jobsQueue.add('publish_social_post', {
+                    postId: newPost.id,
+                    integrationId,
+                    platform,
+                    content,
+                    mediaUrl: media_url
+                }, {
+                    delay: scheduled_at ? new Date(scheduled_at).getTime() - Date.now() : 0,
+                    jobId: `social_${newPost.id}_${Date.now()}`
+                });
+
+                console.log(`📅 Job de publicação agendado para ${scheduled_at} via BullMQ`);
             } else {
                 console.warn(`⚠️ Nenhuma integração encontrada para ${platform}. Post salvo mas não agendado na fila.`);
             }
@@ -109,8 +104,16 @@ const createPost = async (req, res) => {
 // Get all posts
 const getPosts = async (req, res) => {
     try {
-        const query = 'SELECT * FROM social_posts ORDER BY created_at DESC';
-        const result = await db.query(query);
+        let query = 'SELECT * FROM social_posts';
+        const values = [];
+
+        if (req.query.client && req.query.client !== 'all') {
+            query += ' WHERE client_id = $1';
+            values.push(req.query.client);
+        }
+
+        query += ' ORDER BY created_at DESC';
+        const result = await db.query(query, values);
         res.json(result.rows);
     } catch (error) {
         console.error('Error fetching posts:', error);

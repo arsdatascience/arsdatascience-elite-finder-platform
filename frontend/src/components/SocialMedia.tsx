@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Calendar, Image, ThumbsUp, MessageCircle, Share2, TrendingUp, Sparkles, Users } from 'lucide-react';
+import { Image, ThumbsUp, MessageCircle, Share2, TrendingUp, Sparkles, Users } from 'lucide-react';
 import { ContentGenerator } from './ContentGenerator';
-import { CLIENTS_LIST } from '../constants';
 import { ViewState } from '../types';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import { useQuery } from '@tanstack/react-query';
@@ -16,12 +15,24 @@ interface SocialMediaProps {
 
 export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
     const [showGenerator, setShowGenerator] = useState(false);
-    const [selectedClient, setSelectedClient] = useState(CLIENTS_LIST[1].id);
+    const [clients, setClients] = useState<any[]>([]);
+    const [selectedClient, setSelectedClient] = useState('');
 
     const { data: apiPosts = [], isLoading, isError } = useQuery({
         queryKey: ['socialPosts', selectedClient],
-        queryFn: () => apiClient.social.getPosts(selectedClient)
+        queryFn: () => apiClient.social.getPosts(selectedClient),
+        enabled: !!selectedClient // Only fetch if client is selected
     });
+
+    // Fetch Clients
+    React.useEffect(() => {
+        apiClient.clients.getClients()
+            .then(data => {
+                setClients(data);
+                if (data.length > 0) setSelectedClient(data[0].id);
+            })
+            .catch(err => console.error('Erro ao buscar clientes:', err));
+    }, []);
 
     const displayPosts = apiPosts.map((post: any) => ({
         id: post.id,
@@ -29,16 +40,17 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
         content: post.content,
         platform: post.platform,
         status: post.status === 'published' ? 'publicado' : post.status === 'scheduled' ? 'agendado' : 'rascunho',
-        likes: 0,
-        comments: 0
+        likes: post.likes || 0,
+        comments: post.comments || 0,
+        image: post.media_url || post.imageUrl || post.image_url
     })).slice(0, 5); // Mostrar apenas os 5 mais recentes/próximos
 
-    // Simulate stats based on client
-    const statsMultiplier = selectedClient === '1' ? 1 : selectedClient === '2' ? 0.1 : 0.5;
+    // Simulate stats based on client (mocked logic remains for now, could be API driven later)
+    const statsMultiplier = 1;
 
     const stats = {
         reach: (124500 * statsMultiplier).toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 }),
-        engagement: (4.2 * (selectedClient === '2' ? 2 : 1)).toFixed(1) + '%', // Pequenos negocios as vezes tem engajamento maior
+        engagement: '4.2%',
         comments: Math.floor(892 * statsMultiplier)
     };
 
@@ -59,9 +71,9 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                         <select
                             value={selectedClient}
                             onChange={(e) => setSelectedClient(e.target.value)}
-                            className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
+                            className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-slate-500 focus:border-slate-500 block pl-10 p-2.5 shadow-sm outline-none"
                         >
-                            {CLIENTS_LIST.map(client => (
+                            {clients.map((client: any) => (
                                 <option key={client.id} value={client.id}>{client.name}</option>
                             ))}
                         </select>
@@ -69,7 +81,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
 
                     <button
                         onClick={() => setShowGenerator(true)}
-                        className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-2 shadow-lg shadow-purple-200 whitespace-nowrap"
+                        className="bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-800 flex items-center gap-2 shadow-lg shadow-slate-200 whitespace-nowrap"
                     >
                         <Sparkles size={16} />
                         Criar Post IA
@@ -121,7 +133,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                             <h3 className="font-bold text-gray-800">Calendário de Conteúdo</h3>
                             <button
                                 onClick={() => onNavigate(ViewState.SOCIAL_CALENDAR)}
-                                className="text-sm text-blue-600 font-medium cursor-pointer hover:underline"
+                                className="text-sm text-slate-700 font-medium cursor-pointer hover:underline"
                             >
                                 Ver Calendário Completo
                             </button>
@@ -129,7 +141,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                         <div className="divide-y divide-gray-100">
                             {isLoading ? (
                                 <div className="p-8 text-center text-gray-500">
-                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-2"></div>
                                     <p>Carregando posts...</p>
                                 </div>
                             ) : isError ? (
@@ -138,8 +150,12 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                                 </div>
                             ) : displayPosts.length > 0 ? displayPosts.map((post: any) => (
                                 <div key={post.id} className="p-4 flex items-start gap-4 hover:bg-gray-50 transition-colors">
-                                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 shrink-0">
-                                        <Image size={24} />
+                                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 shrink-0 overflow-hidden">
+                                        {post.image ? (
+                                            <img src={post.image} alt="Post media" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <Image size={24} />
+                                        )}
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex justify-between items-start">
@@ -148,7 +164,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                                                 <p className="text-sm font-medium text-gray-900 line-clamp-1">{post.content}</p>
                                             </div>
                                             <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${post.status === 'publicado' ? 'bg-green-100 text-green-700' :
-                                                post.status === 'agendado' ? 'bg-blue-100 text-blue-700' :
+                                                post.status === 'agendado' ? 'bg-gray-100 text-gray-700' :
                                                     'bg-gray-100 text-gray-600'
                                                 }`}>
                                                 {post.status}
@@ -203,7 +219,7 @@ export const SocialMedia: React.FC<SocialMediaProps> = ({ onNavigate }) => {
                                 : 'Inovação e tecnologia para escalar sua operação. Conheça nossa nova suite de APIs.'}
                         </p>
                     </div>
-                    <div className="mt-6 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
+                    <div className="mt-6 p-4 bg-gray-50 rounded-lg text-sm text-gray-700">
                         <strong>Sugestão da IA:</strong> Postar às 18:00 aumenta o engajamento em aprox. 15%.
                     </div>
                 </div>

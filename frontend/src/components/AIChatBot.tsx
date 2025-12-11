@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles, Info } from 'lucide-react';
 import { ChatMessage } from '@/types';
 import { askEliteAssistant } from '@/services/geminiService';
 import { AIProvider, AI_MODELS, OpenAIModel, GeminiModel, ClaudeModel } from '@/constants/aiModels';
@@ -14,6 +15,7 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [provider, setProvider] = useState<AIProvider>(AIProvider.OPENAI);
     const [model, setModel] = useState<string>(OpenAIModel.GPT_5);
+    const [internetAccess, setInternetAccess] = useState(false);
 
     // Atualiza o modelo padrão quando o provedor muda
     useEffect(() => {
@@ -56,7 +58,7 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
         setIsLoading(true);
 
         try {
-            const response = await askEliteAssistant(messages, currentInput, provider, model);
+            const response = await askEliteAssistant(messages, currentInput, provider, model, internetAccess);
             const botMessage: ChatMessage = {
                 id: (Date.now() + 1).toString(),
                 sender: 'agent',
@@ -81,7 +83,7 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
         return (
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+                className="fixed bottom-6 right-6 z-50 bg-slate-800 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
             >
                 <MessageCircle size={24} />
             </button>
@@ -90,7 +92,7 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
 
     return (
         <div className={mode === 'widget' ? "fixed bottom-6 right-6 z-50 w-96 h-[500px] bg-white rounded-lg shadow-2xl flex flex-col" : "h-full flex flex-col bg-white rounded-lg"}>
-            <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4 rounded-t-lg flex items-center justify-between">
+            <div className="bg-slate-800 text-white p-4 rounded-t-lg flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Sparkles size={20} />
                     <span className="font-semibold">Elite Assistant</span>
@@ -103,10 +105,10 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
             </div>
 
             {mode === 'page' && (
-                <div className="bg-indigo-50 p-4 border-b border-indigo-100 flex flex-col gap-3">
+                <div className="bg-slate-50 p-4 border-b border-slate-100 flex flex-col gap-3">
                     <div className="flex items-center gap-2 mb-1">
-                        <Sparkles size={16} className="text-indigo-600" />
-                        <span className="text-xs font-bold text-indigo-800 uppercase tracking-wider">Configuração do Modelo IA</span>
+                        <Sparkles size={16} className="text-slate-600" />
+                        <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Configuração do Modelo IA</span>
                     </div>
                     <div className="flex gap-4">
                         <div className="flex-1">
@@ -114,7 +116,7 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
                             <select
                                 value={provider}
                                 onChange={(e) => setProvider(e.target.value as AIProvider)}
-                                className="w-full text-sm border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-white py-2"
+                                className="w-full text-sm border-gray-300 rounded-lg shadow-sm focus:border-slate-500 focus:ring-slate-500 bg-white py-2"
                             >
                                 <option value={AIProvider.OPENAI}>OpenAI (GPT)</option>
                                 <option value={AIProvider.GEMINI}>Google (Gemini)</option>
@@ -126,12 +128,55 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
                             <select
                                 value={model}
                                 onChange={(e) => setModel(e.target.value)}
-                                className="w-full text-sm border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 bg-white py-2"
+                                className="w-full text-sm border-gray-300 rounded-lg shadow-sm focus:border-slate-500 focus:ring-slate-500 bg-white py-2"
                             >
                                 {AI_MODELS[provider].map((m) => (
                                     <option key={m.id} value={m.id}>{m.name}</option>
                                 ))}
                             </select>
+                        </div>
+                    </div>
+
+                    {/* Internet Access Toggle */}
+                    <div className="flex items-center gap-2 mt-2">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" checked={internetAccess} onChange={(e) => setInternetAccess(e.target.checked)} />
+                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-slate-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-slate-600"></div>
+                            <span className="ml-2 text-xs font-medium text-gray-700 flex items-center gap-1">
+                                🌍 Acesso à Internet {internetAccess ? '(Ativo)' : '(Offline)'}
+                            </span>
+                        </label>
+                        <div className="group relative flex items-center">
+                            <Info size={14} className="text-gray-400 hover:text-gray-600 cursor-help" />
+                            <div className="absolute left-full ml-2 w-64 p-2 bg-slate-800 text-white text-[10px] rounded shadow-lg opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-all duration-200 z-50 pointer-events-none border border-slate-700">
+                                <p className="font-semibold mb-1">Acesso Global vs. Interno:</p>
+                                <p><strong>Online:</strong> O agente pesquisa informações globais na web.</p>
+                                <p><strong>Offline:</strong> Acessa exclusivamente a base de dados interna do sistema.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <h4 className="text-xs font-bold text-gray-800 flex items-center gap-1 mb-2">
+                            💡 Dica: Qual modelo usar?
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                            <div className="flex flex-col">
+                                <span className="font-semibold text-gray-900">🧠 Raciocínio & Estratégia</span>
+                                <span className="text-gray-700">Claude 4.5 Opus ou GPT-5</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="font-semibold text-gray-900">🎨 Criatividade & Copy</span>
+                                <span className="text-gray-700">Claude 4.5 Sonnet</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="font-semibold text-gray-900">📊 Análise de Dados</span>
+                                <span className="text-gray-700">Gemini 3 Pro ou 2.5 Pro</span>
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="font-semibold text-gray-900">⚡ Respostas Rápidas</span>
+                                <span className="text-gray-700">Gemini 2.5 Flash ou GPT-5 Mini</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -141,16 +186,22 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
                 {messages.map((msg) => (
                     <div key={msg.id} className={`flex gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.sender === 'agent' && (
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center flex-shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0">
                                 <Bot size={16} className="text-white" />
                             </div>
                         )}
-                        <div className={`max-w-[70%] p-3 rounded-lg ${msg.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}`}>
-                            <p className="text-sm">{msg.text}</p>
+                        <div className={`max-w-[85%] p-3 rounded-lg ${msg.sender === 'user' ? 'bg-slate-800 text-white' : 'bg-gray-100 text-gray-800'}`}>
+                            {msg.sender === 'agent' ? (
+                                <div className="prose prose-sm max-w-none prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-li:my-0">
+                                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                </div>
+                            ) : (
+                                <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                            )}
                             <span className="text-xs opacity-70 mt-1 block">{msg.timestamp}</span>
                         </div>
                         {msg.sender === 'user' && (
-                            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0">
                                 <User size={16} className="text-white" />
                             </div>
                         )}
@@ -158,7 +209,7 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
                 ))}
                 {isLoading && (
                     <div className="flex gap-2 justify-start">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">
                             <Loader2 size={16} className="text-white animate-spin" />
                         </div>
                         <div className="bg-gray-100 p-3 rounded-lg">
@@ -177,18 +228,18 @@ export const AIChatBot: React.FC<AIChatBotProps> = ({ mode = 'widget' }) => {
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
                         placeholder="Digite sua mensagem..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-600"
                         disabled={isLoading}
                     />
                     <button
                         onClick={handleSend}
                         disabled={isLoading || !input.trim()}
-                        className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-2 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="bg-slate-800 text-white p-2 rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Send size={20} />
                     </button>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

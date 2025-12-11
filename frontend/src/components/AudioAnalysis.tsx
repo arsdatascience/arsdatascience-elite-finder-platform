@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, FileAudio, Mic, Loader2, Play, Pause, CheckCircle, AlertCircle, BarChart2, History, Trash2, Eye, Download, Plus } from 'lucide-react';
+import { Upload, FileAudio, Mic, Loader2, AlertCircle, BarChart2, History, Trash2, Eye, Download, Plus } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
+import { ClientSelector } from './common/ClientSelector';
 
 interface AnalysisResult {
     id?: number;
@@ -35,7 +36,8 @@ interface HistoryItem {
 }
 
 export const AudioAnalysis: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'new' | 'history'>('new');
+    const activeTabState = useState<'new' | 'history'>('new');
+    const [activeTab, setActiveTab] = activeTabState;
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -43,19 +45,26 @@ export const AudioAnalysis: React.FC = () => {
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
+    // Client Filter State
+    const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (activeTab === 'history') {
             fetchHistory();
         }
-    }, [activeTab]);
+    }, [activeTab, selectedClientId]);
 
     const fetchHistory = async () => {
         setIsLoadingHistory(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/audio/history`, {
+            const url = selectedClientId
+                ? `${import.meta.env.VITE_API_URL}/api/audio/history?clientId=${selectedClientId}`
+                : `${import.meta.env.VITE_API_URL}/api/audio/history`;
+
+            const response = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -94,6 +103,9 @@ export const AudioAnalysis: React.FC = () => {
 
         const formData = new FormData();
         formData.append('audio', file);
+        if (selectedClientId) {
+            formData.append('clientId', selectedClientId.toString());
+        }
 
         try {
             const token = localStorage.getItem('token');
@@ -254,12 +266,21 @@ export const AudioAnalysis: React.FC = () => {
     return (
         <div className="p-6 max-w-6xl mx-auto space-y-8 animate-fade-in">
             <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-                        <Mic className="text-blue-600" /> Análise de Áudio Inteligente
-                    </h1>
-                    <p className="text-slate-500 mt-2">Transcreva áudios e analise sentimentos com IA (Whisper + GPT-4o)</p>
+                <div className="flex items-center gap-6">
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+                            <Mic className="text-primary-600" /> Análise de Áudio Inteligente
+                        </h1>
+                        <p className="text-slate-500 mt-2">Transcreva áudios e analise sentimentos com IA (Whisper + GPT-4o)</p>
+                    </div>
+                    <div className="w-64">
+                        <ClientSelector
+                            selectedClientId={selectedClientId}
+                            onSelectClient={setSelectedClientId}
+                        />
+                    </div>
                 </div>
+
                 <div className="flex bg-slate-100 p-1 rounded-lg">
                     <button
                         onClick={() => {
@@ -268,13 +289,13 @@ export const AudioAnalysis: React.FC = () => {
                             setResult(null);
                             setError(null);
                         }}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'new' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'new' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         <Plus size={16} /> Nova Análise
                     </button>
                     <button
                         onClick={() => setActiveTab('history')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'history' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'history' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         <History size={16} /> Histórico
                     </button>
@@ -300,8 +321,8 @@ export const AudioAnalysis: React.FC = () => {
                                 onDrop={handleDrop}
                                 className="cursor-pointer border-2 border-dashed border-slate-300 rounded-xl p-10 hover:bg-slate-50 transition-colors group"
                             >
-                                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                                    <Upload className="text-blue-600" size={32} />
+                                <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                                    <Upload className="text-primary-600" size={32} />
                                 </div>
                                 <h3 className="text-lg font-semibold text-slate-700">Arraste e solte ou clique para selecionar</h3>
                                 <p className="text-slate-400 text-sm mt-1">MP3, WAV, OGG, M4A, FLAC (Máx. 20MB)</p>
@@ -311,7 +332,7 @@ export const AudioAnalysis: React.FC = () => {
                         {file && !result && (
                             <div className="space-y-4">
                                 <div className="flex items-center justify-center gap-3 text-slate-700 bg-slate-50 p-4 rounded-lg inline-block">
-                                    <FileAudio className="text-blue-600" />
+                                    <FileAudio className="text-primary-600" />
                                     <span className="font-medium">{file.name}</span>
                                     <span className="text-xs text-slate-400">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
                                     <button onClick={() => setFile(null)} className="text-slate-400 hover:text-red-500 ml-2"><AlertCircle size={16} /></button>
@@ -321,7 +342,7 @@ export const AudioAnalysis: React.FC = () => {
                                     <button
                                         onClick={handleUpload}
                                         disabled={isUploading}
-                                        className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto shadow-lg shadow-blue-200"
+                                        className="px-8 py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto shadow-lg shadow-primary-200"
                                     >
                                         {isUploading ? (
                                             <>
@@ -420,7 +441,7 @@ export const AudioAnalysis: React.FC = () => {
                                                 <div className="text-xs font-mono text-slate-400 mb-1">
                                                     {formatTime(segment.timestampStart)} - {formatTime(segment.timestampEnd)}
                                                 </div>
-                                                <div className={`text-xs font-bold px-2 py-1 rounded inline-block ${segment.speaker.includes('A') || segment.speaker.includes('1') ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                                <div className={`text-xs font-bold px-2 py-1 rounded inline-block ${segment.speaker.includes('A') || segment.speaker.includes('1') ? 'bg-primary-100 text-primary-700' : 'bg-purple-100 text-purple-700'
                                                     }`}>
                                                     {segment.speaker}
                                                 </div>
@@ -444,7 +465,7 @@ export const AudioAnalysis: React.FC = () => {
                             <div className="text-center">
                                 <button
                                     onClick={() => { setFile(null); setResult(null); setError(null); }}
-                                    className="text-blue-600 hover:text-blue-800 font-medium"
+                                    className="text-primary-600 hover:text-primary-800 font-medium"
                                 >
                                     Analisar outro arquivo
                                 </button>
@@ -495,7 +516,7 @@ export const AudioAnalysis: React.FC = () => {
                                             <td className="p-4 text-right space-x-2">
                                                 <button
                                                     onClick={() => handleView(item.id)}
-                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                    className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                                                     title="Ver Detalhes"
                                                 >
                                                     <Eye size={18} />

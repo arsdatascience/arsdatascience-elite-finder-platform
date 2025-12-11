@@ -1,8 +1,9 @@
+-- NOTE: client_id references clients.id in crossover database (no FK possible across DBs)
 DROP TABLE IF EXISTS social_posts;
 
 CREATE TABLE social_posts (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id),
+    client_id INTEGER, -- References clients(id) in crossover DB
     content TEXT,
     platform VARCHAR(50),
     status VARCHAR(20), -- scheduled, published, draft

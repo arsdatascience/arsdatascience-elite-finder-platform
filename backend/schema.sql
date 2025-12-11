@@ -78,120 +78,56 @@ CREATE TABLE IF NOT EXISTS clients (
     address_neighborhood VARCHAR(100),
     address_city VARCHAR(100),
     address_state CHAR(2),
-    
-    -- Redes Sociais
-    instagram_url TEXT,
-    facebook_url TEXT,
-    linkedin_url TEXT,
-    website TEXT,
-    
-    notes TEXT,
-    
+    address_district VARCHAR(100),
+
+    -- Compliance & Access
+    username VARCHAR(100),
+    password_hash TEXT,
+    terms_accepted BOOLEAN DEFAULT false,
+    privacy_accepted BOOLEAN DEFAULT false,
+    data_consent BOOLEAN DEFAULT false,
+    marketing_optin BOOLEAN DEFAULT false,
+
+    -- PF Specific
+    rg VARCHAR(30),
+    birth_date DATE,
+    gender VARCHAR(50),
+    marital_status VARCHAR(50),
+    nationality VARCHAR(100),
+    mother_name VARCHAR(255),
+
+    -- PJ Specific
+    fantasy_name VARCHAR(255),
+    state_registration VARCHAR(50),
+    municipal_registration VARCHAR(50),
     company_size VARCHAR(50),
-    industry VARCHAR(100),
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
+    cnae VARCHAR(100),
 
--- ============================================
--- LEADS
--- ============================================
-CREATE TABLE IF NOT EXISTS leads (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255),
-    phone VARCHAR(50),
-    company VARCHAR(255),
-    source VARCHAR(50),
-    status VARCHAR(50) DEFAULT 'new',
-    value DECIMAL(10, 2),
+    -- PJ Legal Representative
+    legal_rep_name VARCHAR(255),
+    legal_rep_cpf VARCHAR(20),
+    legal_rep_role VARCHAR(100),
+    legal_rep_email VARCHAR(255),
+    legal_rep_phone VARCHAR(50),
+
+    -- Banking Information
+    bank_name VARCHAR(100),
+    bank_agency VARCHAR(50),
+    bank_account VARCHAR(50),
+    bank_account_type VARCHAR(50),
+    pix_key VARCHAR(100),
+
+    -- Additional Info
     notes TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- ============================================
--- CAMPAIGNS
--- ============================================
-CREATE TABLE IF NOT EXISTS campaigns (
-    id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    platform VARCHAR(50),
-    status VARCHAR(50),
-    budget DECIMAL(10, 2),
-    spent DECIMAL(10, 2),
-    ctr DECIMAL(5, 2),
-    roas DECIMAL(5, 2),
-    conversions INTEGER,
+    referral_source VARCHAR(100),
+    client_references TEXT,
+    
+    triggers TEXT,
+    steps_count INTEGER DEFAULT 0,
+    enrolled_count INTEGER DEFAULT 0,
+    conversion_rate VARCHAR(50),
+    flow_data JSONB,
     created_at TIMESTAMP DEFAULT NOW()
-);
-
--- ============================================
--- CHATBOTS & AI AGENTS
--- ============================================
-CREATE TABLE IF NOT EXISTS chatbots (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    category VARCHAR(100),
-    class VARCHAR(100),
-    specialization_level INTEGER DEFAULT 1,
-    status VARCHAR(50) DEFAULT 'active',
-    ai_config JSONB DEFAULT '{}',
-    vector_config JSONB DEFAULT '{}',
-    prompts JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- ============================================
--- CHAT SESSIONS
--- ============================================
-CREATE TABLE IF NOT EXISTS chat_sessions (
-    id SERIAL PRIMARY KEY,
-    chatbot_id INTEGER REFERENCES chatbots(id) ON DELETE SET NULL,
-    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    external_id VARCHAR(255),
-    channel VARCHAR(50) DEFAULT 'web',
-    status VARCHAR(50) DEFAULT 'active',
-    metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- ============================================
--- CHAT MESSAGES
--- ============================================
-CREATE TABLE IF NOT EXISTS chat_messages (
-    id SERIAL PRIMARY KEY,
-    session_id INTEGER REFERENCES chat_sessions(id) ON DELETE CASCADE,
-    role VARCHAR(50) NOT NULL,
-    content TEXT NOT NULL,
-    metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    lead_id UUID REFERENCES leads(id) ON DELETE SET NULL
-);
-
--- Índices
-CREATE INDEX IF NOT EXISTS idx_chat_messages_lead_id ON chat_messages(lead_id);
-CREATE INDEX IF NOT EXISTS idx_chat_messages_session_id ON chat_messages(session_id);
-
--- ============================================
--- INTEGRATIONS
--- ============================================
-CREATE TABLE IF NOT EXISTS integrations (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    platform VARCHAR(50) NOT NULL,
-    status VARCHAR(50) DEFAULT 'disconnected',
-    access_token TEXT,
-    refresh_token TEXT,
-    config JSONB DEFAULT '{}',
-    last_sync TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 -- ============================================
@@ -199,13 +135,11 @@ CREATE TABLE IF NOT EXISTS integrations (
 -- ============================================
 CREATE TABLE IF NOT EXISTS automation_workflows (
     id SERIAL PRIMARY KEY,
+    client_id INTEGER, -- References clients(id) in crossover DB
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    status VARCHAR(50) DEFAULT 'active',
-    triggers TEXT,
-    steps_count INTEGER DEFAULT 0,
-    enrolled_count INTEGER DEFAULT 0,
-    conversion_rate VARCHAR(50),
-    flow_data JSONB,
+    trigger_type VARCHAR(50),
+    status VARCHAR(20) DEFAULT 'active',
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -219,27 +153,44 @@ CREATE TABLE IF NOT EXISTS automation_workflow_steps (
 );
 
 -- ============================================
+-- LEADS
+-- ============================================
+CREATE TABLE IF NOT EXISTS leads (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    client_id INTEGER, -- References clients(id) in crossover DB
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    phone VARCHAR(50),
+    source VARCHAR(50),
+    product_interest VARCHAR(100),
+    value DECIMAL(10, 2),
+    status VARCHAR(50) DEFAULT 'new',
+    assigned_to VARCHAR(100),
+    tags TEXT[],
+    last_contact TIMESTAMP,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
 -- SOCIAL POSTS
 -- ============================================
 CREATE TABLE IF NOT EXISTS social_posts (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    client_id INTEGER, -- References clients(id) in crossover DB
     content TEXT,
     media_url TEXT,
     platform VARCHAR(50),
     scheduled_date TIMESTAMP,
-    id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
-    label VARCHAR(100),
-    value VARCHAR(100),
-    change DECIMAL(5, 2),
-    trend VARCHAR(20),
+    status VARCHAR(20) DEFAULT 'scheduled',
     created_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS device_stats (
     id SERIAL PRIMARY KEY,
-    client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+    client_id INTEGER, -- References clients(id) in crossover DB
     device_type VARCHAR(50),
     percentage DECIMAL(5, 2),
     conversions INTEGER,
@@ -307,10 +258,30 @@ CREATE TABLE IF NOT EXISTS financial_transactions (
     amount DECIMAL(12, 2) NOT NULL,
     type VARCHAR(20) NOT NULL CHECK (type IN ('income', 'expense')),
     category_id INTEGER REFERENCES financial_categories(id) ON DELETE SET NULL,
-    client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
+    client_id INTEGER, -- References clients(id) in crossover DB
     date DATE DEFAULT CURRENT_DATE,
     status VARCHAR(20) DEFAULT 'paid' CHECK (status IN ('pending', 'paid', 'overdue', 'cancelled')),
     notes TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- ============================================
+-- GENERATED IMAGES (AI Creative Studio)
+-- ============================================
+CREATE TABLE IF NOT EXISTS generated_images (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id INTEGER REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    url TEXT NOT NULL,
+    thumbnail_url TEXT,
+    prompt TEXT,
+    model VARCHAR(100),
+    width INTEGER,
+    height INTEGER,
+    cost NUMERIC(10, 4) DEFAULT 0,
+    provider VARCHAR(50) DEFAULT 'replicate',
+    generation_time INTEGER,
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
 );

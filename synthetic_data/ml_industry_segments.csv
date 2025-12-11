@@ -1,0 +1,7 @@
+id,code,name_pt,name_en,description,icon,color,typical_metrics,typical_algorithms
+1,ecommerce,E-commerce,E-commerce,Segmento de E-commerce,🛒,#3b82f6,"[""revenue"", ""orders"", ""conversion_rate""]","[""xgboost"", ""prophet"", ""kmeans""]"
+2,retail,Varejo,Retail,Segmento de Varejo,🏪,#10b981,"[""revenue"", ""orders"", ""conversion_rate""]","[""xgboost"", ""prophet"", ""kmeans""]"
+3,technology,Tecnologia,Technology,Segmento de Tecnologia,💻,#8b5cf6,"[""revenue"", ""orders"", ""conversion_rate""]","[""xgboost"", ""prophet"", ""kmeans""]"
+4,agriculture,Agricultura,Agriculture,Segmento de Agricultura,🌾,#84cc16,"[""revenue"", ""orders"", ""conversion_rate""]","[""xgboost"", ""prophet"", ""kmeans""]"
+5,healthcare,Saúde,Healthcare,Segmento de Saúde,🏥,#ef4444,"[""revenue"", ""orders"", ""conversion_rate""]","[""xgboost"", ""prophet"", ""kmeans""]"
+6,financial,Financeiro,Financial,Segmento de Financeiro,🏦,#f59e0b,"[""revenue"", ""orders"", ""conversion_rate""]","[""xgboost"", ""prophet"", ""kmeans""]"

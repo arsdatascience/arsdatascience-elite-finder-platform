@@ -25,6 +25,38 @@ interface SocialAccount {
   avatar?: string;
 }
 
+const PLATFORM_CONTENT_TYPES: Record<string, { value: string; label: string }[]> = {
+  google: [
+    { value: 'ad', label: 'Anúncio de Pesquisa (Ad)' },
+  ],
+  meta: [
+    { value: 'ad', label: 'Anúncio (Ads)' },
+    { value: 'post', label: 'Post (Feed)' },
+    { value: 'stories', label: 'Stories' },
+    { value: 'reels', label: 'Reels' }
+  ],
+  instagram: [
+    { value: 'post', label: 'Post (Feed)' },
+    { value: 'reels', label: 'Reels' },
+    { value: 'stories', label: 'Stories' },
+    { value: 'carousel', label: 'Carrossel' },
+    { value: 'caption', label: 'Legenda' }
+  ],
+  linkedin: [
+    { value: 'post', label: 'Post' },
+    { value: 'article', label: 'Artigo' },
+    { value: 'poll', label: 'Enquete' }
+  ],
+  tiktok: [
+    { value: 'video_script', label: 'Roteiro de Vídeo' },
+    { value: 'ad', label: 'Anúncio' },
+    { value: 'caption', label: 'Legenda' }
+  ],
+  blog: [
+    { value: 'article', label: 'Artigo / Blog Post' }
+  ]
+};
+
 export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
   isOpen,
   onClose,
@@ -75,6 +107,16 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
       setModel(GeminiModel.GEMINI_2_5_FLASH);
     }
   }, [provider]);
+
+  // Dynamic Type Selection
+  useEffect(() => {
+    const types = PLATFORM_CONTENT_TYPES[platform];
+    if (types && types.length > 0) {
+      // Only reset if current type is not valid for new platform? 
+      // Or always reset to first one? User requested "mudar automaticamente", usually implies defaulting to the first valid one.
+      setType(types[0].value as any);
+    }
+  }, [platform]);
 
   // Load Mock Accounts based on Client
   useEffect(() => {
@@ -220,14 +262,14 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
       <div className={innerClasses}>
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-indigo-900 to-purple-900 p-6 flex justify-between items-center shrink-0">
+        <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 flex justify-between items-center shrink-0">
           <div className="flex items-center gap-3 text-white">
             <div className="p-2 bg-white/10 rounded-lg">
-              <Sparkles className="text-yellow-400" size={24} />
+              <Sparkles className="text-gray-400" size={24} />
             </div>
             <div>
-              <h3 className="text-xl font-bold">Estúdio Criativo IA <span className="text-xs bg-yellow-400 text-indigo-900 px-2 py-0.5 rounded-full ml-2">{COMPONENT_VERSIONS.ContentGenerator}</span></h3>
-              <p className="text-indigo-200 text-sm">Criação, Agendamento e Design</p>
+              <h3 className="text-xl font-bold">Estúdio Criativo IA <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2">{COMPONENT_VERSIONS.ContentGenerator}</span></h3>
+              <p className="text-gray-400 text-sm">Criação, Agendamento e Design</p>
             </div>
           </div>
           {mode === 'modal' && (
@@ -250,32 +292,32 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                   <button
                     onClick={() => setProvider(AIProvider.GEMINI)}
                     className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${provider === AIProvider.GEMINI
-                      ? 'border-indigo-600 bg-indigo-50'
-                      : 'border-gray-200 hover:border-indigo-200 bg-white'
+                      ? 'border-slate-500 bg-slate-50'
+                      : 'border-gray-200 hover:border-slate-300 bg-white'
                       }`}
                   >
-                    <div className={`p-2 rounded-lg ${provider === AIProvider.GEMINI ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    <div className={`p-2 rounded-lg ${provider === AIProvider.GEMINI ? 'bg-slate-700 text-white' : 'bg-gray-100 text-gray-500'}`}>
                       <Bot size={20} />
                     </div>
                     <div className="text-left">
-                      <span className={`block text-sm font-bold ${provider === AIProvider.GEMINI ? 'text-indigo-900' : 'text-gray-600'}`}>Google Gemini</span>
+                      <span className={`block text-sm font-bold ${provider === AIProvider.GEMINI ? 'text-slate-900' : 'text-gray-600'}`}>Google Gemini</span>
                       <span className="text-xs text-gray-500">Recomendado</span>
                     </div>
-                    {provider === AIProvider.GEMINI && <div className="ml-auto w-2 h-2 bg-indigo-600 rounded-full"></div>}
+                    {provider === AIProvider.GEMINI && <div className="ml-auto w-2 h-2 bg-slate-700 rounded-full"></div>}
                   </button>
 
                   <button
                     onClick={() => setProvider(AIProvider.OPENAI)}
                     className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${provider === AIProvider.OPENAI
-                      ? 'border-teal-600 bg-teal-50'
-                      : 'border-gray-200 hover:border-teal-200 bg-white'
+                      ? 'border-slate-500 bg-slate-50'
+                      : 'border-gray-200 hover:border-slate-300 bg-white'
                       }`}
                   >
-                    <div className={`p-2 rounded-lg ${provider === AIProvider.OPENAI ? 'bg-teal-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    <div className={`p-2 rounded-lg ${provider === AIProvider.OPENAI ? 'bg-slate-700 text-white' : 'bg-gray-100 text-gray-500'}`}>
                       <Cpu size={20} />
                     </div>
                     <div className="text-left">
-                      <span className={`block text-sm font-bold ${provider === AIProvider.OPENAI ? 'text-teal-900' : 'text-gray-600'}`}>OpenAI GPT</span>
+                      <span className={`block text-sm font-bold ${provider === AIProvider.OPENAI ? 'text-slate-900' : 'text-gray-600'}`}>OpenAI GPT</span>
                       <span className="text-xs text-gray-500">Modelo Avançado</span>
                     </div>
                     {provider === AIProvider.OPENAI && <div className="ml-auto w-2 h-2 bg-teal-600 rounded-full"></div>}
@@ -288,7 +330,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                   <select
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+                    className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-slate-500 outline-none bg-white"
                   >
                     {AI_MODELS[provider].map((m) => (
                       <option key={m.id} value={m.id}>{m.name}</option>
@@ -301,33 +343,30 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Conteúdo</label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value as any)}
-                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-purple-500 outline-none bg-white"
-                  >
-                    <option value="ad">Anúncio Pago (Ads)</option>
-                    <option value="post">Post Orgânico (Feed)</option>
-                    <option value="reels">Reels / TikTok (Roteiro)</option>
-                    <option value="stories">Stories (Sequência)</option>
-                    <option value="carousel">Carrossel (Slide a Slide)</option>
-                    <option value="poll">Enquete Interativa</option>
-                    <option value="article">Artigo / Blog Post</option>
-                  </select>
-                </div>
-                <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Plataforma</label>
                   <select
                     value={platform}
                     onChange={(e) => setPlatform(e.target.value as any)}
-                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-slate-500 outline-none bg-white"
                   >
                     <option value="google">Google Ads</option>
                     <option value="meta">Meta (FB/IG)</option>
                     <option value="instagram">Instagram</option>
                     <option value="linkedin">LinkedIn</option>
+                    <option value="tiktok">TikTok</option>
                     <option value="blog">Blog / Site</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Conteúdo</label>
+                  <select
+                    value={type}
+                    onChange={(e) => setType(e.target.value as any)}
+                    className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-slate-500 outline-none bg-white"
+                  >
+                    {PLATFORM_CONTENT_TYPES[platform]?.map((t) => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -340,7 +379,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                       key={t}
                       onClick={() => setTone(t as any)}
                       className={`px-3 py-1.5 rounded-full text-sm capitalize border ${tone === t
-                        ? 'bg-purple-100 border-purple-500 text-purple-700 font-medium'
+                        ? 'bg-gray-100 border-gray-500 text-gray-700 font-medium'
                         : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                         }`}
                     >
@@ -360,7 +399,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   placeholder="Ex: Roteiro de vídeo para lançamento de produto..."
-                  className="w-full border border-gray-300 rounded-lg p-3 h-32 focus:ring-2 focus:ring-purple-500 outline-none resize-none"
+                  className="w-full border border-gray-300 rounded-lg p-3 h-32 focus:ring-2 focus:ring-slate-500 outline-none resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1 text-right">{topic.length} caracteres</p>
               </div>
@@ -370,7 +409,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
 
               {/* Engine Badge */}
               <div className="flex justify-end">
-                <span className={`text-xs font-bold px-2 py-1 rounded flex items-center gap-1 ${provider === AIProvider.GEMINI ? 'bg-indigo-100 text-indigo-700' : 'bg-teal-100 text-teal-700'
+                <span className={`text-xs font-bold px-2 py-1 rounded flex items-center gap-1 ${provider === AIProvider.GEMINI ? 'bg-slate-100 text-slate-700' : 'bg-gray-100 text-gray-700'
                   }`}>
                   {provider === AIProvider.GEMINI ? <Bot size={12} /> : <Cpu size={12} />}
                   Gerado por {provider === AIProvider.GEMINI ? 'Gemini' : 'GPT'}
@@ -378,18 +417,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
               </div>
 
               {/* Headlines Section */}
-              <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
-                <h4 className="text-sm font-bold text-purple-800 mb-3 uppercase tracking-wide">Opções de Título</h4>
-                <div className="space-y-2">
-                  {result.headlines.map((head, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-white p-3 rounded border border-purple-100 group">
-                      <span className="font-medium text-gray-800">{head}</span>
-                      <button className="text-gray-400 hover:text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Copy size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
               </div>
 
               {/* Main Copy Section */}
@@ -408,7 +436,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                   </h4>
                   <div className="flex flex-wrap gap-1">
                     {result.hashtags.map(tag => (
-                      <span key={tag} className="text-xs bg-white border border-gray-200 px-2 py-1 rounded text-blue-600 font-medium">
+                      <span key={tag} className="text-xs bg-white border border-gray-200 px-2 py-1 rounded text-slate-600 font-medium">
                         {tag}
                       </span>
                     ))}
@@ -424,18 +452,18 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
               </div>
 
               {/* Image Idea */}
-              <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 flex gap-3 items-start">
-                <ImageIcon className="text-indigo-500 shrink-0 mt-1" size={20} />
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex gap-3 items-start">
+                <ImageIcon className="text-slate-500 shrink-0 mt-1" size={20} />
                 <div>
-                  <h4 className="text-xs font-bold text-indigo-800 mb-1 uppercase">Sugestão Visual (IA)</h4>
-                  <p className="text-sm text-indigo-700 italic">"{result.imageIdea}"</p>
+                  <h4 className="text-xs font-bold text-slate-800 mb-1 uppercase">Sugestão Visual (IA)</h4>
+                  <p className="text-sm text-slate-700 italic">"{result.imageIdea}"</p>
                 </div>
               </div>
 
               {/* --- NEW: SCHEDULING & MEDIA UPLOAD --- */}
               <div className="w-full border-t border-gray-100 pt-6 mt-6">
                 <h4 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <CalendarIcon size={18} className="text-purple-600" /> Agendamento e Publicação
+                  <CalendarIcon size={18} className="text-gray-600" /> Agendamento e Publicação
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -448,7 +476,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Cliente (Usuário)</label>
                         <div className="relative">
                           <select
-                            className="w-full border border-gray-300 rounded-lg p-2.5 pl-9 text-sm outline-none focus:ring-2 focus:ring-purple-500 appearance-none bg-white"
+                            className="w-full border border-gray-300 rounded-lg p-2.5 pl-9 text-sm outline-none focus:ring-2 focus:ring-slate-500 appearance-none bg-white"
                             value={selectedClient}
                             onChange={(e) => setSelectedClient(e.target.value)}
                           >
@@ -466,7 +494,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Conta de Publicação</label>
                         <div className="relative">
                           <select
-                            className="w-full border border-gray-300 rounded-lg p-2.5 pl-9 text-sm outline-none focus:ring-2 focus:ring-purple-500 appearance-none bg-white"
+                            className="w-full border border-gray-300 rounded-lg p-2.5 pl-9 text-sm outline-none focus:ring-2 focus:ring-slate-500 appearance-none bg-white"
                             value={selectedAccount}
                             onChange={(e) => setSelectedAccount(e.target.value)}
                           >
@@ -486,7 +514,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data</label>
                         <input
                           type="date"
-                          className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-slate-500"
                           value={scheduledDate}
                           onChange={(e) => setScheduledDate(e.target.value)}
                         />
@@ -495,7 +523,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Hora</label>
                         <input
                           type="time"
-                          className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full border border-gray-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-slate-500"
                           value={scheduledTime}
                           onChange={(e) => setScheduledTime(e.target.value)}
                         />
@@ -506,7 +534,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                       <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                         <input
                           type="checkbox"
-                          className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4"
+                          className="rounded text-gray-600 focus:ring-slate-500 w-4 h-4"
                           checked={addToCalendar}
                           onChange={(e) => setAddToCalendar(e.target.checked)}
                         />
@@ -573,8 +601,8 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
               className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold transition-all text-white ${loading || !topic
                 ? 'bg-gray-400 cursor-not-allowed'
                 : provider === AIProvider.GEMINI
-                  ? 'bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200'
-                  : 'bg-teal-600 hover:bg-teal-700 shadow-lg shadow-teal-200'
+                  ? 'bg-slate-700 hover:bg-slate-800 shadow-lg shadow-slate-200'
+                  : 'bg-slate-700 hover:bg-slate-800 shadow-lg shadow-slate-200'
                 }`}
             >
               {loading ? <Loader2 className="animate-spin" size={20} /> : <Sparkles />}
@@ -599,7 +627,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
             <button
               onClick={handleSaveAndSchedule}
               disabled={saving}
-              className={`bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 shadow-lg shadow-green-200 flex items-center gap-2 ${saving ? 'opacity-70 cursor-wait' : ''}`}
+              className={`bg-slate-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-slate-900 shadow-lg shadow-slate-200 flex items-center gap-2 ${saving ? 'opacity-70 cursor-wait' : ''}`}
             >
               {saving ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle size={18} />}
               {addToCalendar ? 'Salvar e Agendar' : 'Salvar Post'}
@@ -614,7 +642,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] flex flex-col overflow-hidden">
             <div className="p-4 border-b border-gray-100 flex justify-between items-center">
               <h3 className="font-bold text-lg flex items-center gap-2">
-                <Sparkles className="text-purple-600" size={20} />
+                <Sparkles className="text-gray-600" size={20} />
                 Galeria do Estúdio Criativo
               </h3>
               <button onClick={() => setGalleryOpen(false)} className="p-1 hover:bg-gray-100 rounded-full">
@@ -628,7 +656,7 @@ export const ContentGenerator: React.FC<ContentGeneratorProps> = ({
                     <div
                       key={img.id}
                       onClick={() => handleSelectFromGallery(img.url)}
-                      className="aspect-square rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:ring-2 hover:ring-purple-500 hover:shadow-lg transition-all relative group"
+                      className="aspect-square rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:ring-2 hover:ring-slate-500 hover:shadow-lg transition-all relative group"
                     >
                       <img src={img.url} alt={img.prompt} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />

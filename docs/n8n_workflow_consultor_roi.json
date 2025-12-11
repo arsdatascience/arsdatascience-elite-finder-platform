@@ -1,0 +1,138 @@
+{
+    "name": "Consultor de ROI Autônomo - Elite Finder",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "weeks",
+                            "triggerAtHour": 9
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "Agendamento Semanal",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://elite-finder.up.railway.app/api/financial/dashboard",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "x-api-key",
+                            "value": "gS89Q17kr):1_8rm8sLiw"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "fetch-financial-data",
+            "name": "Buscar Dados Financeiros",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "chat",
+                "model": "gpt-4-turbo",
+                "prompt": {
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "Você é o 'Consultor de ROI Autônomo' da Elite Finder. Sua função é analisar dados financeiros brutos de marketing e gerar insights estratégicos curtos e acionáveis.\n\nFoco:\n1. Identificar qual canal (Google vs Meta) está trazendo mais retorno.\n2. Alertar sobre gastos excessivos ou anomalias.\n3. Sugerir realocação de verba se houver discrepância de performance.\n\nFormato de Resposta:\n- Use emojis profissionais.\n- Seja direto (máximo 3 parágrafos).\n- Termine com uma pergunta de decisão (Sim/Não)."
+                        },
+                        {
+                            "role": "user",
+                            "content": "Analise os seguintes dados financeiros da semana e me dê um relatório de performance:\n\n{{ JSON.stringify($json) }}"
+                        }
+                    ]
+                }
+            },
+            "id": "ai-analysis",
+            "name": "Análise IA (GPT-4)",
+            "type": "n8n-nodes-base.openAi",
+            "typeVersion": 1,
+            "position": [
+                900,
+                300
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "openai-credential-id",
+                    "name": "OpenAI Account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "fromEmail": "arsdatascience@gmail.com",
+                "toEmail": "arsdatascience@gmail.com",
+                "subject": "💰 Relatório Semanal: Consultor de ROI Autônomo",
+                "text": "={{ $json.message.content }}",
+                "options": {}
+            },
+            "id": "send-email",
+            "name": "Enviar Alerta (Email)",
+            "type": "n8n-nodes-base.emailSend",
+            "typeVersion": 2.1,
+            "position": [
+                1120,
+                300
+            ],
+            "credentials": {
+                "smtp": {
+                    "id": "gmail-smtp-credential",
+                    "name": "Gmail SMTP"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "schedule-trigger": {
+            "main": [
+                [
+                    {
+                        "node": "fetch-financial-data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "fetch-financial-data": {
+            "main": [
+                [
+                    {
+                        "node": "ai-analysis",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "ai-analysis": {
+            "main": [
+                [
+                    {
+                        "node": "send-email",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

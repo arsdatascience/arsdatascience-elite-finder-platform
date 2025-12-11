@@ -1,791 +1,800 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import {
+  DndContext,
+  rectIntersection,
+  pointerWithin,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  DragStartEvent,
+  DragOverEvent,
+  DragEndEvent,
+  useDroppable,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  Users, Plus, Search, MoreVertical, Phone, Mail,
+  CheckCircle, TrendingUp, Target, Loader2, DollarSign,
+  LayoutGrid, List as ListIcon, Table as TableIcon, Filter, MessageCircle, User,
+  FileText, FileSpreadsheet, Info
+} from 'lucide-react';
+import { apiClient } from '@/services/apiClient';
+import socketService from '@/services/socket';
 import { Lead, LeadStatus } from '@/types';
 import { COMPONENT_VERSIONS } from '@/componentVersions';
-import { CLIENTS_LIST } from '@/constants';
-import {
-  CheckCircle, Plus, Download, Save,
-  MoreVertical, Clock, Tag, Users, Filter, Search, X,
-  Phone, Mail, MessageSquare, User, Target, TrendingUp, DollarSign, Calendar
-} from 'lucide-react';
+import { LeadModal } from './LeadModal';
 
-const COLUMNS: { id: LeadStatus; label: string; color: string; bgColor: string }[] = [
-  { id: LeadStatus.NEW, label: 'Novos Leads', color: 'border-blue-500', bgColor: 'bg-blue-50' },
+// --- Configuration ---
+const COLUMNS = [
+  { id: LeadStatus.NEW, label: 'Novos Leads', color: 'border-primary-500', bgColor: 'bg-primary-50' },
   { id: LeadStatus.IN_PROGRESS, label: 'Em Atendimento', color: 'border-yellow-500', bgColor: 'bg-yellow-50' },
   { id: LeadStatus.WAITING, label: 'Aguardando', color: 'border-orange-500', bgColor: 'bg-orange-50' },
-  { id: LeadStatus.CLOSED_WON, label: 'Venda Realizada', color: 'border-green-500', bgColor: 'bg-green-50' },
-  { id: LeadStatus.CLOSED_LOST, label: 'Perdido', color: 'border-gray-500', bgColor: 'bg-gray-50' },
+  { id: LeadStatus.CLOSED_WON, label: 'Fechado', color: 'border-green-500', bgColor: 'bg-green-50' },
+  { id: LeadStatus.CLOSED_LOST, label: 'Perdido', color: 'border-red-500', bgColor: 'bg-red-50' }
 ];
 
-interface LeadDetailModalProps {
-  lead: Lead;
-  onClose: () => void;
-  onUpdate: (leadId: string, updates: Partial<Lead>) => void;
-}
-
-const LeadDetailModal: React.FC<LeadDetailModalProps> = ({ lead, onClose }) => {
-  const [notes, setNotes] = useState('');
-
-  return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
-          <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-2xl font-bold mb-1">{lead.name}</h2>
-              <p className="text-blue-100 text-sm">{lead.productInterest}</p>
-            </div>
-            <button onClick={onClose} className="text-white/80 hover:text-white">
-              <X size={24} />
-            </button>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">
-              {lead.source}
-            </span>
-            <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-medium">
-              R$ {lead.value.toLocaleString('pt-BR')}
-            </span>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Quick Actions */}
-            <div className="md:col-span-2">
-              <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Ações Rápidas</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <button className="flex items-center justify-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 px-4 py-3 rounded-lg transition-colors">
-                  <Phone size={16} />
-                  <span className="text-sm font-medium">Ligar</span>
-                </button>
-                <button className="flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-3 rounded-lg transition-colors">
-                  <Mail size={16} />
-                  <span className="text-sm font-medium">Email</span>
-                </button>
-                <button className="flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-700 px-4 py-3 rounded-lg transition-colors">
-                  <MessageSquare size={16} />
-                  <span className="text-sm font-medium">WhatsApp</span>
-                </button>
-                <button className="flex items-center justify-center gap-2 bg-orange-50 hover:bg-orange-100 text-orange-700 px-4 py-3 rounded-lg transition-colors">
-                  <Calendar size={16} />
-                  <span className="text-sm font-medium">Agendar</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Lead Info */}
-            <div>
-              <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Informações</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm">
-                  <User size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Responsável:</span>
-                  <span className="font-medium">{lead.assignedTo}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Clock size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Último contato:</span>
-                  <span className="font-medium">{lead.lastContact}</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Target size={16} className="text-gray-400" />
-                  <span className="text-gray-600">Status:</span>
-                  <span className="font-medium capitalize">{lead.status.replace('_', ' ')}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div>
-              <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Tags</h3>
-              <div className="flex flex-wrap gap-2">
-                {lead.tags?.map(tag => (
-                  <span key={tag} className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                    <Tag size={12} />
-                    {tag}
-                  </span>
-                ))}
-                <button className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-medium hover:bg-blue-100">
-                  + Adicionar
-                </button>
-              </div>
-            </div>
-
-            {/* Timeline */}
-            <div className="md:col-span-2">
-              <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Timeline de Atividades</h3>
-              <div className="space-y-3">
-                <div className="flex gap-3 items-start">
-                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                    <CheckCircle size={16} className="text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">Lead criado</p>
-                    <p className="text-xs text-gray-500">Há 2 horas via {lead.source}</p>
-                  </div>
-                </div>
-                <div className="flex gap-3 items-start">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                    <Phone size={16} className="text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">Primeira ligação realizada</p>
-                    <p className="text-xs text-gray-500">Há 1 hora por {lead.assignedTo}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Notes */}
-            <div className="md:col-span-2">
-              <h3 className="text-sm font-bold text-gray-500 uppercase mb-3">Adicionar Nota</h3>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Digite suas observações sobre este lead..."
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                rows={4}
-              />
-              <button className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
-                Salvar Nota
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-interface NewLeadModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (lead: any) => void;
-}
-
-const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSave }) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    company: '',
-    source: 'manual',
-    status: 'new',
-    value: '',
-    notes: ''
+// --- Droppable Column Component ---
+const DroppableColumn = memo(({ column, leads, children }: { column: any, leads: Lead[], children: React.ReactNode }) => {
+  const { setNodeRef } = useDroppable({
+    id: column.id,
   });
 
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave({
-      ...formData,
-      value: Number(formData.value) || 0,
-      id: Math.random().toString(36).substr(2, 9), // Temp ID
-      lastContact: new Date().toLocaleDateString(),
-      assignedTo: 'Você'
-    });
-    onClose();
-  };
-
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white flex justify-between items-center">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <Plus size={24} /> Novo Lead Manual
-          </h2>
-          <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
-            <X size={24} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[80vh]">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Nome Completo *</label>
-              <input
-                required
-                type="text"
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.name}
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: João Silva"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Empresa</label>
-              <input
-                type="text"
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.company}
-                onChange={e => setFormData({ ...formData, company: e.target.value })}
-                placeholder="Ex: Acme Corp"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Email *</label>
-              <input
-                required
-                type="email"
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.email}
-                onChange={e => setFormData({ ...formData, email: e.target.value })}
-                placeholder="joao@exemplo.com"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Telefone / WhatsApp</label>
-              <input
-                type="text"
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.phone}
-                onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="(11) 99999-9999"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Origem</label>
-              <select
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.source}
-                onChange={e => setFormData({ ...formData, source: e.target.value })}
-              >
-                <option value="manual">Manual / Prospecção</option>
-                <option value="indication">Indicação</option>
-                <option value="event">Evento</option>
-                <option value="social">Redes Sociais</option>
-                <option value="website">Site / Blog</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Status Inicial</label>
-              <select
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.status}
-                onChange={e => setFormData({ ...formData, status: e.target.value })}
-              >
-                <option value="new">Novo Lead</option>
-                <option value="in_progress">Em Atendimento</option>
-                <option value="waiting">Aguardando</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Valor Potencial (R$)</label>
-              <input
-                type="number"
-                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                value={formData.value}
-                onChange={e => setFormData({ ...formData, value: e.target.value })}
-                placeholder="0.00"
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-700">Observações</label>
-            <textarea
-              className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"
-              value={formData.notes}
-              onChange={e => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Detalhes importantes sobre este lead..."
-            ></textarea>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors">
-              Cancelar
-            </button>
-            <button type="submit" className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg shadow-blue-200">
-              <Save size={18} /> Salvar Lead
-            </button>
-          </div>
-        </form>
+    <div
+      ref={setNodeRef}
+      className={`w-[270px] h-[850px] flex-shrink-0 rounded-xl ${column.bgColor} p-4 flex flex-col gap-3`}
+    >
+      <div className={`flex items-center justify-between pb-3 border-b-2 ${column.color} mb-2`}>
+        <h3 className="font-bold text-gray-700">{column.label}</h3>
+        <span className="bg-white px-2 py-1 rounded-full text-xs font-bold text-gray-500 shadow-sm">
+          {leads.length}
+        </span>
+      </div>
+      <div className="flex-1 overflow-y-auto pr-1">
+        {children}
       </div>
     </div>
   );
-};
+});
 
+DroppableColumn.displayName = 'DroppableColumn';
+
+// --- Sortable Item Component ---
+const SortableItem = memo(({ lead, onClick, onQuickAction }: { lead: Lead, onClick: () => void, onQuickAction: (action: string, lead: Lead) => void }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: lead.id, data: { type: 'Lead', lead } });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  if (isDragging) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="bg-white p-4 rounded-lg shadow-lg border-2 border-primary-500 opacity-50 h-[150px] z-50"
+      />
+    );
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      onClick={onClick}
+      className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-move transition-all relative hover:shadow-md"
+    >
+      <div className="flex justify-between items-start mb-2">
+        <h4 className="font-bold text-gray-800 line-clamp-1 text-sm">{lead.name}</h4>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
+          className="text-gray-400 hover:text-primary-600 transition-all p-1 hover:bg-primary-50 rounded"
+          title="Editar Lead"
+        >
+          <MoreVertical size={16} />
+        </button>
+      </div>
+
+      <div className="space-y-1.5 mb-3">
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <Mail size={12} />
+          <span className="truncate">{lead.email}</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <Phone size={12} />
+          <span>{lead.phone}</span>
+        </div>
+        {lead.assignedTo && (
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <User size={12} />
+            <span>{lead.assignedTo}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Quick Actions - Always Visible */}
+      <div className="flex justify-center gap-2 py-2 border-t border-gray-50 mt-2">
+        <button onClick={(e) => { e.stopPropagation(); onQuickAction('whatsapp', lead); }} className="p-1.5 bg-green-100 text-green-600 rounded-full hover:bg-green-200" title="WhatsApp">
+          <MessageCircle size={14} />
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); onQuickAction('email', lead); }} className="p-1.5 bg-primary-100 text-primary-600 rounded-full hover:bg-primary-200" title="Email">
+          <Mail size={14} />
+        </button>
+        <button onClick={(e) => { e.stopPropagation(); onQuickAction('call', lead); }} className="p-1.5 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200" title="Ligar">
+          <Phone size={14} />
+        </button>
+      </div>
+
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
+        <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+          {lead.source}
+        </span>
+        <span className="text-xs font-bold text-green-600">
+          {formatCurrency(lead.value)}
+        </span>
+      </div>
+
+      {lead.tags && lead.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {lead.tags.slice(0, 3).map(tag => (
+            <span key={tag} className="text-[10px] bg-primary-50 text-primary-600 px-1.5 py-0.5 rounded border border-primary-100">
+              {tag}
+            </span>
+          ))}
+          {lead.tags.length > 3 && (
+            <span className="text-[10px] text-gray-400 px-1">+{lead.tags.length - 3}</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+});
+
+SortableItem.displayName = 'SortableItem';
+
+// --- Main Component ---
 export const FlightControl: React.FC = () => {
-  const [selectedClient, setSelectedClient] = useState(CLIENTS_LIST[1].id);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSource, setSelectedSource] = useState<string>('all');
-  const [selectedValue, setSelectedValue] = useState<string>('all');
-  const [selectedAssignee, setSelectedAssignee] = useState<string>('all');
-  const [draggedLead, setDraggedLead] = useState<Lead | null>(null);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [localLeads, setLocalLeads] = useState<Lead[]>([]);
-  const [showNewLeadModal, setShowNewLeadModal] = useState(false);
+  // --- State ---
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'kanban' | 'list' | 'table'>('kanban');
 
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSource, setSelectedSource] = useState('all');
+  const [selectedClient, setSelectedClient] = useState<string>('all');
+  const [selectedAssignee, setSelectedAssignee] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [minValue, setMinValue] = useState('');
+  const [maxValue, setMaxValue] = useState('');
+
+  const [clients, setClients] = useState<any[]>([]);
+  const [showNewLeadModal, setShowNewLeadModal] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [activeDragStatus, setActiveDragStatus] = useState<LeadStatus | null>(null);
+
+  // --- Sensors ---
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  // --- Data Fetching ---
   useEffect(() => {
     fetchLeads();
-  }, []);
+    fetchClients();
+
+    // Socket Integration
+    const socket = socketService.connect();
+
+    const handleUpdate = (data: any) => {
+      console.log('🔄 Real-time update received:', data);
+      fetchLeads();
+    };
+
+    socket.on('sales_coaching_update', handleUpdate);
+    socket.on('lead_update', handleUpdate);
+
+    return () => {
+      socket.off('sales_coaching_update', handleUpdate);
+      socket.off('lead_update', handleUpdate);
+    };
+  }, [selectedClient]);
 
   const fetchLeads = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leads`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        const adaptedLeads: Lead[] = data.map((l: any) => ({
-          id: l.id,
-          name: l.name,
-          email: l.email,
-          phone: l.phone,
-          company: l.company,
-          source: l.source,
-          status: (l.status || 'NEW').toUpperCase() as LeadStatus,
-          value: Number(l.value),
-          notes: l.notes,
-          assignedTo: l.assigned_to || 'Não atribuído',
-          lastContact: new Date(l.updated_at || l.created_at).toLocaleDateString(),
-          productInterest: 'Geral',
-          tags: []
-        }));
-        setLocalLeads(adaptedLeads);
-      }
+      if (leads.length === 0) setLoading(true);
+      const data = await apiClient.leads.getLeads(selectedClient !== 'all' ? selectedClient : undefined);
+      setLeads(data);
     } catch (error) {
-      console.error('Erro ao buscar leads:', error);
+      console.error('Error fetching leads:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchClients = async () => {
+    try {
+      const data = await apiClient.clients.getClients();
+      setClients(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
 
-  // Filter leads
+  // --- Handlers ---
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setActiveDragId(active.id as string);
+    const lead = leads.find(l => l.id === active.id);
+    if (lead) {
+      setActiveDragStatus(lead.status);
+    }
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    if (activeId === overId) return;
+
+    const isActiveALead = active.data.current?.type === 'Lead';
+    if (!isActiveALead) return;
+
+    const activeLead = leads.find(l => l.id === activeId);
+    if (!activeLead) return;
+
+    const isOverColumn = COLUMNS.some(col => col.id === overId);
+    const isOverLead = active.data.current?.type === 'Lead' && over.data.current?.type === 'Lead';
+
+    let newStatus: LeadStatus | null = null;
+
+    if (isOverColumn) {
+      newStatus = overId as LeadStatus;
+    } else if (isOverLead) {
+      const overLead = leads.find(l => l.id === overId);
+      if (overLead) {
+        newStatus = overLead.status;
+      }
+    }
+
+    if (newStatus && newStatus !== activeLead.status) {
+      setLeads((prev) => {
+        return prev.map(l =>
+          l.id === activeId ? { ...l, status: newStatus! } : l
+        );
+      });
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveDragId(null);
+    setActiveDragStatus(null);
+
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const lead = leads.find(l => l.id === activeId);
+    if (!lead) return;
+
+    const isColumn = COLUMNS.some(col => col.id === overId);
+    let newStatus = lead.status;
+
+    if (isColumn) {
+      newStatus = overId as LeadStatus;
+    } else {
+      const overLead = leads.find(l => l.id === overId);
+      if (overLead) {
+        newStatus = overLead.status;
+      }
+    }
+
+    if (activeDragStatus && newStatus !== activeDragStatus) {
+      try {
+        await apiClient.leads.updateLeadStatus(activeId, newStatus);
+      } catch (error) {
+        console.error('Error updating status:', error);
+        fetchLeads();
+      }
+    }
+  };
+
+  const handleAddLead = async (leadData: any) => {
+    try {
+      await apiClient.leads.createLead(leadData);
+      fetchLeads();
+      setShowNewLeadModal(false);
+    } catch (error) {
+      console.error('Error creating lead:', error);
+    }
+  };
+
+  const handleUpdateLead = async (id: string, updates: Partial<Lead>) => {
+    try {
+      await apiClient.leads.updateLead(id, updates);
+      fetchLeads();
+      setSelectedLead(null);
+    } catch (error) {
+      console.error('Error updating lead:', error);
+    }
+  };
+
+  const handleQuickAction = (action: string, lead: Lead) => {
+    switch (action) {
+      case 'whatsapp':
+        window.open(`https://wa.me/${lead.phone?.replace(/\D/g, '')}`, '_blank');
+        break;
+      case 'email':
+        window.location.href = `mailto:${lead.email}`;
+        break;
+      case 'call':
+        window.location.href = `tel:${lead.phone}`;
+        break;
+    }
+  };
+
+  const handleExport = async (type: 'pdf' | 'excel') => {
+    try {
+      const blob = type === 'pdf'
+        ? await apiClient.leads.exportPdf(selectedClient)
+        : await apiClient.leads.exportExcel(selectedClient);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `leads_export.${type === 'pdf' ? 'pdf' : 'xlsx'}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Error exporting:', error);
+      alert('Erro ao exportar arquivo. Tente novamente.');
+    }
+  };
+
+  // --- Filtering Logic ---
   const filteredLeads = useMemo(() => {
-    return localLeads.filter(lead => {
-      // Client filter
-      if (selectedClient !== 'all') {
-        // Example client-specific filtering logic (adjust as needed)
-        if (selectedClient === '1' && lead.value <= 5000) return false;
-        if (selectedClient === '2' && lead.value >= 3000) return false;
-      }
-
-      // Search filter
+    return leads.filter(lead => {
       const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (lead.email?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-      if (!matchesSearch) return false;
+        (lead.email && lead.email.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesSource = selectedSource === 'all' || lead.source === selectedSource;
+      const matchesAssignee = selectedAssignee === 'all' || lead.assignedTo === selectedAssignee;
+      const matchesMin = !minValue || lead.value >= parseFloat(minValue);
+      const matchesMax = !maxValue || lead.value <= parseFloat(maxValue);
 
-      // Source filter
-      if (selectedSource !== 'all' && lead.source !== selectedSource) {
-        return false;
-      }
+      const leadDate = new Date(lead.lastContact || new Date().toISOString());
+      const matchesStart = !startDate || leadDate >= new Date(startDate);
+      const matchesEnd = !endDate || leadDate <= new Date(endDate + 'T23:59:59');
 
-      // Value filter
-      if (selectedValue === 'low' && lead.value >= 3000) return false;
-      if (selectedValue === 'medium' && (lead.value < 3000 || lead.value > 10000)) return false;
-      if (selectedValue === 'high' && lead.value <= 10000) return false;
-
-      // Assignee filter
-      if (selectedAssignee !== 'all' && lead.assignedTo !== selectedAssignee) {
-        return false;
-      }
-
-      return true;
+      return matchesSearch && matchesSource && matchesAssignee && matchesMin && matchesMax && matchesStart && matchesEnd;
     });
-  }, [localLeads, selectedClient, searchTerm, selectedSource, selectedValue, selectedAssignee]);
+  }, [leads, searchTerm, selectedSource, selectedAssignee, minValue, maxValue, startDate, endDate]);
 
-  const handleAddLead = async (newLead: any) => {
-    try {
-      const token = localStorage.getItem('token');
-      const payload = {
-        ...newLead,
-        status: newLead.status.toLowerCase()
-      };
+  const getLeadsByStatus = useCallback((status: string) => filteredLeads.filter(l => l.status === status), [filteredLeads]);
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/leads`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+  // --- Metrics ---
+  const metrics = useMemo(() => ({
+    totalLeads: leads.length,
+    totalValue: leads.reduce((acc, curr) => acc + curr.value, 0),
+    conversionRate: leads.length > 0
+      ? (leads.filter(l => l.status === LeadStatus.CLOSED_WON).length / leads.length) * 100
+      : 0,
+    avgDealSize: leads.length > 0
+      ? leads.reduce((acc, curr) => acc + curr.value, 0) / leads.length
+      : 0
+  }), [leads]);
 
-      if (res.ok) {
-        const savedLead = await res.json();
-        const adapted: Lead = {
-          id: savedLead.id,
-          name: savedLead.name,
-          email: savedLead.email,
-          phone: savedLead.phone,
-          company: savedLead.company,
-          source: savedLead.source,
-          status: (savedLead.status || 'NEW').toUpperCase() as LeadStatus,
-          value: Number(savedLead.value),
-          notes: savedLead.notes,
-          assignedTo: 'Você',
-          lastContact: new Date().toLocaleDateString(),
-          productInterest: 'Geral',
-          tags: []
-        };
-        setLocalLeads([adapted, ...localLeads]);
-      } else {
-        alert('Erro ao criar lead');
-      }
-    } catch (error) {
-      console.error(error);
-      alert('Erro de conexão');
+  const formatCurrency = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  const DEFAULT_SOURCES = [
+    'Google Ads', 'Meta Ads', 'Instagram', 'Facebook', 'LinkedIn',
+    'TikTok', 'YouTube', 'Email Marketing', 'WhatsApp', 'Site/Blog',
+    'Indicação', 'Evento', 'Outbound', 'Parceria', 'Outros'
+  ];
+
+  const uniqueSources = useMemo(() => Array.from(new Set(leads.map(l => l.source).filter(Boolean))), [leads]);
+  const sources = useMemo(() => Array.from(new Set([...DEFAULT_SOURCES, ...uniqueSources])).sort(), [uniqueSources]);
+  const assignees = useMemo(() => Array.from(new Set(leads.map(l => l.assignedTo).filter(Boolean))), [leads]);
+
+  // Optimize Collision Detection
+  // Prioriza o ponteiro (mouse) para colunas vazias ou movimentos rápidos
+  const customCollisionDetection = useCallback((args: any) => {
+    // First, look for pointer collisions (mouse cursor over element)
+    const pointerCollisions = pointerWithin(args);
+
+    // If we have pointer collisions, use them (great for dropping into columns)
+    if (pointerCollisions.length > 0) {
+      return pointerCollisions;
     }
-  };
 
-  const handleExport = () => {
-    const headers = ['Nome', 'Email', 'Telefone', 'Empresa', 'Origem', 'Status', 'Valor', 'Data Contato', 'Responsável', 'Interesse Produto', 'Tags'];
-    const csvContent = [
-      headers.join(','),
-      ...filteredLeads.map(lead => [
-        `"${lead.name}"`,
-        `"${lead.email}"`,
-        `"${lead.phone}"`,
-        `"${lead.company || ''}"`,
-        `"${lead.source}"`,
-        `"${lead.status}"`,
-        `"${lead.value}"`,
-        `"${lead.lastContact}"`,
-        `"${lead.assignedTo}"`,
-        `"${lead.productInterest || ''}"`,
-        `"${lead.tags ? lead.tags.join(';') : ''}"`
-      ].map(field => field.replace(/"/g, '""')).join(',')) // Escape double quotes within fields
-    ].join('\n');
+    // Fallback to intersection (good for items)
+    return rectIntersection(args);
+  }, []);
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `leads_export_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const getLeadsByStatus = (status: LeadStatus) => filteredLeads.filter(l => l.status === status);
-
-  // Metrics calculation
-  const metrics = useMemo(() => {
-    const totalLeads = filteredLeads.length;
-    const totalValue = filteredLeads.reduce((sum, lead) => sum + lead.value, 0);
-    const wonLeads = filteredLeads.filter(l => l.status === LeadStatus.CLOSED_WON).length;
-    const conversionRate = totalLeads > 0 ? (wonLeads / totalLeads) * 100 : 0;
-
-    return {
-      totalLeads,
-      totalValue,
-      conversionRate,
-      avgDealSize: totalLeads > 0 ? totalValue / totalLeads : 0
-    };
-  }, [filteredLeads]);
-
-  // Drag & Drop handlers
-  const handleDragStart = (lead: Lead) => {
-    setDraggedLead(lead);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = async (newStatus: LeadStatus) => {
-    if (!draggedLead) return;
-
-    // Otimistic Update
-    const oldLeads = [...localLeads];
-    setLocalLeads(prev => prev.map(lead =>
-      lead.id === draggedLead.id ? { ...lead, status: newStatus } : lead
-    ));
-    setDraggedLead(null);
-
-    try {
-      const token = localStorage.getItem('token');
-      await fetch(`${import.meta.env.VITE_API_URL}/api/leads/${draggedLead.id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus.toLowerCase() })
-      });
-    } catch (error) {
-      console.error('Erro ao atualizar status:', error);
-      setLocalLeads(oldLeads); // Revert
-      alert('Erro ao atualizar status');
-    }
-  };
-
-  const handleUpdateLead = async (leadId: string, updates: Partial<Lead>) => {
-    // Otimistic Update
-    setLocalLeads(prev => prev.map(lead =>
-      lead.id === leadId ? { ...lead, ...updates } : lead
-    ));
-
-    try {
-      const token = localStorage.getItem('token');
-      await fetch(`${import.meta.env.VITE_API_URL}/api/leads/${leadId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(updates)
-      });
-    } catch (error) {
-      console.error('Erro ao atualizar lead:', error);
-      alert('Erro ao salvar alterações');
-    }
-  };
-
-  const formatCurrency = (val: number) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-  const sources = Array.from(new Set(localLeads.map(l => l.source)));
-  const assignees = Array.from(new Set(localLeads.map(l => l.assignedTo)));
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="animate-spin text-primary-600" size={48} />
+      </div>
+    );
+  }
 
   return (
-    <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)] flex flex-col animate-fade-in overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+      <div className="flex-shrink-0 p-4 md:p-8 bg-gray-50">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              Controle de Voo <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.FlightControl}</span>
-              <span className="text-xs font-normal bg-slate-800 text-white px-2 py-1 rounded animate-pulse">AO VIVO</span>
-            </h2>
-            <p className="text-gray-500 text-sm">Gestão operacional de leads em tempo real</p>
+            <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
+              <Users className="text-primary-600" /> Controle de Voo
+              <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full ml-2 align-middle">{COMPONENT_VERSIONS.FlightControl}</span>
+            </h1>
+            <p className="text-gray-500 mt-1">Gestão operacional de leads em tempo real</p>
           </div>
 
-          <div className="flex gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
-                <Users size={16} />
-              </div>
-              <select
-                value={selectedClient}
-                onChange={(e) => setSelectedClient(e.target.value)}
-                className="w-full bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block pl-10 p-2.5 shadow-sm outline-none"
-              >
-                {CLIENTS_LIST.map(client => (
-                  <option key={client.id} value={client.id}>{client.name}</option>
-                ))}
-              </select>
+          <div className="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button onClick={() => setViewMode('kanban')} className={`p-2 rounded-md transition-all ${viewMode === 'kanban' ? 'bg-white shadow text-primary-600' : 'text-gray-500 hover:text-gray-700'}`} title="Kanban">
+                <LayoutGrid size={18} />
+              </button>
+              <button onClick={() => setViewMode('list')} className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow text-primary-600' : 'text-gray-500 hover:text-gray-700'}`} title="Lista">
+                <ListIcon size={18} />
+              </button>
+              <button onClick={() => setViewMode('table')} className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-white shadow text-primary-600' : 'text-gray-500 hover:text-gray-700'}`} title="Tabela">
+                <TableIcon size={18} />
+              </button>
             </div>
 
-            <button
-              onClick={handleExport}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+            <div className="h-6 w-px bg-gray-300 mx-1"></div>
+
+            <select
+              value={selectedClient}
+              onChange={(e) => setSelectedClient(e.target.value)}
+              className="pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-primary-500 outline-none"
             >
-              <Download size={18} />
-              <span className="hidden sm:inline">Exportar</span>
-            </button>
+              <option value="all">Todos os Clientes</option>
+              {clients.map(client => (
+                <option key={client.id} value={client.id}>{client.name}</option>
+              ))}
+            </select>
+
             <button
               onClick={() => setShowNewLeadModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-lg shadow-blue-200 transition-all"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-bold shadow-lg shadow-primary-200 transition-all text-sm"
             >
-              <Plus size={18} />
-              <span>Lead Manual</span>
+              <Plus size={16} /> Novo Lead
+            </button>
+
+            <div className="h-6 w-px bg-gray-300 mx-1"></div>
+
+            <button
+              onClick={() => handleExport('pdf')}
+              className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg transition-colors font-medium text-sm border border-red-200"
+              title="Exportar PDF"
+            >
+              <FileText size={18} /> Exportar PDF
+            </button>
+            <button
+              onClick={() => handleExport('excel')}
+              className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors font-medium text-sm border border-green-200"
+              title="Exportar Excel"
+            >
+              <FileSpreadsheet size={18} /> Exportar XLS
             </button>
           </div>
         </div>
 
         {/* Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-primary-500">
             <div className="flex items-center justify-between mb-2">
-              <Target size={20} className="opacity-80" />
-              <TrendingUp size={16} className="opacity-60" />
+              <div className="p-2 rounded-lg bg-primary-50"><Target size={20} className="text-primary-600" /></div>
+              <TrendingUp size={16} className="text-green-500" />
             </div>
-            <p className="text-2xl font-bold">{metrics.totalLeads}</p>
-            <p className="text-xs text-blue-100">Total de Leads</p>
+            <p className="text-sm text-gray-500">Total de Leads</p>
+            <h3 className="text-2xl font-bold text-gray-800">{metrics.totalLeads}</h3>
           </div>
-
-          <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-xl shadow-lg">
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-green-500">
             <div className="flex items-center justify-between mb-2">
-              <DollarSign size={20} className="opacity-80" />
-              <TrendingUp size={16} className="opacity-60" />
+              <div className="p-2 rounded-lg bg-green-50"><DollarSign size={20} className="text-green-600" /></div>
+              <TrendingUp size={16} className="text-green-500" />
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(metrics.totalValue)}</p>
-            <p className="text-xs text-green-100">Pipeline Total</p>
+            <p className="text-sm text-gray-500">Pipeline Total</p>
+            <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(metrics.totalValue)}</h3>
           </div>
-
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-xl shadow-lg">
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-purple-500">
             <div className="flex items-center justify-between mb-2">
-              <CheckCircle size={20} className="opacity-80" />
-              <TrendingUp size={16} className="opacity-60" />
+              <div className="p-2 rounded-lg bg-purple-50"><CheckCircle size={20} className="text-purple-600" /></div>
+              <TrendingUp size={16} className="text-green-500" />
             </div>
-            <p className="text-2xl font-bold">{metrics.conversionRate.toFixed(1)}%</p>
-            <p className="text-xs text-purple-100">Taxa de Conversão</p>
+            <p className="text-sm text-gray-500">Taxa de Conversão</p>
+            <h3 className="text-2xl font-bold text-gray-800">{metrics.conversionRate.toFixed(1)}%</h3>
           </div>
-
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-4 rounded-xl shadow-lg">
+          <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm border-l-4 border-l-orange-500">
             <div className="flex items-center justify-between mb-2">
-              <Target size={20} className="opacity-80" />
-              <TrendingUp size={16} className="opacity-60" />
+              <div className="p-2 rounded-lg bg-orange-50"><DollarSign size={20} className="text-orange-600" /></div>
+              <TrendingUp size={16} className="text-green-500" />
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(metrics.avgDealSize)}</p>
-            <p className="text-xs text-orange-100">Ticket Médio</p>
+            <p className="text-sm text-gray-500">Ticket Médio</p>
+            <h3 className="text-2xl font-bold text-gray-800">{formatCurrency(metrics.avgDealSize)}</h3>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            {/* Search */}
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="flex flex-col gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex-1 min-w-[200px] relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="text"
+                placeholder="Buscar por nome ou email..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar lead..."
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               />
             </div>
 
-            {/* Source Filter */}
             <select
+              className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
               value={selectedSource}
               onChange={(e) => setSelectedSource(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <option value="all">Todas as Fontes</option>
+              <option value="all">Origem: Todas</option>
               {sources.map(source => (
                 <option key={source} value={source}>{source}</option>
               ))}
             </select>
 
-            {/* Value Filter */}
             <select
-              value={selectedValue}
-              onChange={(e) => setSelectedValue(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="all">Todos os Valores</option>
-              <option value="low">Até R$ 3.000</option>
-              <option value="medium">R$ 3.000 - R$ 10.000</option>
-              <option value="high">Acima de R$ 10.000</option>
-            </select>
-
-            {/* Assignee Filter */}
-            <select
+              className="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
               value={selectedAssignee}
               onChange={(e) => setSelectedAssignee(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             >
-              <option value="all">Todos Responsáveis</option>
+              <option value="all">Responsável: Todos</option>
               {assignees.map(assignee => (
                 <option key={assignee} value={assignee}>{assignee}</option>
               ))}
             </select>
+          </div>
 
-            {/* Clear Filters */}
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedSource('all');
-                setSelectedValue('all');
-                setSelectedAssignee('all');
-              }}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-            >
-              <X size={16} />
-              Limpar
-            </button>
+          <div className="flex flex-wrap gap-4 items-center border-t border-gray-100 pt-4">
+            <span className="text-sm font-medium text-gray-500 flex items-center gap-1"><Filter size={14} /> Filtros Avançados:</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              <span className="text-gray-400">-</span>
+              <input
+                type="date"
+                className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative w-24">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">R$</span>
+                <input
+                  type="number"
+                  placeholder="Min"
+                  className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  value={minValue}
+                  onChange={(e) => setMinValue(e.target.value)}
+                />
+              </div>
+              <span className="text-gray-400">-</span>
+              <div className="relative w-24">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">R$</span>
+                <input
+                  type="number"
+                  placeholder="Max"
+                  className="w-full pl-6 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  value={maxValue}
+                  onChange={(e) => setMaxValue(e.target.value)}
+                />
+              </div>
+            </div>
+            {(searchTerm || selectedSource !== 'all' || selectedAssignee !== 'all' || startDate || endDate || minValue || maxValue) && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedSource('all');
+                  setSelectedAssignee('all');
+                  setStartDate('');
+                  setEndDate('');
+                  setMinValue('');
+                  setMaxValue('');
+                }}
+                className="text-xs text-red-500 hover:text-red-700 font-medium ml-auto"
+              >
+                Limpar Filtros
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
-        <div className="flex gap-4 h-full min-w-[1200px] pb-4">
-          {COLUMNS.map((col) => (
-            <div
-              key={col.id}
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop(col.id)}
-              className="flex-1 flex flex-col bg-gray-50 rounded-xl border-2 border-gray-200 min-w-[280px] transition-all hover:border-gray-300"
-            >
-              <div className={`p-4 border-t-4 ${col.color} ${col.bgColor} rounded-t-xl shadow-sm`}>
-                <div className="flex justify-between items-center">
-                  <h3 className="font-semibold text-gray-700">{col.label}</h3>
-                  <span className="bg-white text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
-                    {getLeadsByStatus(col.id).length}
-                  </span>
-                </div>
+      {/* Content Area */}
+      <div className="flex-1 w-full max-w-[1600px] mx-auto pb-[300px] min-h-[1300px]">
+        {viewMode === 'kanban' && (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={customCollisionDetection}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="flex items-center gap-3 bg-gradient-to-r from-indigo-500 to-blue-600 text-white px-6 py-4 rounded-xl shadow-lg border-l-4 border-yellow-400 mb-6 transform transition-all hover:scale-[1.01]">
+              <div className="p-2 bg-white/20 rounded-full shrink-0">
+                <Info size={24} className="text-white" />
               </div>
-              <div className="flex-1 p-3 overflow-y-auto space-y-3 flight-scroll">
-                {getLeadsByStatus(col.id).map((lead) => (
-                  <div
-                    key={lead.id}
-                    draggable
-                    onDragStart={() => handleDragStart(lead)}
-                    onClick={() => setSelectedLead(lead)}
-                    className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-move group hover:scale-[1.02]"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${lead.source === 'Google Ads' ? 'bg-blue-50 text-blue-600' :
-                        lead.source === 'Instagram' ? 'bg-pink-50 text-pink-600' :
-                          'bg-green-50 text-green-600'
-                        }`}>
-                        {lead.source}
-                      </span>
-                      <button className="text-gray-300 hover:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreVertical size={14} />
-                      </button>
-                    </div>
-                    <h4 className="font-bold text-gray-900 mb-1">{lead.name}</h4>
-                    <p className="text-sm text-gray-500 mb-3">{lead.productInterest}</p>
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                      <div className="flex items-center text-xs text-gray-400" title="Last Contact">
-                        <Clock size={12} className="mr-1" />
-                        {lead.lastContact}
-                      </div>
-                      <div className="font-semibold text-gray-700 text-sm">
-                        {formatCurrency(lead.value)}
-                      </div>
-                    </div>
-                    {lead.tags && lead.tags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {lead.tags.slice(0, 2).map(tag => (
-                          <span key={tag} className="flex items-center text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
-                            <Tag size={8} className="mr-1" /> {tag}
-                          </span>
-                        ))}
-                        {lead.tags.length > 2 && (
-                          <span className="text-[10px] text-gray-400">+{lead.tags.length - 2}</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {getLeadsByStatus(col.id).length === 0 && (
-                  <div className="h-24 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-sm flex-col gap-2 opacity-70">
-                    <Filter size={20} />
-                    <span>Nenhum lead</span>
-                  </div>
-                )}
+              <div>
+                <span className="font-bold text-lg block mb-0.5 text-yellow-100">Dica:</span>
+                <span className="text-base font-medium opacity-95 leading-relaxed">
+                  Para trocar o status, basta arrastar e soltar o card na coluna desejada e em poucos segundos a transferência é realizada.
+                </span>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Lead Detail Modal */}
-      {selectedLead && (
-        <LeadDetailModal
-          lead={selectedLead}
-          onClose={() => setSelectedLead(null)}
-          onUpdate={handleUpdateLead}
+            <div className="overflow-x-auto px-4 md:px-8 pb-4 min-h-[800px]">
+              <div className="flex gap-6 min-w-max">
+                {COLUMNS.map(column => (
+                  <DroppableColumn key={column.id} column={column} leads={getLeadsByStatus(column.id)}>
+                    <SortableContext
+                      items={getLeadsByStatus(column.id).map(l => l.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="flex-1 flex flex-col gap-3 min-h-[100px]">
+                        {getLeadsByStatus(column.id).map(lead => (
+                          <SortableItem
+                            key={lead.id}
+                            lead={lead}
+                            onClick={() => setSelectedLead(lead)}
+                            onQuickAction={handleQuickAction}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DroppableColumn>
+                ))}
+              </div>
+            </div>
+
+            <DragOverlay>
+              {activeDragId ? (
+                <div className="bg-white p-4 rounded-lg shadow-xl border-2 border-primary-500 rotate-2 scale-105 w-[300px]">
+                  <h4 className="font-bold text-gray-800">{leads.find(l => l.id === activeDragId)?.name}</h4>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        )}
+
+        {viewMode === 'list' && (
+          <div className="px-4 md:px-8 pb-4">
+            <div className="max-w-4xl mx-auto space-y-3">
+              {filteredLeads.map(lead => (
+                <div key={lead.id} onClick={() => setSelectedLead(lead)} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-2 h-12 rounded-full ${lead.status === LeadStatus.NEW ? 'bg-primary-500' :
+                      lead.status === LeadStatus.CLOSED_WON ? 'bg-green-500' :
+                        lead.status === LeadStatus.CLOSED_LOST ? 'bg-red-500' : 'bg-gray-300'
+                      }`}></div>
+                    <div>
+                      <h4 className="font-bold text-gray-800">{lead.name}</h4>
+                      <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                        <span className="flex items-center gap-1"><Mail size={14} /> {lead.email}</span>
+                        <span className="flex items-center gap-1"><Phone size={14} /> {lead.phone}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600">{lead.source}</span>
+                    <span className="font-bold text-green-600">{formatCurrency(lead.value)}</span>
+                    <div className="flex gap-2">
+                      <button onClick={(e) => { e.stopPropagation(); handleQuickAction('whatsapp', lead); }} className="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100"><MessageCircle size={18} /></button>
+                      <button onClick={(e) => { e.stopPropagation(); handleQuickAction('call', lead); }} className="p-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100"><Phone size={18} /></button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {viewMode === 'table' && (
+          <div className="px-4 md:px-8 pb-4">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden min-w-[1000px]">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Nome</th>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Email</th>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Origem</th>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Responsável</th>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Status</th>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Valor</th>
+                    <th className="p-4 font-bold text-gray-600 text-sm">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLeads.map(lead => (
+                    <tr key={lead.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="p-4 font-medium text-gray-800">{lead.name}</td>
+                      <td className="p-4 text-gray-600 text-sm">{lead.email}</td>
+                      <td className="p-4 text-gray-600 text-sm">{lead.source}</td>
+                      <td className="p-4 text-gray-600 text-sm">{lead.assignedTo || '-'}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${lead.status === LeadStatus.NEW ? 'bg-primary-100 text-primary-700' :
+                          lead.status === LeadStatus.CLOSED_WON ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                          {lead.status}
+                        </span>
+                      </td>
+                      <td className="p-4 font-bold text-green-600">{formatCurrency(lead.value)}</td>
+                      <td className="p-4">
+                        <button onClick={() => setSelectedLead(lead)} className="text-primary-600 hover:text-primary-800 font-medium text-sm">Editar</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {selectedLead && (
+          <LeadModal
+            isOpen={!!selectedLead}
+            onClose={() => setSelectedLead(null)}
+            lead={selectedLead}
+            onSave={(data) => handleUpdateLead(selectedLead.id, data)}
+            mode="edit"
+          />
+        )}
+
+        <LeadModal
+          isOpen={showNewLeadModal}
+          onClose={() => setShowNewLeadModal(false)}
+          onSave={handleAddLead}
+          mode="create"
         />
-      )}
-
-      <NewLeadModal
-        isOpen={showNewLeadModal}
-        onClose={() => setShowNewLeadModal(false)}
-        onSave={handleAddLead}
-      />
+      </div>
     </div>
   );
 };

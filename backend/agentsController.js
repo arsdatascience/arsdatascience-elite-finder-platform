@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../server');
+const { pool } = require('./server');
 
 // Helper para executar queries em transação
 const executeTransaction = async (callback) => {
@@ -17,6 +17,115 @@ const executeTransaction = async (callback) => {
         client.release();
     }
 };
+// Helper para gerar slug único
+const generateSlug = async (name, client) => {
+    let slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (!slug) slug = 'agent-' + Math.random().toString(36).substring(7);
+
+    let uniqueSlug = slug;
+    let counter = 1;
+    while (true) {
+        const check = await client.query('SELECT id FROM chatbots WHERE slug = $1', [uniqueSlug]);
+        if (check.rows.length === 0) return uniqueSlug;
+        uniqueSlug = `${slug}-${counter++}`;
+    }
+};
+
+// Obter agente público por Slug
+router.get('/public/:slug', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const result = await pool.query(`
+            SELECT id, name, description, category, class, specialization_level, slug, avatar, client_id 
+            FROM chatbots WHERE slug = $1 AND status = 'active'
+        `, [slug]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Agente não encontrado' });
+        }
+
+        const agent = result.rows[0];
+
+        // Buscar configs necessárias para o chat (sem expor segredos)
+        const aiConfig = await pool.query('SELECT provider, model, temperature, response_mode FROM agent_ai_configs WHERE chatbot_id = $1', [agent.id]);
+
+        // Retornar apenas o necessário para a interface pública
+        res.json({
+            ...agent,
+            aiConfig: aiConfig.rows[0] || {},
+            isPublic: true
+        });
+    } catch (error) {
+        console.error('Erro ao buscar agente público:', error);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+// Chat Público com o Agente
+router.post('/public/:slug/chat', async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const { messages, sessionId } = req.body;
+
+        const result = await pool.query(`
+            SELECT c.*, a.provider, a.model, a.temperature, a.max_tokens, a.system_prompt,
+                   p.system_prompt as prompt_system, p.response_structure_prompt, p.script_content
+            FROM chatbots c
+            LEFT JOIN agent_ai_configs a ON c.id = a.chatbot_id
+            LEFT JOIN agent_prompts p ON c.id = p.chatbot_id
+            WHERE c.slug = $1 AND c.status = 'active'
+        `, [slug]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Agente não encontrado ou inativo' });
+        }
+
+        const agent = result.rows[0];
+
+        // Construir System Prompt
+        let systemPrompt = agent.prompt_system || `Você é ${agent.name}. ${agent.description}`;
+        if (agent.script_content) {
+            systemPrompt += `\n\nCONTEXTO E SCRIPT OBRIGATÓRIO:\n${agent.script_content}`;
+        }
+        if (agent.response_structure_prompt) {
+            systemPrompt += `\n\nESTRUTURA DE RESPOSTA:\n${agent.response_structure_prompt}`;
+        }
+
+        // Determinar Provider e Chave
+        const provider = agent.provider || 'openai';
+        let apiKey = process.env.OPENAI_API_KEY; // Default system key
+
+        // Simulação de chamada simplificada (Em produção usaríamos o service completo)
+        // Aqui assumimos OpenAI para MVP ou usamos o provider configurado se implementado
+
+        if (provider === 'openai') {
+            const OpenAI = require('openai');
+            const openai = new OpenAI({ apiKey: apiKey });
+
+            const completion = await openai.chat.completions.create({
+                model: agent.model || 'gpt-4o',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    ...messages.map(m => ({ role: m.role, content: m.content }))
+                ],
+                temperature: parseFloat(agent.temperature) || 0.7,
+                max_tokens: agent.max_tokens || 1000
+            });
+
+            return res.json({
+                role: 'assistant',
+                content: completion.choices[0].message.content
+            });
+        }
+
+        // Fallback or other providers...
+        return res.json({ role: 'assistant', content: "Desculpe, estou em manutenção (Provider não suportado neste endpoint público ainda)." });
+
+    } catch (error) {
+        console.error('Erro no chat público:', error);
+        res.status(500).json({ error: 'Erro ao processar mensagem' });
+    }
+});
 
 // Criar novo agente
 router.post('/', async (req, res) => {
@@ -35,11 +144,14 @@ router.post('/', async (req, res) => {
         }
 
         const newAgent = await executeTransaction(async (client) => {
+            // Gerar Slug Único
+            const slug = await generateSlug(identity.name, client);
+
             // 1. Inserir Agente (Chatbot)
             const agentResult = await client.query(`
-                INSERT INTO chatbots (name, description, category, class, specialization_level, status, advanced_settings)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                RETURNING id, name, description, category, class, specialization_level, status
+                INSERT INTO chatbots (name, description, category, class, specialization_level, status, advanced_settings, client_id, slug)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                RETURNING id, name, description, category, class, specialization_level, status, client_id, slug
             `, [
                 identity.name,
                 identity.description,
@@ -47,7 +159,9 @@ router.post('/', async (req, res) => {
                 identity.class,
                 identity.specializationLevel,
                 identity.status,
-                advancedConfig || {}
+                advancedConfig || {},
+                identity.clientId || null,
+                slug
             ]);
             const agentId = agentResult.rows[0].id;
 
@@ -114,8 +228,8 @@ router.post('/', async (req, res) => {
 
             // 5. Inserir Prompts
             await client.query(`
-                INSERT INTO agent_prompts (chatbot_id, system_prompt, response_structure_prompt, vector_search_prompt, analysis_prompt, complex_cases_prompt, validation_prompt)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO agent_prompts (chatbot_id, system_prompt, response_structure_prompt, vector_search_prompt, analysis_prompt, complex_cases_prompt, validation_prompt, script_content)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             `, [
                 agentId,
                 prompts.system,
@@ -123,7 +237,8 @@ router.post('/', async (req, res) => {
                 prompts.vectorSearch,
                 prompts.analysis,
                 prompts.complexCases,
-                prompts.validation
+                prompts.validation,
+                prompts.scriptContent || ''
             ]);
 
             // 6. Inserir WhatsApp Config
@@ -160,7 +275,18 @@ router.post('/', async (req, res) => {
 // Listar agentes (Simplificado, apenas dados básicos)
 router.get('/', async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, name, category, status, created_at FROM chatbots ORDER BY created_at DESC');
+        const { clientId } = req.query;
+        let query = 'SELECT id, name, category, status, created_at, client_id FROM chatbots';
+        const params = [];
+
+        if (clientId) {
+            query += ' WHERE client_id = $1';
+            params.push(clientId);
+        }
+
+        query += ' ORDER BY created_at DESC';
+
+        const result = await pool.query(query, params);
         res.json(result.rows);
     } catch (error) {
         console.error('Erro ao listar agentes:', error);
@@ -207,7 +333,9 @@ router.get('/:id', async (req, res) => {
                 description: agent.description,
                 class: agent.class,
                 specializationLevel: agent.specialization_level,
-                status: agent.status
+                specializationLevel: agent.specialization_level,
+                status: agent.status,
+                slug: agent.slug
             },
             aiConfig: {
                 provider: aiConfig.provider,
@@ -240,7 +368,8 @@ router.get('/:id', async (req, res) => {
                 vectorSearch: prompts.vector_search_prompt,
                 analysis: prompts.analysis_prompt,
                 complexCases: prompts.complex_cases_prompt,
-                validation: prompts.validation_prompt
+                validation: prompts.validation_prompt,
+                scriptContent: prompts.script_content
             },
             whatsappConfig: {
                 enabled: whatsappConfig.enabled,
@@ -283,19 +412,17 @@ router.put('/:id', async (req, res) => {
             // 1. Atualizar Agente
             const agentResult = await client.query(`
                 UPDATE chatbots SET
-        name = $1, description = $2, category = $3, class = $4, specialization_level = $5, status = $6, advanced_settings = $7, updated_at = CURRENT_TIMESTAMP
-                WHERE id = $8
+        name = $1, description = $2, category = $3, class = $4, specialization_level = $5, status = $6, advanced_settings = $7, client_id = $8, updated_at = CURRENT_TIMESTAMP
+                WHERE id = $9
         RETURNING *
-            `, [identity.name, identity.description, identity.category, identity.class, identity.specializationLevel, identity.status, advancedConfig || {}, id]);
+            `, [identity.name, identity.description, identity.category, identity.class, identity.specializationLevel, identity.status, advancedConfig || {}, identity.clientId || null, id]);
 
             if (agentResult.rows.length === 0) {
                 throw new Error('Agente não encontrado');
             }
 
-            // 2. Upsert AI Config (Deletar e inserir é mais simples para garantir consistência se não existir PK)
-            // Mas vamos tentar UPDATE primeiro, se rowCount=0, INSERT.
             // 2. Upsert AI Config
-            const updateAi = await client.query(`
+            await client.query(`
                 UPDATE agent_ai_configs SET
         provider = $1, model = $2, temperature = $3, top_p = $4, top_k = $5, max_tokens = $6, timeout = $7, retries = $8,
             frequency_penalty = $9, presence_penalty = $10, stop_sequences = $11, response_mode = $12, candidate_count = $13,
@@ -342,7 +469,7 @@ router.put('/:id', async (req, res) => {
                 vectorConfigId = updateVector.rows[0].id;
             }
 
-            // 4. Atualizar Filtros (Deletar todos e inserir novos)
+            // 4. Atualizar Filtros
             await client.query('DELETE FROM agent_vector_filters WHERE vector_config_id = $1', [vectorConfigId]);
             if (vectorConfig.filters && vectorConfig.filters.length > 0) {
                 for (const filter of vectorConfig.filters) {
@@ -356,15 +483,15 @@ router.put('/:id', async (req, res) => {
             // 5. Upsert Prompts
             const updatePrompts = await client.query(`
                 UPDATE agent_prompts SET
-        system_prompt = $1, response_structure_prompt = $2, vector_search_prompt = $3, analysis_prompt = $4, complex_cases_prompt = $5, validation_prompt = $6
-                WHERE chatbot_id = $7
-            `, [prompts.system, prompts.responseStructure, prompts.vectorSearch, prompts.analysis, prompts.complexCases, prompts.validation, id]);
+        system_prompt = $1, response_structure_prompt = $2, vector_search_prompt = $3, analysis_prompt = $4, complex_cases_prompt = $5, validation_prompt = $6, script_content = $7
+                WHERE chatbot_id = $8
+            `, [prompts.system, prompts.responseStructure, prompts.vectorSearch, prompts.analysis, prompts.complexCases, prompts.validation, prompts.scriptContent || '', id]);
 
             if (updatePrompts.rowCount === 0) {
                 await client.query(`
-                    INSERT INTO agent_prompts(chatbot_id, system_prompt, response_structure_prompt, vector_search_prompt, analysis_prompt, complex_cases_prompt, validation_prompt)
-        VALUES($1, $2, $3, $4, $5, $6, $7)
-            `, [id, prompts.system, prompts.responseStructure, prompts.vectorSearch, prompts.analysis, prompts.complexCases, prompts.validation]);
+                    INSERT INTO agent_prompts(chatbot_id, system_prompt, response_structure_prompt, vector_search_prompt, analysis_prompt, complex_cases_prompt, validation_prompt, script_content)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+            `, [id, prompts.system, prompts.responseStructure, prompts.vectorSearch, prompts.analysis, prompts.complexCases, prompts.validation, prompts.scriptContent || '']);
             }
 
             // 6. Upsert WhatsApp Config
