@@ -523,18 +523,75 @@ export const AgentBuilder: React.FC = () => {
 
     const applyAiPreset = (preset: string) => {
         let newConfig = { ...config.aiConfig };
+
         switch (preset) {
             case 'creative':
-                newConfig = { ...newConfig, temperature: 0.8, topP: 0.95, presencePenalty: 0.1, frequencyPenalty: 0.1 };
+                newConfig = {
+                    ...newConfig,
+                    temperature: 0.9,
+                    topP: 0.95,
+                    topK: 60,
+                    maxTokens: 4000,
+                    timeout: 60,
+                    retries: 3,
+                    presencePenalty: 0.3,
+                    frequencyPenalty: 0.3,
+                    responseMode: 'detailed',
+                    candidateCount: 1,
+                    seed: undefined, // Aleatório para criatividade
+                    jsonMode: false
+                };
                 break;
             case 'precise':
-                newConfig = { ...newConfig, temperature: 0.2, topP: 0.8, presencePenalty: 0, frequencyPenalty: 0 };
+                newConfig = {
+                    ...newConfig,
+                    temperature: 0.1,
+                    topP: 0.7,
+                    topK: 30,
+                    maxTokens: 2000,
+                    timeout: 60,
+                    retries: 3,
+                    presencePenalty: 0,
+                    frequencyPenalty: 0,
+                    responseMode: 'concise',
+                    candidateCount: 1,
+                    seed: 12345, // Seed fixa para reprodutibilidade
+                    jsonMode: false
+                };
                 break;
             case 'balanced':
-                newConfig = { ...newConfig, temperature: 0.5, topP: 0.9, presencePenalty: 0, frequencyPenalty: 0 };
+                newConfig = {
+                    ...newConfig,
+                    temperature: 0.5,
+                    topP: 0.9,
+                    topK: 40,
+                    maxTokens: 2000,
+                    timeout: 60,
+                    retries: 3,
+                    presencePenalty: 0,
+                    frequencyPenalty: 0,
+                    responseMode: 'balanced',
+                    candidateCount: 1,
+                    seed: undefined,
+                    jsonMode: false
+                };
                 break;
             case 'coding':
-                newConfig = { ...newConfig, temperature: 0.1, topP: 0.7, presencePenalty: 0, frequencyPenalty: 0 };
+                newConfig = {
+                    ...newConfig,
+                    temperature: 0.05,
+                    topP: 0.8,
+                    topK: 40,
+                    maxTokens: 8000, // Mais tokens para código
+                    timeout: 90, // Mais tempo para pensar
+                    retries: 3,
+                    presencePenalty: 0,
+                    frequencyPenalty: 0,
+                    responseMode: 'concise',
+                    candidateCount: 1,
+                    seed: undefined,
+                    jsonMode: false
+                };
                 break;
         }
         setConfig({ ...config, aiConfig: newConfig });
