@@ -3,7 +3,7 @@
 Para fazer o deploy do n8n usando este repositório no Railway:
 
 1. **Novo Projeto**: No Railway, clique em "New Project" -> "Deploy from GitHub repo".
-2. **Selecionar Repositório**: Escolha o repositório `elite-finder-appv1`.
+2. **Selecionar Repositório**: Escolha o repositório `arsdatascience-elite-finder-platform`.
 3. **Configurar Root Directory**:
    - Vá em `Settings` -> `Root Directory`
    - Defina como: `/n8n`
@@ -38,6 +38,11 @@ Para fazer o deploy do n8n usando este repositório no Railway:
 | `N8N_COOKIE_SAMESITE` | `none` | Necessário para iframe |
 | `N8N_RUNNERS_ENABLED` | `true` | |
 | `N8N_GIT_NODE_DISABLE_BARE_REPOS` | `true` | |
+| `NODE_OPTIONS` | `--max-old-space-size=2048` | **Otimização**: Limita uso de RAM do Node a 2GB (Reduz consumo) |
+| `N8N_DEFAULT_BINARY_DATA_MODE` | `filesystem` | **Otimização**: Salva arquivos em disco em vez de RAM (Crítico para memória) |
+| `EXECUTIONS_DATA_MAX_AGE` | `168` | **Otimização**: Mantém histórico por apenas 7 dias (Reduz tamanho do DB) |
+| `EXECUTIONS_DATA_SAVE_ON_PROGRESS` | `false` | **Otimização**: Desativa salvamento constante de progresso (Reduz IO/CPU) |
+| `N8N_CONCURRENCY_PRODUCTION_LIMIT` | `50` | **Otimização**: Limita execuções simultâneas para evitar OOM |
 
 5. **Volume (Persistência)**:
    - Vá na aba `Volumes`.
