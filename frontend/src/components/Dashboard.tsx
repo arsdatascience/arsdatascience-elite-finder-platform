@@ -1,4 +1,5 @@
 
+import React, { useState } from 'react';
 import { AreaChart, Area, PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList, Legend } from 'recharts';
 import { CLIENTS_LIST, KPIS, COMPARATIVE_FUNNEL_DATA, DEVICE_DATA } from '../constants';
 import { ArrowUpRight, ArrowDownRight, Info, Users, Smartphone, Monitor, Tablet, Loader2, LayoutGrid, List as ListIcon, Table as TableIcon, FileText, FileSpreadsheet, Target, DollarSign, MousePointer, TrendingUp, Layers } from 'lucide-react';
@@ -778,21 +779,7 @@ export const Dashboard: React.FC = () => {
 
 
 
-const KpiCard = ({ title, value, icon, trend, trendUp, color }: any) => (
-  <div className={`bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-${color}-500`}>
-    <div className="flex items-start justify-between mb-4">
-      <div className={`p-2 rounded-lg bg-${color}-50`}>
-        {icon}
-      </div>
-      <div className={`flex items-center gap-1 text-xs font-bold ${trendUp ? 'text-green-600' : 'text-red-600'}`}>
-        {trendUp ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-        {trend}
-      </div>
-    </div>
-    <p className="text-sm text-gray-500 mb-1">{title}</p>
-    <h3 className="text-2xl font-bold text-gray-800">{value}</h3>
-  </div>
-);
+
 
 const CampaignCard = ({ camp, formatCurrency, formatNumber, onClick }: any) => (
   <div

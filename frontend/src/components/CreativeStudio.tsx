@@ -6,9 +6,36 @@ import { ImageGenerationPage } from './ImageGenerationPage';
 import { BatchWizard } from './BatchWizard';
 import { ContentGenerator } from './ContentGenerator';
 
+const PLATFORM_CONTENT_TYPES: Record<string, { value: string; label: string }[]> = {
+    instagram: [
+        { value: 'post', label: 'Post (Feed)' },
+        { value: 'reels', label: 'Reels' },
+        { value: 'stories', label: 'Stories' },
+        { value: 'carousel', label: 'Carrossel' },
+        { value: 'caption', label: 'Legenda' }
+    ],
+    linkedin: [
+        { value: 'post', label: 'Post' },
+        { value: 'article', label: 'Artigo' },
+        { value: 'poll', label: 'Enquete' }
+    ],
+    tiktok: [
+        { value: 'video_script', label: 'Roteiro de Vídeo' },
+        { value: 'caption', label: 'Legenda' },
+        { value: 'ad', label: 'Roteiro de Anúncio' }
+    ],
+    email: [
+        { value: 'email', label: 'Newsletter / Vendas' }
+    ],
+    whatsapp: [
+        { value: 'message', label: 'Mensagem Direta' }
+    ]
+};
+
 const CreativeStudio: React.FC = () => {
     const [topic, setTopic] = useState('');
     const [platform, setPlatform] = useState('instagram');
+    const [contentType, setContentType] = useState('post');
     const [tone, setTone] = useState('persuasive');
     const [generatedContent, setGeneratedContent] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -23,6 +50,14 @@ const CreativeStudio: React.FC = () => {
     useEffect(() => {
         fetchHistory();
     }, [selectedClientId]);
+
+    // Update contentType when platform changes
+    useEffect(() => {
+        const types = PLATFORM_CONTENT_TYPES[platform];
+        if (types && types.length > 0) {
+            setContentType(types[0].value);
+        }
+    }, [platform]);
 
     const fetchHistory = async () => {
         try {
@@ -55,7 +90,7 @@ const CreativeStudio: React.FC = () => {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
-                    type: platform === 'instagram' ? 'post' : platform === 'linkedin' ? 'article' : platform === 'tiktok' ? 'reels' : 'email',
+                    type: contentType,
                     platform: platform,
                     topic: topic,
                     tone: tone,
@@ -362,6 +397,22 @@ const CreativeStudio: React.FC = () => {
                                                     </button>
                                                 </div>
                                             </div>
+
+                                            {/* Dynamic Content Type Selector */}
+                                            {PLATFORM_CONTENT_TYPES[platform] && (
+                                                <div className="animate-fade-in">
+                                                    <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de Conteúdo</label>
+                                                    <select
+                                                        value={contentType}
+                                                        onChange={(e) => setContentType(e.target.value)}
+                                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-slate-500 bg-white"
+                                                    >
+                                                        {PLATFORM_CONTENT_TYPES[platform].map((t) => (
+                                                            <option key={t.value} value={t.value}>{t.label}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
 
                                             <div>
                                                 <label className="block text-sm font-medium text-slate-700 mb-1">Tom de Voz</label>

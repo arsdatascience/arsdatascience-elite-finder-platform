@@ -96,8 +96,8 @@ export interface AnalysisResult {
 
 // Content Generation Types
 export interface ContentRequest {
-  type: 'ad' | 'post' | 'reels' | 'stories' | 'carousel' | 'poll' | 'article';
-  platform: 'google' | 'meta' | 'instagram' | 'linkedin' | 'tiktok' | 'blog' | 'site';
+  type: 'ad' | 'post' | 'reels' | 'stories' | 'carousel' | 'poll' | 'article' | 'email' | 'video_script' | 'caption' | 'message';
+  platform: 'google' | 'meta' | 'instagram' | 'linkedin' | 'tiktok' | 'youtube' | 'whatsapp' | 'blog' | 'site' | 'email';
   topic: string;
   tone: 'professional' | 'persuasive' | 'urgent' | 'friendly';
   provider?: 'gemini' | 'openai';
