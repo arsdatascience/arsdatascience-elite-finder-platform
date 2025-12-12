@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 const axios = require('axios');
 const db = require('../database');
+const qdrantService = require('../services/qdrantService');
 
 const dataSourceController = {
     // List all configured data sources
@@ -54,20 +55,18 @@ const dataSourceController = {
             }
             // 3. Qdrant Introspection
             else if (source.type === 'qdrant') {
-                const url = config.url; // e.g. https://xyz.qdrant.io:6333
-                const key = config.apiKey;
+                // Use centralized service (Source of Truth via Env Vars) 
+                // instead of potentially stale DB credentials
+                const result = await qdrantService.getCollections();
 
-                // Fix URL if missing http/https
-                const baseUrl = url.startsWith('http') ? url : `https://${url}`;
-
-                const response = await axios.get(`${baseUrl}/collections`, {
-                    headers: { 'api-key': key }
-                });
-
-                res.json({
-                    type: 'qdrant',
-                    items: response.data.result.collections.map(c => c.name)
-                });
+                if (result.success) {
+                    res.json({
+                        type: 'qdrant',
+                        items: result.collections.map(c => c.name)
+                    });
+                } else {
+                    throw new Error(result.error || 'Failed to fetch Qdrant collections from Service');
+                }
             } else {
                 res.status(400).json({ error: 'Unsupported source type' });
             }

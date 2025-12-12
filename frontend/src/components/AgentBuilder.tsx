@@ -1032,9 +1032,23 @@ POLÍTICA: Evitar temas sensíveis como [LISTAR TEMAS PROIBIDOS].`;
                                                     <p className="text-sm text-gray-500 mb-4 line-clamp-2 min-h-[40px]">{agent.description || 'Sem descrição.'}</p>
 
                                                     <div className="flex flex-col gap-2 mb-4">
-                                                        <div className="text-xs text-gray-500 font-mono bg-gray-50 p-2 rounded truncate">
-                                                            <Globe size={12} className="inline mr-1" />
-                                                            {agent.slug ? `${window.location.origin}/agent/${agent.slug}` : 'Sem link público'}
+                                                        <div className="flex items-center justify-between gap-2 bg-gray-50 p-2 rounded border border-gray-100">
+                                                            <code className="text-xs text-gray-500 font-mono break-all">
+                                                                {agent.slug ? `${window.location.origin}/agent/${agent.slug}` : 'Sem link público'}
+                                                            </code>
+                                                            {agent.slug && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        navigator.clipboard.writeText(`${window.location.origin}/agent/${agent.slug}`);
+                                                                        alert('Link copiado para a área de transferência!');
+                                                                    }}
+                                                                    className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors shrink-0"
+                                                                    title="Copiar Link"
+                                                                >
+                                                                    <Copy size={14} />
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
 
