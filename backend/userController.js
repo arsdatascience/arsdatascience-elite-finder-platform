@@ -491,7 +491,7 @@ const deleteTeamMember = async (req, res) => {
         res.json({ success: true, message: 'Membro removido com sucesso' });
     } catch (err) {
         console.error('Error deleting team member:', err);
-        res.status(500).json({ success: false, error: 'Database error' });
+        res.status(500).json({ success: false, error: 'Database error: ' + err.message });
     }
 };
 
