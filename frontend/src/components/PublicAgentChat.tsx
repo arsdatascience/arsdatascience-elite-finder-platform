@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { RefreshCw, AlertTriangle } from 'lucide-react';
+import { RefreshCw, AlertTriangle, MonitorPlay, MessageSquare } from 'lucide-react';
 import { PublicAgentWithObserver } from './PublicAgentWithObserver';
+import { PublicSalesCoach } from './PublicSalesCoach';
 
 interface AgentPublic {
     id: string;
@@ -11,10 +12,13 @@ interface AgentPublic {
     slug: string;
 }
 
+type AgentMode = 'assistant' | 'training';
+
 export const PublicAgentChat: React.FC = () => {
     const { slug } = useParams<{ slug: string }>();
     const [agent, setAgent] = useState<AgentPublic | null>(null);
     const [error, setError] = useState('');
+    const [mode, setMode] = useState<AgentMode>('assistant');
 
     useEffect(() => {
         fetchAgent();
@@ -47,7 +51,43 @@ export const PublicAgentChat: React.FC = () => {
         return <div className="min-h-screen flex items-center justify-center bg-gray-50"><RefreshCw className="animate-spin text-primary-600" /></div>;
     }
 
-    // Use the Dual-Agent Observer View for ALL agents as requested
-    // "Connect System Brain to any agent"
-    return <PublicAgentWithObserver agent={agent} observerSlug="system-brain" />;
+    return (
+        <div className="flex flex-col h-screen">
+            {/* Mode Switcher Floating Toggle (Top Center) */}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white/90 backdrop-blur-sm shadow-md rounded-full px-1 py-1 flex items-center border border-gray-200">
+                <button
+                    onClick={() => setMode('assistant')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${mode === 'assistant'
+                            ? 'bg-primary-600 text-white shadow-sm'
+                            : 'text-gray-500 hover:bg-gray-100'
+                        }`}
+                >
+                    <MessageSquare size={14} />
+                    Modo Assistente
+                </button>
+                <button
+                    onClick={() => setMode('training')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${mode === 'training'
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'text-gray-500 hover:bg-gray-100'
+                        }`}
+                >
+                    <MonitorPlay size={14} />
+                    Sales Coach
+                </button>
+            </div>
+
+            {/* Render Selected Mode */}
+            <div className="flex-1 relative">
+                {mode === 'assistant' ? (
+                    // Assistant Mode: User talks to Agent, System Brain observes
+                    <PublicAgentWithObserver agent={agent} observerSlug="system-brain" />
+                ) : (
+                    // Training Mode: User talks to "Customer" (Agent), Sales Coach observes
+                    // Note: PublicSalesCoach internally uses 'agent-sales-coach' as the observer
+                    <PublicSalesCoach agent={agent} />
+                )}
+            </div>
+        </div>
+    );
 };
