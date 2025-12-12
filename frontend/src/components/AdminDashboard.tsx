@@ -215,7 +215,8 @@ const AdminDashboard: React.FC = () => {
             if (res.ok) {
                 setUsers(prev => prev.filter(u => u.id !== id));
             } else {
-                alert('Erro ao excluir usuário');
+                const err = await res.json();
+                alert('Erro ao excluir usuário: ' + (err.error || err.message || 'Erro desconhecido'));
             }
         } catch (error) {
             console.error(error);
