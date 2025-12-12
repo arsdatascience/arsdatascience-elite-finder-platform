@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Save, Database, Sparkles, Sliders, FileText, Brain, ArrowLeft, Search, Activity, Shield, Target, Briefcase, GraduationCap, Gavel, BarChart3, Lightbulb, Server } from "lucide-react";
+import { Bot, Save, Database, Sparkles, Sliders, FileText, Brain, ArrowLeft, Search, Activity, Shield, Target, Briefcase, GraduationCap, Gavel, BarChart3, Lightbulb, Server, X } from "lucide-react";
 import { apiClient } from '@/services/apiClient';
 import { useNavigate } from 'react-router-dom';
 import { AIProvider, AI_MODELS } from '@/constants/aiModels';
@@ -1005,13 +1005,71 @@ const AIControlPlane = () => {
                                             <div className="space-y-6 animate-fade-in max-w-4xl">
                                                 <div className="p-6 bg-white rounded-xl border border-gray-200">
                                                     <Label className="mb-4 block text-lg font-semibold">Ferramentas Habilitadas</Label>
-                                                    <Select multiple value={config.identity.specificTools} options={[
-                                                        { label: 'Busca de Legislação', value: 'busca_legislacao' },
-                                                        { label: 'Consulta Processual', value: 'consulta_processos' },
-                                                        { label: 'Cálculo de Prazos', value: 'calculo_prazos' },
-                                                        { label: 'Análise de Contratos', value: 'analise_documentos' },
-                                                        { label: 'Geração de Peças', value: 'geracao_pecas' }
-                                                    ]} onChange={v => setConfig({ ...config, identity: { ...config.identity, specificTools: v } })} />
+
+                                                    {/* TAGS INPUT COMPONENT */}
+                                                    <div className="space-y-3">
+                                                        <div className="flex flex-wrap gap-2 mb-2 p-2 min-h-[40px] bg-white border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-transparent">
+                                                            {config.identity.specificTools?.map((tool, idx) => (
+                                                                <span key={idx} className="bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded-full flex items-center gap-1 animate-scale-in">
+                                                                    {tool}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            const newTools = config.identity.specificTools.filter((_, i) => i !== idx);
+                                                                            setConfig({ ...config, identity: { ...config.identity, specificTools: newTools } });
+                                                                        }}
+                                                                        className="hover:text-purple-900 focus:outline-none"
+                                                                    >
+                                                                        <X className="h-3 w-3" />
+                                                                    </button>
+                                                                </span>
+                                                            ))}
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Adicionar ferramenta... (Enter)"
+                                                                className="flex-1 min-w-[150px] outline-none text-sm p-1"
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === 'Enter') {
+                                                                        e.preventDefault();
+                                                                        const val = e.currentTarget.value.trim();
+                                                                        if (val && !config.identity.specificTools.includes(val)) {
+                                                                            setConfig({
+                                                                                ...config,
+                                                                                identity: {
+                                                                                    ...config.identity,
+                                                                                    specificTools: [...config.identity.specificTools, val]
+                                                                                }
+                                                                            });
+                                                                            e.currentTarget.value = '';
+                                                                        }
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div className="flex gap-2 flex-wrap">
+                                                            <span className="text-xs text-gray-500">Sugestões:</span>
+                                                            {[
+                                                                'Busca de Legislação', 'Consulta Processual', 'Cálculo de Prazos',
+                                                                'Análise de Contratos', 'Geração de Peças', 'Análise Financeira',
+                                                                'Busca Web', 'Geração de Imagens', 'Python Interpreter'
+                                                            ].filter(t => !config.identity.specificTools.includes(t)).map(t => (
+                                                                <button
+                                                                    key={t}
+                                                                    type="button"
+                                                                    onClick={() => setConfig({
+                                                                        ...config,
+                                                                        identity: {
+                                                                            ...config.identity,
+                                                                            specificTools: [...config.identity.specificTools, t]
+                                                                        }
+                                                                    })}
+                                                                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded transition-colors"
+                                                                >
+                                                                    + {t}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
