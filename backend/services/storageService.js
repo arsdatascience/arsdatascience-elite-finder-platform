@@ -28,17 +28,69 @@ if (!fs.existsSync(UPLOADS_DIR)) {
     fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
+// Tenant 1 Exclusive Config
+const TENANT_1_CONFIG = {
+    BUCKET: process.env.S3_ELITE_FINDER_BUCKET || 'bucket-elite-finder-9-zcci',
+    ACCESS_KEY: process.env.S3_ELITE_FINDER_ACCESS_KEY || 'tid_IMMVHgdvyQpkvrqGWGGuVZvnhohRHaPhzMgZtIrUTvmrgCMGQU',
+    SECRET_KEY: process.env.S3_ELITE_FINDER_SECRET_KEY || 'tsec_cSJ3BOMLOLeVR1Fi-zD-kQWdHMWPJTuX+ll+9erWLjLelVDnJlIOUCz-vN7YuugMw0c04F',
+    ENDPOINT: 'https://storage.railway.app'
+};
+
+let tenant1S3Client;
+try {
+    tenant1S3Client = new S3Client({
+        region: 'auto',
+        endpoint: TENANT_1_CONFIG.ENDPOINT,
+        credentials: {
+            accessKeyId: TENANT_1_CONFIG.ACCESS_KEY,
+            secretAccessKey: TENANT_1_CONFIG.SECRET_KEY
+        },
+        forcePathStyle: true
+    });
+} catch (err) {
+    console.error('Failed to initialize Tenant 1 S3 Client:', err);
+}
+
+/**
+ * Helper to get Client and Bucket based on Tenant ID
+ */
+const getStorageContext = (tenantId) => {
+    // Check if tenantId matches Tenant 1 (Assuming ID is 1 or string '1')
+    if (tenantId && String(tenantId) === '1' && tenant1S3Client) {
+        return {
+            client: tenant1S3Client,
+            bucket: TENANT_1_CONFIG.BUCKET
+        };
+    }
+    // Default to main configuration
+    return {
+        client: s3Client,
+        bucket: BUCKET_NAME
+    };
+};
+
 /**
  * Upload a file (S3 or Local)
  */
-const uploadFile = async (fileBuffer, fileName, mimeType, folder = 'uploads') => {
+const uploadFile = async (fileBuffer, fileName, mimeType, folder = 'uploads', tenantId = null, bucketOverride = null) => {
     const fileExtension = fileName.split('.').pop();
     const uniqueFileName = `${crypto.randomUUID()}.${fileExtension}`;
 
+    // Check if we have S3 configured at all
     if (isS3Configured) {
+        let { client, bucket } = getStorageContext(tenantId);
+
+        if (bucketOverride) {
+            bucket = bucketOverride;
+        }
+
+        // If specific tenant client failed to init but main exists, or vice versa needs handling?
+        // Current logic: if tenant1S3Client exists, use it. If not (endpoint missing?), fall back or fail?
+        // Assuming process.env.S3_ENDPOINT is set since isS3Configured is true.
+
         const key = `${folder}/${uniqueFileName}`;
         const command = new PutObjectCommand({
-            Bucket: BUCKET_NAME,
+            Bucket: bucket,
             Key: key,
             Body: fileBuffer,
             ContentType: mimeType,
@@ -46,11 +98,19 @@ const uploadFile = async (fileBuffer, fileName, mimeType, folder = 'uploads') =>
         });
 
         try {
-            await s3Client.send(command);
-            const endpoint = process.env.S3_ENDPOINT.replace(/\/$/, '');
-            return `${endpoint}/${BUCKET_NAME}/${key}`;
+            await client.send(command);
+
+            // Determine endpoint to use for URL
+            let endpoint = process.env.S3_ENDPOINT || '';
+            if (tenantId && String(tenantId) === '1') {
+                endpoint = TENANT_1_CONFIG.ENDPOINT;
+            }
+            endpoint = endpoint.replace(/\/$/, '');
+
+            // Return URL with correct bucket
+            return `${endpoint}/${bucket}/${key}`;
         } catch (error) {
-            console.error('Error uploading to S3:', error);
+            console.error(`Error uploading to S3 (Tenant ${tenantId}):`, error);
             throw new Error('Failed to upload file to S3');
         }
     } else {
@@ -64,12 +124,6 @@ const uploadFile = async (fileBuffer, fileName, mimeType, folder = 'uploads') =>
 
         try {
             fs.writeFileSync(filePath, fileBuffer);
-            // Construct local URL using FRONTEND_URL or relative path if proxy handles it.
-            // Assuming server handles '/uploads' static route mapping to the uploads dir.
-            // Server.js line 679: app.use('/uploads', express.static(... 'uploads'))
-            // The static path in server.js points to path.join(__dirname, '..', 'uploads') which is backend/../uploads => root/uploads.
-            // Matches UPLOADS_DIR.
-            // URL format: /uploads/folder/filename
             return `${process.env.API_URL || 'http://localhost:3001'}/uploads/${folder}/${uniqueFileName}`;
         } catch (error) {
             console.error('Error saving to local disk:', error);
@@ -81,37 +135,28 @@ const uploadFile = async (fileBuffer, fileName, mimeType, folder = 'uploads') =>
 /**
  * Delete a file
  */
-const deleteFile = async (fileUrl) => {
+const deleteFile = async (fileUrl, tenantId = null) => {
     if (isS3Configured && fileUrl.includes(process.env.S3_ENDPOINT)) {
         try {
-            const urlParts = fileUrl.split(`${BUCKET_NAME}/`);
-            if (urlParts.length < 2) return;
+            const { client, bucket } = getStorageContext(tenantId);
+            const urlParts = fileUrl.split(`${bucket}/`);
+            if (urlParts.length < 2) return; // URL doesn't match bucket pattern
+
             const key = urlParts[1];
-            await s3Client.send(new DeleteObjectCommand({ Bucket: BUCKET_NAME, Key: key }));
+            await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
         } catch (error) {
             console.error('Error deleting from S3:', error);
         }
     } else {
-        // Local delete
+        // Local delete logic remains same
         try {
-            // Extract relative path from URL. URL: http://host/uploads/folder/file.ext
             const urlObj = new URL(fileUrl);
-            const relativePath = urlObj.pathname; // /uploads/folder/file.ext
-            // Map to filesystem
-            // If pathname starts with /uploads, remove it to get internal path inside UPLOADS_DIR
-            // Wait, UPLOADS_DIR is root/uploads.
-            // So if path is /uploads/foo.jpg, we want root/uploads/foo.jpg
-
-            // Adjust path logic depending on mount point
+            const relativePath = urlObj.pathname;
             let fsPath;
             if (relativePath.startsWith('/uploads')) {
-                // Remove /uploads prefix if UPLOADS_DIR already includes 'uploads' at end?
-                // UPLOADS_DIR = C:\...\uploads
-                // relativePath = /uploads/foo.jpg
-                // path.join(root, relativePath) -> root/uploads/foo.jpg
                 fsPath = path.join(__dirname, '..', '..', relativePath);
             } else {
-                return; // Unknown path
+                return;
             }
 
             if (fs.existsSync(fsPath)) {
@@ -124,33 +169,31 @@ const deleteFile = async (fileUrl) => {
 };
 
 /**
- * Get a signed URL for file download (works for files with restricted access)
+ * Get a signed URL for file download
  */
-const getSignedUrl = async (fileUrl, expiresIn = 3600) => {
+const getSignedUrl = async (fileUrl, expiresIn = 3600, tenantId = null) => {
     if (!isS3Configured) {
-        // For local files, just return the URL as-is
         return fileUrl;
     }
 
     try {
-        // Extract key from URL
-        // URL format: https://endpoint/bucket/key
-        const urlParts = fileUrl.split(`${BUCKET_NAME}/`);
+        const { client, bucket } = getStorageContext(tenantId);
+        const urlParts = fileUrl.split(`${bucket}/`);
         if (urlParts.length < 2) return fileUrl;
 
         const key = urlParts[1];
 
         const command = new GetObjectCommand({
-            Bucket: BUCKET_NAME,
+            Bucket: bucket,
             Key: key,
             ResponseContentDisposition: 'attachment'
         });
 
-        const signedUrl = await getS3SignedUrl(s3Client, command, { expiresIn });
+        const signedUrl = await getS3SignedUrl(client, command, { expiresIn });
         return signedUrl;
     } catch (error) {
         console.error('Error generating signed URL:', error);
-        return fileUrl; // Fallback to original URL
+        return fileUrl;
     }
 };
 

@@ -5,7 +5,7 @@ import {
     Brain, Save, Database, MessageSquare,
     Shield, Fingerprint, Wand2, Smartphone, Check,
     LayoutTemplate, X, Loader2, RefreshCw, Zap,
-    Globe, Copy, ExternalLink, Store, Trash2, Edit
+    Globe, Copy, ExternalLink, Store, Trash2, Edit, Table
 } from 'lucide-react';
 import { ClientSelector } from './common/ClientSelector';
 // Tipos baseados na especificação do usuário
@@ -118,6 +118,10 @@ interface AgentConfig {
             instanceName: string;
         };
     };
+    relationalConfig?: {
+        enabled: boolean;
+        tables: string[];
+    };
 }
 const INITIAL_CONFIG: AgentConfig = {
     identity: {
@@ -221,19 +225,69 @@ const INITIAL_CONFIG: AgentConfig = {
             apiKey: '',
             instanceName: ''
         }
+    },
+    relationalConfig: {
+        enabled: false,
+        tables: []
     }
 };
 export const AgentBuilder: React.FC = () => {
     const [searchParams] = useSearchParams();
     const templateId = searchParams.get('template');
 
-    const [activeTab, setActiveTab] = useState<'store' | 'identity' | 'ai' | 'vector' | 'prompts' | 'channels' | 'advanced' | 'deploy'>('store');
+    const [activeTab, setActiveTab] = useState<'store' | 'identity' | 'ai' | 'vector' | 'prompts' | 'channels' | 'advanced' | 'deploy' | 'relational'>('store');
     const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
     const [config, setConfig] = useState<AgentConfig>(INITIAL_CONFIG);
 
     // Estado para Loja de Agentes
     const [agentsList, setAgentsList] = useState<any[]>([]);
     const [loadingAgents, setLoadingAgents] = useState(false);
+
+    // State for Relational DB Tables
+    const [availableTables, setAvailableTables] = useState<string[]>([]);
+    const [isLoadingTables, setIsLoadingTables] = useState(false);
+
+    // Fetch Tables when Tab is selected
+    useEffect(() => {
+        if (activeTab === 'relational') {
+            fetchTables();
+        }
+    }, [activeTab]);
+
+    const fetchTables = async () => {
+        setIsLoadingTables(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/admin/secondary-db/tables`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setAvailableTables(data.tables || []);
+            }
+        } catch (error) {
+            console.error('Failed to fetch tables:', error);
+        } finally {
+            setIsLoadingTables(false);
+        }
+    };
+
+    const toggleTableSelection = (table: string) => {
+        setConfig(prev => {
+            const currentTables = prev.relationalConfig?.tables || [];
+            const newTables = currentTables.includes(table)
+                ? currentTables.filter(t => t !== table)
+                : [...currentTables, table];
+
+            return {
+                ...prev,
+                relationalConfig: {
+                    enabled: newTables.length > 0,
+                    tables: newTables
+                }
+            };
+        });
+    };
 
     useEffect(() => {
         if (activeTab === 'store') {
@@ -323,6 +377,7 @@ export const AgentBuilder: React.FC = () => {
         { id: 'identity', label: 'Identidade & Perfil', icon: Fingerprint },
         { id: 'ai', label: 'Parâmetros de IA', icon: Brain },
         { id: 'vector', label: 'Base Vetorial (RAG)', icon: Database },
+        { id: 'relational', label: 'Base Relacional (SQL)', icon: Table },
         { id: 'prompts', label: 'Engenharia de Prompt', icon: MessageSquare },
         { id: 'channels', label: 'Canais & Integrações', icon: Smartphone },
         { id: 'advanced', label: 'Otimização Avançada', icon: Zap },
@@ -1617,6 +1672,68 @@ POLÍTICA: Evitar temas sensíveis como [LISTAR TEMAS PROIBIDOS].`;
                                                 <input type="number" step="0.01" value={config.vectorConfig.relevanceThreshold} className="w-full px-3 py-2 border rounded-lg" />
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB: RELATIONAL DB */}
+                        {activeTab === 'relational' && (
+                            <div className="space-y-6 animate-fade-in">
+                                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
+                                    <Table className="text-blue-600 shrink-0 mt-1" size={24} />
+                                    <div>
+                                        <h4 className="text-sm font-bold text-blue-900">Base de Conhecimento Relacional (Postgres)</h4>
+                                        <p className="text-sm text-blue-700 mt-1">
+                                            Conecte seu agente a tabelas de um banco de dados externo. O agente poderá executar queries SQL de leitura para responder perguntas baseadas nestes dados.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <Database size={20} className="text-gray-500" /> Tabelas Disponíveis
+                                    </h3>
+
+                                    {isLoadingTables ? (
+                                        <div className="py-8 flex flex-col items-center justify-center text-gray-400">
+                                            <Loader2 className="animate-spin mb-2" size={24} />
+                                            <p>Carregando esquema do banco...</p>
+                                        </div>
+                                    ) : availableTables.length === 0 ? (
+                                        <div className="py-8 text-center text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                                            Nenhuma tabela pública encontrada no banco secundário.
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                            {availableTables.map(table => (
+                                                <div
+                                                    key={table}
+                                                    onClick={() => toggleTableSelection(table)}
+                                                    className={`cursor-pointer p-4 rounded-lg border transition-all flex items-center justify-between ${config.relationalConfig?.tables.includes(table)
+                                                        ? 'bg-blue-50 border-blue-200 shadow-sm ring-1 ring-blue-200'
+                                                        : 'bg-white border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${config.relationalConfig?.tables.includes(table) ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'
+                                                            }`}>
+                                                            <Table size={16} />
+                                                        </div>
+                                                        <span className={`font-medium ${config.relationalConfig?.tables.includes(table) ? 'text-blue-900' : 'text-gray-700'
+                                                            }`}>{table}</span>
+                                                    </div>
+                                                    {config.relationalConfig?.tables.includes(table) && (
+                                                        <Check size={18} className="text-blue-600" />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500 flex justify-between">
+                                        <span>Total selecionado: {config.relationalConfig?.tables.length || 0}</span>
+                                        <span className="flex items-center gap-1"><Shield size={12} /> Apenas leitura (SELECT) permitida</span>
                                     </div>
                                 </div>
                             </div>

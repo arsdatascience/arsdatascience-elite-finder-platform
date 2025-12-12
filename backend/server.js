@@ -118,7 +118,8 @@ const stripeController = require('./stripeController');
 // Webhook Stripe (Precisa ser antes do express.json() global para validar assinatura)
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeController.handleWebhook);
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // --- PUBLIC AGENT ROUTES (No Auth) ---
 const publicAgentController = require('./controllers/publicAgentController');
@@ -143,6 +144,12 @@ app.delete('/api/admin/plans/:id', authenticateToken, checkAdmin, planController
 
 // Rotas de Admin - Gestão de Tenants (Empresas)
 const tenantController = require('./tenantController');
+const secondaryDbController = require('./controllers/secondaryDbController');
+
+// Secondary DB Routes
+app.get('/api/admin/secondary-db/tables', authenticateToken, checkAdmin, secondaryDbController.getTables);
+app.get('/api/admin/secondary-db/tables/:tableName', authenticateToken, checkAdmin, secondaryDbController.getTableDetails);
+
 app.get('/api/admin/tenants', authenticateToken, checkAdmin, tenantController.getAllTenants);
 app.post('/api/admin/tenants', authenticateToken, checkAdmin, tenantController.createTenant);
 app.put('/api/admin/tenants/:id', authenticateToken, checkAdmin, tenantController.updateTenant);

@@ -15,6 +15,7 @@ import {
     Video
 } from 'lucide-react';
 import { apiClient } from '../services/apiClient';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Asset {
     id: number;
@@ -42,6 +43,8 @@ export const AssetLibrary: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showNewFolderModal, setShowNewFolderModal] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
+    const [newFolderBucket, setNewFolderBucket] = useState('');
+    const { user } = useAuth();
 
     useEffect(() => {
         loadContent();
@@ -91,9 +94,11 @@ export const AssetLibrary: React.FC = () => {
         try {
             await apiClient.assets.createFolder({
                 name: newFolderName,
-                parent_id: currentFolder?.id
+                parent_id: currentFolder?.id,
+                bucket: newFolderBucket || null // Pass selected bucket (or null for default)
             });
             setNewFolderName('');
+            setNewFolderBucket('');
             setShowNewFolderModal(false);
             loadContent();
         } catch (error) {
@@ -361,6 +366,26 @@ export const AssetLibrary: React.FC = () => {
                             autoFocus
                             className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 mb-6 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
                         />
+
+                        {user?.role === 'super_admin' && (
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Bucket de Armazenamento
+                                </label>
+                                <select
+                                    value={newFolderBucket}
+                                    onChange={(e) => setNewFolderBucket(e.target.value)}
+                                    className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-primary-500"
+                                >
+                                    <option value="">Padrão do Sistema</option>
+                                    <option value="bucket-elite-finder-9-zcci">Elite Finder (Tenant 1 Exclusive)</option>
+                                    <option value="test-bucket">Test Bucket (Optional)</option>
+                                </select>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Define onde os arquivos desta pasta serão salvos fisicamente.
+                                </p>
+                            </div>
+                        )}
                         <div className="flex justify-end gap-3">
                             <button
                                 onClick={() => setShowNewFolderModal(false)}

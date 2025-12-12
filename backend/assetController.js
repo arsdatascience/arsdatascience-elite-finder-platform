@@ -66,14 +66,14 @@ const assetController = {
 
     createFolder: async (req, res) => {
         const { isSuperAdmin, tenantId } = getTenantScope(req);
-        const { name, parent_id, client_id, project_id, color } = req.body;
+        const { name, parent_id, client_id, project_id, color, bucket } = req.body;
 
         try {
             const result = await db.query(`
-                INSERT INTO asset_folders (tenant_id, name, parent_id, client_id, project_id, color)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO asset_folders (tenant_id, name, parent_id, client_id, project_id, color, bucket)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING *
-            `, [tenantId, name, parent_id || null, client_id || null, project_id || null, color || '#cbd5e1']);
+            `, [tenantId, name, parent_id || null, client_id || null, project_id || null, color || '#cbd5e1', bucket || null]);
 
             res.status(201).json({ success: true, data: result.rows[0] });
         } catch (error) {
@@ -148,13 +148,24 @@ const assetController = {
         }
 
         try {
+            // Check for specific folder bucket override
+            let bucketOverride = null;
+            if (folder_id && folder_id !== 'null') {
+                const folderRes = await db.query('SELECT bucket FROM asset_folders WHERE id = $1', [folder_id]);
+                if (folderRes.rows.length > 0 && folderRes.rows[0].bucket) {
+                    bucketOverride = folderRes.rows[0].bucket;
+                }
+            }
+
             // 1. Upload to S3
             // Assuming file.buffer is available (memory storage)
             const s3Url = await storageService.uploadFile(
                 file.buffer,
                 file.originalname,
                 file.mimetype,
-                `tenants/${tenantId}/assets`
+                `tenants/${tenantId}/assets`,
+                tenantId,
+                bucketOverride
             );
 
             // 2. Save to DB

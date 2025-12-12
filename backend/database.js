@@ -28,9 +28,20 @@ opsPool.on('error', (err) => {
     console.error('⚠️  Unexpected OPS database error:', err.message);
 });
 
-// Attach opsPool to pool for backward compatibility and destructuring
+// Create Secondary Connection Pool (Knowledge Base)
+const secondaryPool = new Pool({
+    connectionString: process.env.SECONDARY_DB_URL || 'postgresql://postgres:JlLDJLEhfXbCgZhIegKhTPWBWlBMmLTC@shuttle.proxy.rlwy.net:13676/railway',
+    ssl: sslConfig
+});
+
+secondaryPool.on('error', (err) => {
+    console.error('⚠️  Unexpected SECONDARY database error:', err.message);
+});
+
+// Attach opsPool and secondaryPool to pool for backward compatibility and destructuring
 pool.opsPool = opsPool;
+pool.secondaryPool = secondaryPool;
 pool.pool = pool; // Allow const { pool } = require... as well
 
-// Export the pool (Core) as default, with opsPool attached
+// Export the pool (Core) as default, with others attached
 module.exports = pool;

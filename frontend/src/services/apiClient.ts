@@ -356,7 +356,7 @@ export const apiClient = {
             const response = await axiosInstance.get('/folders', { params });
             return response.data;
         },
-        createFolder: async (data: { name: string, parent_id?: number | null, client_id?: number, project_id?: number, color?: string }) => {
+        createFolder: async (data: { name: string, parent_id?: number | null, client_id?: number, project_id?: number, color?: string, bucket?: string | null }) => {
             const response = await axiosInstance.post('/folders', data);
             return response.data;
         },
