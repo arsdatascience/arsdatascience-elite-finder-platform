@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, Bot, User, Download, Trash2 } from 'lucide-react';
+import { Send, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, Bot, User, Download, Trash2, Paperclip, FileUp, Settings, FileBarChart, FileText, RefreshCw } from 'lucide-react';
+import { WhatsAppConfigModal } from './WhatsAppConfigModal';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 
@@ -38,6 +41,8 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
     const [isLoading, setIsLoading] = useState(false);
     const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisResult | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    const [showWhatsAppConfig, setShowWhatsAppConfig] = useState(false);
 
     // Load history from LocalStorage
     useEffect(() => {
@@ -98,6 +103,42 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
             }]);
             localStorage.removeItem(`chat_history_${agent.slug}`);
             setCurrentAnalysis(null);
+        }
+    };
+
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length > 0) await processFile(files[0]);
+    };
+
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            await processFile(e.target.files[0]);
+        }
+    };
+
+    const processFile = async (file: File) => {
+        // Simple Text/Code Reader
+        if (file.type.startsWith('text/') || file.name.endsWith('.md') || file.name.endsWith('.js') || file.name.endsWith('.ts') || file.name.endsWith('.json')) {
+            const text = await file.text();
+            setInput(prev => prev + `\n\n[Arquivo: ${file.name}]\n\`\`\`\n${text}\n\`\`\`\n`);
+        } else {
+            alert('Apenas arquivos de texto/código são suportados no momento para análise direta.');
         }
     };
 
@@ -198,6 +239,141 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
         }
     };
 
+    const handleGeneratePDFReport = (type: 'analysis' | 'full') => {
+        if (!currentAnalysis && type === 'analysis') {
+            alert('Nenhuma análise disponível para gerar relatório.');
+            return;
+        }
+
+        const doc = new jsPDF();
+        const dateStr = new Date().toLocaleString();
+
+        // Header
+        doc.setFontSize(20);
+        doc.setTextColor(41, 98, 255); // Primary Blue
+        doc.text("Elite Finder - Relatório de Inteligência", 14, 20);
+
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Gerado em: ${dateStr}`, 14, 28);
+        doc.text(`Agente: ${agent.name}`, 14, 33);
+        doc.text(`Observer: System Brain`, 14, 38);
+
+        let yPos = 50;
+
+        // Section: Analysis Insights
+        if (currentAnalysis) {
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text("Análise Estratégica (IA)", 14, yPos);
+            yPos += 10;
+
+            doc.setFontSize(11);
+            doc.setTextColor(50);
+
+            const insightsData = [
+                ['Sentimento', currentAnalysis.sentiment],
+                ['Estágio', currentAnalysis.buying_stage],
+                ['Estratégia Sugerida', currentAnalysis.suggested_strategy || '-'],
+                ['Próxima Ação', currentAnalysis.next_best_action || '-'],
+                ['Insight (Whisper)', currentAnalysis.coach_whisper]
+            ];
+
+            autoTable(doc, {
+                startY: yPos,
+                head: [['Métrica', 'Insight']],
+                body: insightsData,
+                theme: 'grid',
+                headStyles: { fillColor: [41, 98, 255] },
+                columnStyles: { 0: { fontStyle: 'bold', cellWidth: 50 } }
+            });
+
+            // @ts-ignore
+            yPos = doc.lastAutoTable.finalY + 15;
+
+            // Objections Table
+            if (currentAnalysis.detected_objections && currentAnalysis.detected_objections.length > 0) {
+                doc.text("Objeções Detectadas", 14, yPos);
+                yPos += 5;
+                autoTable(doc, {
+                    startY: yPos,
+                    body: currentAnalysis.detected_objections.map(obj => [obj]),
+                    theme: 'striped',
+                    headStyles: { fillColor: [220, 53, 69] }, // Red for danger
+                });
+                // @ts-ignore
+                yPos = doc.lastAutoTable.finalY + 15;
+            }
+        }
+
+        // Section: Chat History (If requested)
+        if (type === 'full' && messages.length > 0) {
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text("Histórico da Conversa", 14, yPos);
+            yPos += 10;
+
+            const chatData = messages.map(m => [
+                m.timestamp.toLocaleTimeString(),
+                m.role === 'assistant' ? agent.name : 'Usuário',
+                m.content.substring(0, 500) // Truncate very long messages for PDF safety
+            ]);
+
+            autoTable(doc, {
+                startY: yPos,
+                head: [['Hora', 'Autor', 'Mensagem']],
+                body: chatData,
+                theme: 'striped',
+                columnStyles: { 2: { cellWidth: 100 } }
+            });
+        }
+
+        doc.save(`relatorio_${type}_${agent.slug}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    };
+
+    const handleReanalyze = async () => {
+        if (messages.length === 0) return;
+        setIsLoading(true);
+        try {
+            // Re-trigger only the observer analysis
+            const analysisPromise = fetch(`${import.meta.env.VITE_API_URL}/api/agents/public/${observerSlug}/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: [
+                        {
+                            role: 'system',
+                            content: `CONTEXT: User is chatting with Agent: "${agent.name}" (${agent.description}). RE-ANALYSIS REQUESTED. Review conversation context.`
+                        },
+                        ...messages.map(m => ({ role: m.role, content: m.content })),
+                        { role: 'user', content: "(System: Please provide updated analysis based on full history)" }
+                    ],
+                    sessionId: 'reanalysis-' + Date.now()
+                })
+            });
+
+            const analysisResponse = await analysisPromise;
+            if (analysisResponse.ok) {
+                const analysisData = await analysisResponse.json();
+                try {
+                    let analysisJsonStr = analysisData.content;
+                    analysisJsonStr = analysisJsonStr.replace(/```json/g, '').replace(/```/g, '');
+                    const jsonMatch = analysisJsonStr.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        const parsed = JSON.parse(jsonMatch[0]);
+                        setCurrentAnalysis(parsed);
+                    }
+                } catch (e) {
+                    console.warn('Failed to parse re-analysis:', e);
+                }
+            }
+        } catch (error) {
+            console.error("Reanalysis failed", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const getSentimentColor = (sentiment: string) => {
         switch (sentiment?.toLowerCase()) {
             case 'positive': return 'text-green-500 bg-green-50 border-green-200';
@@ -208,7 +384,12 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+        <div
+            className="min-h-screen bg-gray-50 flex flex-col font-sans"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
             {/* Header */}
             <header className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm sticky top-0 z-10 flex justify-between items-center">
                 <div className="flex items-center gap-3">
@@ -224,6 +405,13 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
                 </div>
                 {/* Actions */}
                 <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowWhatsAppConfig(true)}
+                        className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Configuração WhatsApp"
+                    >
+                        <Settings size={20} />
+                    </button>
                     <button
                         onClick={handleSaveChat}
                         className="p-2 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -274,31 +462,40 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Input */}
-                    <div className="p-4 bg-white border-t border-gray-200">
-                        <div className="max-w-3xl mx-auto flex gap-2">
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                placeholder="Digite sua mensagem..."
-                                className="flex-1 bg-gray-100 border-0 rounded-full px-6 py-3 focus:ring-2 focus:ring-primary-500 outline-none text-gray-800"
-                                disabled={isLoading}
-                            />
-                            <button onClick={handleSendMessage} disabled={!input.trim() || isLoading} className="p-3 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors disabled:opacity-50">
-                                <Send size={20} />
-                            </button>
-                        </div>
-                    </div>
                 </div>
 
                 {/* RIGHT: Observer Teleprompter */}
                 <div className="w-80 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
-                    <div className="p-4 border-b border-gray-100 bg-gray-50">
+                    <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                         <h3 className="font-bold text-gray-700 flex items-center gap-2 text-sm uppercase tracking-wider">
-                            <BrainCircuit size={16} /> System Brain Observer
+                            <BrainCircuit size={16} /> System Brain
                         </h3>
+                        <div className="flex gap-1">
+                            <button
+                                onClick={() => handleGeneratePDFReport('analysis')}
+                                disabled={!currentAnalysis}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                                title="Gerar Relatório de Análise"
+                            >
+                                <FileBarChart size={16} />
+                            </button>
+                            <button
+                                onClick={() => handleGeneratePDFReport('full')}
+                                disabled={!messages.length}
+                                className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
+                                title="Gerar Relatório Completo"
+                            >
+                                <FileText size={16} />
+                            </button>
+                            <button
+                                onClick={handleReanalyze}
+                                disabled={!messages.length || isLoading}
+                                className="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
+                                title="Reanalisar Conversa"
+                            >
+                                <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -358,7 +555,56 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
                         )}
                     </div>
                 </div>
+
+                {/* Drag Overlay */}
+                {isDragging && (
+                    <div className="absolute inset-0 bg-primary-500/10 backdrop-blur-sm z-50 flex items-center justify-center border-2 border-dashed border-primary-500 m-4 rounded-3xl">
+                        <div className="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center animate-bounce">
+                            <FileUp size={48} className="text-primary-600 mb-2" />
+                            <p className="text-lg font-bold text-primary-900">Solte o arquivo aqui</p>
+                        </div>
+                    </div>
+                )}
             </main>
+
+            {/* Input Area (Bottom) */}
+            <div className="p-4 bg-white border-t border-gray-200">
+                <div className="max-w-3xl mx-auto flex gap-2">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleFileSelect}
+                        accept=".txt,.md,.js,.ts,.tsx,.json,.css,.html"
+                    />
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-3 text-gray-400 hover:text-primary-600 hover:bg-gray-100 rounded-full transition-colors"
+                        title="Anexar Arquivo"
+                    >
+                        <Paperclip size={20} />
+                    </button>
+
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                        placeholder="Digite sua mensagem..."
+                        className="flex-1 bg-gray-100 border-0 rounded-full px-6 py-3 focus:ring-2 focus:ring-primary-500 outline-none text-gray-800"
+                        disabled={isLoading}
+                    />
+                    <button onClick={handleSendMessage} disabled={!input.trim() || isLoading} className="p-3 bg-primary-600 text-white rounded-full hover:bg-primary-700 transition-colors disabled:opacity-50">
+                        <Send size={20} />
+                    </button>
+                </div>
+            </div>
+            {/* WhatsApp Integration Modal */}
+            <WhatsAppConfigModal
+                isOpen={showWhatsAppConfig}
+                onClose={() => setShowWhatsAppConfig(false)}
+                onConfigUpdate={() => console.log('WhatsApp Config Updated')}
+            />
         </div>
     );
 };

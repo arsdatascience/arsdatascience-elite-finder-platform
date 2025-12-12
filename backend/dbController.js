@@ -36,6 +36,7 @@ const getUsers = async (req, res) => {
                    t.name as tenant_name
             FROM users u
             LEFT JOIN tenants t ON u.tenant_id = t.id
+            WHERE u.status != 'deleted'
         `;
         const params = [];
 

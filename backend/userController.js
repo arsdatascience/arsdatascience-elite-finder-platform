@@ -473,7 +473,7 @@ const updateTeamMember = async (req, res) => {
         `;
         values.push(id);
 
-        const result = await db.query(query, values);
+        await db.query(query, values);
         res.json({ success: true, member: result.rows[0], message: 'Usuário atualizado com sucesso' });
 
     } catch (err) {
