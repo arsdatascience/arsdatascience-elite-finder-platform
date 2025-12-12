@@ -99,7 +99,7 @@ const HELP_SECTIONS: HelpSection[] = [
                         <p>Estrutura profissional de instrução da IA:</p>
                         <ul className="list-disc pl-5 space-y-1">
                             <li><strong>System Prompt:</strong> A "alma" do agente. Define expertise e tom.</li>
-                            <li><strong>Response Structure:</strong> O esqueleto da resposta (ex: Saudação -> Resposta -> CTA).</li>
+                            <li><strong>Response Structure:</strong> O esqueleto da resposta (ex: Saudação &rarr; Resposta &rarr; CTA).</li>
                             <li><strong>Complex Cases:</strong> Regras "Se/Então" para situações difíceis.</li>
                             <li><strong>Validation (Guardrails):</strong> Checklist de segurança (ex: "Verificar se inventou fatos").</li>
                             <li><strong>Script:</strong> Roteiro passo-a-passo (ideal para Vendas).</li>
