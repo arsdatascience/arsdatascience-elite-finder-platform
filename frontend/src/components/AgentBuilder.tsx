@@ -5,7 +5,7 @@ import {
     Brain, Save, Database, MessageSquare,
     Shield, Fingerprint, Wand2, Smartphone, Check,
     LayoutTemplate, X, Loader2, RefreshCw, Zap,
-    Globe, Copy, ExternalLink
+    Globe, Copy, ExternalLink, Store, Trash2, Edit
 } from 'lucide-react';
 import { ClientSelector } from './common/ClientSelector';
 // Tipos baseados na especificação do usuário
@@ -226,11 +226,101 @@ const INITIAL_CONFIG: AgentConfig = {
 export const AgentBuilder: React.FC = () => {
     const [searchParams] = useSearchParams();
     const templateId = searchParams.get('template');
-    const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'vector' | 'prompts' | 'channels' | 'advanced' | 'deploy'>('identity');
+
+    const [activeTab, setActiveTab] = useState<'store' | 'identity' | 'ai' | 'vector' | 'prompts' | 'channels' | 'advanced' | 'deploy'>('store');
     const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
     const [config, setConfig] = useState<AgentConfig>(INITIAL_CONFIG);
 
+    // Estado para Loja de Agentes
+    const [agentsList, setAgentsList] = useState<any[]>([]);
+    const [loadingAgents, setLoadingAgents] = useState(false);
+
+    useEffect(() => {
+        if (activeTab === 'store') {
+            fetchAgents();
+        }
+    }, [activeTab]);
+
+    const fetchAgents = async () => {
+        setLoadingAgents(true);
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agents`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setAgentsList(Array.isArray(data) ? data : []);
+            }
+        } catch (error) {
+            console.error('Erro ao buscar agentes:', error);
+        } finally {
+            setLoadingAgents(false);
+        }
+    };
+
+    const handleDeleteAgent = async (agentId: number) => {
+        if (!confirm('Tem certeza que deseja excluir este agente? Esta ação não pode ser desfeita.')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agents/${agentId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                alert('Agente excluído com sucesso!');
+                fetchAgents();
+            } else {
+                alert('Erro ao excluir agente.');
+            }
+        } catch (error) {
+            console.error('Erro ao excluir agente:', error);
+            alert('Erro ao excluir agente.');
+        }
+    };
+
+    const handleEditAgent = async (agent: any) => {
+        // Mapear dados do agente para o estado de configuração
+        // Nota: A estrutura retornada pela API pode variar, aqui assumimos um mapeamento básico para edição
+        // Em um cenário real, precisaríamos de um endpoint GET /api/agents/:id com todos os detalhes
+
+        // Simulação de carregamento de dados para edição (Idealmente buscaria fresh data do backend)
+        try {
+            const token = localStorage.getItem('token');
+            // Endpoint imaginário para pegar full details se a lista for resumida. 
+            // Se a lista já tem tudo, usar 'agent' direto. Vamos assumir que precisamos de reload para garantir.
+            // Mas para este MVP, vamos usar o que temos ou o que o backend retorna no POST
+
+            // Se o backend retornar 'advanced_settings' e 'ai_config' flat ou aninhado, precisamos adaptar.
+            // PROVISÓRIO: Resetar config e preencher com dados conhecidos
+            setConfig({
+                ...INITIAL_CONFIG,
+                identity: {
+                    name: agent.name,
+                    category: agent.category || '',
+                    description: agent.description || '',
+                    class: agent.class || 'SaaS',
+                    specializationLevel: agent.specialization_level || 5,
+                    status: agent.status
+                },
+                // Preencher outros campos se disponíveis no objeto agent da lista
+                // Caso contrário, o ideal seria implementar GET /api/agents/:id no backend
+            });
+
+            // Marcar ID do agente em edição se necessário (não temos state para isso ainda no componente, 
+            // talvez adicionar 'editingAgentId' state futuramente para UPDATE em vez de CREATE)
+
+            alert('Modo de edição iniciado. (Nota: Para edição completa, certifique-se que o backend retorna todos os dados na lista ou implemente GET by ID).');
+            setActiveTab('identity');
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const TABS = [
+        { id: 'store', label: 'Loja de Agentes', icon: Store },
         { id: 'identity', label: 'Identidade & Perfil', icon: Fingerprint },
         { id: 'ai', label: 'Parâmetros de IA', icon: Brain },
         { id: 'vector', label: 'Base Vetorial (RAG)', icon: Database },
@@ -898,6 +988,79 @@ POLÍTICA: Evitar temas sensíveis como [LISTAR TEMAS PROIBIDOS].`;
                 {/* Content Area */}
                 <div className="flex-1 overflow-y-auto p-8">
                     <div className="max-w-4xl mx-auto">
+                        {/* TAB: AGENT STORE */}
+                        {activeTab === 'store' && (
+                            <div className="space-y-6 animate-fade-in">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                                        <Store className="text-purple-600" /> Loja de Agentes
+                                    </h3>
+                                    <button
+                                        onClick={() => {
+                                            setConfig(INITIAL_CONFIG);
+                                            setActiveTab('identity');
+                                        }}
+                                        className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 shadow-lg flex items-center gap-2"
+                                    >
+                                        <Wand2 size={18} /> Criar Novo Agente
+                                    </button>
+                                </div>
+
+                                {loadingAgents ? (
+                                    <div className="flex justify-center py-20">
+                                        <Loader2 className="animate-spin text-purple-600" size={48} />
+                                    </div>
+                                ) : agentsList.length === 0 ? (
+                                    <div className="text-center py-20 bg-gray-50 rounded-xl border border-gray-200 border-dashed">
+                                        <Store className="mx-auto text-gray-300 mb-4" size={64} />
+                                        <p className="text-gray-500 text-lg">Nenhum agente criado ainda.</p>
+                                        <p className="text-gray-400 text-sm">Crie seu primeiro agente para vê-lo aqui.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {agentsList.map((agent) => (
+                                            <div key={agent.id} className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden group">
+                                                <div className="p-6">
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${agent.status === 'active' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                            <Brain size={24} />
+                                                        </div>
+                                                        <span className={`px-2 py-1 rounded text-xs font-bold uppercase tracking-wider ${agent.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                                            {agent.status === 'active' ? 'Ativo' : 'Inativo'}
+                                                        </span>
+                                                    </div>
+                                                    <h4 className="text-lg font-bold text-gray-800 mb-1 line-clamp-1">{agent.name}</h4>
+                                                    <p className="text-sm text-gray-500 mb-4 line-clamp-2 min-h-[40px]">{agent.description || 'Sem descrição.'}</p>
+
+                                                    <div className="flex flex-col gap-2 mb-4">
+                                                        <div className="text-xs text-gray-500 font-mono bg-gray-50 p-2 rounded truncate">
+                                                            <Globe size={12} className="inline mr-1" />
+                                                            {agent.slug ? `${window.location.origin}/agent/${agent.slug}` : 'Sem link público'}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex gap-2 border-t pt-4">
+                                                        <button
+                                                            onClick={() => handleEditAgent(agent)}
+                                                            className="flex-1 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg flex items-center justify-center gap-1 transition-colors"
+                                                        >
+                                                            <Edit size={16} /> Editar
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteAgent(agent.id)}
+                                                            className="flex-1 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg flex items-center justify-center gap-1 transition-colors"
+                                                        >
+                                                            <Trash2 size={16} /> Excluir
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {/* TAB: IDENTIDADE */}
                         {activeTab === 'identity' && (
                             <div className="space-y-6 animate-fade-in">
