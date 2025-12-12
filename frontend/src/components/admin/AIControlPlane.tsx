@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Save, Database, Sparkles, Sliders, FileText, Brain, Zap, ArrowLeft, Search, Filter, Activity, Shield, Target, BookOpen, MessageSquare, Briefcase, GraduationCap, Gavel, BarChart3, Lightbulb } from "lucide-react";
+import { Bot, Save, Database, Sparkles, Sliders, FileText, Brain, Zap, ArrowLeft, Search, Filter, Activity, Shield, Target, BookOpen, MessageSquare, Briefcase, GraduationCap, Gavel, BarChart3, Lightbulb, Server, RefreshCw } from "lucide-react";
 import { apiClient } from '@/services/apiClient';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,6 +13,13 @@ interface Agent {
     client_id?: number | null;
     status: string;
     is_system?: boolean;
+}
+
+interface DataSource {
+    id: number;
+    name: string;
+    type: 'postgres' | 'qdrant';
+    is_active: boolean;
 }
 
 interface AgentConfig {
@@ -66,7 +73,7 @@ interface AgentConfig {
         structureSensitivity: number; // 1-10
         useCache: boolean;
         aggregationMethod: string;
-        // Advanced / Technical (Keep for heavy lifting)
+        // Technical internals
         chunkingMode: string;
         chunkSize: number;
         chunkOverlap: number;
@@ -75,7 +82,15 @@ interface AgentConfig {
         maxChunkSize: number;
     };
     whatsappConfig?: any;
-    advancedConfig?: any;
+    advancedConfig?: {
+        knowledgeSources?: {
+            [sourceId: number]: {
+                enabled: boolean;
+                selectedItems: string[];
+            }
+        };
+        [key: string]: any;
+    };
 }
 
 // --- Prompt Templates ---
@@ -244,8 +259,7 @@ FOCO: Python, Pandas, SQL, Estatística e Visualização.`,
     },
     pm: {
         label: "Gestão de Projetos (Project Manager)",
-        icon: target => <Target className="w-4 h-4" />, // Using generic icon logic wrapper if needed, but simple map works
-        iconComp: Target,
+        icon: Target,
         prompts: {
             system: `ATUAÇÃO: Gerente de Projetos (PMP/Agile).
 OBJETIVO: Planejar cronogramas, gerir riscos e coordenar times.
@@ -282,7 +296,6 @@ FOCO: Visão sistêmica, integração e eficiência operacionall.`,
 };
 
 // --- Components UI (Light Theme) ---
-// (Reusing same components as before...)
 const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
     <div className={`bg-white border border-gray-200 rounded-xl shadow-sm ${className}`}>{children}</div>
 );
@@ -367,23 +380,40 @@ const AIControlPlane = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Tabs aligned with User Requirements
+    // --- Data Sources State ---
+    const [dataSources, setDataSources] = useState<DataSource[]>([]);
+    const [sourceItems, setSourceItems] = useState<{ [key: number]: string[] }>({});
+    const [loadingSources, setLoadingSources] = useState(false);
+
+    // Tabs
     const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'technical' | 'behavior' | 'rag' | 'capabilities'>('identity');
     const [behaviorSubTab, setBehaviorSubTab] = useState<'prompt' | 'context' | 'communication' | 'examples'>('prompt');
 
 
     useEffect(() => {
         fetchAgents();
+        fetchDataSources();
     }, []);
 
     const fetchAgents = async () => {
         try {
             const res = await apiClient.get('/agents?include_system=true');
             const allAgents = res.data;
-            // Filter: Prioritize displaying IsSystem=true for this Admin Panel, but keep all reachable
             setAgents(allAgents);
         } catch (err) {
             console.error("Failed to load agents", err);
+        }
+    };
+
+    const fetchDataSources = async () => {
+        try {
+            setLoadingSources(true);
+            const res = await apiClient.get('/admin/datasources');
+            setDataSources(res.data);
+        } catch (err) {
+            console.error("Failed to load data sources", err);
+        } finally {
+            setLoadingSources(false);
         }
     };
 
@@ -439,11 +469,10 @@ const AIControlPlane = () => {
                     docLimit: data.vectorConfig?.docLimit || 5,
                     enableReranking: data.vectorConfig?.enableReranking || true,
                     relevanceWeight: data.vectorConfig?.relevanceWeight || 0.7,
-                    minRelevance: data.vectorConfig?.minRelevance || 0.7, // limiar_similaridade
+                    minRelevance: data.vectorConfig?.minRelevance || 0.7,
                     structureSensitivity: data.vectorConfig?.structureSensitivity || 7,
                     useCache: data.vectorConfig?.useCache !== false,
                     aggregationMethod: data.vectorConfig?.aggregationMethod || 'concatenacao',
-                    // Technical internals
                     chunkingMode: data.vectorConfig?.chunkingMode || 'semantico',
                     chunkSize: data.vectorConfig?.chunkSize || 512,
                     chunkOverlap: data.vectorConfig?.chunkOverlap || 50,
@@ -452,7 +481,7 @@ const AIControlPlane = () => {
                     maxChunkSize: data.vectorConfig?.maxChunkSize || 2048
                 },
                 whatsappConfig: data.whatsappConfig || {},
-                advancedConfig: data.advancedConfig || {}
+                advancedConfig: data.advancedConfig || { knowledgeSources: {} }
             });
         } catch (err) {
             console.error("Failed to load agent config", err);
@@ -482,15 +511,15 @@ const AIControlPlane = () => {
                     specificTools: config.identity.specificTools,
                     specializationFilters: config.identity.specializationFilters
                 },
-                aiConfig: config.aiConfig, // Direct map
-                vectorConfig: config.vectorConfig, // Direct map (controller handles cleanup)
-                prompts: config.prompts, // Direct map
+                aiConfig: config.aiConfig,
+                vectorConfig: config.vectorConfig,
+                prompts: config.prompts,
                 whatsappConfig: config.whatsappConfig,
                 advancedConfig: config.advancedConfig
             };
 
             await apiClient.put(`/agents/${selectedAgent.id}`, payload);
-            await loadAgentConfig(selectedAgent.id); // Reload to confirm
+            await loadAgentConfig(selectedAgent.id);
             setAgents(prev => prev.map(a =>
                 a.id === selectedAgent.id ? { ...a, name: config.identity.name, description: config.identity.description, category: config.identity.category } : a
             ));
@@ -519,7 +548,59 @@ const AIControlPlane = () => {
         }
     };
 
-    // Filter to show System Agents prominently
+    const handleIntrospectSource = async (sourceId: number) => {
+        try {
+            const res = await apiClient.get(`/admin/datasources/${sourceId}/introspect`);
+            setSourceItems(prev => ({ ...prev, [sourceId]: res.data.items }));
+        } catch (err) {
+            console.error("Failed to introspect source", err);
+            alert("Erro ao conectar e listar itens da fonte de dados.");
+        }
+    };
+
+    const toggleDataSource = (sourceId: number, enabled: boolean) => {
+        if (!config || !config.advancedConfig) return;
+        const currentSources = config.advancedConfig.knowledgeSources || {};
+
+        setConfig({
+            ...config,
+            advancedConfig: {
+                ...config.advancedConfig,
+                knowledgeSources: {
+                    ...currentSources,
+                    [sourceId]: {
+                        ...currentSources[sourceId],
+                        enabled: enabled,
+                        selectedItems: currentSources[sourceId]?.selectedItems || []
+                    }
+                }
+            }
+        });
+
+        if (enabled && !sourceItems[sourceId]) {
+            handleIntrospectSource(sourceId);
+        }
+    };
+
+    const updateSourceItems = (sourceId: number, items: string[]) => {
+        if (!config || !config.advancedConfig) return;
+        const currentSources = config.advancedConfig.knowledgeSources || {};
+
+        setConfig({
+            ...config,
+            advancedConfig: {
+                ...config.advancedConfig,
+                knowledgeSources: {
+                    ...currentSources,
+                    [sourceId]: {
+                        ...currentSources[sourceId],
+                        selectedItems: items
+                    }
+                }
+            }
+        });
+    };
+
     const systemAgents = agents.filter(a => a.is_system);
     const standardAgents = agents.filter(a => !a.is_system);
 
@@ -539,7 +620,7 @@ const AIControlPlane = () => {
                                 </div>
                                 <div>
                                     <h1 className="text-xl font-bold text-gray-900">AI Control Plane</h1>
-                                    <p className="text-xs text-gray-500">Gestão Avançada de Especialistas (Template Completo)</p>
+                                    <p className="text-xs text-gray-500">Gestão Avançada de Especialistas (Conexões Ativas)</p>
                                 </div>
                             </div>
                         </div>
@@ -552,7 +633,7 @@ const AIControlPlane = () => {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                    {/* Sidebar: System Agent List */}
+                    {/* Sidebar */}
                     <div className="md:col-span-3">
                         <Card className="h-full min-h-[700px] flex flex-col overflow-hidden">
                             <div className="p-4 border-b border-gray-100 bg-gray-50">
@@ -620,9 +701,6 @@ const AIControlPlane = () => {
                                             <p className="text-xs text-gray-500">ID: {selectedAgent.id} • {config.aiConfig.model}</p>
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button onClick={() => alert("Simulação de Teste")} variant="warning" className="text-xs h-9">
-                                                <Zap className="h-3 w-3 mr-2" /> Testar
-                                            </Button>
                                             <Button onClick={handleSave} disabled={isSaving} variant="success" className="h-9">
                                                 {isSaving ? <Activity className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                                                 Salvar
@@ -638,7 +716,7 @@ const AIControlPlane = () => {
                                                 { id: 'ai', label: 'Inteligência', icon: Brain },
                                                 { id: 'technical', label: 'Parâmetros', icon: Sliders },
                                                 { id: 'behavior', label: 'Comportamento & Prompts', icon: FileText },
-                                                { id: 'rag', label: 'Conhecimento (RAG)', icon: Database },
+                                                { id: 'rag', label: 'Conhecimento & Dados', icon: Database },
                                                 { id: 'capabilities', label: 'Capacidades', icon: Shield }
                                             ].map((tab) => (
                                                 <button
@@ -658,13 +736,13 @@ const AIControlPlane = () => {
 
                                     <div className="p-8 flex-1 bg-gray-50/50 overflow-y-auto">
 
-                                        {/* --- 1. IDENTIDADE --- */}
+                                        {/* --- IDENTIDADE --- */}
                                         {activeTab === 'identity' && (
                                             <div className="space-y-8 animate-fade-in max-w-4xl">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div className="space-y-4">
                                                         <div><Label>Nome do Agente</Label> <Input value={config.identity.name} onChange={e => setConfig({ ...config, identity: { ...config.identity, name: e.target.value } })} /></div>
-                                                        <div><Label>Categoria Jurídica/Negócio</Label> <Input value={config.identity.category} onChange={e => setConfig({ ...config, identity: { ...config.identity, category: e.target.value } })} /></div>
+                                                        <div><Label>Categoria</Label> <Input value={config.identity.category} onChange={e => setConfig({ ...config, identity: { ...config.identity, category: e.target.value } })} /></div>
                                                         <div><Label>Descrição</Label> <Textarea value={config.identity.description} onChange={e => setConfig({ ...config, identity: { ...config.identity, description: e.target.value } })} /></div>
                                                     </div>
                                                     <div className="space-y-4">
@@ -683,25 +761,10 @@ const AIControlPlane = () => {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <Label className="text-red-500 flex items-center gap-2"><Target className="h-4 w-4" /> Área de Especialidade Principal</Label>
-                                                    <Select
-                                                        value={config.identity.specialtyArea}
-                                                        options={[
-                                                            { label: 'Selecione...', value: '' },
-                                                            { label: 'Direito Agrário', value: 'direito_agrario' },
-                                                            { label: 'Direito Empresarial', value: 'direito_empresarial' },
-                                                            { label: 'Vendas Consultivas', value: 'vendas_consultivas' },
-                                                            { label: 'Suporte Técnico', value: 'suporte_tecnico' },
-                                                            { label: 'Análise de Dados', value: 'analise_dados' }
-                                                        ]}
-                                                        onChange={v => setConfig({ ...config, identity: { ...config.identity, specialtyArea: v } })}
-                                                    />
-                                                </div>
                                             </div>
                                         )}
 
-                                        {/* --- 2. INTELIGÊNCIA --- */}
+                                        {/* --- INTELIGÊNCIA --- */}
                                         {activeTab === 'ai' && (
                                             <div className="space-y-6 animate-fade-in max-w-4xl">
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -711,21 +774,23 @@ const AIControlPlane = () => {
                                                     </div>
                                                     <div>
                                                         <Label>Modelo</Label>
-                                                        <Select value={config.aiConfig.model} options={[{ label: 'GPT-4o', value: 'gpt-4o' }, { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' }, { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022' }, { label: 'Gemini 1.5 Pro', value: 'gemini-1.5-pro' }]} onChange={v => setConfig({ ...config, aiConfig: { ...config.aiConfig, model: v } })} />
+                                                        <Select value={config.aiConfig.model} options={[
+                                                            { label: 'GPT-4o', value: 'gpt-4o' },
+                                                            { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' },
+                                                            { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022' },
+                                                            { label: 'Gemini 1.5 Pro', value: 'gemini-1.5-pro' },
+                                                            { label: 'Gemini Pro', value: 'gemini-pro' },
+                                                        ]} onChange={v => setConfig({ ...config, aiConfig: { ...config.aiConfig, model: v } })} />
                                                     </div>
                                                     <div>
                                                         <Label>Tokens Máximos</Label>
                                                         <Input type="number" value={config.aiConfig.maxTokens} onChange={e => setConfig({ ...config, aiConfig: { ...config.aiConfig, maxTokens: parseInt(e.target.value) } })} />
                                                     </div>
                                                 </div>
-                                                <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-800">
-                                                    <Zap className="inline h-4 w-4 mr-2" />
-                                                    <strong>Dica:</strong> Modelos mais recentes como GPT-4o e Claude 3.5 Sonnet oferecem melhor raciocínio para casos jurídicos complexos.
-                                                </div>
                                             </div>
                                         )}
 
-                                        {/* --- 3. PARÂMETROS --- */}
+                                        {/* --- PARÂMETROS --- */}
                                         {activeTab === 'technical' && (
                                             <div className="space-y-8 animate-fade-in max-w-4xl">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -733,7 +798,6 @@ const AIControlPlane = () => {
                                                         <div>
                                                             <div className="flex justify-between mb-2"><Label>Temperatura</Label> <span className="text-xs bg-gray-200 px-2 rounded">{config.aiConfig.temperature}</span></div>
                                                             <input type="range" min="0" max="2" step="0.1" className="w-full" value={config.aiConfig.temperature} onChange={e => setConfig({ ...config, aiConfig: { ...config.aiConfig, temperature: parseFloat(e.target.value) } })} />
-                                                            <p className="text-xs text-gray-500">0=Preciso/Determinístico, 2=Criativo/Aleatório</p>
                                                         </div>
                                                         <div>
                                                             <div className="flex justify-between mb-2"><Label>Top-P</Label> <span className="text-xs bg-gray-200 px-2 rounded">{config.aiConfig.topP}</span></div>
@@ -758,11 +822,9 @@ const AIControlPlane = () => {
                                             </div>
                                         )}
 
-                                        {/* --- 4. COMPORTAMENTO (PROPMTS ETC) --- */}
+                                        {/* --- COMPORTAMENTO --- */}
                                         {activeTab === 'behavior' && (
                                             <div className="space-y-6 animate-fade-in max-w-5xl">
-
-                                                {/* --- Template Selector --- */}
                                                 <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100 flex items-center justify-between mb-6">
                                                     <div className="flex items-center gap-3">
                                                         <div className="p-2 bg-white rounded-lg shadow-sm text-purple-600"><Lightbulb className="w-5 h-5" /></div>
@@ -799,7 +861,7 @@ const AIControlPlane = () => {
                                                 {behaviorSubTab === 'prompt' && (
                                                     <div className="space-y-4">
                                                         <Label className="text-yellow-600 font-bold">System Prompt Principal</Label>
-                                                        <Textarea className="min-h-[400px] font-mono text-sm bg-gray-900 text-green-400 p-4 leading-relaxed" value={config.prompts.system} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, system: e.target.value } })} placeholder="Você é um especialista em..." />
+                                                        <Textarea className="min-h-[400px] font-mono text-sm bg-gray-900 text-green-400 p-4 leading-relaxed" value={config.prompts.system} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, system: e.target.value } })} />
                                                     </div>
                                                 )}
                                                 {behaviorSubTab === 'context' && (
@@ -811,34 +873,88 @@ const AIControlPlane = () => {
                                                 )}
                                                 {behaviorSubTab === 'communication' && (
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <div><Label>Tom de Comunicação</Label><Input value={config.prompts.communicationTone} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, communicationTone: e.target.value } })} placeholder="Ex: Formal, Técnico, Empático" /></div>
-                                                        <div><Label>Formato de Resposta</Label><Input value={config.prompts.responseStructure} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, responseStructure: e.target.value } })} placeholder="Ex: Markdown, JSON, Bullet Points" /></div>
-                                                        <div><Label>Prioridades</Label><Textarea value={config.prompts.priorities} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, priorities: e.target.value } })} placeholder="Precisão técnica, Citar leis..." /></div>
-                                                        <div><Label>Restrições</Label><Textarea value={config.prompts.restrictions} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, restrictions: e.target.value } })} placeholder="Não dar conselho financeiro..." /></div>
-                                                        <div><Label>Análise (Prompt)</Label><Textarea value={config.prompts.analysis} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, analysis: e.target.value } })} /></div>
-                                                        <div><Label>Validação (Prompt)</Label><Textarea value={config.prompts.validation} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, validation: e.target.value } })} /></div>
+                                                        <div><Label>Tom de Comunicação</Label><Input value={config.prompts.communicationTone} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, communicationTone: e.target.value } })} /></div>
+                                                        <div><Label>Formato de Resposta</Label><Input value={config.prompts.responseStructure} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, responseStructure: e.target.value } })} /></div>
+                                                        <div><Label>Prioridades</Label><Textarea value={config.prompts.priorities} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, priorities: e.target.value } })} /></div>
+                                                        <div><Label>Restrições</Label><Textarea value={config.prompts.restrictions} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, restrictions: e.target.value } })} /></div>
+                                                        <div><Label>Análise</Label><Textarea value={config.prompts.analysis} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, analysis: e.target.value } })} /></div>
+                                                        <div><Label>Validação</Label><Textarea value={config.prompts.validation} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, validation: e.target.value } })} /></div>
                                                     </div>
                                                 )}
                                                 {behaviorSubTab === 'examples' && (
                                                     <div className="space-y-4">
-                                                        <Label>Exemplos de Uso (Few-Shot Learning)</Label>
-                                                        <p className="text-xs text-gray-500">Forneça pares de Pergunta/Resposta ideais para calibrar o modelo.</p>
-                                                        <Textarea className="min-h-[300px] font-mono bg-gray-50" value={config.prompts.usageExamples} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, usageExamples: e.target.value } })} placeholder={`User: Como calculo o prazo X?\nAgent: O prazo X é calculado conforme art. Y...`} />
-                                                        <div className="mt-4">
-                                                            <Label>Prompt Casos Complexos</Label>
-                                                            <Textarea value={config.prompts.complexCases} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, complexCases: e.target.value } })} />
-                                                        </div>
+                                                        <Label>Exemplos de Uso</Label>
+                                                        <Textarea className="min-h-[300px] font-mono bg-gray-50" value={config.prompts.usageExamples} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, usageExamples: e.target.value } })} />
+                                                        <div className="mt-4"><Label>Prompt Casos Complexos</Label><Textarea value={config.prompts.complexCases} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, complexCases: e.target.value } })} /></div>
                                                     </div>
                                                 )}
                                             </div>
                                         )}
 
-                                        {/* --- 5. RAG & CONHECIMENTO --- */}
+                                        {/* --- RAG & CONHECIMENTO --- */}
                                         {activeTab === 'rag' && (
-                                            <div className="space-y-8 animate-fade-in max-w-4xl">
+                                            <div className="space-y-8 animate-fade-in max-w-5xl">
+
+                                                {/* DATA SOURCES SECTION */}
+                                                <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm">
+                                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                                        <Database className="h-5 w-5 text-purple-600" />
+                                                        Fontes de Dados Conectadas (External DBs)
+                                                    </h3>
+                                                    {loadingSources ? (
+                                                        <div className="flex items-center text-sm text-gray-500"><Activity className="animate-spin mr-2 h-4 w-4" /> Carregando fontes...</div>
+                                                    ) : (
+                                                        <div className="space-y-4">
+                                                            {dataSources.map(source => {
+                                                                const sourceConfig = config.advancedConfig?.knowledgeSources?.[source.id] || { enabled: false, selectedItems: [] };
+
+                                                                return (
+                                                                    <div key={source.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                                                                        <div className="bg-gray-50 p-3 flex items-center justify-between">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <Server className="h-4 w-4 text-gray-500" />
+                                                                                <span className="font-semibold text-gray-700 text-sm">{source.name}</span>
+                                                                                <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded uppercase">{source.type}</span>
+                                                                            </div>
+                                                                            <Switch
+                                                                                checked={sourceConfig.enabled}
+                                                                                onCheckedChange={(checked) => toggleDataSource(source.id, checked)}
+                                                                            />
+                                                                        </div>
+
+                                                                        {sourceConfig.enabled && (
+                                                                            <div className="p-4 bg-white border-t border-gray-100 animate-fade-in">
+                                                                                {sourceItems[source.id] ? (
+                                                                                    <div className="space-y-2">
+                                                                                        <Label>Selecione os Itens ({source.type === 'postgres' ? 'Tabelas' : 'Coleções'}) Permissionados:</Label>
+                                                                                        <Select
+                                                                                            multiple
+                                                                                            value={sourceConfig.selectedItems}
+                                                                                            options={sourceItems[source.id].map(item => ({ label: item, value: item }))}
+                                                                                            onChange={(val) => updateSourceItems(source.id, val)}
+                                                                                        />
+                                                                                        <p className="text-xs text-gray-400">Segure Ctrl (Windows) ou Cmd (Mac) para selecionar múltiplos.</p>
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="flex flex-col items-center justify-center p-4 text-gray-400">
+                                                                                        <p className="text-sm mb-2">Conectando à fonte...</p>
+                                                                                        <Activity className="animate-spin h-5 w-5 text-gray-300" />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <hr className="border-gray-200" />
+
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                     <div>
-                                                        <Label>Método de Busca</Label>
+                                                        <Label>Método de Busca (Vector)</Label>
                                                         <Select value={config.vectorConfig.searchMode} options={[{ label: 'Semântica', value: 'semantica' }, { label: 'Palavra-Chave', value: 'palavra_chave' }, { label: 'Híbrido (Rec.)', value: 'hibrido' }]} onChange={v => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, searchMode: v } })} />
                                                     </div>
                                                     <div>
@@ -862,20 +978,10 @@ const AIControlPlane = () => {
                                                     </div>
                                                 </div>
 
-                                                <div className="space-y-4">
-                                                    <Label className="text-green-600 flex items-center gap-2"><Filter className="h-4 w-4" /> Filtros de Especialização (Qdrant)</Label>
-                                                    <Select multiple value={config.identity.specializationFilters} options={[
-                                                        { label: 'Direito Agrário Geral', value: 'direito_agrario_geral' },
-                                                        { label: 'Contratos Rurais', value: 'contratos_rurais' },
-                                                        { label: 'Legislação Agrária', value: 'legislacao_agraria' },
-                                                        { label: 'Súmulas STJ', value: 'sumulas_stj' }
-                                                    ]} onChange={v => setConfig({ ...config, identity: { ...config.identity, specializationFilters: v } })} />
-                                                    <p className="text-xs text-gray-500">Segure Ctrl/Cmd para selecionar múltiplos.</p>
-                                                </div>
                                             </div>
                                         )}
 
-                                        {/* --- 6. CAPACIDADES & FERRAMENTAS --- */}
+                                        {/* --- CAPACIDADES --- */}
                                         {activeTab === 'capabilities' && (
                                             <div className="space-y-6 animate-fade-in max-w-4xl">
                                                 <div className="p-6 bg-white rounded-xl border border-gray-200">

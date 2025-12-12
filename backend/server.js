@@ -652,9 +652,15 @@ async function initializeDatabase() {
 
       // Migração para Task Expansion (Task Management Phase)
       console.log('🔄 Verificando migrações de Task Expansion...');
-      const taskMigration = fs.readFileSync(path.join(__dirname, 'migrations', '026_expand_tasks_table.sql'), 'utf8');
-      await pool.query(taskMigration);
-      console.log('✅ Migração de Task Expansion verificada/aplicada.');
+      const expandSchemaMigration = fs.readFileSync(path.join(__dirname, 'migrations', '052_expand_agent_schema.sql'), 'utf8');
+      await pool.query(expandSchemaMigration);
+      console.log('✅ Migração 052 (Expand Agent Schema) aplicada.');
+
+      // Migração 053: Seed Data Sources (Crossover/Tramway/Qdrant)
+      console.log('🔄 Verificando migração 053 (Seed Data Sources)...');
+      const dataSourceMigration = fs.readFileSync(path.join(__dirname, 'migrations', '053_seed_data_sources.sql'), 'utf8');
+      await pool.query(dataSourceMigration);
+      console.log('✅ Migração 053 (Seed Data Sources) aplicada.');
 
       // Migração 027: Detailed Project Fields
       console.log('🔄 Verificando migrações de Projetos Detalhados (027)...');
