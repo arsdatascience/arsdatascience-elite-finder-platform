@@ -811,6 +811,18 @@ async function initializeDatabase() {
     } catch (agentSchemaErr) {
       console.log('⚠️ Erro na migração 048:', agentSchemaErr.message);
     }
+
+    // ============================================
+    // SEED: Migração 049 (Default Agents)
+    // ============================================
+    console.log('🔄 Verificando migração 049 (Seed Default Agents)...');
+    try {
+      const seedAgentsMigration = fs.readFileSync(path.join(__dirname, 'migrations', '049_seed_default_agents.sql'), 'utf8');
+      await pool.query(seedAgentsMigration);
+      console.log('✅ Migração 049 (Seed Default Agents) aplicada.');
+    } catch (seedAgentsErr) {
+      console.log('⚠️ Erro na migração 049:', seedAgentsErr.message);
+    }
   } catch (error) {
     console.error('⚠️  Database initialization error:', error.message);
     // Don't crash the app if schema already exists
