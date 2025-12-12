@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, Bot, User } from 'lucide-react';
+import { Send, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, Bot, User, Download, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 
@@ -39,8 +39,23 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
     const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisResult | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Initial Greeting
+    // Load history from LocalStorage
     useEffect(() => {
+        const key = `chat_history_${agent.slug}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                // Convert timestamp strings back to Date objects
+                const restored = parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
+                setMessages(restored);
+                return; // Don't overwrite with welcome message if history exists
+            } catch (e) {
+                console.error('Failed to load chat history', e);
+            }
+        }
+
+        // Initial Greeting if no history
         setMessages([{
             id: 'welcome',
             role: 'assistant',
@@ -49,9 +64,42 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
         }]);
     }, [agent]);
 
+    // Save history to LocalStorage
+    useEffect(() => {
+        if (messages.length > 0) {
+            localStorage.setItem(`chat_history_${agent.slug}`, JSON.stringify(messages));
+        }
+    }, [messages, agent.slug]);
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    const handleSaveChat = () => {
+        const textContent = messages.map(m => `[${m.role.toUpperCase()} - ${m.timestamp.toLocaleString()}]: ${m.content}`).join('\n\n');
+        const blob = new Blob([textContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chat-history-${agent.slug}-${new Date().toISOString().slice(0, 10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleClearChat = () => {
+        if (confirm('Tem certeza que deseja limpar o histórico desta conversa?')) {
+            setMessages([{
+                id: 'welcome',
+                role: 'assistant',
+                content: `Olá! Sou **${agent.name}**. \n\n${agent.description || 'Como posso ajudar?'}`,
+                timestamp: new Date()
+            }]);
+            localStorage.removeItem(`chat_history_${agent.slug}`);
+            setCurrentAnalysis(null);
+        }
+    };
 
     const handleSendMessage = async () => {
         if (!input.trim()) return;
@@ -173,6 +221,23 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
                         </h1>
                         <p className="text-xs text-gray-500">Intelligent Agent Ecosystem</p>
                     </div>
+                </div>
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleSaveChat}
+                        className="p-2 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Salvar Conversa"
+                    >
+                        <Download size={20} />
+                    </button>
+                    <button
+                        onClick={handleClearChat}
+                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Limpar Conversa (Reset)"
+                    >
+                        <Trash2 size={20} />
+                    </button>
                 </div>
             </header>
 
