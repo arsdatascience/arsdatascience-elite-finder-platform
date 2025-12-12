@@ -33,6 +33,10 @@ interface AgentConfig {
         maxTokens: number;
         timeout: number;
         retries: number;
+        frequencyPenalty: number;
+        presencePenalty: number;
+        seed: number | null;
+        jsonMode: boolean;
     };
     vectorProcessing: {
         chunkingMode: string;
@@ -42,6 +46,10 @@ interface AgentConfig {
         conceptWeight: number;
         autoFineTuning: boolean;
         embeddingModel: string;
+        enableReranking: boolean;
+        chunkingStrategy: string;
+        chunkOverlap: number;
+        maxChunkSize: number;
     };
     prompts: {
         system: string;
@@ -176,16 +184,24 @@ const AIControlPlane = () => {
                     topK: data.aiConfig?.topK || 10,
                     maxTokens: data.aiConfig?.maxTokens || 2000,
                     timeout: data.aiConfig?.timeout || 60,
-                    retries: data.aiConfig?.retries || 3
+                    retries: data.aiConfig?.retries || 3,
+                    frequencyPenalty: data.aiConfig?.frequencyPenalty || 0.0,
+                    presencePenalty: data.aiConfig?.presencePenalty || 0.0,
+                    seed: data.aiConfig?.seed || null,
+                    jsonMode: data.aiConfig?.jsonMode || false
                 },
                 vectorProcessing: {
                     chunkingMode: data.vectorConfig?.chunkingMode || 'semantico',
                     chunkSize: data.vectorConfig?.chunkSize || 275,
                     structureSensitivity: data.vectorConfig?.sensitivity || 7,
                     minRelevance: data.vectorConfig?.relevanceThreshold || 0.8,
-                    conceptWeight: 70, // Not present in backend explicitly yet, keep default
-                    autoFineTuning: true, // Not present in backend explicitly yet, keep default
-                    embeddingModel: 'text-embedding-3-small' // Not present in backend explicitly yet, keep default
+                    conceptWeight: 70,
+                    autoFineTuning: true,
+                    embeddingModel: 'text-embedding-3-small',
+                    enableReranking: data.vectorConfig?.enableReranking || false,
+                    chunkingStrategy: data.vectorConfig?.chunkingStrategy || 'paragraph',
+                    chunkOverlap: data.vectorConfig?.chunkOverlap || 100,
+                    maxChunkSize: data.vectorConfig?.maxChunkSize || 2048
                 },
                 prompts: {
                     system: data.prompts?.system || '',
@@ -234,7 +250,10 @@ const AIControlPlane = () => {
                     ...config.aiConfig,
                     responseMode: 'balanced',
                     candidateCount: 1,
-                    jsonMode: false
+                    jsonMode: config.aiConfig.jsonMode,
+                    frequencyPenalty: config.aiConfig.frequencyPenalty,
+                    presencePenalty: config.aiConfig.presencePenalty,
+                    seed: config.aiConfig.seed
                 },
                 vectorConfig: {
                     chunkingMode: config.vectorProcessing.chunkingMode,
@@ -243,11 +262,11 @@ const AIControlPlane = () => {
                     contextWindow: 10,
                     relevanceThreshold: config.vectorProcessing.minRelevance,
                     searchMode: 'semantic',
-                    enableReranking: false,
-                    chunkingStrategy: 'paragraph',
+                    enableReranking: config.vectorProcessing.enableReranking,
+                    chunkingStrategy: config.vectorProcessing.chunkingStrategy,
                     chunkDelimiter: '\n\n',
-                    maxChunkSize: 2048,
-                    chunkOverlap: 100
+                    maxChunkSize: config.vectorProcessing.maxChunkSize,
+                    chunkOverlap: config.vectorProcessing.chunkOverlap
                 },
                 prompts: config.prompts,
                 whatsappConfig: config.whatsappConfig,
@@ -628,12 +647,133 @@ const AIControlPlane = () => {
                                             </div>
                                         )}
 
-                                        {/* Placeholder for other tabs */}
+                                        {/* TAB: VECTOR PROCESSING */}
                                         {activeTab === 'vector' && (
-                                            <div className="p-10 text-center bg-white rounded-xl border border-dashed border-gray-300">
-                                                <Database className="h-10 w-10 text-gray-300 mx-auto mb-4" />
-                                                <p className="text-gray-500">Configuração Vetorial Avançada</p>
-                                                <p className="text-xs text-gray-400 mt-2">Utilize as opções padrão ou personalize no banco de dados.</p>
+                                            <div className="space-y-6 max-w-4xl animate-fade-in">
+                                                <div className="flex space-x-2 border-b border-gray-200 mb-6 bg-gray-50 rounded-t-lg p-1">
+                                                    {['chunking', 'quality', 'embeddings'].map(tab => (
+                                                        <button
+                                                            key={tab}
+                                                            onClick={() => setVectorTab(tab as any)}
+                                                            className={`px-4 py-2 text-sm rounded-md transition-all capitalize ${vectorTab === tab ? 'bg-white text-purple-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                                                                }`}
+                                                        >
+                                                            {tab === 'chunking' && 'Estratégia de Chunking'}
+                                                            {tab === 'quality' && 'Qualidade & Relevância'}
+                                                            {tab === 'embeddings' && 'Embeddings & Rerank'}
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                {vectorTab === 'chunking' && (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-1">
+                                                        <div className="space-y-2">
+                                                            <Label>Modo de Chunking</Label>
+                                                            <Select
+                                                                value={config.vectorProcessing.chunkingMode}
+                                                                options={[
+                                                                    { label: 'Semântico (Recomendado)', value: 'semantico' },
+                                                                    { label: 'Hierárquico', value: 'hierarquico' },
+                                                                    { label: 'Híbrido', value: 'hibrido' },
+                                                                    { label: 'Básico (Fixo)', value: 'basico' }
+                                                                ]}
+                                                                onChange={(v) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, chunkingMode: v } })}
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            <Label>Estratégia</Label>
+                                                            <Select
+                                                                value={config.vectorProcessing.chunkingStrategy}
+                                                                options={[
+                                                                    { label: 'Parágrafo', value: 'paragraph' },
+                                                                    { label: 'Sentença', value: 'sentence' },
+                                                                    { label: 'Markdown Header', value: 'markdown' }
+                                                                ]}
+                                                                onChange={(v) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, chunkingStrategy: v } })}
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-4">
+                                                            <div className="flex justify-between">
+                                                                <Label>Tamanho do Chunk (Tokens)</Label>
+                                                                <span className="text-xs bg-gray-100 px-2 rounded">{config.vectorProcessing.chunkSize}</span>
+                                                            </div>
+                                                            <input
+                                                                type="range" min="128" max="2048" step="128"
+                                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                                                                value={config.vectorProcessing.chunkSize}
+                                                                onChange={(e) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, chunkSize: parseInt(e.target.value) } })}
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-4">
+                                                            <div className="flex justify-between">
+                                                                <Label>Overlap (Sobreposição)</Label>
+                                                                <span className="text-xs bg-gray-100 px-2 rounded">{config.vectorProcessing.chunkOverlap}</span>
+                                                            </div>
+                                                            <input
+                                                                type="range" min="0" max="512" step="16"
+                                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                                                                value={config.vectorProcessing.chunkOverlap}
+                                                                onChange={(e) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, chunkOverlap: parseInt(e.target.value) } })}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {vectorTab === 'quality' && (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-1">
+                                                        <div className="space-y-4">
+                                                            <div className="flex justify-between">
+                                                                <Label>Limiar de Relevância (0.0 - 1.0)</Label>
+                                                                <span className="text-xs bg-gray-100 px-2 rounded">{config.vectorProcessing.minRelevance}</span>
+                                                            </div>
+                                                            <input
+                                                                type="range" min="0.5" max="0.95" step="0.05"
+                                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                                                                value={config.vectorProcessing.minRelevance}
+                                                                onChange={(e) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, minRelevance: parseFloat(e.target.value) } })}
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-4">
+                                                            <div className="flex justify-between">
+                                                                <Label>Sensibilidade Estrutural (1-10)</Label>
+                                                                <span className="text-xs bg-gray-100 px-2 rounded">{config.vectorProcessing.structureSensitivity}</span>
+                                                            </div>
+                                                            <input
+                                                                type="range" min="1" max="10"
+                                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                                                                value={config.vectorProcessing.structureSensitivity}
+                                                                onChange={(e) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, structureSensitivity: parseInt(e.target.value) } })}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {vectorTab === 'embeddings' && (
+                                                    <div className="space-y-6 p-1">
+                                                        <div className="space-y-2">
+                                                            <Label>Modelo de Embedding</Label>
+                                                            <Select
+                                                                value={config.vectorProcessing.embeddingModel}
+                                                                options={[
+                                                                    { label: 'text-embedding-3-small (Rápido)', value: 'text-embedding-3-small' },
+                                                                    { label: 'text-embedding-3-large (Preciso)', value: 'text-embedding-3-large' },
+                                                                    { label: 'text-embedding-ada-002 (Legacy)', value: 'text-embedding-ada-002' }
+                                                                ]}
+                                                                onChange={(v) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, embeddingModel: v } })}
+                                                            />
+                                                        </div>
+                                                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                                            <div>
+                                                                <Label>Enable Reranking (Cohere/BGE)</Label>
+                                                                <p className="text-xs text-gray-500">Reordena resultados para maior precisão (mais lento)</p>
+                                                            </div>
+                                                            <Switch
+                                                                checked={config.vectorProcessing.enableReranking}
+                                                                onCheckedChange={(c) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, enableReranking: c } })}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
 

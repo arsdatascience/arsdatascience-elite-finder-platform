@@ -840,6 +840,21 @@ async function initializeDatabase() {
     } catch (hideSystemErr) {
       console.log('⚠️ Erro na migração 050:', hideSystemErr.message);
     }
+
+    // ============================================
+    // MIGRATION 051: Fix Visibility Swap
+    // ============================================
+    console.log('🔄 Verificando migração 051 (Fix Visibility Swap)...');
+    try {
+      const fixVisMigration = fs.readFileSync(path.join(__dirname, 'migrations', '051_fix_agent_visibility.sql'), 'utf8');
+      const statements = fixVisMigration.split(';').filter(stmt => stmt.trim().length > 0);
+      for (const stmt of statements) {
+        await pool.query(stmt);
+      }
+      console.log('✅ Migração 051 (Fix Visibility Swap) aplicada.');
+    } catch (fixVisErr) {
+      console.log('⚠️ Erro na migração 051:', fixVisErr.message);
+    }
   } catch (error) {
     console.error('⚠️  Database initialization error:', error.message);
     // Don't crash the app if schema already exists
