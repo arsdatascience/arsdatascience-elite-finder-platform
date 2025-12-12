@@ -67,67 +67,74 @@ export const PublicSalesCoach: React.FC<PublicSalesCoachProps> = ({ agent }) => 
         setIsLoading(true);
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/agents/public/${agent.slug}/chat`, {
+            // 1. Primary Chat with the visible agent (Simulated Customer)
+            const chatPromise = fetch(`${import.meta.env.VITE_API_URL}/api/agents/public/${agent.slug}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     messages: messages.concat(userMsg).map(m => ({ role: m.role, content: m.content })),
-                    sessionId: 'public-' + Date.now() // Unique per session-ish
+                    sessionId: 'public-' + Date.now()
                 })
             });
 
-            if (!response.ok) throw new Error('Falha ao enviar mensagem');
+            // 2. Parallel Shadow Analysis with "Elite Sales Coach"
+            // Using 'agent-sales-coach' as the permanent analyst
+            const analysisPromise = fetch(`${import.meta.env.VITE_API_URL}/api/agents/public/agent-sales-coach/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: [
+                        { role: 'system', content: 'You are an expert Sales Coach observing a negotiation. The "user" is the Salesperson. The "assistant" is the Customer. ANALYZE the Salesperson\'s performance. Return ONLY a pure JSON object (no markdown) with keys: sentiment (of the customer), buying_stage, detected_objections (array), coach_whisper (short advice to salesperson), next_best_action.' },
+                        ...messages.map(m => ({ role: m.role, content: m.content })),
+                        { role: 'user', content: userMsg.content }
+                    ],
+                    sessionId: 'analysis-' + Date.now()
+                })
+            });
 
-            const data = await response.json();
-            let rawContent = data.content;
-            let parsedAnalysis: AnalysisResult | null = null;
-            let cleanContent = rawContent;
+            const [chatResponse, analysisResponse] = await Promise.all([chatPromise, analysisPromise]);
 
-            // Attempt to extract JSON from response (The agent is instructed to return JSON)
-            // Sometimes models wrap JSON in ```json ... ```
+            if (!chatResponse.ok) throw new Error('Falha no chat');
+
+            const chatData = await chatResponse.json();
+
+            // Process Chat Response
+            let cleanContent = chatData.content;
+
+            // If the chatbot itself returns JSON (it shouldn't if it's the customer role, but safety check)
             try {
-                const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    parsedAnalysis = JSON.parse(jsonMatch[0]);
-
-                    // If the content was ONLY the JSON, we might want to display the "Coach Whisper" as the text, 
-                    // or if the agent provides a "response" field. The current prompt structure returns PURE JSON.
-                    // If pure JSON, the "message" to the user might be implicit or mapped.
-                    // However, usually we want the AI to reply AND coach.
-                    // The prompt says "Retorne JSON estrito". This means the User sees nothing?
-                    // Ah, for the "Sales Coach" (Shadowing), it's a silent observer.
-                    // BUT for "Roleplay", it should speak.
-                    // Let's assume for this "Coach" view, we display the 'coach_whisper' as the main insight, 
-                    // but we might need the "Simulated Customer" reply if it's roleplay.
-
-                    // If the agent is purely coaching, the user IS the salesperson.
-                    // If the agent IS the customer, it acts as customer + sends hidden metadata.
-
-                    // For now, let's treat the JSON as metadata and if there's text outside, show it.
-                    // If ONLY JSON, we show the JSON fields in the UI.
-
-                    // Check logic: The prompt `agent-sales-coach` is a "Director" analyzing the conversation.
-                    // So it likely shouldn't "speak" to the customer effectively, it speaks to the SALESPERSON.
-                    // So the `cleanContent` (what appears in chat) should be the `coach_whisper` or `next_best_action`.
-
-                    if (parsedAnalysis?.coach_whisper) {
-                        cleanContent = `💡 **Coach:** ${parsedAnalysis.coach_whisper}`;
-                    }
-                    setCurrentAnalysis(parsedAnalysis);
+                if (cleanContent.trim().startsWith('{')) {
+                    const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) cleanContent = JSON.parse(jsonMatch[0]).message || cleanContent;
                 }
-            } catch (e) {
-                console.warn('Could not parse JSON analysis', e);
-            }
+            } catch (e) { /* ignore */ }
 
             const botMsg: Message = {
                 id: Date.now().toString(),
                 role: 'assistant',
                 content: cleanContent,
-                timestamp: new Date(),
-                analysis: parsedAnalysis || undefined
+                timestamp: new Date()
             };
 
             setMessages(prev => [...prev, botMsg]);
+
+            // Process Analysis Response (Silent)
+            if (analysisResponse.ok) {
+                const analysisData = await analysisResponse.json();
+                try {
+                    let analysisJsonStr = analysisData.content;
+                    // Strip markdown code blocks if present
+                    analysisJsonStr = analysisJsonStr.replace(/```json/g, '').replace(/```/g, '');
+
+                    const jsonMatch = analysisJsonStr.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        const parsed = JSON.parse(jsonMatch[0]);
+                        setCurrentAnalysis(parsed);
+                    }
+                } catch (e) {
+                    console.warn('Failed to parse shadow analysis:', e);
+                }
+            }
 
         } catch (err) {
             console.error(err);
@@ -161,7 +168,7 @@ export const PublicSalesCoach: React.FC<PublicSalesCoachProps> = ({ agent }) => 
                     </div>
                     <div>
                         <h1 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                            {agent.name} <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">Modo Treinamento</span>
+                            {agent.name} <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full">Training Mode</span>
                         </h1>
                         <p className="text-xs text-gray-500">Sales Intelligence Powered by AIIAM</p>
                     </div>
@@ -209,7 +216,7 @@ export const PublicSalesCoach: React.FC<PublicSalesCoachProps> = ({ agent }) => 
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                placeholder="Digite sua mensagem (simule o vendedor)..."
+                                placeholder="Digite sua resposta de venda..."
                                 className="flex-1 bg-gray-100 border-0 rounded-full px-6 py-3 focus:ring-2 focus:ring-primary-500 outline-none text-gray-800"
                                 disabled={isLoading}
                             />
@@ -271,6 +278,11 @@ export const PublicSalesCoach: React.FC<PublicSalesCoachProps> = ({ agent }) => 
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        ) : isLoading ? (
+                            <div className="flex flex-col items-center justify-center h-64 text-center text-gray-400 space-y-4">
+                                <Sparkles size={32} className="opacity-20 animate-pulse text-purple-500" />
+                                <p className="text-sm">Analisando seu padrão de resposta...</p>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-64 text-center text-gray-400 space-y-4">
