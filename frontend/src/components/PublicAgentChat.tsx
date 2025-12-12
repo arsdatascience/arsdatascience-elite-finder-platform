@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Send, Paperclip, Bot, User, RefreshCw, AlertTriangle, Trash2, Download, FileJson, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
+import { PublicSalesCoach } from './PublicSalesCoach';
 
 interface Message {
     id: string;
@@ -168,6 +169,11 @@ export const PublicAgentChat: React.FC = () => {
 
     if (!agent) {
         return <div className="min-h-screen flex items-center justify-center bg-gray-50"><RefreshCw className="animate-spin text-primary-600" /></div>;
+    }
+
+    // Custom Template for Sales Coach
+    if (agent.slug.includes('sales-coach')) {
+        return <PublicSalesCoach agent={agent} />;
     }
 
     return (
