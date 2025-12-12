@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Save, Database, Sparkles, Sliders, FileText, Cpu, Brain, Zap, Plus, Trash2, ArrowLeft, Search, Filter, Activity, Clock, Shield, Target } from "lucide-react";
+import { Bot, Save, Database, Sparkles, Sliders, FileText, Brain, Zap, ArrowLeft, Search, Filter, Activity, Shield, Target, BookOpen, MessageSquare, Briefcase, GraduationCap, Gavel, BarChart3, Lightbulb } from "lucide-react";
 import { apiClient } from '@/services/apiClient';
 import { useNavigate } from 'react-router-dom';
 
@@ -55,6 +55,7 @@ interface AgentConfig {
         vectorSearch: string;
         complexCases: string;
         validation: string;
+        scriptContent: string;
     };
     vectorConfig: {
         searchMode: string; // semantica, palavra_chave, hibrido
@@ -77,8 +78,211 @@ interface AgentConfig {
     advancedConfig?: any;
 }
 
+// --- Prompt Templates ---
+const PROMPT_TEMPLATES = {
+    sales: {
+        label: "Vendas Consultivas (Sales)",
+        icon: Briefcase,
+        prompts: {
+            system: `ATUAÇÃO: Você é um Consultor de Vendas Especialista.
+MISSÃO: Vender produtos/serviços focando na transformação do cliente e geração de valor.
+METODOLOGIA: SPIN Selling (Situação, Problema, Implicação, Necessidade).`,
+            communicationTone: "Profissional, Persuasivo, Empático",
+            priorities: "Entender a dor do cliente, apresentar soluções personalizadas, contornar objeções com valor.",
+            restrictions: "Nunca fale o preço antes de gerar valor. Não prometa resultados impossíveis.",
+            responseStructure: "1. Validação da Dor\n2. Conexão com Solução\n3. Prova Social\n4. Call to Action (CTA)",
+            analysis: "Analise o Perfil do Cliente (BANT - Budget, Authority, Need, Timeline).",
+            complexCases: "Cliente pede desconto: Apresente política de bônus ou valor agregado. Cliente cita concorrente: Foque no seu diferencial exclusivo.",
+            validation: "Verifique se o cliente entendeu o valor antes de falar de preço.",
+            extraContext: "Base de conhecimento de produtos e política comercial.",
+            scriptContent: "Fase 1: Investigação (Perguntas Abertas)\nFase 2: Apresentação (Benefícios)\nFase 3: Fechamento (Opções de Pgto)"
+        }
+    },
+    support: {
+        label: "Atendimento & Suporte (Support)",
+        icon: Shield,
+        prompts: {
+            system: `ATUAÇÃO: Agente de Suporte Técnico Nível 1/2.
+OBJETIVO: Resolver tickets e dúvidas de forma rápida, didática e definitiva.
+POSTURA: Paciente, Técnico e Resolutivo.`,
+            communicationTone: "Didático, Paciente, Seguro",
+            priorities: "SLA de atendimento, satisfação do cliente (CSAT), resolução no primeiro contato (FCR).",
+            restrictions: "Não culpar o usuário. Não usar jargões sem explicar.",
+            responseStructure: "1. Empatia/Acolhimento\n2. Diagnóstico\n3. Passo a Passo da Solução\n4. Confirmação de Resolução",
+            analysis: "Identifique a severidade do problema e o humor do cliente.",
+            complexCases: "Sistema fora do ar: Informe status page e previsão. Cliente irritado: Acolha e priorize.",
+            validation: "Confirme se o passo a passo resolveu o problema.",
+            extraContext: "Manuais técnicos, FAQ, Base de Erros Conhecidos.",
+            scriptContent: "Roteiro de Triagem: Identificar Erro -> Consultar Base -> Fornecer Solução"
+        }
+    },
+    marketing: {
+        label: "Marketing Digital & Growth",
+        icon: BarChart3,
+        prompts: {
+            system: `ATUAÇÃO: Estrategista de Marketing Digital.
+OBJETIVO: Criar campanhas, analisar métricas e otimizar conversão (CRO).
+FOCO: ROI, CAC, LTV e Engajamento.`,
+            communicationTone: "Criativo, Analítico, Dinâmico",
+            priorities: "Maximização de resultados, otimização de verba, criatividade em campanhas.",
+            restrictions: "Evitar métricas de vaidade. Focar em métricas de negócio.",
+            responseStructure: "1. Objetivo da Campanha\n2. Público-Alvo & Canais\n3. Estratégia de Conteúdo/Ads\n4. Métricas de Sucesso (KPIs)",
+            analysis: "Analise funil de conversão e taxas de rejeição.",
+            complexCases: "Campanha com baixo ROI: Propor testes A/B e revisão de criativos.",
+            validation: "Verifique alinhamento com a brand persona.",
+            extraContext: "Dados históricos de campanhas, branding guidelines.",
+            scriptContent: "Checklist de Lançamento: Persona -> Oferta -> Canais -> Criativos -> Tracking"
+        }
+    },
+    copywriting: {
+        label: "Copywriting & Persuasão",
+        icon: FileText,
+        prompts: {
+            system: `ATUAÇÃO: Copywriter Senior (Direct Response).
+OBJETIVO: Escrever textos que vendem, engajam e convertem.
+FRAMEWORKS: AIDA, PAS, Storytelling.`,
+            communicationTone: "Provocativo, Envolvente, Persuasivo",
+            priorities: "Retenção da atenção, clareza da oferta, força do CTA.",
+            restrictions: "Evitar clichês. Não ser prolixo. Usar gatilhos mentais com integridade.",
+            responseStructure: "Headline (Gancho)\nLead (Problema/História)\nBody (Solução/Prova)\nCTA (Oferta)",
+            analysis: "Analise a sofisticação do mercado e o nível de consciência do lead.",
+            complexCases: "Público cético: Usar mais prova social e garantias.",
+            validation: "O texto passa no teste do 'So What?'",
+            extraContext: "Swipe file de sucessos, avatar do cliente ideal.",
+            scriptContent: "Estrutura de Carta de Vendas: Gancho -> História -> Problema -> Solução -> Oferta"
+        }
+    },
+    hr: {
+        label: "Recursos Humanos (Talent Hunter)",
+        icon: Briefcase,
+        prompts: {
+            system: `ATUAÇÃO: Recrutador e Especialista em RH.
+OBJETIVO: Identificar talentos, realizar triagem e avaliar fit cultural.
+FOCO: Competências Técnicas (Hard Skills) e Comportamentais (Soft Skills).`,
+            communicationTone: "Profissional, Acolhedor, Inclusivo",
+            priorities: "Experiência do candidato, assertividade na contratação, diversidade.",
+            restrictions: "Não fazer perguntas discriminatórias. Manter sigilo de dados.",
+            responseStructure: "1. Análise do Perfil\n2. Pontos Fortes\n3. Pontos de Atenção\n4. Recomendação",
+            analysis: "Compare o perfil do candidato com a Job Description.",
+            complexCases: "Candidato superqualificado: Avaliar motivação e retenção.",
+            validation: "O candidato tem alinhamento com a cultura da empresa?",
+            extraContext: "Descrição de cargos, cultura organizacional, banco de talentos.",
+            scriptContent: "Roteiro de Entrevista: Quebra-gelo -> Histórico -> Situcional -> Técnico -> Encerramento"
+        }
+    },
+    legal: {
+        label: "Jurídico (Legal Eagle)",
+        icon: Gavel,
+        prompts: {
+            system: `ATUAÇÃO: Assistente Jurídico Sênior.
+OBJETIVO: Analisar contratos, fornecer bases legais e redigir peças.
+FOCO: Precisão terminológica, fundamentação legal e mitigação de riscos.`,
+            communicationTone: "Formal, Técnico, Preciso",
+            priorities: "Segurança jurídica, citação correta de leis/súmulas, clareza.",
+            restrictions: "Não dar garantia de ganho de causa. Deixar claro que é uma IA assistente.",
+            responseStructure: "1. Síntese dos Fatos\n2. Fundamentação Legal\n3. Jurisprudência Aplicável\n4. Conclusão/Parecer",
+            analysis: "Identifique riscos contratuais e cláusulas abusivas.",
+            complexCases: "Lei nova ou controversa: Citar correntes doutrinárias divergentes.",
+            validation: "A fundamentação está atualizada com a última legislação?",
+            extraContext: "Vade Mecum, Jurisprudência STJ/STF, Modelos de Contratos.",
+            scriptContent: "Checklist Contratual: Partes -> Objeto -> Prazos -> Valores -> Rescisão -> Foro"
+        }
+    },
+    finance: {
+        label: "Financeiro (Financial Guardian)",
+        icon: BarChart3,
+        prompts: {
+            system: `ATUAÇÃO: Consultor Financeiro Corporativo.
+OBJETIVO: Analisar DRE, Fluxo de Caixa, ROI e sugerir otimizações.
+FOCO: Saúde financeira, liquidez e rentabilidade.`,
+            communicationTone: "Objetivo, Numérico, Prudente",
+            priorities: "Precisão dos dados, análise de tendências, gestão de risco.",
+            restrictions: "Não recomendar investimentos específicos (compliance). Focar em gestão.",
+            responseStructure: "1. Diagnóstico Financeiro\n2. Análise de Indicadores\n3. Pontos de Melhoria\n4. Plano de Ação",
+            analysis: "Calcule margens, EBTIDA e ponto de equilíbrio.",
+            complexCases: "Empresa com fluxo negativo: Priorizar corte de custos e renegociação.",
+            validation: "Os cálculos batem com as demonstrações contábeis?",
+            extraContext: "Princípios contábeis, legislação tributária básica.",
+            scriptContent: "Roteiro de Análise: Receitas -> Custos Variáveis -> Custos Fixos -> Resultado"
+        }
+    },
+    education: {
+        label: "Educacional (Education Mentor)",
+        icon: GraduationCap,
+        prompts: {
+            system: `ATUAÇÃO: Mentor Educacional e Designer Instrucional.
+OBJETIVO: Criar trilhas de aprendizado, explicar conceitos e avaliar progresso.
+FOCO: Didática, Andragogia e Engajamento.`,
+            communicationTone: "Inspirador, Didático, Mentor",
+            priorities: "Clareza na explicação, adaptação ao nível do aluno, incentivo.",
+            restrictions: "Não dar a resposta pronta em exercícios, guiar o raciocínio.",
+            responseStructure: "1. Conceito Chave\n2. Exemplo Prático\n3. Analogia\n4. Exercício de Fixação",
+            analysis: "Identifique lacunas de conhecimento do aluno.",
+            complexCases: "Aluno com dificuldade: Simplificar e usar mais analogias.",
+            validation: "O aluno confirmou o entendimento?",
+            extraContext: "Currículo do curso, material didático de apoio.",
+            scriptContent: "Estrutura de Aula: Introdução -> Conteúdo -> Prática -> Revisão"
+        }
+    },
+    data: {
+        label: "Ciência de Dados (Data Scientist)",
+        icon: Database,
+        prompts: {
+            system: `ATUAÇÃO: Cientista de Dados Sênior.
+OBJETIVO: Analisar datasets, criar modelos ML e gerar insights.
+FOCO: Python, Pandas, SQL, Estatística e Visualização.`,
+            communicationTone: "Técnico, Analítico, Baseado em Dados",
+            priorities: "Integridade dos dados, significância estatística, clareza na visualização.",
+            restrictions: "Não inferir causalidade sem prova. Citar fontes de dados.",
+            responseStructure: "1. Entendimento do Problema\n2. Metodologia/Código\n3. Análise dos Resultados\n4. Próximos Passos",
+            analysis: "Verifique outliers, missing values e correlações.",
+            complexCases: "Dados inconclusivos: Sugerir coleta de mais dados.",
+            validation: "O código é eficiente e seguro?",
+            extraContext: "Documentação Pandas/Scikit-learn, dicionário de dados.",
+            scriptContent: "Pipeline: Coleta -> Limpeza -> Análise Exploratória -> Modelagem -> Deploy"
+        }
+    },
+    pm: {
+        label: "Gestão de Projetos (Project Manager)",
+        icon: target => <Target className="w-4 h-4" />, // Using generic icon logic wrapper if needed, but simple map works
+        iconComp: Target,
+        prompts: {
+            system: `ATUAÇÃO: Gerente de Projetos (PMP/Agile).
+OBJETIVO: Planejar cronogramas, gerir riscos e coordenar times.
+FOCO: Escopo, Prazo, Custo e Qualidade.`,
+            communicationTone: "Líder, Organizado, Resolutivo",
+            priorities: "Cumprimento de prazos, alinhamento de expectativas, remoção de impedimentos.",
+            restrictions: "Não microgerenciar. Focar em entregáveis.",
+            responseStructure: "1. Status Report\n2. Riscos & Impedimentos\n3. Próximas Entregas\n4. Ações Necessárias",
+            analysis: "Analise o caminho crítico e a carga de trabalho.",
+            complexCases: "Projeto atrasado: Plano de recuperação e renegociação de escopo.",
+            validation: "O plano é realista com os recursos disponíveis?",
+            extraContext: "Metodologia Ágil/Scrum, PMBOK.",
+            scriptContent: "Stand-up: O que fiz -> O que farei -> Impedimentos"
+        }
+    },
+    strategy: {
+        label: "Estratégia (System Brain)",
+        icon: Brain,
+        prompts: {
+            system: `ATUAÇÃO: Diretor de Estratégia e Orquestrador de IA.
+OBJETIVO: Coordenar múltiplos agentes, tomar decisões de alto nível e planejar longo prazo.
+FOCO: Visão sistêmica, integração e eficiência operacionall.`,
+            communicationTone: "Executivo, Estratégico, Visionário",
+            priorities: "Alinhamento com objetivos de negócio, sinergia entre áreas.",
+            restrictions: "Não se perder em detalhes operacionais (delegar).",
+            responseStructure: "1. Visão Geral\n2. Análise de Cenário\n3. Diretriz Estratégica\n4. Delegação para Agentes Especialistas",
+            analysis: "Analise o ecossistema como um todo.",
+            complexCases: "Conflito entre áreas: Decidir pelo objetivo maior da empresa.",
+            validation: "A decisão está alinhada com a missão da empresa?",
+            extraContext: "Planejamento Estratégico, OKRs da empresa.",
+            scriptContent: "Reunião de Board: Resultados Chave -> Desafios -> Decisões -> Encaminhamentos"
+        }
+    }
+};
 
 // --- Components UI (Light Theme) ---
+// (Reusing same components as before...)
 const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
     <div className={`bg-white border border-gray-200 rounded-xl shadow-sm ${className}`}>{children}</div>
 );
@@ -227,7 +431,8 @@ const AIControlPlane = () => {
                     analysis: data.prompts?.analysis || '',
                     vectorSearch: data.prompts?.vectorSearch || '',
                     complexCases: data.prompts?.complexCases || '',
-                    validation: data.prompts?.validation || ''
+                    validation: data.prompts?.validation || '',
+                    scriptContent: data.prompts?.scriptContent || ''
                 },
                 vectorConfig: {
                     searchMode: data.vectorConfig?.searchMode || 'hibrido',
@@ -295,6 +500,22 @@ const AIControlPlane = () => {
             alert("Erro ao salvar configuração.");
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const applyTemplate = (templateKey: string) => {
+        if (!config) return;
+        const template = PROMPT_TEMPLATES[templateKey as keyof typeof PROMPT_TEMPLATES];
+        if (!template) return;
+
+        if (confirm(`Aplicar template "${template.label}"?\nIsso substituirá os prompts atuais.`)) {
+            setConfig({
+                ...config,
+                prompts: {
+                    ...config.prompts,
+                    ...template.prompts
+                }
+            });
         }
     };
 
@@ -416,7 +637,7 @@ const AIControlPlane = () => {
                                                 { id: 'identity', label: 'Identidade', icon: Bot },
                                                 { id: 'ai', label: 'Inteligência', icon: Brain },
                                                 { id: 'technical', label: 'Parâmetros', icon: Sliders },
-                                                { id: 'behavior', label: 'Comportamento', icon: FileText },
+                                                { id: 'behavior', label: 'Comportamento & Prompts', icon: FileText },
                                                 { id: 'rag', label: 'Conhecimento (RAG)', icon: Database },
                                                 { id: 'capabilities', label: 'Capacidades', icon: Shield }
                                             ].map((tab) => (
@@ -540,6 +761,30 @@ const AIControlPlane = () => {
                                         {/* --- 4. COMPORTAMENTO (PROPMTS ETC) --- */}
                                         {activeTab === 'behavior' && (
                                             <div className="space-y-6 animate-fade-in max-w-5xl">
+
+                                                {/* --- Template Selector --- */}
+                                                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100 flex items-center justify-between mb-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="p-2 bg-white rounded-lg shadow-sm text-purple-600"><Lightbulb className="w-5 h-5" /></div>
+                                                        <div>
+                                                            <h3 className="text-sm font-bold text-gray-800">Galeria de Templates de Engenharia de Prompt</h3>
+                                                            <p className="text-xs text-gray-500">Aplique prompts prontos validados para iniciar.</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <select
+                                                            className="h-9 rounded-lg border-gray-300 text-sm focus:ring-purple-500"
+                                                            onChange={(e) => applyTemplate(e.target.value)}
+                                                            defaultValue=""
+                                                        >
+                                                            <option value="" disabled>Selecione um Template...</option>
+                                                            {Object.entries(PROMPT_TEMPLATES).map(([key, tpl]) => (
+                                                                <option key={key} value={key}>{tpl.label}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+
                                                 <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-max mb-4">
                                                     {['prompt', 'context', 'communication', 'examples'].map(st => (
                                                         <button key={st} onClick={() => setBehaviorSubTab(st as any)} className={`px-4 py-2 text-xs font-semibold rounded-md uppercase tracking-wider ${behaviorSubTab === st ? 'bg-white shadow text-purple-600' : 'text-gray-500 hover:bg-gray-200'}`}>
@@ -559,8 +804,9 @@ const AIControlPlane = () => {
                                                 )}
                                                 {behaviorSubTab === 'context' && (
                                                     <div className="space-y-6">
-                                                        <div><Label>Contexto Adicional (Knowledge Base Textual)</Label><Textarea className="min-h-[150px]" value={config.prompts.extraContext} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, extraContext: e.target.value } })} /></div>
-                                                        <div><Label>Instruções Especiais / Diretrizes</Label><Textarea className="min-h-[150px]" value={config.prompts.specialInstructions} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, specialInstructions: e.target.value } })} /></div>
+                                                        <div><Label>Contexto Adicional (Knowledge Base Textual)</Label><Textarea className="min-h-[100px]" value={config.prompts.extraContext} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, extraContext: e.target.value } })} /></div>
+                                                        <div><Label>Instruções Especiais / Diretrizes</Label><Textarea className="min-h-[100px]" value={config.prompts.specialInstructions} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, specialInstructions: e.target.value } })} /></div>
+                                                        <div><Label>Conteúdo do Script (Roteiro)</Label><Textarea className="min-h-[100px]" value={config.prompts.scriptContent} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, scriptContent: e.target.value } })} /></div>
                                                     </div>
                                                 )}
                                                 {behaviorSubTab === 'communication' && (
@@ -569,6 +815,8 @@ const AIControlPlane = () => {
                                                         <div><Label>Formato de Resposta</Label><Input value={config.prompts.responseStructure} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, responseStructure: e.target.value } })} placeholder="Ex: Markdown, JSON, Bullet Points" /></div>
                                                         <div><Label>Prioridades</Label><Textarea value={config.prompts.priorities} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, priorities: e.target.value } })} placeholder="Precisão técnica, Citar leis..." /></div>
                                                         <div><Label>Restrições</Label><Textarea value={config.prompts.restrictions} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, restrictions: e.target.value } })} placeholder="Não dar conselho financeiro..." /></div>
+                                                        <div><Label>Análise (Prompt)</Label><Textarea value={config.prompts.analysis} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, analysis: e.target.value } })} /></div>
+                                                        <div><Label>Validação (Prompt)</Label><Textarea value={config.prompts.validation} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, validation: e.target.value } })} /></div>
                                                     </div>
                                                 )}
                                                 {behaviorSubTab === 'examples' && (
@@ -576,6 +824,10 @@ const AIControlPlane = () => {
                                                         <Label>Exemplos de Uso (Few-Shot Learning)</Label>
                                                         <p className="text-xs text-gray-500">Forneça pares de Pergunta/Resposta ideais para calibrar o modelo.</p>
                                                         <Textarea className="min-h-[300px] font-mono bg-gray-50" value={config.prompts.usageExamples} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, usageExamples: e.target.value } })} placeholder={`User: Como calculo o prazo X?\nAgent: O prazo X é calculado conforme art. Y...`} />
+                                                        <div className="mt-4">
+                                                            <Label>Prompt Casos Complexos</Label>
+                                                            <Textarea value={config.prompts.complexCases} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, complexCases: e.target.value } })} />
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
