@@ -20,18 +20,10 @@ CREATE TABLE IF NOT EXISTS data_source_permissions (
 );
 
 -- Seed Data Sources provided by User
-INSERT INTO data_sources (name, type, connection_config) VALUES 
-('Crossover Protocol (App DB)', 'postgres', '{"connectionString": "postgresql://postgres:aYLfhaDtABXovCxhPjBOFObCYQTgMvfZ@crossover.proxy.rlwy.net:59957/railway"}'),
-('Tramway/Maglev (Ops DB)', 'postgres', '{"connectionString": "postgresql://postgres:llaKYzXGMyByDmdrFYwPyZBegwGnjeON@maglev.proxy.rlwy.net:29278/railway"}'),
-('Neural Memory (Qdrant)', 'qdrant', '{"url": "https://c21e6a5b-298d-483b-82f4-00aeff5edabe.us-east4-0.gcp.cloud.qdrant.io:6333", "apiKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.tr20ppnyxa1Zrz5cyaLAVyEvfMGBIeFbTvSKB4q25FE"}')
-ON CONFLICT (id) DO UPDATE 
-SET connection_config = EXCLUDED.connection_config, updated_at = NOW();
--- Note: Logic above might fail if ID not specified? "ON CONFLICT (id)" relies on ID match. 
--- Better to use Name if unique, or just simple insert if empty.
--- Since this is "seed", let's use a robust Upsert based on name.
-
+-- Idempotent approach: Delete first, then Insert
 DELETE FROM data_sources WHERE name IN ('Crossover Protocol (App DB)', 'Tramway/Maglev (Ops DB)', 'Neural Memory (Qdrant)');
+
 INSERT INTO data_sources (name, type, connection_config) VALUES 
 ('Crossover Protocol (App DB)', 'postgres', '{"connectionString": "postgresql://postgres:aYLfhaDtABXovCxhPjBOFObCYQTgMvfZ@crossover.proxy.rlwy.net:59957/railway"}'),
 ('Tramway/Maglev (Ops DB)', 'postgres', '{"connectionString": "postgresql://postgres:llaKYzXGMyByDmdrFYwPyZBegwGnjeON@maglev.proxy.rlwy.net:29278/railway"}'),
-('Neural Memory (Qdrant)', 'qdrant', '{"url": "https://c21e6a5b-298d-483b-82f4-00aeff5edabe.us-east4-0.gcp.cloud.qdrant.io:6333", "apiKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.tr20ppnyxa1Zrz5cyaLAVyEvfMGBIeFbTvSKB4q25FE"}');
+('Neural Memory (Qdrant)', 'qdrant', '{"url": "https://e9459d08-5654-4794-a278-b3251bfbce21.us-east4-0.gcp.cloud.qdrant.io:6333", "apiKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.GVIPFCWOEbpQlYdhK4i0aOEZCuXIv3tNO5ALBZFjx0Q"}');
