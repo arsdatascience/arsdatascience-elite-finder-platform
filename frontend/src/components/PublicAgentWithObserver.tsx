@@ -32,7 +32,7 @@ interface LoggerAgentProps {
     observerSlug?: string; // Slug of the agent acting as the observer ("System Brain")
 }
 
-export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, observerSlug = 'elite-sales-coach' }) => { // Default to sales coach if not specified, or 'system-brain'
+export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, observerSlug = 'system-brain' }) => { // Default to system-brain
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -79,13 +79,16 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
             });
 
             // 2. Parallel Shadow Analysis with Observer (System Brain / Orchestrator)
-            // We ask the observer to analyze the interaction
+            // The prompt is now fetched from the DB for 'system-brain' slug.
             const analysisPromise = fetch(`${import.meta.env.VITE_API_URL}/api/agents/public/${observerSlug}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     messages: [
-                        { role: 'system', content: `You are the SYSTEM ORCHESTRATOR observing a conversation between a User and an Agent named "${agent.name}". ANALYZE the interaction. Return ONLY a pure JSON object (no markdown) with keys: sentiment (of user), buying_stage, detected_objections, coach_whisper (advice/insight), next_best_action.` },
+                        {
+                            role: 'system',
+                            content: `CONTEXT: User is chatting with Agent: "${agent.name}" (${agent.description}).`
+                        },
                         ...messages.map(m => ({ role: m.role, content: m.content })),
                         { role: 'user', content: userMsg.content }
                     ],
