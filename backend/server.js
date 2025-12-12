@@ -118,6 +118,11 @@ const stripeController = require('./stripeController');
 // Webhook Stripe (Precisa ser antes do express.json() global para validar assinatura)
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), stripeController.handleWebhook);
 
+// --- PUBLIC AGENT ROUTES (No Auth) ---
+const publicAgentController = require('./controllers/publicAgentController');
+app.get('/api/agents/public/:slug', publicAgentController.getAgentBySlug);
+app.post('/api/agents/public/:slug/chat', publicAgentController.handlePublicChat);
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
