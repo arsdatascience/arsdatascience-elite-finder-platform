@@ -926,6 +926,36 @@ async function initializeDatabase() {
     } catch (optimizeErr) {
       console.log('⚠️ Erro na migração 055:', optimizeErr.message);
     }
+
+    // ============================================
+    // MIGRATION 056: Create System Brain
+    // ============================================
+    console.log('🔄 Verificando migração 056 (Create System Brain)...');
+    try {
+      const systemBrainMigration = fs.readFileSync(path.join(__dirname, 'migrations', '056_create_system_brain.sql'), 'utf8');
+      const statements = systemBrainMigration.split(';').filter(stmt => stmt.trim().length > 0);
+      for (const stmt of statements) {
+        await pool.query(stmt);
+      }
+      console.log('✅ Migração 056 (Create System Brain) aplicada.');
+    } catch (brainErr) {
+      console.log('⚠️ Erro na migração 056:', brainErr.message);
+    }
+
+    // ============================================
+    // MIGRATION 057: Update User Constraint
+    // ============================================
+    console.log('🔄 Verificando migração 057 (Update User Constraint)...');
+    try {
+      const constraintMigration = fs.readFileSync(path.join(__dirname, 'migrations', '057_update_user_status_constraint.sql'), 'utf8');
+      const statements = constraintMigration.split(';').filter(stmt => stmt.trim().length > 0);
+      for (const stmt of statements) {
+        await pool.query(stmt);
+      }
+      console.log('✅ Migração 057 (Update User Constraint) aplicada.');
+    } catch (constraintErr) {
+      console.log('⚠️ Erro na migração 057:', constraintErr.message);
+    }
   } catch (error) {
     console.error('⚠️  Database initialization error:', error.message);
     // Don't crash the app if schema already exists

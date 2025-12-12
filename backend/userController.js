@@ -428,6 +428,11 @@ const updateTeamMember = async (req, res) => {
             addField('address_zip', updates.address.zip);
         }
 
+        if (updates.tenant_id !== undefined) {
+            const tId = updates.tenant_id === '' ? null : parseInt(updates.tenant_id);
+            addField('tenant_id', tId);
+        }
+
         if (updates.permissions) {
             addField('permissions', JSON.stringify(updates.permissions));
         }
