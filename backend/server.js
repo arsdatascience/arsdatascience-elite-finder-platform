@@ -160,7 +160,7 @@ app.delete('/api/audio/analysis/:id', authenticateToken, audioController.deleteA
 const mlAgentRoutes = require('./routes/mlAgent.routes');
 const agentsController = require('./agentsController'); // Chatbot/Agent Management
 app.use('/api/ml-agent', mlAgentRoutes);
-app.use('/api/chatbots', authenticateToken, agentsController);
+app.use('/api/agents', authenticateToken, agentsController);
 
 // Analytics Routes (Market Analysis)
 const analyticsRoutes = require('./routes/analyticsRoutes');
