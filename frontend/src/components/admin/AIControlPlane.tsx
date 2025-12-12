@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Save, Database, Sparkles, Sliders, FileText, Brain, Zap, ArrowLeft, Search, Filter, Activity, Shield, Target, BookOpen, MessageSquare, Briefcase, GraduationCap, Gavel, BarChart3, Lightbulb, Server, RefreshCw } from "lucide-react";
+import { Bot, Save, Database, Sparkles, Sliders, FileText, Brain, ArrowLeft, Search, Activity, Shield, Target, Briefcase, GraduationCap, Gavel, BarChart3, Lightbulb, Server } from "lucide-react";
 import { apiClient } from '@/services/apiClient';
 import { useNavigate } from 'react-router-dom';
+import { AIProvider, AI_MODELS } from '@/constants/aiModels';
 
 // --- Types ---
 interface Agent {
@@ -770,17 +771,35 @@ const AIControlPlane = () => {
                                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                     <div>
                                                         <Label>Provedor</Label>
-                                                        <Select value={config.aiConfig.provider} options={[{ label: 'OpenAI', value: 'openai' }, { label: 'Anthropic', value: 'anthropic' }, { label: 'Google', value: 'google' }]} onChange={v => setConfig({ ...config, aiConfig: { ...config.aiConfig, provider: v } })} />
+                                                        <Select
+                                                            value={config.aiConfig.provider}
+                                                            options={[
+                                                                { label: 'OpenAI (GPT)', value: AIProvider.OPENAI },
+                                                                { label: 'Google (Gemini)', value: AIProvider.GEMINI },
+                                                                { label: 'Anthropic (Claude)', value: AIProvider.ANTHROPIC }
+                                                            ]}
+                                                            onChange={v => {
+                                                                // When provider changes, reset model to first available or default
+                                                                const newProvider = v as AIProvider;
+                                                                const defaultModel = AI_MODELS[newProvider]?.[0]?.id || '';
+                                                                setConfig({
+                                                                    ...config,
+                                                                    aiConfig: {
+                                                                        ...config.aiConfig,
+                                                                        provider: newProvider,
+                                                                        model: defaultModel
+                                                                    }
+                                                                });
+                                                            }}
+                                                        />
                                                     </div>
                                                     <div>
                                                         <Label>Modelo</Label>
-                                                        <Select value={config.aiConfig.model} options={[
-                                                            { label: 'GPT-4o', value: 'gpt-4o' },
-                                                            { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' },
-                                                            { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022' },
-                                                            { label: 'Gemini 1.5 Pro', value: 'gemini-1.5-pro' },
-                                                            { label: 'Gemini Pro', value: 'gemini-pro' },
-                                                        ]} onChange={v => setConfig({ ...config, aiConfig: { ...config.aiConfig, model: v } })} />
+                                                        <Select
+                                                            value={config.aiConfig.model}
+                                                            options={AI_MODELS[config.aiConfig.provider as AIProvider]?.map(m => ({ label: m.name, value: m.id })) || []}
+                                                            onChange={v => setConfig({ ...config, aiConfig: { ...config.aiConfig, model: v } })}
+                                                        />
                                                     </div>
                                                     <div>
                                                         <Label>Tokens Máximos</Label>
