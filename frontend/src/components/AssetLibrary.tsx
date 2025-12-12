@@ -377,32 +377,32 @@ export const AssetLibrary: React.FC = () => {
                                     onChange={(e) => setNewFolderBucket(e.target.value)}
                                     className="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-primary-500"
                                 >
-                                    <option value="">Padrão do Sistema</option>
-                                    <option value="bucket-elite-finder-9-zcci">Elite Finder (Tenant 1 Exclusive)</option>
-                                    <option value="test-bucket">Test Bucket (Optional)</option>
+                                    <option value="">S3 Sistema (Padrão)</option>
+                                    <option value="bucket-elite-finder-9-zcci">S3 Elite Finder</option>
                                 </select>
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Define onde os arquivos desta pasta serão salvos fisicamente.
-                                </p>
+                                    O "S3 Sistema" é o bucket padrão configurado no ambiente (spacious-chamber).
+                                </p>                                </p>
                             </div>
                         )}
-                        <div className="flex justify-end gap-3">
-                            <button
-                                onClick={() => setShowNewFolderModal(false)}
-                                className="px-4 py-2 text-gray-500 hover:text-gray-700 transition-colors"
-                            >
-                                Cancelar
-                            </button>
-                            <button
-                                onClick={handleCreateFolder}
-                                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors font-medium"
-                            >
-                                Criar
-                            </button>
-                        </div>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            onClick={() => setShowNewFolderModal(false)}
+                            className="px-4 py-2 text-gray-500 hover:text-gray-700 transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleCreateFolder}
+                            className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors font-medium"
+                        >
+                            Criar
+                        </button>
                     </div>
                 </div>
-            )}
-        </div>
+                </div>
+    )
+}
+        </div >
     );
 };
