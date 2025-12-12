@@ -261,13 +261,14 @@ export const PublicAgentChat: React.FC = () => {
                                 ) : (
                                     <ReactMarkdown
                                         components={{
-                                            code({ node, inline, className, children, ...props }) {
+                                            code(props: any) {
+                                                const { node, inline, className, children, ...rest } = props;
                                                 return !inline ? (
                                                     <div className="bg-gray-900 rounded-md p-3 my-2 overflow-x-auto text-xs font-mono text-gray-200">
                                                         {children}
                                                     </div>
                                                 ) : (
-                                                    <code className={`${className} bg-black/10 px-1 py-0.5 rounded font-mono text-xs`} {...props}>
+                                                    <code className={`${className} bg-black/10 px-1 py-0.5 rounded font-mono text-xs`} {...rest}>
                                                         {children}
                                                     </code>
                                                 );
