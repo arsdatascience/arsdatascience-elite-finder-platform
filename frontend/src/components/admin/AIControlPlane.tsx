@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Save, Database, Sparkles, MessageSquare, RefreshCw, Sliders, FileText, Cpu, Brain, Zap, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Bot, Save, Database, Sparkles, Sliders, FileText, Cpu, Brain, Zap, Plus, Trash2, ArrowLeft, Search, Filter, Activity, Clock, Shield, Target } from "lucide-react";
 import { apiClient } from '@/services/apiClient';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,50 +16,63 @@ interface Agent {
 }
 
 interface AgentConfig {
-    basic: {
+    identity: {
         name: string;
-        description: string;
         category: string;
-        level: number;
-        active: boolean;
+        description: string;
         class: string;
+        specializationLevel: number;
+        status: boolean; // active
+        specialtyArea: string;
+        specificTools: string[];
+        specializationFilters: string[];
     };
     aiConfig: {
         provider: string;
         model: string;
         temperature: number;
+        maxTokens: number;
         topP: number;
         topK: number;
-        maxTokens: number;
-        timeout: number;
-        retries: number;
-        frequencyPenalty: number;
-        presencePenalty: number;
         seed: number | null;
         jsonMode: boolean;
-    };
-    vectorProcessing: {
-        chunkingMode: string;
-        chunkSize: number;
-        structureSensitivity: number;
-        minRelevance: number;
-        conceptWeight: number;
-        autoFineTuning: boolean;
-        embeddingModel: string;
-        enableReranking: boolean;
-        chunkingStrategy: string;
-        chunkOverlap: number;
-        maxChunkSize: number;
+        frequencyPenalty: number;
+        presencePenalty: number;
+        timeout: number;
+        retries: number;
     };
     prompts: {
         system: string;
-        vectorSearch: string;
+        extraContext: string;
+        specialInstructions: string;
+        responseStructure: string; // formato_resposta
+        communicationTone: string;
+        priorities: string;
+        restrictions: string;
+        usageExamples: string;
+        // Legacy/Other
         analysis: string;
-        responseStructure: string;
+        vectorSearch: string;
         complexCases: string;
         validation: string;
     };
-    capabilities: string[];
+    vectorConfig: {
+        searchMode: string; // semantica, palavra_chave, hibrido
+        docLimit: number;
+        enableReranking: boolean;
+        relevanceWeight: number; // 0-1
+        minRelevance: number; // similarity_threshold
+        structureSensitivity: number; // 1-10
+        useCache: boolean;
+        aggregationMethod: string;
+        // Advanced / Technical (Keep for heavy lifting)
+        chunkingMode: string;
+        chunkSize: number;
+        chunkOverlap: number;
+        chunkingStrategy: string;
+        embeddingModel: string;
+        maxChunkSize: number;
+    };
     whatsappConfig?: any;
     advancedConfig?: any;
 }
@@ -70,13 +83,15 @@ const Card = ({ children, className = "" }: { children: React.ReactNode; classNa
     <div className={`bg-white border border-gray-200 rounded-xl shadow-sm ${className}`}>{children}</div>
 );
 
-const Button = ({ onClick, children, disabled = false, variant = "primary", className = "" }: { onClick?: () => void; children: React.ReactNode; disabled?: boolean; variant?: "primary" | "outline" | "ghost" | "danger"; className?: string }) => {
+const Button = ({ onClick, children, disabled = false, variant = "primary", className = "" }: { onClick?: () => void; children: React.ReactNode; disabled?: boolean; variant?: "primary" | "outline" | "ghost" | "danger" | "success" | "warning"; className?: string }) => {
     const baseClass = "inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2";
     const variants = {
-        primary: "bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 shadow-md",
+        primary: "bg-purple-600 text-white hover:bg-purple-700 shadow-sm",
         outline: "border border-gray-300 bg-white hover:bg-gray-50 text-gray-700",
         ghost: "hover:bg-gray-100 text-gray-600",
-        danger: "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+        danger: "bg-red-50 text-red-600 hover:bg-red-100 border border-red-200",
+        success: "bg-green-600 text-white hover:bg-green-700 shadow-sm",
+        warning: "bg-amber-100 text-amber-800 hover:bg-amber-200 border border-amber-200"
     };
     return (
         <button onClick={onClick} disabled={disabled} className={`${baseClass} ${variants[variant]} ${className}`}>
@@ -97,18 +112,28 @@ const Label = ({ children, className = "" }: { children: React.ReactNode; classN
     <label className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-700 ${className}`}>{children}</label>
 );
 
-const Select = ({ value, onChange, options }: { value: string; onChange: (val: string) => void; options: { label: string; value: string }[] }) => (
+const Select = ({ value, onChange, options, multiple = false }: { value: string | string[]; onChange: (val: any) => void; options: { label: string; value: string }[]; multiple?: boolean }) => (
     <div className="relative">
         <select
+            multiple={multiple}
             value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="flex h-10 w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 text-gray-900 appearance-none"
+            onChange={(e) => {
+                if (multiple) {
+                    const selected = Array.from(e.target.selectedOptions, option => option.value);
+                    onChange(selected);
+                } else {
+                    onChange(e.target.value);
+                }
+            }}
+            className={`flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:cursor-not-allowed disabled:opacity-50 text-gray-900 appearance-none ${multiple ? 'h-auto min-h-[120px]' : 'h-10'}`}
         >
             {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
-        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-        </div>
+        {!multiple && (
+            <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+        )}
     </div>
 );
 
@@ -137,8 +162,11 @@ const AIControlPlane = () => {
     const [config, setConfig] = useState<AgentConfig | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'info' | 'prompts' | 'technical' | 'vector' | 'capabilities'>('info');
-    const [vectorTab, setVectorTab] = useState<'chunking' | 'quality' | 'finetuning' | 'embeddings'>('chunking');
+
+    // Tabs aligned with User Requirements
+    const [activeTab, setActiveTab] = useState<'identity' | 'ai' | 'technical' | 'behavior' | 'rag' | 'capabilities'>('identity');
+    const [behaviorSubTab, setBehaviorSubTab] = useState<'prompt' | 'context' | 'communication' | 'examples'>('prompt');
+
 
     useEffect(() => {
         fetchAgents();
@@ -146,12 +174,9 @@ const AIControlPlane = () => {
 
     const fetchAgents = async () => {
         try {
-            // Fetch ALL agents including System Agents using the new query param
             const res = await apiClient.get('/agents?include_system=true');
             const allAgents = res.data;
-            // Filter to show primarily System Agents or sort them to top
-            // For this Admin view, we might want to see ONLY system agents or distinct them clearly
-            // Let's keep all but prioritize system agents in UI
+            // Filter: Prioritize displaying IsSystem=true for this Admin Panel, but keep all reachable
             setAgents(allAgents);
         } catch (err) {
             console.error("Failed to load agents", err);
@@ -164,54 +189,63 @@ const AIControlPlane = () => {
             const res = await apiClient.get(`/agents/${agentId}`);
             const data = res.data;
 
-            // Extract capabilities from specialized storage or default
-            const capabilities = data.advancedConfig?.capabilities || data.aiConfig?.capabilities || ['Análise de documentos', 'Geração de insights'];
-
             setConfig({
-                basic: {
-                    name: data.identity?.name || data.name,
-                    description: data.identity?.description || data.description,
-                    category: data.identity?.category || data.category,
-                    class: data.identity?.class || 'SystemAgent',
-                    level: data.identity?.specializationLevel || 3,
-                    active: data.identity?.status === 'active'
+                identity: {
+                    name: data.identity?.name || '',
+                    category: data.identity?.category || '',
+                    description: data.identity?.description || '',
+                    class: data.identity?.class || 'AgentePadrao',
+                    specializationLevel: data.identity?.specializationLevel || 3,
+                    status: data.identity?.status === 'active',
+                    specialtyArea: data.identity?.specialtyArea || '',
+                    specificTools: data.identity?.specificTools || [],
+                    specializationFilters: data.identity?.specializationFilters || []
                 },
                 aiConfig: {
+                    provider: data.aiConfig?.provider || 'openai',
                     model: data.aiConfig?.model || 'gpt-4o',
                     temperature: data.aiConfig?.temperature || 0.7,
-                    provider: data.aiConfig?.provider || 'openai',
+                    maxTokens: data.aiConfig?.maxTokens || 2000,
                     topP: data.aiConfig?.topP || 0.95,
                     topK: data.aiConfig?.topK || 10,
-                    maxTokens: data.aiConfig?.maxTokens || 2000,
-                    timeout: data.aiConfig?.timeout || 60,
-                    retries: data.aiConfig?.retries || 3,
+                    seed: data.aiConfig?.seed || null,
+                    jsonMode: data.aiConfig?.jsonMode || false,
                     frequencyPenalty: data.aiConfig?.frequencyPenalty || 0.0,
                     presencePenalty: data.aiConfig?.presencePenalty || 0.0,
-                    seed: data.aiConfig?.seed || null,
-                    jsonMode: data.aiConfig?.jsonMode || false
-                },
-                vectorProcessing: {
-                    chunkingMode: data.vectorConfig?.chunkingMode || 'semantico',
-                    chunkSize: data.vectorConfig?.chunkSize || 275,
-                    structureSensitivity: data.vectorConfig?.sensitivity || 7,
-                    minRelevance: data.vectorConfig?.relevanceThreshold || 0.8,
-                    conceptWeight: 70,
-                    autoFineTuning: true,
-                    embeddingModel: 'text-embedding-3-small',
-                    enableReranking: data.vectorConfig?.enableReranking || false,
-                    chunkingStrategy: data.vectorConfig?.chunkingStrategy || 'paragraph',
-                    chunkOverlap: data.vectorConfig?.chunkOverlap || 100,
-                    maxChunkSize: data.vectorConfig?.maxChunkSize || 2048
+                    timeout: data.aiConfig?.timeout || 60,
+                    retries: data.aiConfig?.retries || 3
                 },
                 prompts: {
                     system: data.prompts?.system || '',
-                    analysis: data.prompts?.analysis || '',
+                    extraContext: data.prompts?.extraContext || '',
+                    specialInstructions: data.prompts?.specialInstructions || '',
+                    communicationTone: data.prompts?.communicationTone || '',
+                    priorities: data.prompts?.priorities || '',
+                    restrictions: data.prompts?.restrictions || '',
+                    usageExamples: data.prompts?.usageExamples || '',
                     responseStructure: data.prompts?.responseStructure || '',
+                    analysis: data.prompts?.analysis || '',
                     vectorSearch: data.prompts?.vectorSearch || '',
                     complexCases: data.prompts?.complexCases || '',
                     validation: data.prompts?.validation || ''
                 },
-                capabilities: capabilities,
+                vectorConfig: {
+                    searchMode: data.vectorConfig?.searchMode || 'hibrido',
+                    docLimit: data.vectorConfig?.docLimit || 5,
+                    enableReranking: data.vectorConfig?.enableReranking || true,
+                    relevanceWeight: data.vectorConfig?.relevanceWeight || 0.7,
+                    minRelevance: data.vectorConfig?.minRelevance || 0.7, // limiar_similaridade
+                    structureSensitivity: data.vectorConfig?.structureSensitivity || 7,
+                    useCache: data.vectorConfig?.useCache !== false,
+                    aggregationMethod: data.vectorConfig?.aggregationMethod || 'concatenacao',
+                    // Technical internals
+                    chunkingMode: data.vectorConfig?.chunkingMode || 'semantico',
+                    chunkSize: data.vectorConfig?.chunkSize || 512,
+                    chunkOverlap: data.vectorConfig?.chunkOverlap || 50,
+                    chunkingStrategy: data.vectorConfig?.chunkingStrategy || 'paragraph',
+                    embeddingModel: data.vectorConfig?.embeddingModel || 'text-embedding-3-small',
+                    maxChunkSize: data.vectorConfig?.maxChunkSize || 2048
+                },
                 whatsappConfig: data.whatsappConfig || {},
                 advancedConfig: data.advancedConfig || {}
             });
@@ -231,52 +265,29 @@ const AIControlPlane = () => {
         if (!selectedAgent || !config) return;
         setIsSaving(true);
         try {
-            const updatedAdvancedConfig = {
-                ...config.advancedConfig,
-                capabilities: config.capabilities
-            };
-
             const payload = {
                 identity: {
-                    name: config.basic.name,
-                    description: config.basic.description,
-                    category: config.basic.category,
-                    class: config.basic.class,
-                    specializationLevel: config.basic.level,
-                    status: config.basic.active ? 'active' : 'inactive',
-                    clientId: selectedAgent.client_id
+                    name: config.identity.name,
+                    description: config.identity.description,
+                    category: config.identity.category,
+                    class: config.identity.class,
+                    specializationLevel: config.identity.specializationLevel,
+                    status: config.identity.status ? 'active' : 'inactive',
+                    specialtyArea: config.identity.specialtyArea,
+                    specificTools: config.identity.specificTools,
+                    specializationFilters: config.identity.specializationFilters
                 },
-                aiConfig: {
-                    ...config.aiConfig,
-                    responseMode: 'balanced',
-                    candidateCount: 1,
-                    jsonMode: config.aiConfig.jsonMode,
-                    frequencyPenalty: config.aiConfig.frequencyPenalty,
-                    presencePenalty: config.aiConfig.presencePenalty,
-                    seed: config.aiConfig.seed
-                },
-                vectorConfig: {
-                    chunkingMode: config.vectorProcessing.chunkingMode,
-                    chunkSize: config.vectorProcessing.chunkSize,
-                    sensitivity: config.vectorProcessing.structureSensitivity,
-                    contextWindow: 10,
-                    relevanceThreshold: config.vectorProcessing.minRelevance,
-                    searchMode: 'semantic',
-                    enableReranking: config.vectorProcessing.enableReranking,
-                    chunkingStrategy: config.vectorProcessing.chunkingStrategy,
-                    chunkDelimiter: '\n\n',
-                    maxChunkSize: config.vectorProcessing.maxChunkSize,
-                    chunkOverlap: config.vectorProcessing.chunkOverlap
-                },
-                prompts: config.prompts,
+                aiConfig: config.aiConfig, // Direct map
+                vectorConfig: config.vectorConfig, // Direct map (controller handles cleanup)
+                prompts: config.prompts, // Direct map
                 whatsappConfig: config.whatsappConfig,
-                advancedConfig: updatedAdvancedConfig
+                advancedConfig: config.advancedConfig
             };
 
             await apiClient.put(`/agents/${selectedAgent.id}`, payload);
-            await loadAgentConfig(selectedAgent.id);
+            await loadAgentConfig(selectedAgent.id); // Reload to confirm
             setAgents(prev => prev.map(a =>
-                a.id === selectedAgent.id ? { ...a, name: config.basic.name, description: config.basic.description, category: config.basic.category } : a
+                a.id === selectedAgent.id ? { ...a, name: config.identity.name, description: config.identity.description, category: config.identity.category } : a
             ));
             alert("Configuração salva com sucesso!");
         } catch (err) {
@@ -287,31 +298,9 @@ const AIControlPlane = () => {
         }
     };
 
-    const addCapability = () => {
-        if (config) {
-            setConfig({ ...config, capabilities: [...config.capabilities, 'Nova Capacidade'] });
-        }
-    };
-
-    const removeCapability = (index: number) => {
-        if (config) {
-            const newCaps = [...config.capabilities];
-            newCaps.splice(index, 1);
-            setConfig({ ...config, capabilities: newCaps });
-        }
-    };
-
-    const updateCapability = (index: number, val: string) => {
-        if (config) {
-            const newCaps = [...config.capabilities];
-            newCaps[index] = val;
-            setConfig({ ...config, capabilities: newCaps });
-        }
-    };
-
-    // Filter to show only System Agents in the sidebar list (since this is Admin Control Plane)
-    // Or highlight them. Reverting to simple list for now but filtered by the backend returns.
+    // Filter to show System Agents prominently
     const systemAgents = agents.filter(a => a.is_system);
+    const standardAgents = agents.filter(a => !a.is_system);
 
     return (
         <div className="min-h-screen bg-gray-50 pb-10">
@@ -324,17 +313,17 @@ const AIControlPlane = () => {
                                 <ArrowLeft className="h-5 w-5" />
                             </button>
                             <div className="flex items-center gap-2">
-                                <div className="p-2 bg-purple-100 rounded-lg">
-                                    <Bot className="h-6 w-6 text-purple-600" />
+                                <div className="p-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg">
+                                    <Bot className="h-6 w-6 text-white" />
                                 </div>
                                 <div>
                                     <h1 className="text-xl font-bold text-gray-900">AI Control Plane</h1>
-                                    <p className="text-xs text-gray-500">Gestão Avançada de Agentes do Sistema</p>
+                                    <p className="text-xs text-gray-500">Gestão Avançada de Especialistas (Template Completo)</p>
                                 </div>
                             </div>
                         </div>
                         <Button onClick={fetchAgents} variant="outline" className="gap-2">
-                            <RefreshCw className="h-4 w-4" /> Atualizar Lista
+                            <Search className="h-4 w-4" /> Atualizar Lista
                         </Button>
                     </div>
                 </div>
@@ -344,30 +333,26 @@ const AIControlPlane = () => {
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                     {/* Sidebar: System Agent List */}
                     <div className="md:col-span-3">
-                        <Card className="h-full min-h-[600px] flex flex-col overflow-hidden">
+                        <Card className="h-full min-h-[700px] flex flex-col overflow-hidden">
                             <div className="p-4 border-b border-gray-100 bg-gray-50">
-                                <h2 className="font-semibold text-gray-700 flex items-center gap-2">
-                                    <Sparkles className="h-4 w-4 text-purple-500" /> Agentes de Elite
+                                <h2 className="font-semibold text-gray-700 flex items-center gap-2 text-sm uppercase tracking-wide">
+                                    <Sparkles className="h-4 w-4 text-purple-500" /> Agentes de Sistema
                                 </h2>
                             </div>
                             <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                                {systemAgents.length === 0 && (
-                                    <p className="p-4 text-sm text-gray-400 text-center">Nenhum agente de sistema encontrado.</p>
-                                )}
+                                {systemAgents.length === 0 && <p className="p-4 text-sm text-gray-400">Nenhum agente de sistema.</p>}
                                 {systemAgents.map((agent) => (
                                     <div
                                         key={agent.id}
                                         onClick={() => handleAgentSelect(agent)}
                                         className={`p-3 rounded-lg cursor-pointer transition-all border ${selectedAgent?.id === agent.id
-                                            ? 'bg-purple-50 border-purple-200 shadow-sm'
+                                            ? 'bg-purple-50 border-purple-200 shadow-sm ring-1 ring-purple-200'
                                             : 'bg-white border-transparent hover:bg-gray-50 hover:border-gray-200'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${selectedAgent?.id === agent.id ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-500'}`}>
-                                                {agent.slug.includes('sales') ? <Sparkles className="h-4 w-4" /> :
-                                                    agent.slug.includes('creative') ? <Bot className="h-4 w-4" /> :
-                                                        <Brain className="h-4 w-4" />}
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${selectedAgent?.id === agent.id ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                                                {agent.name.charAt(0)}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className={`font-medium text-sm truncate ${selectedAgent?.id === agent.id ? 'text-purple-900' : 'text-gray-700'}`}>
@@ -378,42 +363,62 @@ const AIControlPlane = () => {
                                         </div>
                                     </div>
                                 ))}
+                                {standardAgents.length > 0 && (
+                                    <>
+                                        <div className="mt-4 px-2 py-1 text-xs font-semibold text-gray-400 uppercase">Outros Agentes</div>
+                                        {standardAgents.map((agent) => (
+                                            <div key={agent.id} onClick={() => handleAgentSelect(agent)} className={`p-3 rounded-lg cursor-pointer transition-all border ${selectedAgent?.id === agent.id ? 'bg-purple-50 border-purple-200' : 'hover:bg-gray-50'} opacity-75`}>
+                                                <span className="text-sm text-gray-600">{agent.name}</span>
+                                            </div>
+                                        ))}
+                                    </>
+                                )}
                             </div>
                         </Card>
                     </div>
 
                     {/* Main Content */}
                     <div className="md:col-span-9">
-                        <Card className="min-h-[600px] flex flex-col overflow-hidden">
+                        <Card className="min-h-[700px] flex flex-col overflow-hidden border-0 shadow-lg relative">
                             {isLoading ? (
                                 <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
-                                    <RefreshCw className="h-10 w-10 animate-spin mb-3 text-purple-500" />
-                                    <p>Carregando configurações...</p>
+                                    <Activity className="h-10 w-10 animate-spin mb-3 text-purple-600" />
+                                    <p>Carregando dados do Especialista...</p>
                                 </div>
                             ) : selectedAgent && config ? (
                                 <>
-                                    <div className="p-6 border-b border-gray-100 bg-white flex justify-between items-center sticky top-0 z-10 backdrop-blur-sm bg-white/90">
+                                    {/* Toolbar */}
+                                    <div className="p-4 px-6 border-b border-gray-100 bg-white flex justify-between items-center sticky top-0 z-20 backdrop-blur-sm bg-white/95">
                                         <div>
-                                            <h2 className="text-2xl font-bold text-gray-900 mb-1">{config.basic.name}</h2>
-                                            <div className="flex gap-3 text-xs">
-                                                <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded">ID: {selectedAgent.id}</span>
-                                                <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100">{config.aiConfig.model}</span>
-                                            </div>
+                                            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                                {config.identity.name}
+                                                <span className={`px-2 py-0.5 rounded text-xs font-normal border ${config.identity.status ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-100 text-gray-500'}`}>
+                                                    {config.identity.status ? 'Ativo' : 'Inativo'}
+                                                </span>
+                                            </h2>
+                                            <p className="text-xs text-gray-500">ID: {selectedAgent.id} • {config.aiConfig.model}</p>
                                         </div>
-                                        <Button onClick={handleSave} disabled={isSaving} className="gap-2">
-                                            {isSaving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                                            {isSaving ? 'Salvando...' : 'Salvar Alterações'}
-                                        </Button>
+                                        <div className="flex gap-2">
+                                            <Button onClick={() => alert("Simulação de Teste")} variant="warning" className="text-xs h-9">
+                                                <Zap className="h-3 w-3 mr-2" /> Testar
+                                            </Button>
+                                            <Button onClick={handleSave} disabled={isSaving} variant="success" className="h-9">
+                                                {isSaving ? <Activity className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                                                Salvar
+                                            </Button>
+                                        </div>
                                     </div>
 
-                                    <div className="border-b border-gray-200 px-6">
+                                    {/* Tabs */}
+                                    <div className="border-b border-gray-200 px-6 bg-white">
                                         <div className="flex space-x-6 overflow-x-auto">
                                             {[
-                                                { id: 'info', label: 'Básico', icon: Bot },
-                                                { id: 'technical', label: 'Parâmetros IA', icon: Sliders },
-                                                { id: 'vector', label: 'Processamento Vetorial', icon: Database },
-                                                { id: 'prompts', label: 'Engenharia de Prompt', icon: FileText },
-                                                { id: 'capabilities', label: 'Habilidades', icon: Zap }
+                                                { id: 'identity', label: 'Identidade', icon: Bot },
+                                                { id: 'ai', label: 'Inteligência', icon: Brain },
+                                                { id: 'technical', label: 'Parâmetros', icon: Sliders },
+                                                { id: 'behavior', label: 'Comportamento', icon: FileText },
+                                                { id: 'rag', label: 'Conhecimento (RAG)', icon: Database },
+                                                { id: 'capabilities', label: 'Capacidades', icon: Shield }
                                             ].map((tab) => (
                                                 <button
                                                     key={tab.id}
@@ -430,350 +435,221 @@ const AIControlPlane = () => {
                                         </div>
                                     </div>
 
-                                    <div className="p-6 flex-1 bg-gray-50/50">
-                                        {/* TAB: BASIC INFO */}
-                                        {activeTab === 'info' && (
-                                            <div className="space-y-6 max-w-3xl animate-fade-in">
+                                    <div className="p-8 flex-1 bg-gray-50/50 overflow-y-auto">
+
+                                        {/* --- 1. IDENTIDADE --- */}
+                                        {activeTab === 'identity' && (
+                                            <div className="space-y-8 animate-fade-in max-w-4xl">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                     <div className="space-y-4">
-                                                        <div className="space-y-2">
-                                                            <Label>Nome do Agente</Label>
-                                                            <Input
-                                                                value={config.basic.name}
-                                                                onChange={(e) => setConfig({ ...config, basic: { ...config.basic, name: e.target.value } })}
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label>Categoria</Label>
-                                                            <Input
-                                                                value={config.basic.category}
-                                                                onChange={(e) => setConfig({ ...config, basic: { ...config.basic, category: e.target.value } })}
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label>Descrição</Label>
-                                                            <Textarea
-                                                                value={config.basic.description}
-                                                                onChange={(e) => setConfig({ ...config, basic: { ...config.basic, description: e.target.value } })}
-                                                            />
-                                                        </div>
+                                                        <div><Label>Nome do Agente</Label> <Input value={config.identity.name} onChange={e => setConfig({ ...config, identity: { ...config.identity, name: e.target.value } })} /></div>
+                                                        <div><Label>Categoria Jurídica/Negócio</Label> <Input value={config.identity.category} onChange={e => setConfig({ ...config, identity: { ...config.identity, category: e.target.value } })} /></div>
+                                                        <div><Label>Descrição</Label> <Textarea value={config.identity.description} onChange={e => setConfig({ ...config, identity: { ...config.identity, description: e.target.value } })} /></div>
                                                     </div>
                                                     <div className="space-y-4">
-                                                        <div className="space-y-2">
-                                                            <Label>Classe do Agente</Label>
-                                                            <Input value={config.basic.class} readOnly className="bg-gray-100 text-gray-500" />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label>Nível de Especialização</Label>
-                                                            <Select
-                                                                value={config.basic.level.toString()}
-                                                                options={[
-                                                                    { label: '1 - Iniciante', value: '1' },
-                                                                    { label: '2 - Intermediário', value: '2' },
-                                                                    { label: '3 - Avançado', value: '3' },
-                                                                    { label: '4 - Especialista', value: '4' },
-                                                                    { label: '5 - Mestre', value: '5' }
-                                                                ]}
-                                                                onChange={(v) => setConfig({ ...config, basic: { ...config.basic, level: parseInt(v) } })}
-                                                            />
-                                                        </div>
-                                                        <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 mt-6 shadow-sm">
-                                                            <div>
-                                                                <Label className="text-gray-900">Status do Agente</Label>
-                                                                <p className="text-xs text-gray-500">Agentes ativos podem ser invocados</p>
-                                                            </div>
-                                                            <Switch
-                                                                checked={config.basic.active}
-                                                                onCheckedChange={(c) => setConfig({ ...config, basic: { ...config.basic, active: c } })}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="border border-gray-200 rounded-xl p-5 bg-white shadow-sm mt-6">
-                                                    <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                                        <Cpu className="h-4 w-4 text-purple-500" /> Configuração de LLM
-                                                    </h3>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <div><Label>Classe (Read Only)</Label> <Input value={config.identity.class} readOnly className="bg-gray-100" /></div>
                                                         <div>
-                                                            <Label className="mb-2 block">Provedor de IA</Label>
+                                                            <Label>Nível de Especialização (1-5)</Label>
                                                             <Select
-                                                                value={config.aiConfig.provider}
-                                                                options={[
-                                                                    { label: 'OpenAI', value: 'openai' },
-                                                                    { label: 'Anthropic', value: 'anthropic' },
-                                                                    { label: 'Google', value: 'google' }
-                                                                ]}
-                                                                onChange={(v) => setConfig({ ...config, aiConfig: { ...config.aiConfig, provider: v } })}
+                                                                value={config.identity.specializationLevel.toString()}
+                                                                options={['1', '2', '3', '4', '5'].map(n => ({ label: `Nível ${n}`, value: n }))}
+                                                                onChange={v => setConfig({ ...config, identity: { ...config.identity, specializationLevel: parseInt(v) } })}
                                                             />
                                                         </div>
-                                                        <div>
-                                                            <Label className="mb-2 block">Modelo</Label>
-                                                            <Input
-                                                                value={config.aiConfig.model}
-                                                                onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, model: e.target.value } })}
-                                                            />
+                                                        <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
+                                                            <Label>Ativo</Label>
+                                                            <Switch checked={config.identity.status} onCheckedChange={c => setConfig({ ...config, identity: { ...config.identity, status: c } })} />
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )}
-
-                                        {/* TAB: TECHNICAL PARAMETERS */}
-                                        {activeTab === 'technical' && (
-                                            <div className="space-y-6 max-w-3xl animate-fade-in">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                    <div className="space-y-6 p-5 bg-white rounded-xl border border-gray-200 shadow-sm">
-                                                        <div className="space-y-4">
-                                                            <div className="flex justify-between">
-                                                                <Label>Temperature</Label>
-                                                                <span className="text-xs font-mono bg-gray-100 px-2 rounded">{config.aiConfig.temperature}</span>
-                                                            </div>
-                                                            <input
-                                                                type="range" min="0" max="2" step="0.1"
-                                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                                                                value={config.aiConfig.temperature}
-                                                                onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, temperature: parseFloat(e.target.value) } })}
-                                                            />
-                                                            <p className="text-xs text-gray-500">Controla a criatividade/alucinação (0=Preciso, 2=Criativo)</p>
-                                                        </div>
-
-                                                        <div className="space-y-4">
-                                                            <div className="flex justify-between">
-                                                                <Label>Top-P</Label>
-                                                                <span className="text-xs font-mono bg-gray-100 px-2 rounded">{config.aiConfig.topP}</span>
-                                                            </div>
-                                                            <input
-                                                                type="range" min="0" max="1" step="0.05"
-                                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                                                                value={config.aiConfig.topP}
-                                                                onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, topP: parseFloat(e.target.value) } })}
-                                                            />
-                                                            <p className="text-xs text-gray-500">Diversidade de vocabulário (Nucleus Sampling)</p>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="space-y-4">
-                                                        <div className="space-y-2">
-                                                            <Label>Top-K</Label>
-                                                            <Input
-                                                                type="number"
-                                                                value={config.aiConfig.topK}
-                                                                onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, topK: parseInt(e.target.value) } })}
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label>Max Tokens</Label>
-                                                            <Input
-                                                                type="number"
-                                                                value={config.aiConfig.maxTokens}
-                                                                onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, maxTokens: parseInt(e.target.value) } })}
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label>Timeout (ms)</Label>
-                                                            <Input
-                                                                type="number"
-                                                                value={config.aiConfig.timeout}
-                                                                onChange={(e) => setConfig({ ...config, aiConfig: { ...config.aiConfig, timeout: parseInt(e.target.value) } })}
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* TAB: PROMPTS */}
-                                        {activeTab === 'prompts' && (
-                                            <div className="space-y-6 max-w-4xl animate-fade-in">
                                                 <div className="space-y-2">
-                                                    <Label className="text-purple-700">System Prompt (Personalidade Central)</Label>
-                                                    <Textarea
-                                                        className="min-h-[250px] font-mono text-sm bg-gray-50 border-gray-300 focus:bg-white focus:ring-purple-500"
-                                                        value={config.prompts.system}
-                                                        onChange={(e) => setConfig({ ...config, prompts: { ...config.prompts, system: e.target.value } })}
-                                                        placeholder="Defina quem é o agente, suas restrições e objetivos..."
+                                                    <Label className="text-red-500 flex items-center gap-2"><Target className="h-4 w-4" /> Área de Especialidade Principal</Label>
+                                                    <Select
+                                                        value={config.identity.specialtyArea}
+                                                        options={[
+                                                            { label: 'Selecione...', value: '' },
+                                                            { label: 'Direito Agrário', value: 'direito_agrario' },
+                                                            { label: 'Direito Empresarial', value: 'direito_empresarial' },
+                                                            { label: 'Vendas Consultivas', value: 'vendas_consultivas' },
+                                                            { label: 'Suporte Técnico', value: 'suporte_tecnico' },
+                                                            { label: 'Análise de Dados', value: 'analise_dados' }
+                                                        ]}
+                                                        onChange={v => setConfig({ ...config, identity: { ...config.identity, specialtyArea: v } })}
                                                     />
                                                 </div>
+                                            </div>
+                                        )}
 
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                    <div className="space-y-2">
-                                                        <Label>Prompt de Análise</Label>
-                                                        <Textarea
-                                                            className="min-h-[120px] font-mono text-sm"
-                                                            value={config.prompts.analysis}
-                                                            onChange={(e) => setConfig({ ...config, prompts: { ...config.prompts, analysis: e.target.value } })}
-                                                        />
+                                        {/* --- 2. INTELIGÊNCIA --- */}
+                                        {activeTab === 'ai' && (
+                                            <div className="space-y-6 animate-fade-in max-w-4xl">
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                    <div>
+                                                        <Label>Provedor</Label>
+                                                        <Select value={config.aiConfig.provider} options={[{ label: 'OpenAI', value: 'openai' }, { label: 'Anthropic', value: 'anthropic' }, { label: 'Google', value: 'google' }]} onChange={v => setConfig({ ...config, aiConfig: { ...config.aiConfig, provider: v } })} />
                                                     </div>
-                                                    <div className="space-y-2">
-                                                        <Label>Estrutura de Resposta</Label>
-                                                        <Textarea
-                                                            className="min-h-[120px] font-mono text-sm"
-                                                            value={config.prompts.responseStructure}
-                                                            onChange={(e) => setConfig({ ...config, prompts: { ...config.prompts, responseStructure: e.target.value } })}
-                                                        />
+                                                    <div>
+                                                        <Label>Modelo</Label>
+                                                        <Select value={config.aiConfig.model} options={[{ label: 'GPT-4o', value: 'gpt-4o' }, { label: 'GPT-4 Turbo', value: 'gpt-4-turbo' }, { label: 'Claude 3.5 Sonnet', value: 'claude-3-5-sonnet-20241022' }, { label: 'Gemini 1.5 Pro', value: 'gemini-1.5-pro' }]} onChange={v => setConfig({ ...config, aiConfig: { ...config.aiConfig, model: v } })} />
                                                     </div>
+                                                    <div>
+                                                        <Label>Tokens Máximos</Label>
+                                                        <Input type="number" value={config.aiConfig.maxTokens} onChange={e => setConfig({ ...config, aiConfig: { ...config.aiConfig, maxTokens: parseInt(e.target.value) } })} />
+                                                    </div>
+                                                </div>
+                                                <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-800">
+                                                    <Zap className="inline h-4 w-4 mr-2" />
+                                                    <strong>Dica:</strong> Modelos mais recentes como GPT-4o e Claude 3.5 Sonnet oferecem melhor raciocínio para casos jurídicos complexos.
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* TAB: CAPABILITIES */}
-                                        {activeTab === 'capabilities' && (
-                                            <div className="space-y-6 max-w-2xl animate-fade-in">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <Label>Habilidades Definidas</Label>
-                                                    <Button onClick={addCapability} variant="outline" className="text-xs h-8">
-                                                        <Plus className="h-3 w-3 mr-1" /> Adicionar
-                                                    </Button>
-                                                </div>
-
-                                                <div className="space-y-3 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                                                    {config.capabilities.map((cap, idx) => (
-                                                        <div key={idx} className="flex gap-2">
-                                                            <Input
-                                                                value={cap}
-                                                                onChange={(e) => updateCapability(idx, e.target.value)}
-                                                                placeholder="Ex: Análise de Contratos"
-                                                            />
-                                                            <Button onClick={() => removeCapability(idx)} variant="danger" className="px-3 h-10 w-10">
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
+                                        {/* --- 3. PARÂMETROS --- */}
+                                        {activeTab === 'technical' && (
+                                            <div className="space-y-8 animate-fade-in max-w-4xl">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                                    <div className="space-y-6">
+                                                        <div>
+                                                            <div className="flex justify-between mb-2"><Label>Temperatura</Label> <span className="text-xs bg-gray-200 px-2 rounded">{config.aiConfig.temperature}</span></div>
+                                                            <input type="range" min="0" max="2" step="0.1" className="w-full" value={config.aiConfig.temperature} onChange={e => setConfig({ ...config, aiConfig: { ...config.aiConfig, temperature: parseFloat(e.target.value) } })} />
+                                                            <p className="text-xs text-gray-500">0=Preciso/Determinístico, 2=Criativo/Aleatório</p>
                                                         </div>
-                                                    ))}
-                                                    {config.capabilities.length === 0 && (
-                                                        <p className="text-gray-400 text-center italic text-sm py-4">Nenhuma habilidade extra definida.</p>
-                                                    )}
+                                                        <div>
+                                                            <div className="flex justify-between mb-2"><Label>Top-P</Label> <span className="text-xs bg-gray-200 px-2 rounded">{config.aiConfig.topP}</span></div>
+                                                            <input type="range" min="0" max="1" step="0.05" className="w-full" value={config.aiConfig.topP} onChange={e => setConfig({ ...config, aiConfig: { ...config.aiConfig, topP: parseFloat(e.target.value) } })} />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-4">
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div><Label>Frequency Penalty</Label><Input type="number" step="0.1" value={config.aiConfig.frequencyPenalty} onChange={e => setConfig({ ...config, aiConfig: { ...config.aiConfig, frequencyPenalty: parseFloat(e.target.value) } })} /></div>
+                                                            <div><Label>Presence Penalty</Label><Input type="number" step="0.1" value={config.aiConfig.presencePenalty} onChange={e => setConfig({ ...config, aiConfig: { ...config.aiConfig, presencePenalty: parseFloat(e.target.value) } })} /></div>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div><Label>Top-K</Label><Input type="number" value={config.aiConfig.topK} onChange={e => setConfig({ ...config, aiConfig: { ...config.aiConfig, topK: parseInt(e.target.value) } })} /></div>
+                                                            <div><Label>Seed</Label><Input type="number" placeholder="Random" value={config.aiConfig.seed || ''} onChange={e => setConfig({ ...config, aiConfig: { ...config.aiConfig, seed: parseInt(e.target.value) || null } })} /></div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mt-4">
+                                                            <Switch checked={config.aiConfig.jsonMode} onCheckedChange={c => setConfig({ ...config, aiConfig: { ...config.aiConfig, jsonMode: c } })} />
+                                                            <Label>JSON Mode (Strict Output)</Label>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         )}
 
-                                        {/* TAB: VECTOR PROCESSING */}
-                                        {activeTab === 'vector' && (
-                                            <div className="space-y-6 max-w-4xl animate-fade-in">
-                                                <div className="flex space-x-2 border-b border-gray-200 mb-6 bg-gray-50 rounded-t-lg p-1">
-                                                    {['chunking', 'quality', 'embeddings'].map(tab => (
-                                                        <button
-                                                            key={tab}
-                                                            onClick={() => setVectorTab(tab as any)}
-                                                            className={`px-4 py-2 text-sm rounded-md transition-all capitalize ${vectorTab === tab ? 'bg-white text-purple-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                                                                }`}
-                                                        >
-                                                            {tab === 'chunking' && 'Estratégia de Chunking'}
-                                                            {tab === 'quality' && 'Qualidade & Relevância'}
-                                                            {tab === 'embeddings' && 'Embeddings & Rerank'}
+                                        {/* --- 4. COMPORTAMENTO (PROPMTS ETC) --- */}
+                                        {activeTab === 'behavior' && (
+                                            <div className="space-y-6 animate-fade-in max-w-5xl">
+                                                <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg w-max mb-4">
+                                                    {['prompt', 'context', 'communication', 'examples'].map(st => (
+                                                        <button key={st} onClick={() => setBehaviorSubTab(st as any)} className={`px-4 py-2 text-xs font-semibold rounded-md uppercase tracking-wider ${behaviorSubTab === st ? 'bg-white shadow text-purple-600' : 'text-gray-500 hover:bg-gray-200'}`}>
+                                                            {st === 'prompt' && 'System Prompt'}
+                                                            {st === 'context' && 'Contexto & Instruções'}
+                                                            {st === 'communication' && 'Comunicação'}
+                                                            {st === 'examples' && 'Exemplos (Few-Shot)'}
                                                         </button>
                                                     ))}
                                                 </div>
 
-                                                {vectorTab === 'chunking' && (
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-1">
-                                                        <div className="space-y-2">
-                                                            <Label>Modo de Chunking</Label>
-                                                            <Select
-                                                                value={config.vectorProcessing.chunkingMode}
-                                                                options={[
-                                                                    { label: 'Semântico (Recomendado)', value: 'semantico' },
-                                                                    { label: 'Hierárquico', value: 'hierarquico' },
-                                                                    { label: 'Híbrido', value: 'hibrido' },
-                                                                    { label: 'Básico (Fixo)', value: 'basico' }
-                                                                ]}
-                                                                onChange={(v) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, chunkingMode: v } })}
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            <Label>Estratégia</Label>
-                                                            <Select
-                                                                value={config.vectorProcessing.chunkingStrategy}
-                                                                options={[
-                                                                    { label: 'Parágrafo', value: 'paragraph' },
-                                                                    { label: 'Sentença', value: 'sentence' },
-                                                                    { label: 'Markdown Header', value: 'markdown' }
-                                                                ]}
-                                                                onChange={(v) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, chunkingStrategy: v } })}
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-4">
-                                                            <div className="flex justify-between">
-                                                                <Label>Tamanho do Chunk (Tokens)</Label>
-                                                                <span className="text-xs bg-gray-100 px-2 rounded">{config.vectorProcessing.chunkSize}</span>
-                                                            </div>
-                                                            <input
-                                                                type="range" min="128" max="2048" step="128"
-                                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                                                                value={config.vectorProcessing.chunkSize}
-                                                                onChange={(e) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, chunkSize: parseInt(e.target.value) } })}
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-4">
-                                                            <div className="flex justify-between">
-                                                                <Label>Overlap (Sobreposição)</Label>
-                                                                <span className="text-xs bg-gray-100 px-2 rounded">{config.vectorProcessing.chunkOverlap}</span>
-                                                            </div>
-                                                            <input
-                                                                type="range" min="0" max="512" step="16"
-                                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                                                                value={config.vectorProcessing.chunkOverlap}
-                                                                onChange={(e) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, chunkOverlap: parseInt(e.target.value) } })}
-                                                            />
-                                                        </div>
+                                                {behaviorSubTab === 'prompt' && (
+                                                    <div className="space-y-4">
+                                                        <Label className="text-yellow-600 font-bold">System Prompt Principal</Label>
+                                                        <Textarea className="min-h-[400px] font-mono text-sm bg-gray-900 text-green-400 p-4 leading-relaxed" value={config.prompts.system} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, system: e.target.value } })} placeholder="Você é um especialista em..." />
                                                     </div>
                                                 )}
+                                                {behaviorSubTab === 'context' && (
+                                                    <div className="space-y-6">
+                                                        <div><Label>Contexto Adicional (Knowledge Base Textual)</Label><Textarea className="min-h-[150px]" value={config.prompts.extraContext} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, extraContext: e.target.value } })} /></div>
+                                                        <div><Label>Instruções Especiais / Diretrizes</Label><Textarea className="min-h-[150px]" value={config.prompts.specialInstructions} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, specialInstructions: e.target.value } })} /></div>
+                                                    </div>
+                                                )}
+                                                {behaviorSubTab === 'communication' && (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                        <div><Label>Tom de Comunicação</Label><Input value={config.prompts.communicationTone} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, communicationTone: e.target.value } })} placeholder="Ex: Formal, Técnico, Empático" /></div>
+                                                        <div><Label>Formato de Resposta</Label><Input value={config.prompts.responseStructure} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, responseStructure: e.target.value } })} placeholder="Ex: Markdown, JSON, Bullet Points" /></div>
+                                                        <div><Label>Prioridades</Label><Textarea value={config.prompts.priorities} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, priorities: e.target.value } })} placeholder="Precisão técnica, Citar leis..." /></div>
+                                                        <div><Label>Restrições</Label><Textarea value={config.prompts.restrictions} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, restrictions: e.target.value } })} placeholder="Não dar conselho financeiro..." /></div>
+                                                    </div>
+                                                )}
+                                                {behaviorSubTab === 'examples' && (
+                                                    <div className="space-y-4">
+                                                        <Label>Exemplos de Uso (Few-Shot Learning)</Label>
+                                                        <p className="text-xs text-gray-500">Forneça pares de Pergunta/Resposta ideais para calibrar o modelo.</p>
+                                                        <Textarea className="min-h-[300px] font-mono bg-gray-50" value={config.prompts.usageExamples} onChange={e => setConfig({ ...config, prompts: { ...config.prompts, usageExamples: e.target.value } })} placeholder={`User: Como calculo o prazo X?\nAgent: O prazo X é calculado conforme art. Y...`} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
 
-                                                {vectorTab === 'quality' && (
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-1">
-                                                        <div className="space-y-4">
-                                                            <div className="flex justify-between">
-                                                                <Label>Limiar de Relevância (0.0 - 1.0)</Label>
-                                                                <span className="text-xs bg-gray-100 px-2 rounded">{config.vectorProcessing.minRelevance}</span>
-                                                            </div>
-                                                            <input
-                                                                type="range" min="0.5" max="0.95" step="0.05"
-                                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                                                                value={config.vectorProcessing.minRelevance}
-                                                                onChange={(e) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, minRelevance: parseFloat(e.target.value) } })}
-                                                            />
-                                                        </div>
-                                                        <div className="space-y-4">
-                                                            <div className="flex justify-between">
-                                                                <Label>Sensibilidade Estrutural (1-10)</Label>
-                                                                <span className="text-xs bg-gray-100 px-2 rounded">{config.vectorProcessing.structureSensitivity}</span>
-                                                            </div>
-                                                            <input
-                                                                type="range" min="1" max="10"
-                                                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                                                                value={config.vectorProcessing.structureSensitivity}
-                                                                onChange={(e) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, structureSensitivity: parseInt(e.target.value) } })}
-                                                            />
-                                                        </div>
+                                        {/* --- 5. RAG & CONHECIMENTO --- */}
+                                        {activeTab === 'rag' && (
+                                            <div className="space-y-8 animate-fade-in max-w-4xl">
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                    <div>
+                                                        <Label>Método de Busca</Label>
+                                                        <Select value={config.vectorConfig.searchMode} options={[{ label: 'Semântica', value: 'semantica' }, { label: 'Palavra-Chave', value: 'palavra_chave' }, { label: 'Híbrido (Rec.)', value: 'hibrido' }]} onChange={v => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, searchMode: v } })} />
                                                     </div>
-                                                )}
+                                                    <div>
+                                                        <Label>Qtd. Documentos</Label>
+                                                        <Input type="number" min="1" max="20" value={config.vectorConfig.docLimit} onChange={e => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, docLimit: parseInt(e.target.value) } })} />
+                                                    </div>
+                                                    <div className="flex items-center justify-between p-2 border rounded bg-white mt-6">
+                                                        <Label>Usar Reranking</Label>
+                                                        <Switch checked={config.vectorConfig.enableReranking} onCheckedChange={c => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, enableReranking: c } })} />
+                                                    </div>
+                                                </div>
 
-                                                {vectorTab === 'embeddings' && (
-                                                    <div className="space-y-6 p-1">
-                                                        <div className="space-y-2">
-                                                            <Label>Modelo de Embedding</Label>
-                                                            <Select
-                                                                value={config.vectorProcessing.embeddingModel}
-                                                                options={[
-                                                                    { label: 'text-embedding-3-small (Rápido)', value: 'text-embedding-3-small' },
-                                                                    { label: 'text-embedding-3-large (Preciso)', value: 'text-embedding-3-large' },
-                                                                    { label: 'text-embedding-ada-002 (Legacy)', value: 'text-embedding-ada-002' }
-                                                                ]}
-                                                                onChange={(v) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, embeddingModel: v } })}
-                                                            />
-                                                        </div>
-                                                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                                            <div>
-                                                                <Label>Enable Reranking (Cohere/BGE)</Label>
-                                                                <p className="text-xs text-gray-500">Reordena resultados para maior precisão (mais lento)</p>
-                                                            </div>
-                                                            <Switch
-                                                                checked={config.vectorProcessing.enableReranking}
-                                                                onCheckedChange={(c) => setConfig({ ...config, vectorProcessing: { ...config.vectorProcessing, enableReranking: c } })}
-                                                            />
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6 bg-white border border-gray-200 rounded-xl">
+                                                    <div>
+                                                        <div className="flex justify-between mb-2"><Label>Limiar de Similaridade</Label> <span>{config.vectorConfig.minRelevance}</span></div>
+                                                        <input type="range" min="0" max="1" step="0.05" className="w-full" value={config.vectorConfig.minRelevance} onChange={e => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, minRelevance: parseFloat(e.target.value) } })} />
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex justify-between mb-2"><Label>Peso de Relevância (Semântica vs Keyword)</Label> <span>{config.vectorConfig.relevanceWeight}</span></div>
+                                                        <input type="range" min="0" max="1" step="0.1" className="w-full" value={config.vectorConfig.relevanceWeight} onChange={e => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, relevanceWeight: parseFloat(e.target.value) } })} />
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    <Label className="text-green-600 flex items-center gap-2"><Filter className="h-4 w-4" /> Filtros de Especialização (Qdrant)</Label>
+                                                    <Select multiple value={config.identity.specializationFilters} options={[
+                                                        { label: 'Direito Agrário Geral', value: 'direito_agrario_geral' },
+                                                        { label: 'Contratos Rurais', value: 'contratos_rurais' },
+                                                        { label: 'Legislação Agrária', value: 'legislacao_agraria' },
+                                                        { label: 'Súmulas STJ', value: 'sumulas_stj' }
+                                                    ]} onChange={v => setConfig({ ...config, identity: { ...config.identity, specializationFilters: v } })} />
+                                                    <p className="text-xs text-gray-500">Segure Ctrl/Cmd para selecionar múltiplos.</p>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* --- 6. CAPACIDADES & FERRAMENTAS --- */}
+                                        {activeTab === 'capabilities' && (
+                                            <div className="space-y-6 animate-fade-in max-w-4xl">
+                                                <div className="p-6 bg-white rounded-xl border border-gray-200">
+                                                    <Label className="mb-4 block text-lg font-semibold">Ferramentas Habilitadas</Label>
+                                                    <Select multiple value={config.identity.specificTools} options={[
+                                                        { label: 'Busca de Legislação', value: 'busca_legislacao' },
+                                                        { label: 'Consulta Processual', value: 'consulta_processos' },
+                                                        { label: 'Cálculo de Prazos', value: 'calculo_prazos' },
+                                                        { label: 'Análise de Contratos', value: 'analise_documentos' },
+                                                        { label: 'Geração de Peças', value: 'geracao_pecas' }
+                                                    ]} onChange={v => setConfig({ ...config, identity: { ...config.identity, specificTools: v } })} />
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="p-4 bg-gray-100 rounded-lg">
+                                                        <Label>Cache de Respostas</Label>
+                                                        <div className="flex items-center gap-2 mt-2">
+                                                            <Switch checked={config.vectorConfig.useCache} onCheckedChange={c => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, useCache: c } })} />
+                                                            <span className="text-sm">Ativar Cache (Redis)</span>
                                                         </div>
                                                     </div>
-                                                )}
+                                                    <div className="p-4 bg-gray-100 rounded-lg">
+                                                        <Label>Método de Agregação (RAG)</Label>
+                                                        <Select value={config.vectorConfig.aggregationMethod} options={[{ label: 'Concatenação', value: 'concatenacao' }, { label: 'Sumarização', value: 'sumarizacao' }]} onChange={v => setConfig({ ...config, vectorConfig: { ...config.vectorConfig, aggregationMethod: v } })} />
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
 
@@ -784,9 +660,9 @@ const AIControlPlane = () => {
                                     <div className="h-24 w-24 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-6 shadow-sm">
                                         <Bot className="h-10 w-10 text-purple-300" />
                                     </div>
-                                    <h3 className="text-xl font-medium text-gray-900">Selecione um Agente do Sistema</h3>
+                                    <h3 className="text-xl font-medium text-gray-900">Selecione um Especialista</h3>
                                     <p className="max-w-md mx-auto mt-2 text-gray-500">
-                                        Escolha um dos agentes na barra lateral para configurar sua inteligência, prompts e parâmetros técnicos.
+                                        Configure os Agentes de Sistema utilizando o template completo de Especialista.
                                     </p>
                                 </div>
                             )}

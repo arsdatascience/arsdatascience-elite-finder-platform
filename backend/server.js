@@ -855,6 +855,21 @@ async function initializeDatabase() {
     } catch (fixVisErr) {
       console.log('⚠️ Erro na migração 051:', fixVisErr.message);
     }
+
+    // ============================================
+    // MIGRATION 052: Expand Agent Schema
+    // ============================================
+    console.log('🔄 Verificando migração 052 (Expand Agent Schema)...');
+    try {
+      const schemaMigration = fs.readFileSync(path.join(__dirname, 'migrations', '052_expand_agent_schema.sql'), 'utf8');
+      const statements = schemaMigration.split(';').filter(stmt => stmt.trim().length > 0);
+      for (const stmt of statements) {
+        await pool.query(stmt);
+      }
+      console.log('✅ Migração 052 (Expand Agent Schema) aplicada.');
+    } catch (schemaErr) {
+      console.log('⚠️ Erro na migração 052:', schemaErr.message);
+    }
   } catch (error) {
     console.error('⚠️  Database initialization error:', error.message);
     // Don't crash the app if schema already exists

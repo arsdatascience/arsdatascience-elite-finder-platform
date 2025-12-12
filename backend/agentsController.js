@@ -346,7 +346,10 @@ router.get('/:id', async (req, res) => {
                 specializationLevel: agent.specialization_level,
                 specializationLevel: agent.specialization_level,
                 status: agent.status,
-                slug: agent.slug
+                slug: agent.slug,
+                specialtyArea: agent.specialty_area,
+                specificTools: agent.specific_tools || [],
+                specializationFilters: agent.specialization_filters || []
             },
             aiConfig: {
                 provider: aiConfig.provider,
@@ -371,7 +374,11 @@ router.get('/:id', async (req, res) => {
                 chunkDelimiter: vectorConfig.chunk_delimiter,
                 maxChunkSize: vectorConfig.max_chunk_size,
                 chunkOverlap: vectorConfig.chunk_overlap,
-                filters: filters
+                filters: filters,
+                docLimit: vectorConfig.doc_limit,
+                relevanceWeight: parseFloat(vectorConfig.relevance_weight || 0.7),
+                useCache: vectorConfig.use_cache,
+                aggregationMethod: vectorConfig.aggregation_method
             },
             prompts: {
                 system: prompts.system_prompt,
@@ -380,7 +387,13 @@ router.get('/:id', async (req, res) => {
                 analysis: prompts.analysis_prompt,
                 complexCases: prompts.complex_cases_prompt,
                 validation: prompts.validation_prompt,
-                scriptContent: prompts.script_content
+                scriptContent: prompts.script_content,
+                extraContext: prompts.extra_context,
+                specialInstructions: prompts.special_instructions,
+                communicationTone: prompts.communication_tone,
+                priorities: prompts.priorities,
+                restrictions: prompts.restrictions,
+                usageExamples: prompts.usage_examples
             },
             whatsappConfig: {
                 enabled: whatsappConfig.enabled,
@@ -423,10 +436,13 @@ router.put('/:id', async (req, res) => {
             // 1. Atualizar Agente
             const agentResult = await client.query(`
                 UPDATE chatbots SET
-        name = $1, description = $2, category = $3, class = $4, specialization_level = $5, status = $6, advanced_settings = $7, client_id = $8, updated_at = CURRENT_TIMESTAMP
+        name = $1, description = $2, category = $3, class = $4, specialization_level = $5, status = $6, advanced_settings = $7, client_id = $8, 
+        specialty_area = $10, specific_tools = $11, specialization_filters = $12, updated_at = CURRENT_TIMESTAMP
                 WHERE id = $9
         RETURNING *
-            `, [identity.name, identity.description, identity.category, identity.class, identity.specializationLevel, identity.status, advancedConfig || {}, identity.clientId || null, id]);
+            `, [identity.name, identity.description, identity.category, identity.class, identity.specializationLevel, identity.status, advancedConfig || {}, identity.clientId || null, id,
+            identity.specialtyArea || '', identity.specificTools || [], identity.specializationFilters || []
+            ]);
 
             if (agentResult.rows.length === 0) {
                 throw new Error('Agente não encontrado');
@@ -452,28 +468,32 @@ router.put('/:id', async (req, res) => {
                 UPDATE agent_vector_configs SET
         chunking_mode = $1, chunk_size = $2, sensitivity = $3, context_window = $4, relevance_threshold = $5,
             search_mode = $6, enable_reranking = $7,
-            chunking_strategy = $8, chunk_delimiter = $9, max_chunk_size = $10, chunk_overlap = $11
+            chunking_strategy = $8, chunk_delimiter = $9, max_chunk_size = $10, chunk_overlap = $11,
+            doc_limit = $13, relevance_weight = $14, use_cache = $15, aggregation_method = $16
                 WHERE chatbot_id = $12
                 RETURNING id
             `, [
                 vectorConfig.chunkingMode, vectorConfig.chunkSize, vectorConfig.sensitivity, vectorConfig.contextWindow, vectorConfig.relevanceThreshold,
                 vectorConfig.searchMode || 'semantic', vectorConfig.enableReranking || false,
                 vectorConfig.chunkingStrategy || 'paragraph', vectorConfig.chunkDelimiter || '\n\n', vectorConfig.maxChunkSize || 2048, vectorConfig.chunkOverlap || 100,
-                id
+                id,
+                vectorConfig.docLimit || 5, vectorConfig.relevanceWeight || 0.7, vectorConfig.useCache !== false, vectorConfig.aggregationMethod || 'concatenacao'
             ]);
 
             if (updateVector.rowCount === 0) {
                 const insertVector = await client.query(`
                     INSERT INTO agent_vector_configs(
                 chatbot_id, chunking_mode, chunk_size, sensitivity, context_window, relevance_threshold,
-                search_mode, enable_reranking, chunking_strategy, chunk_delimiter, max_chunk_size, chunk_overlap
+                search_mode, enable_reranking, chunking_strategy, chunk_delimiter, max_chunk_size, chunk_overlap,
+                doc_limit, relevance_weight, use_cache, aggregation_method
             )
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
                     RETURNING id
             `, [
                     id, vectorConfig.chunkingMode, vectorConfig.chunkSize, vectorConfig.sensitivity, vectorConfig.contextWindow, vectorConfig.relevanceThreshold,
                     vectorConfig.searchMode || 'semantic', vectorConfig.enableReranking || false,
-                    vectorConfig.chunkingStrategy || 'paragraph', vectorConfig.chunkDelimiter || '\n\n', vectorConfig.maxChunkSize || 2048, vectorConfig.chunkOverlap || 100
+                    vectorConfig.chunkingStrategy || 'paragraph', vectorConfig.chunkDelimiter || '\n\n', vectorConfig.maxChunkSize || 2048, vectorConfig.chunkOverlap || 100,
+                    vectorConfig.docLimit || 5, vectorConfig.relevanceWeight || 0.7, vectorConfig.useCache !== false, vectorConfig.aggregationMethod || 'concatenacao'
                 ]);
                 vectorConfigId = insertVector.rows[0].id;
             } else {
@@ -494,9 +514,13 @@ router.put('/:id', async (req, res) => {
             // 5. Upsert Prompts
             const updatePrompts = await client.query(`
                 UPDATE agent_prompts SET
-        system_prompt = $1, response_structure_prompt = $2, vector_search_prompt = $3, analysis_prompt = $4, complex_cases_prompt = $5, validation_prompt = $6, script_content = $7
+        system_prompt = $1, response_structure_prompt = $2, vector_search_prompt = $3, analysis_prompt = $4, complex_cases_prompt = $5, validation_prompt = $6, script_content = $7,
+        extra_context = $9, special_instructions = $10, communication_tone = $11, priorities = $12, restrictions = $13, usage_examples = $14
                 WHERE chatbot_id = $8
-            `, [prompts.system, prompts.responseStructure, prompts.vectorSearch, prompts.analysis, prompts.complexCases, prompts.validation, prompts.scriptContent || '', id]);
+            `, [
+                prompts.system, prompts.responseStructure, prompts.vectorSearch, prompts.analysis, prompts.complexCases, prompts.validation, prompts.scriptContent || '', id,
+                prompts.extraContext || '', prompts.specialInstructions || '', prompts.communicationTone || '', prompts.priorities || '', prompts.restrictions || '', prompts.usageExamples || ''
+            ]);
 
             if (updatePrompts.rowCount === 0) {
                 await client.query(`
