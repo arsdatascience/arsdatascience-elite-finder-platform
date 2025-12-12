@@ -54,25 +54,25 @@ export const PublicAgentChat: React.FC = () => {
     return (
         <div className="flex flex-col h-screen">
             {/* Mode Switcher Floating Toggle (Top Center) */}
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-white/90 backdrop-blur-sm shadow-md rounded-full px-1 py-1 flex items-center border border-gray-200">
+            <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-[100] bg-white shadow-xl rounded-full px-1.5 py-1.5 flex items-center border border-gray-200 ring-2 ring-gray-100">
                 <button
                     onClick={() => setMode('assistant')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${mode === 'assistant'
-                            ? 'bg-primary-600 text-white shadow-sm'
-                            : 'text-gray-500 hover:bg-gray-100'
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${mode === 'assistant'
+                            ? 'bg-gradient-to-r from-primary-600 to-primary-500 text-white shadow-md transform scale-105'
+                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
                         }`}
                 >
-                    <MessageSquare size={14} />
+                    <MessageSquare size={16} />
                     Modo Assistente
                 </button>
                 <button
                     onClick={() => setMode('training')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all ${mode === 'training'
-                            ? 'bg-indigo-600 text-white shadow-sm'
-                            : 'text-gray-500 hover:bg-gray-100'
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${mode === 'training'
+                            ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-md transform scale-105'
+                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
                         }`}
                 >
-                    <MonitorPlay size={14} />
+                    <MonitorPlay size={16} />
                     Sales Coach
                 </button>
             </div>

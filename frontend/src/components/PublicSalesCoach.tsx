@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, Bot, User, Settings } from 'lucide-react';
+import { Send, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, Bot, User, Settings, FileBarChart, FileText, RefreshCw, Download, Trash2 } from 'lucide-react';
 import { WhatsAppConfigModal } from './WhatsAppConfigModal';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Message {
     id: string;
@@ -160,6 +162,139 @@ export const PublicSalesCoach: React.FC<PublicSalesCoachProps> = ({ agent }) => 
         }
     };
 
+    const handleGeneratePDFReport = (type: 'analysis' | 'full') => {
+        if (!currentAnalysis && type === 'analysis') {
+            alert('Nenhuma análise disponível para gerar relatório.');
+            return;
+        }
+
+        const doc = new jsPDF();
+        const dateStr = new Date().toLocaleString();
+
+        // Header
+        doc.setFontSize(20);
+        doc.setTextColor(41, 98, 255); // Primary Blue
+        doc.text("Elite Finder - Relatório de Inteligência de Vendas", 14, 20);
+
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text(`Data: ${dateStr}`, 14, 28);
+        doc.text(`Agente: ${agent.name}`, 14, 33);
+        doc.text(`Modo: Sales Coach (Treinamento)`, 14, 38);
+
+        let yPos = 50;
+
+        // 1. ANÁLISE SEC (Se existir)
+        if (currentAnalysis) {
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text("Resumo da Análise (Tempo Real)", 14, yPos);
+            yPos += 10;
+
+            const analysisData = [
+                ["Sentimento", currentAnalysis.sentiment],
+                ["Estágio de Compra", currentAnalysis.buying_stage],
+                ["Objeções Detectadas", currentAnalysis.detected_objections?.join(', ') || '-'],
+                ["Dica do Coach", currentAnalysis.coach_whisper],
+                ["Próxima Melhor Ação", currentAnalysis.next_best_action || '-']
+            ];
+
+            autoTable(doc, {
+                startY: yPos,
+                head: [['Métrica', 'Resultado']],
+                body: analysisData,
+                theme: 'grid',
+                headStyles: { fillColor: [41, 98, 255] },
+                styles: { fontSize: 10, cellPadding: 4 }
+            });
+
+            yPos = (doc as any).lastAutoTable.finalY + 20;
+        }
+
+        // 2. HISTÓRICO DA CONVERSA (Apenas se type === 'full')
+        if (type === 'full') {
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text("Transcrição Completa da Conversa", 14, yPos);
+            yPos += 10;
+
+            const chatHistory = messages.filter(m => m.role !== 'system').map(m => {
+                const role = m.role === 'assistant' ? 'Cliente (Simulado)' : 'Vendedor (Você)';
+                return [m.timestamp.toLocaleTimeString(), role, m.content];
+            });
+
+            autoTable(doc, {
+                startY: yPos,
+                head: [['Hora', 'Participante', 'Mensagem']],
+                body: chatHistory,
+                theme: 'striped',
+                headStyles: { fillColor: [100, 100, 100] },
+                styles: { fontSize: 9, cellPadding: 3 },
+                columnStyles: { 2: { cellWidth: 'auto' } }
+            });
+        }
+
+        doc.save(`Elite_Sales_Coach_${type}_Report_${Date.now()}.pdf`);
+    };
+
+    const handleSaveChat = () => {
+        const textContent = messages.map(m => `[${m.role.toUpperCase()} - ${m.timestamp.toLocaleString()}]: ${m.content}`).join('\n\n');
+        const blob = new Blob([textContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sales-coach-history-${agent.slug}-${new Date().toISOString().slice(0, 10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleClearChat = () => {
+        if (confirm('Tem certeza que deseja limpar o histórico desta negociação?')) {
+            setMessages([{
+                id: 'welcome',
+                role: 'assistant',
+                content: `Olá! Sou o **${agent.name}**. \n\nVamos simular uma negociação? Atuarei como seu cliente ou treinador. \n\n*Pode começar a conversa!*`,
+                timestamp: new Date()
+            }]);
+            setCurrentAnalysis(null);
+        }
+    };
+
+    const handleReanalyze = async () => {
+        if (messages.length === 0) return;
+        setIsLoading(true);
+
+        try {
+            const analysisPromise = fetch(`${import.meta.env.VITE_API_URL}/api/agents/public/agent-sales-coach/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: [
+                        { role: 'system', content: 'You are an expert Sales Coach RE-ANALYZING a full conversation. Return ONLY a pure JSON object (no markdown) with keys: sentiment, buying_stage, detected_objections, coach_whisper, next_best_action.' },
+                        ...messages.map(m => ({ role: m.role, content: m.content }))
+                    ],
+                    sessionId: 're-analysis-' + Date.now()
+                })
+            });
+
+            const res = await analysisPromise;
+            const data = await res.json();
+
+            let analysisJsonStr = data.content;
+            analysisJsonStr = analysisJsonStr.replace(/```json/g, '').replace(/```/g, '');
+            const parsed = JSON.parse(analysisJsonStr);
+            setCurrentAnalysis(parsed);
+
+        } catch (e) {
+            console.error("Reanalysis failed", e);
+            alert("Erro ao reanalisar conversa.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
             {/* Header */}
@@ -175,13 +310,29 @@ export const PublicSalesCoach: React.FC<PublicSalesCoachProps> = ({ agent }) => 
                         <p className="text-xs text-gray-500">Sales Intelligence Powered by AIIAM</p>
                     </div>
                 </div>
-                <button
-                    onClick={() => setShowWhatsAppConfig(true)}
-                    className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                    title="Configuração WhatsApp"
-                >
-                    <Settings size={20} />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowWhatsAppConfig(true)}
+                        className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        title="Configuração WhatsApp"
+                    >
+                        <Settings size={20} />
+                    </button>
+                    <button
+                        onClick={handleSaveChat}
+                        className="p-2 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Salvar Conversa"
+                    >
+                        <Download size={20} />
+                    </button>
+                    <button
+                        onClick={handleClearChat}
+                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Limpar Conversa (Reset)"
+                    >
+                        <Trash2 size={20} />
+                    </button>
+                </div>
             </header>
 
             <main className="flex-1 flex overflow-hidden">
@@ -238,10 +389,33 @@ export const PublicSalesCoach: React.FC<PublicSalesCoachProps> = ({ agent }) => 
 
                 {/* RIGHT: AI Coach Teleprompter */}
                 <div className="w-80 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
-                    <div className="p-4 border-b border-gray-100 bg-gray-50">
+                    <div className="p-4 border-b border-gray-100 bg-gray-50 flex flex-col gap-3">
                         <h3 className="font-bold text-gray-700 flex items-center gap-2 text-sm uppercase tracking-wider">
                             <BrainCircuit size={16} /> Análise em Tempo Real
                         </h3>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => handleGeneratePDFReport('analysis')}
+                                className="flex-1 bg-white border border-gray-200 text-gray-600 px-2 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 flex items-center justify-center gap-1 transition-colors"
+                                title="Gerar Relatório de Análise"
+                            >
+                                <FileBarChart size={14} /> Análise
+                            </button>
+                            <button
+                                onClick={() => handleGeneratePDFReport('full')}
+                                className="flex-1 bg-white border border-gray-200 text-gray-600 px-2 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 flex items-center justify-center gap-1 transition-colors"
+                                title="Gerar Relatório Completo"
+                            >
+                                <FileText size={14} /> Completo
+                            </button>
+                            <button
+                                onClick={handleReanalyze}
+                                className="bg-white border border-gray-200 text-gray-600 px-2 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 flex items-center justify-center transition-colors"
+                                title="Reanalisar Conversa"
+                            >
+                                <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 space-y-6">
