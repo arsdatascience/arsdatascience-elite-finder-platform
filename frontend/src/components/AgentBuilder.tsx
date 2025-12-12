@@ -288,7 +288,6 @@ export const AgentBuilder: React.FC = () => {
 
         // Simulação de carregamento de dados para edição (Idealmente buscaria fresh data do backend)
         try {
-            const token = localStorage.getItem('token');
             // Endpoint imaginário para pegar full details se a lista for resumida. 
             // Se a lista já tem tudo, usar 'agent' direto. Vamos assumir que precisamos de reload para garantir.
             // Mas para este MVP, vamos usar o que temos ou o que o backend retorna no POST
