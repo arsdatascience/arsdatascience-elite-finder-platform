@@ -790,6 +790,16 @@ async function initializeDatabase() {
         console.log('⚠️ ML Configs erro:', mlConfigErr.message);
       }
 
+      // Migração 048: Complete Agent Schema (Fix missing columns)
+      console.log('🔄 Verificando migração 048 (Complete Agent Schema)...');
+      try {
+        const agentSchemaMigration = fs.readFileSync(path.join(__dirname, 'migrations', '048_complete_agent_schema.sql'), 'utf8');
+        await pool.query(agentSchemaMigration);
+        console.log('✅ Migração 048 (Agent Schema) aplicada.');
+      } catch (agentSchemaErr) {
+        console.log('⚠️ Erro na migração 048:', agentSchemaErr.message);
+      }
+
     } catch (err) {
       console.error('⚠️ Erro na migração:', err.message);
     }
