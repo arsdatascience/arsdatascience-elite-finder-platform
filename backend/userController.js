@@ -475,7 +475,7 @@ const updateTeamMember = async (req, res) => {
 const deleteTeamMember = async (req, res) => {
     const { id } = req.params;
     try {
-        const result = await db.query(`UPDATE users SET status = 'inactive', updated_at = NOW() WHERE id = $1 RETURNING id`, [id]);
+        const result = await db.query(`UPDATE users SET status = 'deleted', updated_at = NOW() WHERE id = $1 RETURNING id`, [id]);
         if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Membro não encontrado' });
         res.json({ success: true, message: 'Membro removido com sucesso' });
     } catch (err) {
