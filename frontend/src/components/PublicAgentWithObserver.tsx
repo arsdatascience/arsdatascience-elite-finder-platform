@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, Bot, User, Download, Trash2, Paperclip, FileUp, Settings, FileBarChart, FileText, RefreshCw } from 'lucide-react';
+import { Send, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, Bot, User, Download, Trash2, Paperclip, FileUp, Settings, FileBarChart, FileText, RefreshCw, Users, X } from 'lucide-react';
 import { WhatsAppConfigModal } from './WhatsAppConfigModal';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -24,6 +24,14 @@ interface AnalysisResult {
     gap_analysis?: string;
 }
 
+interface Session {
+    id: string;
+    name: string;
+    phone: string;
+    lastUpdate: string;
+    status: string;
+}
+
 interface LoggerAgentProps {
     agent: {
         id: string;
@@ -42,10 +50,16 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
     const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisResult | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const [sessions, setSessions] = useState<Session[]>([]);
+    const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+    const [activePhone, setActivePhone] = useState<string | null>(null);
+
     const [showWhatsAppConfig, setShowWhatsAppConfig] = useState(false);
 
-    // Load history from LocalStorage
+    // Load history from LocalStorage (ONLY IF NO SESSION ACTIVE)
     useEffect(() => {
+        if (activeSessionId) return; // Don't load local history if viewing a session
+
         const key = `chat_history_${agent.slug}`;
         const saved = localStorage.getItem(key);
         if (saved) {
@@ -67,18 +81,105 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
             content: `Olá! Sou **${agent.name}**. \n\n${agent.description || 'Como posso ajudar?'}`,
             timestamp: new Date()
         }]);
-    }, [agent]);
+    }, [agent, activeSessionId]);
 
-    // Save history to LocalStorage
+    // Save history to LocalStorage (ONLY IF NO SESSION ACTIVE)
     useEffect(() => {
-        if (messages.length > 0) {
+        if (!activeSessionId && messages.length > 0) {
             localStorage.setItem(`chat_history_${agent.slug}`, JSON.stringify(messages));
         }
-    }, [messages, agent.slug]);
+    }, [messages, agent.slug, activeSessionId]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
+
+    // --- Session Management Logic ---
+    useEffect(() => {
+        fetchSessions();
+    }, []);
+
+    const fetchSessions = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            // Check if token exists before fetching to avoid 401s if public view
+            if (!token) return;
+
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/sessions`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setSessions(data);
+            }
+        } catch (error) {
+            console.error("Error fetching sessions:", error);
+        }
+    };
+
+    const formatPhoneNumber = (phone: string | null) => {
+        if (!phone) return '';
+        const clean = phone.replace('@s.whatsapp.net', '').replace('@g.us', '');
+        if (clean.length >= 10 && (clean.startsWith('55') || clean.startsWith('1'))) {
+            if (clean.startsWith('55') && clean.length > 4) {
+                const ddd = clean.substring(2, 4);
+                const rest = clean.substring(4);
+                if (rest.length === 9) {
+                    return `+55 (${ddd}) ${rest.substring(0, 5)}-${rest.substring(5)}`;
+                } else if (rest.length === 8) {
+                    return `+55 (${ddd}) ${rest.substring(0, 4)}-${rest.substring(4)}`;
+                }
+            }
+        }
+        return clean;
+    };
+
+    const handleDeleteSession = async (sessionId: string) => {
+        if (!confirm('Tem certeza que deseja excluir esta conversa?')) return;
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/sessions/${sessionId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                setSessions(prev => prev.filter(s => s.id !== sessionId));
+                if (activeSessionId === sessionId) {
+                    setActiveSessionId(null);
+                    setActivePhone(null);
+                    setMessages([]); // Will trigger local storage load
+                    setCurrentAnalysis(null);
+                }
+            }
+        } catch (error) {
+            console.error('Error deleting session:', error);
+        }
+    };
+
+    const selectSession = async (session: Session) => {
+        setActiveSessionId(session.id);
+        setActivePhone(session.phone);
+        setMessages([]);
+        setCurrentAnalysis(null);
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/sessions/${session.id}/messages`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const formattedMessages = data.map((msg: any) => ({
+                    ...msg,
+                    timestamp: new Date(msg.timestamp),
+                    role: msg.role === 'agent' ? 'assistant' : 'user' // Normalize role
+                }));
+                setMessages(formattedMessages);
+            }
+        } catch (error) {
+            console.error("Error fetching messages:", error);
+        }
+    };
 
     const handleSaveChat = () => {
         const textContent = messages.map(m => `[${m.role.toUpperCase()} - ${m.timestamp.toLocaleString()}]: ${m.content}`).join('\n\n');
@@ -145,97 +246,152 @@ export const PublicAgentWithObserver: React.FC<LoggerAgentProps> = ({ agent, obs
     const handleSendMessage = async () => {
         if (!input.trim()) return;
 
-        const userMsg: Message = {
-            id: Date.now().toString(),
-            role: 'user',
-            content: input,
-            timestamp: new Date()
-        };
+        if (activeSessionId && activePhone) {
+            // --- SESSION MODE: Send to WhatsApp (Human -> Client) ---
+            try {
+                const token = localStorage.getItem('token');
+                await fetch(`${import.meta.env.VITE_API_URL}/api/whatsapp/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        to: activePhone,
+                        content: input,
+                        sessionId: activeSessionId
+                    })
+                });
 
-        setMessages(prev => [...prev, userMsg]);
-        setInput('');
-        setIsLoading(true);
+                const whatsappMsg: Message = {
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content: input,
+                    timestamp: new Date()
+                };
+                setMessages(prev => [...prev, whatsappMsg]);
+            } catch (error) {
+                console.error("Error sending WhatsApp message:", error);
+                alert('Erro ao enviar mensagem para o WhatsApp.');
+            }
 
-        try {
-            // 1. Primary Chat with the visible agent
-            const chatPromise = fetch(`${import.meta.env.VITE_API_URL}/api/agents/public/${agent.slug}/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    messages: messages.concat(userMsg).map(m => ({ role: m.role, content: m.content })),
-                    sessionId: 'public-' + Date.now()
-                })
-            });
-
-            // 2. Parallel Shadow Analysis with Observer (System Brain / Orchestrator)
-            // The prompt is now fetched from the DB for 'system-brain' slug.
+            setInput('');
+            // Trigger Observer Analysis for the new message
             const analysisPromise = fetch(`${import.meta.env.VITE_API_URL}/api/agents/public/${observerSlug}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     messages: [
-                        {
-                            role: 'system',
-                            content: `CONTEXT: User is chatting with Agent: "${agent.name}" (${agent.description}).`
-                        },
+                        { role: 'system', content: `CONTEXT: User (Sales Rep) sent message to Client via WhatsApp.` },
                         ...messages.map(m => ({ role: m.role, content: m.content })),
-                        { role: 'user', content: userMsg.content }
+                        { role: 'assistant', content: input } // We just sent this
                     ],
                     sessionId: 'analysis-' + Date.now()
                 })
             });
 
-            const [chatResponse, analysisResponse] = await Promise.all([chatPromise, analysisPromise]);
+            analysisPromise.then(res => res.json()).then(data => {
+                try {
+                    let analysisJsonStr = data.content;
+                    analysisJsonStr = analysisJsonStr.replace(/```json/g, '').replace(/```/g, '');
+                    const parsed = JSON.parse(analysisJsonStr);
+                    setCurrentAnalysis(parsed);
+                } catch (e) { }
+            });
 
-            if (!chatResponse.ok) throw new Error('Falha no chat');
-
-            const chatData = await chatResponse.json();
-
-            // Process Chat Response
-            let cleanContent = chatData.content;
-            try {
-                if (cleanContent.trim().startsWith('{')) {
-                    const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) cleanContent = JSON.parse(jsonMatch[0]).message || cleanContent;
-                }
-            } catch (e) { /* ignore */ }
-
-            const botMsg: Message = {
+        } else {
+            // --- WEB MODE: Chat with AI Agent (User -> AI) ---
+            const userMsg: Message = {
                 id: Date.now().toString(),
-                role: 'assistant',
-                content: cleanContent,
+                role: 'user',
+                content: input,
                 timestamp: new Date()
             };
 
-            setMessages(prev => [...prev, botMsg]);
+            setMessages(prev => [...prev, userMsg]);
+            setInput('');
+            setIsLoading(true);
 
-            // Process Analysis Response (Silent)
-            if (analysisResponse.ok) {
-                const analysisData = await analysisResponse.json();
+            try {
+                // 1. Primary Chat with the visible agent
+                const chatPromise = fetch(`${import.meta.env.VITE_API_URL}/api/agents/public/${agent.slug}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: messages.concat(userMsg).map(m => ({ role: m.role, content: m.content })),
+                        sessionId: 'public-' + Date.now()
+                    })
+                });
+
+                // 2. Parallel Shadow Analysis
+                const analysisPromise = fetch(`${import.meta.env.VITE_API_URL}/api/agents/public/${observerSlug}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: [
+                            {
+                                role: 'system',
+                                content: `CONTEXT: User is chatting with Agent: "${agent.name}" (${agent.description}).`
+                            },
+                            ...messages.map(m => ({ role: m.role, content: m.content })),
+                            { role: 'user', content: userMsg.content }
+                        ],
+                        sessionId: 'analysis-' + Date.now()
+                    })
+                });
+
+                const [chatResponse, analysisResponse] = await Promise.all([chatPromise, analysisPromise]);
+
+                if (!chatResponse.ok) throw new Error('Falha no chat');
+
+                const chatData = await chatResponse.json();
+
+                // Process Chat Response
+                let cleanContent = chatData.content;
                 try {
-                    let analysisJsonStr = analysisData.content;
-                    analysisJsonStr = analysisJsonStr.replace(/```json/g, '').replace(/```/g, '');
-
-                    const jsonMatch = analysisJsonStr.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        const parsed = JSON.parse(jsonMatch[0]);
-                        setCurrentAnalysis(parsed);
+                    if (cleanContent.trim().startsWith('{')) {
+                        const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) cleanContent = JSON.parse(jsonMatch[0]).message || cleanContent;
                     }
-                } catch (e) {
-                    console.warn('Failed to parse shadow analysis:', e);
-                }
-            }
+                } catch (e) { /* ignore */ }
 
-        } catch (err) {
-            console.error(err);
-            setMessages(prev => [...prev, {
-                id: Date.now().toString(),
-                role: 'system',
-                content: '⚠️ Erro ao processar. Tente novamente.',
-                timestamp: new Date()
-            }]);
-        } finally {
-            setIsLoading(false);
+                const botMsg: Message = {
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content: cleanContent,
+                    timestamp: new Date()
+                };
+
+                setMessages(prev => [...prev, botMsg]);
+
+                // Process Analysis Response (Silent)
+                if (analysisResponse.ok) {
+                    const analysisData = await analysisResponse.json();
+                    try {
+                        let analysisJsonStr = analysisData.content;
+                        analysisJsonStr = analysisJsonStr.replace(/```json/g, '').replace(/```/g, '');
+
+                        const jsonMatch = analysisJsonStr.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            const parsed = JSON.parse(jsonMatch[0]);
+                            setCurrentAnalysis(parsed);
+                        }
+                    } catch (e) {
+                        console.warn('Failed to parse shadow analysis:', e);
+                    }
+                }
+
+            } catch (err) {
+                console.error(err);
+                setMessages(prev => [...prev, {
+                    id: Date.now().toString(),
+                    role: 'system',
+                    content: '⚠️ Erro ao processar. Tente novamente.',
+                    timestamp: new Date()
+                }]);
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 

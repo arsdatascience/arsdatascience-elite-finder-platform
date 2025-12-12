@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, Bot, User } from 'lucide-react';
+import { Send, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, Bot, User, Settings } from 'lucide-react';
+import { WhatsAppConfigModal } from './WhatsAppConfigModal';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 
@@ -36,6 +37,7 @@ export const PublicSalesCoach: React.FC<PublicSalesCoachProps> = ({ agent }) => 
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisResult | null>(null);
+    const [showWhatsAppConfig, setShowWhatsAppConfig] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     // Initial Greeting
@@ -173,6 +175,13 @@ export const PublicSalesCoach: React.FC<PublicSalesCoachProps> = ({ agent }) => 
                         <p className="text-xs text-gray-500">Sales Intelligence Powered by AIIAM</p>
                     </div>
                 </div>
+                <button
+                    onClick={() => setShowWhatsAppConfig(true)}
+                    className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                    title="Configuração WhatsApp"
+                >
+                    <Settings size={20} />
+                </button>
             </header>
 
             <main className="flex-1 flex overflow-hidden">
@@ -293,6 +302,11 @@ export const PublicSalesCoach: React.FC<PublicSalesCoachProps> = ({ agent }) => 
                     </div>
                 </div>
             </main>
+            <WhatsAppConfigModal
+                isOpen={showWhatsAppConfig}
+                onClose={() => setShowWhatsAppConfig(false)}
+                onConfigUpdate={() => console.log('WhatsApp Config Updated')}
+            />
         </div>
     );
 };
