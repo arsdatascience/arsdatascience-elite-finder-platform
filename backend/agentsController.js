@@ -276,11 +276,11 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const { clientId } = req.query;
-        let query = 'SELECT id, name, category, status, created_at, client_id FROM chatbots';
+        let query = 'SELECT id, name, category, status, created_at, client_id, slug FROM chatbots WHERE is_system = false';
         const params = [];
 
         if (clientId) {
-            query += ' WHERE client_id = $1';
+            query += ' AND client_id = $1';
             params.push(clientId);
         }
 

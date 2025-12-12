@@ -823,6 +823,23 @@ async function initializeDatabase() {
     } catch (seedAgentsErr) {
       console.log('⚠️ Erro na migração 049:', seedAgentsErr.message);
     }
+
+    // ============================================
+    // MIGRATION 050: Hide System Agents
+    // ============================================
+    console.log('🔄 Verificando migração 050 (Hide System Agents)...');
+    try {
+      const hideSystemMigration = fs.readFileSync(path.join(__dirname, 'migrations', '050_hide_system_agents.sql'), 'utf8');
+
+      const statements = hideSystemMigration.split(';').filter(stmt => stmt.trim().length > 0);
+      for (const stmt of statements) {
+        await pool.query(stmt);
+      }
+
+      console.log('✅ Migração 050 (Hide System Agents) aplicada.');
+    } catch (hideSystemErr) {
+      console.log('⚠️ Erro na migração 050:', hideSystemErr.message);
+    }
   } catch (error) {
     console.error('⚠️  Database initialization error:', error.message);
     // Don't crash the app if schema already exists
