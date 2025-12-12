@@ -4,6 +4,7 @@ import { Send, Paperclip, Bot, User, RefreshCw, AlertTriangle, Trash2, Download,
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { PublicSalesCoach } from './PublicSalesCoach';
+import { PublicAgentWithObserver } from './PublicAgentWithObserver';
 
 interface Message {
     id: string;
@@ -171,196 +172,192 @@ export const PublicAgentChat: React.FC = () => {
         return <div className="min-h-screen flex items-center justify-center bg-gray-50"><RefreshCw className="animate-spin text-primary-600" /></div>;
     }
 
-    // Custom Template for Sales Coach
-    if (agent.slug.includes('sales-coach')) {
-        return <PublicSalesCoach agent={agent} />;
-    }
+    // Use the Dual-Agent Observer View for ALL agents as requested
+    // "Connect System Brain to any agent"
+    return <PublicAgentWithObserver agent={agent} observerSlug="agent-sales-coach" />;
 
-    return (
-        <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-            {/* Header */}
-            <header className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm sticky top-0 z-10">
-                <div className="max-w-4xl mx-auto flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg overflow-hidden shrink-0">
-                        {agent?.avatar ? (
-                            <img src={agent.avatar} alt={agent.name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-                        ) : (
-                            <Bot size={20} />
-                        )}
-                        <Bot size={20} className="hidden text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <h1 className="text-lg font-bold text-gray-800 flex items-center gap-2 truncate">
-                            {agent?.name} <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full shrink-0">Online</span>
-                        </h1>
-                        <p className="text-xs text-gray-500 line-clamp-1">{agent?.description}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleSaveChat}
-                            className="p-2 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Salvar Conversa"
-                        >
-                            <Download size={18} />
-                        </button>
-                        <button
-                            onClick={handleClearChat}
-                            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Limpar Conversa"
-                        >
-                            <Trash2 size={18} />
-                        </button>
-                    </div>
-                </div>
-            </header>
+    <header className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg overflow-hidden shrink-0">
+                {agent?.avatar ? (
+                    <img src={agent.avatar} alt={agent.name} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                ) : (
+                    <Bot size={20} />
+                )}
+                <Bot size={20} className="hidden text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+                <h1 className="text-lg font-bold text-gray-800 flex items-center gap-2 truncate">
+                    {agent?.name} <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full shrink-0">Online</span>
+                </h1>
+                <p className="text-xs text-gray-500 line-clamp-1">{agent?.description}</p>
+            </div>
+            <div className="flex items-center gap-2">
+                <button
+                    onClick={handleSaveChat}
+                    className="p-2 text-gray-500 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Salvar Conversa"
+                >
+                    <Download size={18} />
+                </button>
+                <button
+                    onClick={handleClearChat}
+                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Limpar Conversa"
+                >
+                    <Trash2 size={18} />
+                </button>
+            </div>
+        </div>
+    </header>
 
-            {/* Chat Area with Drag Drop */}
-            <main
-                className="flex-1 overflow-y-auto p-4 custom-scrollbar relative"
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-            >
-                {/* Drag Overlay */}
-                <AnimatePresence>
-                    {isDragging && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-primary-500/10 backdrop-blur-sm z-50 flex items-center justify-center border-4 border-dashed border-primary-500 m-4 rounded-3xl"
-                        >
-                            <div className="bg-white p-6 rounded-2xl shadow-xl text-center">
-                                <FileJson className="w-12 h-12 text-primary-500 mx-auto mb-2" />
-                                <h3 className="text-lg font-bold text-gray-800">Solte arquivos aqui</h3>
-                                <p className="text-sm text-gray-500">Para adicionar ao contexto</p>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+    {/* Chat Area with Drag Drop */ }
+    <main
+        className="flex-1 overflow-y-auto p-4 custom-scrollbar relative"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+    >
+        {/* Drag Overlay */}
+        <AnimatePresence>
+            {isDragging && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-primary-500/10 backdrop-blur-sm z-50 flex items-center justify-center border-4 border-dashed border-primary-500 m-4 rounded-3xl"
+                >
+                    <div className="bg-white p-6 rounded-2xl shadow-xl text-center">
+                        <FileJson className="w-12 h-12 text-primary-500 mx-auto mb-2" />
+                        <h3 className="text-lg font-bold text-gray-800">Solte arquivos aqui</h3>
+                        <p className="text-sm text-gray-500">Para adicionar ao contexto</p>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
 
-                <div className="max-w-3xl mx-auto space-y-6 pb-4">
-                    {messages.map((msg) => (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            key={msg.id}
-                            className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
-                        >
-                            <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm
+        <div className="max-w-3xl mx-auto space-y-6 pb-4">
+            {messages.map((msg) => (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    key={msg.id}
+                    className={`flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                >
+                    <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm
                   ${msg.role === 'user' ? 'bg-gray-800 text-white' : 'bg-gradient-to-br from-primary-500 to-indigo-600 text-white'}
                 `}
-                            >
-                                {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
-                            </div>
+                    >
+                        {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
+                    </div>
 
-                            <div
-                                className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-sm text-sm leading-relaxed
+                    <div
+                        className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-sm text-sm leading-relaxed
                   ${msg.role === 'user'
-                                        ? 'bg-gray-800 text-white rounded-tr-none'
-                                        : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'}
+                                ? 'bg-gray-800 text-white rounded-tr-none'
+                                : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'}
                 `}
-                            >
-                                {msg.role === 'system' ? (
-                                    <span className="text-red-500 font-medium">{msg.content}</span>
-                                ) : (
-                                    <ReactMarkdown
-                                        components={{
-                                            code(props: any) {
-                                                const { node, inline, className, children, ...rest } = props;
-                                                return !inline ? (
-                                                    <div className="bg-gray-900 rounded-md p-3 my-2 overflow-x-auto text-xs font-mono text-gray-200">
-                                                        {children}
-                                                    </div>
-                                                ) : (
-                                                    <code className={`${className} bg-black/10 px-1 py-0.5 rounded font-mono text-xs`} {...rest}>
-                                                        {children}
-                                                    </code>
-                                                );
-                                            }
-                                        }}
-                                    >
-                                        {msg.content}
-                                    </ReactMarkdown>
-                                )}
-                                <div className={`text-[10px] mt-2 opacity-50 ${msg.role === 'user' ? 'text-gray-300' : 'text-gray-400'}`}>
-                                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </div>
-                            </div>
-                        </motion.div>
-                    ))}
-
-                    {/* File Previews */}
-                    {uploadedFiles.length > 0 && (
-                        <div className="flex gap-2 flex-wrap justify-end">
-                            {uploadedFiles.map((file, idx) => (
-                                <div key={idx} className="bg-gray-100 px-3 py-1 rounded-lg text-xs flex items-center gap-2 border border-gray-200">
-                                    <Paperclip size={12} />
-                                    <span className="max-w-[150px] truncate">{file.name}</span>
-                                    <button onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== idx))} className="text-gray-500 hover:text-red-500">
-                                        <X size={12} />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {isLoading && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center text-white shrink-0">
-                                <Bot size={16} />
-                            </div>
-                            <div className="bg-white px-5 py-4 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm">
-                                <div className="flex gap-1.5 h-full items-center">
-                                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                    <div ref={messagesEndRef} />
-                </div>
-            </main>
-
-            {/* Input Area */}
-            <footer className="bg-white border-t border-gray-200 p-4 sticky bottom-0 z-10">
-                <div className="max-w-3xl mx-auto">
-                    <div className="relative flex items-center gap-2">
-                        <button className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors relative">
-                            <Paperclip size={20} />
-                            <input
-                                type="file"
-                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                multiple
-                                onChange={(e) => {
-                                    if (e.target.files) setUploadedFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                    >
+                        {msg.role === 'system' ? (
+                            <span className="text-red-500 font-medium">{msg.content}</span>
+                        ) : (
+                            <ReactMarkdown
+                                components={{
+                                    code(props: any) {
+                                        const { node, inline, className, children, ...rest } = props;
+                                        return !inline ? (
+                                            <div className="bg-gray-900 rounded-md p-3 my-2 overflow-x-auto text-xs font-mono text-gray-200">
+                                                {children}
+                                            </div>
+                                        ) : (
+                                            <code className={`${className} bg-black/10 px-1 py-0.5 rounded font-mono text-xs`} {...rest}>
+                                                {children}
+                                            </code>
+                                        );
+                                    }
                                 }}
-                            />
-                        </button>
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                            placeholder="Digite sua mensagem para o agente..."
-                            className="flex-1 bg-gray-100 border-0 rounded-full px-6 py-3 focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all outline-none text-gray-800 placeholder-gray-400"
-                            disabled={isLoading}
-                        />
-                        <button
-                            onClick={handleSendMessage}
-                            disabled={(!input.trim() && uploadedFiles.length === 0) || isLoading}
-                            className="p-3 bg-gray-900 text-white rounded-full hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95 shadow-lg"
-                        >
-                            <Send size={20} />
-                        </button>
+                            >
+                                {msg.content}
+                            </ReactMarkdown>
+                        )}
+                        <div className={`text-[10px] mt-2 opacity-50 ${msg.role === 'user' ? 'text-gray-300' : 'text-gray-400'}`}>
+                            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
                     </div>
-                    <div className="text-center mt-2 text-xs text-gray-400">
-                        AI pode cometer erros. Verifique as informações importantes.
-                    </div>
+                </motion.div>
+            ))}
+
+            {/* File Previews */}
+            {uploadedFiles.length > 0 && (
+                <div className="flex gap-2 flex-wrap justify-end">
+                    {uploadedFiles.map((file, idx) => (
+                        <div key={idx} className="bg-gray-100 px-3 py-1 rounded-lg text-xs flex items-center gap-2 border border-gray-200">
+                            <Paperclip size={12} />
+                            <span className="max-w-[150px] truncate">{file.name}</span>
+                            <button onClick={() => setUploadedFiles(prev => prev.filter((_, i) => i !== idx))} className="text-gray-500 hover:text-red-500">
+                                <X size={12} />
+                            </button>
+                        </div>
+                    ))}
                 </div>
-            </footer>
+            )}
+
+            {isLoading && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center text-white shrink-0">
+                        <Bot size={16} />
+                    </div>
+                    <div className="bg-white px-5 py-4 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm">
+                        <div className="flex gap-1.5 h-full items-center">
+                            <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+            <div ref={messagesEndRef} />
         </div>
+    </main>
+
+    {/* Input Area */ }
+    <footer className="bg-white border-t border-gray-200 p-4 sticky bottom-0 z-10">
+        <div className="max-w-3xl mx-auto">
+            <div className="relative flex items-center gap-2">
+                <button className="p-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors relative">
+                    <Paperclip size={20} />
+                    <input
+                        type="file"
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        multiple
+                        onChange={(e) => {
+                            if (e.target.files) setUploadedFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                        }}
+                    />
+                </button>
+                <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Digite sua mensagem para o agente..."
+                    className="flex-1 bg-gray-100 border-0 rounded-full px-6 py-3 focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all outline-none text-gray-800 placeholder-gray-400"
+                    disabled={isLoading}
+                />
+                <button
+                    onClick={handleSendMessage}
+                    disabled={(!input.trim() && uploadedFiles.length === 0) || isLoading}
+                    className="p-3 bg-gray-900 text-white rounded-full hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95 shadow-lg"
+                >
+                    <Send size={20} />
+                </button>
+            </div>
+            <div className="text-center mt-2 text-xs text-gray-400">
+                AI pode cometer erros. Verifique as informações importantes.
+            </div>
+        </div>
+    </footer>
+        </div >
     );
 };
