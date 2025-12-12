@@ -2,7 +2,7 @@ const { createWorker } = require('../queueClient');
 const { Pool } = require('pg');
 const pool = require('../database');
 const aiController = require('../aiController');
-const whatsappController = require('../whatsappController');
+const { getAgentConfig } = aiController;
 
 // ML Agent Services
 const mlIntentDetector = require('./mlIntentDetector');
@@ -410,37 +410,38 @@ async function handleBatchContentGeneration(payload) {
     try {
         const apiKey = await aiController.getEffectiveApiKey(provider, userId);
 
+        // DYNAMIC AGENT: Batch Copywriter
+        const agentConfig = await getAgentConfig('agent-batch-copywriter', tenantId);
+
+        let systemPrompt = "";
+        let modelToUse = "gpt-4-turbo-preview";
+
+        if (agentConfig && agentConfig.prompts && agentConfig.prompts.system) {
+            systemPrompt = agentConfig.prompts.system;
+            if (agentConfig.aiConfig && agentConfig.aiConfig.model) modelToUse = agentConfig.aiConfig.model;
+        } else {
+            console.warn("⚠️ [Batch Job] 'agent-batch-copywriter' not found in DB. Using minimalistic fallback.");
+            systemPrompt = "Atue como copywriter. Crie um post sobre o tema. Retorne JSON: headlines, body, cta, hashtags, imageIdea.";
+        }
+
         const prompt = `
-          ATUE COMO: Copywriter Sênior Especialista em ${platform}.
-          TAREFA: Criar um post de alta conversão para o Dia ${dayIndex} de uma sequência.
+          ${systemPrompt}
           
           TEMA DO DIA: "${topic}"
           PLATAFORMA: ${platform}
           TOM DE VOZ: ${tone}
           PÚBLICO ALVO: ${targetAudience.ageRange} anos, renda ${targetAudience.income}. Interesses: ${targetAudience.interests}.
 
-          REQUISITOS:
-          1. Headline Magnética (Gatilho de Curiosidade).
-          2. Corpo do texto formatado para ${platform} (se Instagram = visual, se LinkedIn = profissional).
-          3. Call to Action (CTA) claro.
-          4. Hashtags estratégicas.
-          5. Ideia visual para o designer.
-
-          Retorne JSON estrito:
-          {
-            "headlines": ["Opção 1", "Opção 2"],
-            "body": "Texto completo...",
-            "cta": "...",
-            "hashtags": ["#..."],
-            "imageIdea": "..."
-          }
+          REQUISITOS ESPECÍFICOS DO DIA ${dayIndex}:
+          - Foco em alta conversão.
+          - Respeitar limite de caracteres do ${platform}.
         `;
 
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
             body: JSON.stringify({
-                model: "gpt-4-turbo-preview",
+                model: modelToUse,
                 messages: [{ role: "user", content: prompt + "\n\nRetorne APENAS JSON." }],
                 temperature: 0.7,
                 response_format: { type: "json_object" }

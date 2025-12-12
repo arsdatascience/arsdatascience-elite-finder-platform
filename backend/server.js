@@ -876,6 +876,51 @@ async function initializeDatabase() {
     } catch (schemaErr) {
       console.log('⚠️ Erro na migração 052:', schemaErr.message);
     }
+
+    // ============================================
+    // MIGRATION 053: Seed Data Sources
+    // ============================================
+    console.log('🔄 Verificando migração 053 (Seed Data Sources)...');
+    try {
+      const seedDSMigration = fs.readFileSync(path.join(__dirname, 'migrations', '053_seed_data_sources.sql'), 'utf8');
+      const statements = seedDSMigration.split(';').filter(stmt => stmt.trim().length > 0);
+      for (const stmt of statements) {
+        await pool.query(stmt);
+      }
+      console.log('✅ Migração 053 (Seed Data Sources) aplicada.');
+    } catch (seedDSErr) {
+      console.log('⚠️ Erro na migração 053:', seedDSErr.message);
+    }
+
+    // ============================================
+    // MIGRATION 054: Migrate Hardcoded Agents
+    // ============================================
+    console.log('🔄 Verificando migração 054 (Migrate Hardcoded Agents)...');
+    try {
+      const migrateAgentsMigration = fs.readFileSync(path.join(__dirname, 'migrations', '054_migrate_hardcoded_agents.sql'), 'utf8');
+      const statements = migrateAgentsMigration.split(';').filter(stmt => stmt.trim().length > 0);
+      for (const stmt of statements) {
+        await pool.query(stmt);
+      }
+      console.log('✅ Migração 054 (Migrate Hardcoded Agents) aplicada.');
+    } catch (migrateAgentsErr) {
+      console.log('⚠️ Erro na migração 054:', migrateAgentsErr.message);
+    }
+
+    // ============================================
+    // MIGRATION 055: Optimize Agent Prompts
+    // ============================================
+    console.log('🔄 Verificando migração 055 (Optimize Agent Prompts)...');
+    try {
+      const optimizePromptsMigration = fs.readFileSync(path.join(__dirname, 'migrations', '055_optimize_agent_prompts.sql'), 'utf8');
+      const statements = optimizePromptsMigration.split(';').filter(stmt => stmt.trim().length > 0);
+      for (const stmt of statements) {
+        await pool.query(stmt);
+      }
+      console.log('✅ Migração 055 (Optimize Agent Prompts) aplicada.');
+    } catch (optimizeErr) {
+      console.log('⚠️ Erro na migração 055:', optimizeErr.message);
+    }
   } catch (error) {
     console.error('⚠️  Database initialization error:', error.message);
     // Don't crash the app if schema already exists
@@ -1456,9 +1501,3 @@ server.listen(PORT, HOST, () => {
     console.error('❌ Erro crítico na inicialização (Migrações):', err);
   });
 });
-
-
-
-   
-    
- 

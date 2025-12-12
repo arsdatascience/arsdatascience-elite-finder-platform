@@ -498,42 +498,23 @@ const generateMarketingContent = async (req, res) => {
         "imageIdea": "Descrição da imagem/vídeo..."
       }
       `;
-  } else {
-    // Hardcoded Fallback
-    dynamicPrompt = `
-       Você é um Copywriter de Elite de classe mundial (nível Ogilvy/Gary Halbert).
-       ...
-       `;
   }
 
-  const prompt = dynamicPrompt || `
-      Você é um Copywriter de Elite de classe mundial (nível Ogilvy/Gary Halbert).
-      
-      TAREFA: Criar conteúdo de marketing de alta conversão.
-      FORMATO: ${typeDescription}
-      PLATAFORMA: ${request.platform}
-      TÓPICO/PRODUTO: ${request.topic}
-      TOM DE VOZ: ${request.tone}
-      IDIOMA: Português do Brasil (PT-BR)
-      CLIENTE_ID: ${request.clientId || 'N/A'}
+  if (!dynamicPrompt) {
+    console.warn("⚠️ [Content Agent] No Agent Config found for 'agent-creative-director'. Using generic fallback.");
+    dynamicPrompt = `
+       Você é um especialista em Marketing Digital.
+       TAREFA: Criar conteúdo de marketing.
+       FORMATO: ${typeDescription}
+       PLATAFORMA: ${request.platform}
+       TÓPICO: ${request.topic}
+       
+       Retorne JSON estrito com: headlines, body, cta, hashtags, imageIdea.
+     `;
+  }
 
-      REGRAS:
-      1. Use gatilhos mentais (urgência, escassez, prova social).
-      2. Se for Reels, forneça um roteiro visual passo a passo.
-      3. Se for Carrossel, separe por Slides.
-      4. Se for Blog, use H2 e H3.
-      5. Gere 3 opções de Headlines (Títulos).
-      6. Sugira uma ideia visual clara para a imagem/vídeo.
+  const prompt = dynamicPrompt;
 
-      Retorne JSON estrito com a seguinte estrutura:
-      {
-        "headlines": ["Titulo 1", "Titulo 2", "Titulo 3"],
-        "body": "Texto do conteúdo...",
-        "cta": "Chamada para ação...",
-        "hashtags": ["#tag1", "#tag2"],
-        "imageIdea": "Descrição da imagem/vídeo..."
-      }
-  `;
 
   try {
     let text;
@@ -690,10 +671,10 @@ const askEliteAssistant = async (req, res) => {
     // Usually System Prompt is fixed identity. Context is injected into the prompt.
   } else {
     // Fallback to Hardcoded
-    systemPrompt = `
-    Você é o **Elite Strategist**, um Especialista Sênior em Marketing Digital e Vendas da plataforma 'EliteFinder'.
-    ... (fallback content) ...
-    `;
+    // Fallback if DB fails - Generic safety prompt
+    systemPrompt = "Você é um assistente virtual útil.";
+    console.warn("⚠️ [Elite Assistant] Config not found in DB. Using minimal fallback.");
+
   }
 
   const prompt = `
@@ -767,43 +748,12 @@ const analyzeConversationStrategy = async (req, res) => {
  * Internal function to analyze conversation strategy
  */
 const analyzeStrategyInternal = async (messages, agentContext, apiKey, customPrompt, model) => {
-  const basePrompt = customPrompt || `
-        Atue como um Diretor de Estratégia Comercial e Marketing Sênior. Analise a seguinte conversa entre um Agente (Bot) e um Cliente (Prospect).
-        
-        CONTEXTO DO AGENTE:
-        ${JSON.stringify(agentContext || {})}
-
-        HISTÓRICO DA CONVERSA:
-        ${messages.map(m => `${m.role === 'user' ? 'CLIENTE' : 'AGENTE'}: ${m.content}`).join('\n')}
-
-        TAREFA:
-        Realize uma análise em tempo real para fornecer "Coaching de Vendas" imediato.
-        
-        PRIMEIRO, CLASSIFIQUE O CONTEXTO:
-        - É uma conversa de VENDAS/NEGÓCIOS? (Perguntas sobre produto, preço, serviço, dúvidas técnicas).
-        - Ou é uma conversa INFORMAL/SOCIAL? (Piadas, conversa fiada, "bom dia", assuntos pessoais, memes).
-
-        SE FOR INFORMAL/SOCIAL:
-        - NÃO tente vender agora.
-        - "sentiment": O real (ex: "Positivo" ou "Neutro").
-        - "buying_stage": "Construção de Rapport".
-        - "suggested_strategy": "Manter Conexão Pessoal".
-        - "next_best_action": Sugira uma resposta leve, humorada ou educada para manter o relacionamento.
-        - "coach_whisper": "Conversa informal detectada. Foque no relacionamento, não venda agora."
-
-        SE FOR VENDAS/NEGÓCIOS:
-        Identifique o sentimento, objeções ocultas e sugira a próxima melhor ação para FECHAR A VENDA ou AVANÇAR O FUNIL.
-
-        Gere um relatório estratégico estruturado em JSON com os seguintes campos:
-        1. "sentiment": Sentimento atual do cliente (Positivo, Neutro, Cético, Irritado).
-        2. "detected_objections": Lista de objeções identificadas (ex: Preço, Concorrência, Autoridade).
-        3. "buying_stage": Estágio de compra (Curiosidade, Consideração, Decisão, Construção de Rapport).
-        4. "suggested_strategy": Uma estratégia tática para o vendedor usar AGORA.
-        5. "next_best_action": A próxima pergunta ou afirmação exata que deve ser feita.
-        6. "coach_whisper": Uma dica curta e direta para o vendedor (Whisper).
-
-        Responda APENAS o JSON.
-        `;
+  let basePrompt = customPrompt;
+  if (!basePrompt) {
+    console.warn("⚠️ [Sales Coach] No prompt provided and agent-sales-coach not found in DB.");
+    // Minimal fallback to prevent crash, but logic should be in DB
+    basePrompt = `Atue como coach de vendas. Analise a conversa e retorne JSON com sentiment, buying_stage, suggested_strategy.`;
+  }
 
   const text = await callOpenAI(basePrompt, apiKey, model || "gpt-4-turbo-preview", true);
   const cleanText = text.replace(/```json\n?|\n?```/g, '').trim();
@@ -1054,5 +1004,6 @@ module.exports = {
   analyzeStrategyInternal,
   getEffectiveApiKey,
   generateContentIdeasFromChat,
-  startBatchGeneration
+  startBatchGeneration,
+  getAgentConfig
 };
