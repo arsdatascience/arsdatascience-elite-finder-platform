@@ -362,6 +362,9 @@ const updateTeamMember = async (req, res) => {
     const updates = req.body;
 
     try {
+        console.log(`[UPDATE USER] ID: ${id}`);
+        console.log('[UPDATE USER] Updates:', JSON.stringify(updates, null, 2));
+
         // 1. Fetch current user data
         const currentUserRes = await db.query('SELECT * FROM users WHERE id = $1', [id]);
         if (currentUserRes.rows.length === 0) {
@@ -455,8 +458,11 @@ const updateTeamMember = async (req, res) => {
         addField('updated_at', new Date());
 
         if (fieldsToUpdate.length === 0) {
+            console.log('[UPDATE USER] No fields to update.');
             return res.json({ success: true, member: currentUser, message: 'Nada a atualizar' });
         }
+
+        console.log('[UPDATE USER] Executing Query Fields:', fieldsToUpdate);
 
         // Execute Update
         const query = `

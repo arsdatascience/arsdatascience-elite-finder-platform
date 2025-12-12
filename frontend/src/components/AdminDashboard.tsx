@@ -134,7 +134,7 @@ const AdminDashboard: React.FC = () => {
     const fetchUsers = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users?t=${new Date().getTime()}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
