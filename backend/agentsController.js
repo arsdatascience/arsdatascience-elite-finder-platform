@@ -275,13 +275,24 @@ router.post('/', async (req, res) => {
 // Listar agentes (Simplificado, apenas dados básicos)
 router.get('/', async (req, res) => {
     try {
-        const { clientId } = req.query;
-        let query = 'SELECT id, name, category, status, created_at, client_id, slug FROM chatbots WHERE is_system = false';
+        const { clientId, include_system } = req.query;
+
+        let conditions = [];
         const params = [];
 
+        // Check if we should include system agents (default: false)
+        if (include_system !== 'true') {
+            conditions.push('is_system = false');
+        }
+
         if (clientId) {
-            query += ' AND client_id = $1';
+            conditions.push(`client_id = $${params.length + 1}`);
             params.push(clientId);
+        }
+
+        let query = 'SELECT id, name, category, status, created_at, client_id, slug, is_system FROM chatbots';
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
         }
 
         query += ' ORDER BY created_at DESC';
