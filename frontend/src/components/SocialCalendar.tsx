@@ -384,7 +384,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
     return (
         <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-fade-in relative">
             {/* Client Filter Bar */}
-            <div className="px-6 py-3 bg-white border-b border-gray-100 flex items-center gap-3">
+            <div className="px-4 md:px-6 py-3 bg-white border-b border-gray-100 flex flex-col md:flex-row items-start md:items-center gap-3">
                 <div className="flex items-center gap-2 text-gray-600">
                     <Users size={18} />
                     <span className="text-sm font-medium">Cliente:</span>
@@ -392,7 +392,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                 <select
                     value={selectedClient}
                     onChange={(e) => setSelectedClient(e.target.value)}
-                    className="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 outline-none min-w-[200px]"
+                    className="w-full md:w-auto bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block p-2 outline-none min-w-[200px]"
                 >
                     <option value="all">Todos os Clientes</option>
                     {clients?.map((client: any) => (
@@ -402,51 +402,53 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
             </div>
 
             {/* Toolbar */}
-            <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-wrap gap-4 items-center justify-between shrink-0">
-                <div className="flex gap-2 bg-white rounded-lg p-1 shadow-sm">
+            <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col md:flex-row flex-wrap gap-4 items-start md:items-center justify-between shrink-0">
+                <div className="flex w-full md:w-auto gap-2 bg-white rounded-lg p-1 shadow-sm overflow-x-auto">
                     <button
                         onClick={() => setViewMode('month')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'month' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                        className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${viewMode === 'month' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
                     >
                         <Grid3x3 size={16} />
-                        Mês
+                        <span className="hidden sm:inline">Mês</span>
                     </button>
                     <button
                         onClick={() => setViewMode('week')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'week' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                        className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${viewMode === 'week' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
                     >
                         <List size={16} />
-                        Semana
+                        <span className="hidden sm:inline">Semana</span>
                     </button>
                     <button
                         onClick={() => setViewMode('day')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${viewMode === 'day' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                        className={`flex-1 md:flex-none px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${viewMode === 'day' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
                     >
                         <Clock size={16} />
-                        Dia
+                        <span className="hidden sm:inline">Dia</span>
                     </button>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <Filter size={16} className="text-gray-500" />
-                    <span className="text-sm font-medium text-gray-600">Filtros:</span>
-                    {platforms.map(platform => {
-                        const Icon = getPlatformIcon(platform.id);
-                        const isSelected = selectedPlatforms.includes(platform.id);
-                        return (
-                            <button
-                                key={platform.id}
-                                onClick={() => togglePlatform(platform.id)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${isSelected ? getPlatformColor(platform.id) : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
-                            >
-                                <Icon size={14} />
-                                {platform.name}
-                            </button>
-                        );
-                    })}
+                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <Filter size={16} className="text-gray-500 hidden md:block" />
+                    <span className="text-sm font-medium text-gray-600 hidden md:block">Filtros:</span>
+                    <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+                        {platforms.map(platform => {
+                            const Icon = getPlatformIcon(platform.id);
+                            const isSelected = selectedPlatforms.includes(platform.id);
+                            return (
+                                <button
+                                    key={platform.id}
+                                    onClick={() => togglePlatform(platform.id)}
+                                    className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1 ${isSelected ? getPlatformColor(platform.id) : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
+                                >
+                                    <Icon size={14} />
+                                    <span className="hidden sm:inline">{platform.name}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 w-full md:w-auto justify-end">
                     <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full">v1.0</span>
                     <div className="text-sm text-gray-600">
                         <span className="font-bold">{filteredPosts.length}</span> posts
@@ -459,10 +461,10 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                 <button onClick={previousPeriod} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                     <ChevronLeft size={24} />
                 </button>
-                <h4 className="text-xl font-bold text-gray-800">
+                <h4 className="text-lg md:text-xl font-bold text-gray-800 text-center">
                     {viewMode === 'month'
                         ? `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`
-                        : `Semana de ${weekDays[0].getDate()} a ${weekDays[6].getDate()} de ${monthNames[currentDate.getMonth()]}`
+                        : <span className="text-sm md:text-xl">Semana {weekDays[0].getDate()} - {weekDays[6].getDate()} {monthNames[currentDate.getMonth()]}</span>
                     }
                 </h4>
                 <button onClick={nextPeriod} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -471,11 +473,11 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
             </div>
 
             {/* Calendar Grid */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-2 md:p-6">
                 {viewMode === 'month' ? (
-                    <div className="grid grid-cols-7 gap-2">
+                    <div className="grid grid-cols-7 gap-1 md:gap-2">
                         {dayNames.map(day => (
-                            <div key={day} className="text-center font-bold text-gray-600 text-sm py-2">{day}</div>
+                            <div key={day} className="text-center font-bold text-gray-600 text-xs md:text-sm py-2">{day}</div>
                         ))}
                         {Array.from({ length: startingDayOfWeek }).map((_, i) => (
                             <div key={`empty-${i}`} className="aspect-square" />
@@ -490,24 +492,32 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                     onDragOver={handleDragOver}
                                     onDrop={() => handleDrop(day)}
                                     onClick={() => handleDayClick(day)}
-                                    className={`aspect-square border rounded-lg p-2 flex flex-col ${isToday ? 'border-primary-500 bg-primary-50' : 'border-gray-200 bg-white'} hover:shadow-md transition-shadow cursor-pointer min-h-[100px]`}
+                                    className={`aspect-square border rounded-lg p-1 md:p-2 flex flex-col ${isToday ? 'border-primary-500 bg-primary-50' : 'border-gray-200 bg-white'} hover:shadow-md transition-shadow cursor-pointer min-h-[60px] md:min-h-[100px] overflow-hidden`}
                                 >
-                                    <div className={`text-sm font-bold mb-1 flex justify-between items-start ${isToday ? 'text-primary-600' : 'text-gray-700'}`}>
+                                    <div className={`text-xs md:text-sm font-bold mb-1 flex justify-between items-start ${isToday ? 'text-primary-600' : 'text-gray-700'}`}>
                                         <span>{day}</span>
-                                        {holidays.find(h => h.date === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0]) && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleHolidayClick(holidays.find(h => h.date === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0]), new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
-                                                }}
-                                                className="text-amber-500 hover:text-amber-600 transition-colors"
-                                                title="Feriado/Data Comemorativa"
-                                            >
-                                                <Gift size={14} />
-                                            </button>
-                                        )}
+                                        <div className="hidden md:block">
+                                            {holidays.find(h => h.date === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0]) && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleHolidayClick(holidays.find(h => h.date === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0]), new Date(currentDate.getFullYear(), currentDate.getMonth(), day));
+                                                    }}
+                                                    className="text-amber-500 hover:text-amber-600 transition-colors"
+                                                    title="Feriado/Data Comemorativa"
+                                                >
+                                                    <Gift size={14} />
+                                                </button>
+                                            )}
+                                        </div>
+                                        {/* Mobile dot for holidays */}
+                                        <div className="md:hidden">
+                                            {holidays.find(h => h.date === new Date(currentDate.getFullYear(), currentDate.getMonth(), day).toISOString().split('T')[0]) && (
+                                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="flex-1 overflow-y-auto space-y-1 custom-scrollbar">
+                                    <div className="flex-1 overflow-y-hidden md:overflow-y-auto space-y-0.5 md:space-y-1 custom-scrollbar">
                                         {dayPosts.map(post => {
                                             const Icon = getPlatformIcon(post.platform);
                                             return (
@@ -516,14 +526,14 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                     draggable
                                                     onDragStart={() => handleDragStart(post)}
                                                     onClick={(e) => { e.stopPropagation(); handleEditPost(post); }}
-                                                    className={`w-full text-left p-1.5 rounded border text-xs transition-all ${getPlatformColor(post.platform)} cursor-move`}
+                                                    className={`w-full text-left p-0.5 md:p-1.5 rounded border text-[10px] md:text-xs transition-all ${getPlatformColor(post.platform)} cursor-move`}
                                                 >
-                                                    <div className="flex items-center gap-1 group relative pr-4">
-                                                        <Icon size={12} className="shrink-0" />
-                                                        <span className="truncate flex-1">{post.content.substring(0, 20)}...</span>
+                                                    <div className="flex items-center gap-1 group relative md:pr-4 justify-center md:justify-start">
+                                                        <Icon size={10} className="shrink-0" />
+                                                        <span className="truncate flex-1 hidden md:block">{post.content.substring(0, 20)}...</span>
                                                         <button
                                                             onClick={(e) => handleDeletePost(e, post.id)}
-                                                            className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-100 text-red-500 rounded transition-all"
+                                                            className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-0.5 hover:bg-red-100 text-red-500 rounded transition-all"
                                                         >
                                                             <Trash2 size={10} />
                                                         </button>
@@ -531,6 +541,8 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                 </div>
                                             );
                                         })}
+                                        {/* Mobile indicator if too many posts */}
+                                        {dayPosts.length > 0 && <div className="md:hidden flex justify-center"><div className="w-1 h-1 bg-gray-400 rounded-full"></div></div>}
                                     </div>
                                 </div>
                             );
@@ -547,13 +559,13 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                     onDragOver={handleDragOver}
                                     onDrop={() => handleDrop(date.getDate(), date.getMonth(), date.getFullYear())}
                                     onClick={() => setSchedulingModal({ isOpen: true, date })}
-                                    className={`border rounded-lg p-4 ${isToday ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'} hover:shadow-md transition-shadow cursor-pointer`}
+                                    className={`border rounded-lg p-3 md:p-4 ${isToday ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white'} hover:shadow-md transition-shadow cursor-pointer`}
                                 >
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="text-2xl font-bold">{date.getDate()}</div>
+                                            <div className="text-xl md:text-2xl font-bold">{date.getDate()}</div>
                                             <div>
-                                                <div className="font-bold text-gray-800">{dayNames[date.getDay()]}</div>
+                                                <div className="font-bold text-sm md:text-base text-gray-800">{dayNames[date.getDay()]}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -561,14 +573,15 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                         {dayPosts.map(post => {
                                             const Icon = getPlatformIcon(post.platform);
                                             return (
-                                                <div key={post.id} draggable onDragStart={() => handleDragStart(post)} onClick={(e) => { e.stopPropagation(); handleEditPost(post); }} className={`p-3 rounded-lg border cursor-pointer transition-all ${getPlatformColor(post.platform)}`}>
+                                                <div key={post.id} draggable onDragStart={() => handleDragStart(post)} onClick={(e) => { e.stopPropagation(); handleEditPost(post); }} className={`p-2 md:p-3 rounded-lg border cursor-pointer transition-all ${getPlatformColor(post.platform)}`}>
                                                     <div className="flex items-start gap-2">
                                                         <Icon size={16} className="shrink-0 mt-0.5" />
-                                                        <p className="text-sm font-medium line-clamp-2">{post.content}</p>
+                                                        <p className="text-xs md:text-sm font-medium line-clamp-2">{post.content}</p>
                                                     </div>
                                                 </div>
                                             );
                                         })}
+                                        {dayPosts.length === 0 && <div className="text-xs text-gray-400 italic py-1">Sem agendamentos</div>}
                                     </div>
                                 </div>
                             );
@@ -605,7 +618,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                         setSchedulingModal({ isOpen: true, date: currentDate });
                                     }}
                                 >
-                                    <div className="w-20 border-r border-gray-100 p-3 text-xs font-medium text-gray-500 flex items-start justify-center">
+                                    <div className="w-14 md:w-20 border-r border-gray-100 p-2 md:p-3 text-xs font-medium text-gray-500 flex items-start justify-center">
                                         {timeString}
                                     </div>
                                     <div className="flex-1 p-2 relative">
@@ -624,12 +637,12 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                                         draggable
                                                         onDragStart={() => handleDragStart(post)}
                                                         onClick={(e) => { e.stopPropagation(); handleEditPost(post); }}
-                                                        className={`px-3 py-1.5 rounded border text-xs transition-all ${getPlatformColor(post.platform)} cursor-move flex items-center gap-2 shadow-sm`}
+                                                        className={`px-2 py-1 md:px-3 md:py-1.5 rounded border text-xs transition-all ${getPlatformColor(post.platform)} cursor-move flex items-center gap-1 md:gap-2 shadow-sm`}
                                                         style={{ marginTop: `${topOffset}%` }}
                                                     >
                                                         <Icon size={12} />
-                                                        <span className="font-medium">{postDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                                                        <span className="truncate max-w-[200px]">{post.content}</span>
+                                                        <span className="font-medium hidden md:inline">{postDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                                        <span className="truncate max-w-[100px] md:max-w-[200px]">{post.content}</span>
                                                     </div>
                                                 );
                                             })}
@@ -642,7 +655,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                 )}
             </div>
 
-            <div className="p-4 border-t border-gray-200 bg-gray-50 shrink-0">
+            <div className="p-4 border-t border-gray-200 bg-gray-50 shrink-0 hidden md:block">
                 <div className="flex flex-wrap gap-4 justify-center items-center">
                     <div className="text-sm text-gray-600 font-medium">Legenda:</div>
                     {platforms.map(platform => {
@@ -664,7 +677,7 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
 
             {suggestionModal && (
                 <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 animate-in fade-in">
-                    <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full">
+                    <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="p-2 bg-purple-100 rounded-lg text-purple-600"><Sparkles size={24} /></div>
                             <div>
@@ -675,9 +688,9 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                         <p className="text-sm text-gray-600 mb-6">
                             Deseja que a IA gere uma sugestão de conteúdo criativo para o feriado <strong>{suggestionModal.holiday.name}</strong> no dia {suggestionModal.date.toLocaleDateString()}?
                         </p>
-                        <div className="flex gap-3 justify-end">
-                            <button onClick={() => setSuggestionModal(null)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium" disabled={isGenerating}>Cancelar</button>
-                            <button onClick={generateSuggestion} disabled={isGenerating} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center gap-2">
+                        <div className="flex gap-3 justify-end flex-col md:flex-row">
+                            <button onClick={() => setSuggestionModal(null)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm font-medium order-2 md:order-1" disabled={isGenerating}>Cancelar</button>
+                            <button onClick={generateSuggestion} disabled={isGenerating} className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 flex items-center justify-center gap-2 order-1 md:order-2">
                                 {isGenerating ? 'Gerando...' : 'Gerar Sugestão'}
                             </button>
                         </div>
@@ -688,26 +701,26 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
             {schedulingModal.isOpen && (
                 <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="bg-gradient-to-r from-primary-600 to-indigo-600 p-6 text-white flex justify-between items-center shrink-0">
+                        <div className="bg-gradient-to-r from-primary-600 to-indigo-600 p-4 md:p-6 text-white flex justify-between items-center shrink-0">
                             <div>
-                                <h2 className="text-xl font-bold flex items-center gap-2"><CalendarIcon size={24} /> Novo Agendamento</h2>
+                                <h2 className="text-lg md:text-xl font-bold flex items-center gap-2"><CalendarIcon size={24} /> Novo Agendamento</h2>
                                 <p className="text-primary-100 text-sm mt-1">{schedulingModal.date?.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                             </div>
                             <button onClick={() => setSchedulingModal({ isOpen: false, date: null })} className="text-white/80 hover:text-white transition-colors"><X size={24} /></button>
                         </div>
-                        <div className="p-6 space-y-6 overflow-y-auto">
-                            <div className="flex p-1 bg-gray-100 rounded-lg mb-6">
-                                <button onClick={() => setNewEvent({ ...newEvent, category: 'meeting' })} className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${newEvent.category === 'meeting' ? 'bg-white shadow text-primary-600' : 'text-gray-500 hover:text-gray-700'}`}>Compromisso / Reunião</button>
-                                <button onClick={() => setNewEvent({ ...newEvent, category: 'social_post' })} className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${newEvent.category === 'social_post' ? 'bg-white shadow text-pink-600' : 'text-gray-500 hover:text-gray-700'}`}>Postagem Social</button>
+                        <div className="p-4 md:p-6 space-y-4 md:space-y-6 overflow-y-auto">
+                            <div className="flex p-1 bg-gray-100 rounded-lg mb-4 md:mb-6">
+                                <button onClick={() => setNewEvent({ ...newEvent, category: 'meeting' })} className={`flex-1 py-2 text-xs md:text-sm font-medium rounded-md transition-all ${newEvent.category === 'meeting' ? 'bg-white shadow text-primary-600' : 'text-gray-500 hover:text-gray-700'}`}>Compromisso / Reunião</button>
+                                <button onClick={() => setNewEvent({ ...newEvent, category: 'social_post' })} className={`flex-1 py-2 text-xs md:text-sm font-medium rounded-md transition-all ${newEvent.category === 'social_post' ? 'bg-white shadow text-pink-600' : 'text-gray-500 hover:text-gray-700'}`}>Postagem Social</button>
                             </div>
 
                             {newEvent.category === 'meeting' ? (
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-gray-700">Título do Evento</label>
-                                        <input type="text" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-lg" value={newEvent.title} onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })} placeholder="Adicionar título" autoFocus />
+                                        <input type="text" className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-base md:text-lg" value={newEvent.title} onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })} placeholder="Adicionar título" autoFocus />
                                     </div>
-                                    <div className="grid grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div><label className="text-sm font-bold text-gray-700">Início</label><input type="time" className="w-full p-2.5 border border-gray-300 rounded-lg" value={newEvent.startTime} onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })} /></div>
                                         <div><label className="text-sm font-bold text-gray-700">Fim</label><input type="time" className="w-full p-2.5 border border-gray-300 rounded-lg" value={newEvent.endTime} onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })} /></div>
                                     </div>
@@ -722,9 +735,9 @@ export const SocialCalendar: React.FC<SocialCalendarProps> = ({
                                 </div>
                             )}
 
-                            <div className="flex justify-end gap-3 p-6 border-t border-gray-100 bg-gray-50 shrink-0">
-                                <button onClick={() => setSchedulingModal({ isOpen: false, date: null })} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors">Cancelar</button>
-                                <button onClick={handleScheduleEvent} className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-bold flex items-center gap-2 shadow-lg shadow-primary-200 transition-all"><Save size={18} /> Salvar Agendamento</button>
+                            <div className="flex justify-end gap-3 p-4 md:p-6 border-t border-gray-100 bg-gray-50 shrink-0 flex-col md:flex-row">
+                                <button onClick={() => setSchedulingModal({ isOpen: false, date: null })} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors order-2 md:order-1">Cancelar</button>
+                                <button onClick={handleScheduleEvent} className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary-200 transition-all order-1 md:order-2"><Save size={18} /> Salvar</button>
                             </div>
                         </div>
                     </div>

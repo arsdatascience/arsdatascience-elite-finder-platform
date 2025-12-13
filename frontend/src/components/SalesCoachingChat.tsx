@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Mic, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, MessageSquare, Smartphone, Settings, Users, MessageCircle, Download, UserPlus, X, FileText, FileBarChart, RefreshCw } from 'lucide-react';
+import { Send, Mic, Sparkles, AlertTriangle, TrendingUp, BrainCircuit, Smartphone, Settings, Users, MessageCircle, Download, UserPlus, X, FileText, FileBarChart, RefreshCw, ChevronLeft } from 'lucide-react';
 import { COMPONENT_VERSIONS } from '../componentVersions';
 import socketService from '../services/socket';
 import { WhatsAppConfigModal } from './WhatsAppConfigModal';
@@ -43,6 +43,18 @@ export const SalesCoachingChat: React.FC = () => {
     const [integrationStatus, setIntegrationStatus] = useState<{ connected: boolean; platform: string; phone?: string }>({ connected: false, platform: '' });
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const activeSessionIdRef = useRef(activeSessionId);
+
+    // Mobile View State
+    const [mobileView, setMobileView] = useState<'sessions' | 'chat' | 'coach'>('sessions');
+
+    // Auto-switch to chat when session selected on mobile
+    useEffect(() => {
+        if (activeSessionId && window.innerWidth < 1024) {
+            setMobileView('chat');
+        }
+    }, [activeSessionId]);
+
+
 
     const formatPhoneNumber = (phone: string | null) => {
         if (!phone) return '';
@@ -529,9 +541,9 @@ export const SalesCoachingChat: React.FC = () => {
     };
 
     return (
-        <div className="flex h-[calc(100vh-100px)] gap-4 animate-fade-in relative">
+        <div className="flex flex-col lg:flex-row h-[calc(100vh-100px)] gap-4 animate-fade-in relative">
             {/* LEFT: Sessions List */}
-            <div className="w-72 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className={`w-full lg:w-72 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden ${mobileView === 'sessions' ? 'flex' : 'hidden lg:flex'}`}>
                 <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                     <h3 className="font-bold text-gray-700 flex items-center gap-2">
                         <Users size={18} /> Conversas
@@ -576,32 +588,35 @@ export const SalesCoachingChat: React.FC = () => {
             </div>
 
             {/* MIDDLE: Main Chat Interface */}
-            <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className={`flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden ${mobileView === 'chat' ? 'flex' : 'hidden lg:flex'}`}>
                 {/* Chat Header */}
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center text-white relative">
+                        <button onClick={() => setMobileView('sessions')} className="lg:hidden p-1 -ml-1 text-gray-500">
+                            <ChevronLeft size={24} />
+                        </button>
+                        <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center text-white relative shrink-0">
                             <Smartphone size={20} />
                             <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
                         </div>
-                        <div>
-                            <h3 className="font-bold text-gray-800">
+                        <div className="overflow-hidden">
+                            <h3 className="font-bold text-gray-800 truncate">
                                 {activePhone ? `WhatsApp: ${formatPhoneNumber(activePhone)}` : 'Selecione uma conversa'}
                             </h3>
                             <p className="text-xs text-gray-500 flex items-center gap-1">
                                 <span className={`w-2 h-2 rounded-full ${integrationStatus.connected ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                {integrationStatus.connected ? `Conectado via ${integrationStatus.platform}` : 'Desconectado'}
+                                <span className="truncate max-w-[150px] md:max-w-none">{integrationStatus.connected ? `Conectado via ${integrationStatus.platform}` : 'Desconectado'}</span>
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full">{COMPONENT_VERSIONS.SalesCoachingChat || 'v1.1'}</span>
+                    <div className="flex items-center gap-1 md:gap-2">
+                        <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full hidden md:inline">{COMPONENT_VERSIONS.SalesCoachingChat || 'v1.1'}</span>
 
                         {activeSessionId && (
                             <>
                                 <button
                                     onClick={handleExportChat}
-                                    className="p-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors shadow-sm"
+                                    className="p-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors shadow-sm hidden md:flex"
                                     title="Exportar Conversa (TXT)"
                                 >
                                     <Download size={20} />
@@ -623,20 +638,30 @@ export const SalesCoachingChat: React.FC = () => {
                         >
                             <Settings size={20} />
                         </button>
+
+                        <button
+                            onClick={() => setMobileView('coach')}
+                            className="lg:hidden p-2 bg-slate-800 text-primary-400 rounded-lg shadow-sm animate-pulse ml-1"
+                        >
+                            <BrainCircuit size={20} />
+                        </button>
                     </div>
                 </div>
 
                 {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 bg-slate-50">
                     {messages.length === 0 && !activeSessionId ? (
-                        <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                        <div className="h-full flex flex-col items-center justify-center text-gray-400 text-center p-4">
                             <MessageCircle size={48} className="mb-4 opacity-20" />
-                            <p>Selecione uma conversa ao lado para iniciar.</p>
+                            <p>Selecione uma conversa para iniciar.</p>
+                            <button onClick={() => setMobileView('sessions')} className="mt-4 px-4 py-2 bg-primary-100 text-primary-600 rounded-lg text-sm font-medium lg:hidden">
+                                Ver Conversas
+                            </button>
                         </div>
                     ) : (
                         messages.map((msg) => (
                             <div key={msg.id} className={`flex ${msg.role === 'agent' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[70%] rounded-2xl p-4 shadow-sm relative ${msg.role === 'agent'
+                                <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl p-3 md:p-4 shadow-sm relative ${msg.role === 'agent'
                                     ? 'bg-primary-600 text-white rounded-tr-none'
                                     : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'
                                     }`}>
@@ -645,8 +670,8 @@ export const SalesCoachingChat: React.FC = () => {
                                             <Smartphone size={8} /> WA
                                         </span>
                                     )}
-                                    <p className="text-sm leading-relaxed">{msg.content}</p>
-                                    <span className={`text-[10px] block mt-2 ${msg.role === 'agent' ? 'text-primary-100' : 'text-gray-400'}`}>
+                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                                    <span className={`text-[10px] block mt-1 md:mt-2 ${msg.role === 'agent' ? 'text-primary-100' : 'text-gray-400'}`}>
                                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
                                 </div>
@@ -657,9 +682,9 @@ export const SalesCoachingChat: React.FC = () => {
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 bg-white border-t border-gray-100">
+                <div className="p-3 md:p-4 bg-white border-t border-gray-100">
                     <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200 focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-transparent transition-all">
-                        <button className="p-2 text-gray-400 hover:text-primary-600 transition-colors">
+                        <button className="p-2 text-gray-400 hover:text-primary-600 transition-colors hidden md:block">
                             <Mic size={20} />
                         </button>
                         <input
@@ -669,7 +694,7 @@ export const SalesCoachingChat: React.FC = () => {
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                             placeholder={activeSessionId ? "Digite sua resposta..." : "Selecione uma conversa..."}
                             disabled={!activeSessionId}
-                            className="flex-1 bg-transparent border-none focus:ring-0 text-gray-700 placeholder-gray-400 disabled:opacity-50"
+                            className="flex-1 bg-transparent border-none focus:ring-0 text-gray-700 placeholder-gray-400 disabled:opacity-50 text-sm md:text-base"
                         />
                         <button
                             onClick={handleSendMessage}
@@ -683,7 +708,14 @@ export const SalesCoachingChat: React.FC = () => {
             </div>
 
             {/* RIGHT: Teleprompter / AI Coach */}
-            <div className="w-80 flex flex-col gap-4 overflow-hidden">
+            <div className={`w-full lg:w-80 flex flex-col gap-4 overflow-hidden ${mobileView === 'coach' ? 'flex' : 'hidden lg:flex'}`}>
+                {/* Mobile Back Button */}
+                <div className="lg:hidden flex items-center gap-2 mb-2">
+                    <button onClick={() => setMobileView('chat')} className="flex items-center gap-1 text-sm text-gray-500 font-medium">
+                        <ChevronLeft size={16} /> Voltar ao Chat
+                    </button>
+                </div>
+
                 {/* AI Header with Report Buttons */}
                 <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-gray-200">
                     <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
@@ -767,7 +799,7 @@ export const SalesCoachingChat: React.FC = () => {
                     </div>
 
                     {/* THE TELEPROMPTER (Actionable Advice) */}
-                    <div className="bg-gradient-to-b from-slate-900 to-slate-800 rounded-2xl shadow-lg border border-slate-700 p-6 text-white relative overflow-hidden">
+                    <div className="bg-gradient-to-b from-slate-900 to-slate-800 rounded-2xl shadow-lg border border-slate-700 p-6 text-white relative overflow-hidden mb-20 lg:mb-0">
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500"></div>
 
                         <h4 className="text-sm font-bold text-primary-300 uppercase tracking-wider mb-6 flex items-center gap-2">
@@ -797,17 +829,10 @@ export const SalesCoachingChat: React.FC = () => {
                                         </p>
                                     </div>
                                 </div>
-
-                                {/* Strategy Tag */}
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/20 text-primary-300 text-xs font-medium border border-blue-500/30">
-                                    <BrainCircuit size={12} />
-                                    Estratégia: {analysis.suggested_strategy}
-                                </div>
                             </div>
                         ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-slate-500 text-center py-8">
-                                <MessageSquare size={48} className="mb-4 opacity-20" />
-                                <p className="text-sm">O Teleprompter será ativado assim que o cliente interagir.</p>
+                            <div className="text-center py-8 text-slate-500 text-sm">
+                                Mantenha a conversa fluindo para receber dicas em tempo real.
                             </div>
                         )}
                     </div>
@@ -823,7 +848,7 @@ export const SalesCoachingChat: React.FC = () => {
             {/* Save Client Modal */}
             {showSaveClientModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 m-4">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                                 <UserPlus size={24} className="text-primary-600" /> Salvar Cliente

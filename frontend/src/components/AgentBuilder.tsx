@@ -957,54 +957,56 @@ POLÍTICA: Evitar temas sensíveis como [LISTAR TEMAS PROIBIDOS].`;
     return (
         <div className="flex flex-col h-full bg-gray-50 animate-fade-in min-h-screen">
             {/* Header */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-                <div>
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-2xl font-bold text-gray-800">Construtor de Agentes IA</h2>
-                        <span className="px-2 py-1 bg-primary-100 text-primary-700 text-xs font-bold rounded-full uppercase">Enterprise Edition</span>
+            <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sticky top-0 z-10">
+                <div className="w-full md:w-auto">
+                    <div className="flex items-center gap-2 md:gap-3">
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-800">Construtor de Agentes IA</h2>
+                        <span className="px-2 py-1 bg-primary-100 text-primary-700 text-[10px] md:text-xs font-bold rounded-full uppercase">Enterprise</span>
                     </div>
-                    <p className="text-sm text-gray-500">Configure agentes especializados com parâmetros avançados de RAG e Engenharia de Prompt.</p>
+                    <p className="text-xs md:text-sm text-gray-500 mt-1">Configure agentes especializados com parâmetros avançados.</p>
                 </div>
-                <div className="flex gap-3 items-center">
-                    <div className="w-64">
+                <div className="flex flex-col md:flex-row gap-3 items-center w-full md:w-auto">
+                    <div className="w-full md:w-64">
                         <ClientSelector
                             selectedClientId={selectedClientId}
                             onSelectClient={setSelectedClientId}
                         />
                     </div>
-                    <button
-                        onClick={() => window.open('/whatsapp-simulator', '_blank')}
-                        className="px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg font-medium flex items-center gap-2 border border-green-200"
-                    >
-                        <MessageSquare size={18} /> Simular WhatsApp
-                    </button>
-                    <button
-                        onClick={() => setShowMagicModal(true)}
-                        className="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium flex items-center gap-2 border border-indigo-200"
-                    >
-                        <Wand2 size={18} /> Configuração Mágica
-                    </button>
-                    <button
-                        onClick={fetchTemplates}
-                        className="px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg font-medium flex items-center gap-2 border border-primary-200"
-                    >
-                        <LayoutTemplate size={18} /> Carregar Template
-                    </button>
-                    <button
-                        onClick={() => setShowSaveTemplateModal(true)}
-                        className="px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg font-medium flex items-center gap-2 border border-purple-200"
-                    >
-                        <Save size={18} /> Salvar como Template
-                    </button>
-                    <button
-                        onClick={handleSaveAgent}
-                        disabled={saveAgentMutation.isPending}
-                        className={`px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 flex items-center gap-2 shadow-lg shadow-primary-200 ${saveAgentMutation.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    >
-                        <Save size={18} /> {saveAgentMutation.isPending ? 'Salvando...' : 'Salvar Agente'}
-                    </button>
+                    <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 w-full md:w-auto no-scrollbar">
+                        <button
+                            onClick={() => window.open('/whatsapp-simulator', '_blank')}
+                            className="px-3 md:px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg font-medium flex items-center gap-2 border border-green-200 whitespace-nowrap"
+                        >
+                            <MessageSquare size={18} /> <span className="hidden lg:inline">Simular WhatsApp</span>
+                        </button>
+                        <button
+                            onClick={() => setShowMagicModal(true)}
+                            className="px-3 md:px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg font-medium flex items-center gap-2 border border-indigo-200 whitespace-nowrap"
+                        >
+                            <Wand2 size={18} /> <span className="hidden lg:inline">Mágica</span>
+                        </button>
+                        <button
+                            onClick={fetchTemplates}
+                            className="px-3 md:px-4 py-2 text-primary-600 hover:bg-primary-50 rounded-lg font-medium flex items-center gap-2 border border-primary-200 whitespace-nowrap"
+                        >
+                            <LayoutTemplate size={18} /> <span className="hidden lg:inline">Templates</span>
+                        </button>
+                        <button
+                            onClick={() => setShowSaveTemplateModal(true)}
+                            className="px-3 md:px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg font-medium flex items-center gap-2 border border-purple-200 whitespace-nowrap"
+                        >
+                            <Save size={18} /> <span className="hidden lg:inline">Salvar Tmpl</span>
+                        </button>
+                        <button
+                            onClick={handleSaveAgent}
+                            disabled={saveAgentMutation.isPending}
+                            className={`px-3 md:px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 flex items-center gap-2 shadow-lg shadow-primary-200 whitespace-nowrap ${saveAgentMutation.isPending ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        >
+                            <Save size={18} /> {saveAgentMutation.isPending ? '...' : <span className="hidden lg:inline">Salvar Agente</span>}
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </div >
             <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
                 {/* Mobile Navigation */}
                 <div className="md:hidden w-full bg-white border-b border-gray-200 overflow-x-auto shrink-0">
@@ -1040,7 +1042,7 @@ POLÍTICA: Evitar temas sensíveis como [LISTAR TEMAS PROIBIDOS].`;
                     </nav>
                 </div>
                 {/* Content Area */}
-                <div className="flex-1 overflow-y-auto p-8">
+                <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-20 md:pb-8">
                     <div className="max-w-4xl mx-auto">
                         {/* TAB: AGENT STORE */}
                         {activeTab === 'store' && (

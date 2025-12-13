@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Layout, FileText, Layers, Trash2, PenTool, Instagram, Linkedin, Mail, MessageCircle, Send, Save, Check, Copy, Music, History as HistoryIcon, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, Layout, FileText, Layers, Trash2, PenTool, Instagram, Linkedin, Mail, MessageCircle, Send, Save, Check, Copy, Music, History as HistoryIcon, Image as ImageIcon, Menu, X } from 'lucide-react';
 
 import { ClientSelector } from './common/ClientSelector';
 import { ImageGenerationPage } from './ImageGenerationPage';
@@ -206,18 +206,18 @@ const CreativeStudio: React.FC = () => {
             {/* Main Container */}
             <div className="w-full flex-1 flex flex-col">
                 {/* Header Section with Tabs */}
-                <div className="bg-white border-b border-slate-200 px-8 py-6">
+                <div className="bg-white border-b border-slate-200 px-4 md:px-8 py-4 md:py-6">
                     <div className="max-w-6xl mx-auto w-full">
-                        <div className="flex justify-between items-center mb-6">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                             <div>
-                                <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-                                    <Sparkles className="text-slate-600" /> Estúdio Criativo & Copywriter
+                                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-2 md:gap-3">
+                                    <Sparkles className="text-slate-600" /> <span className="truncate">Estúdio Criativo</span>
                                 </h1>
-                                <p className="text-slate-600 mt-2">Central unificada para criação de textos persuasivos e design de posts.</p>
+                                <p className="text-xs md:text-sm text-slate-600 mt-1 md:mt-2">Central unificada para criação e design.</p>
                             </div>
 
-                            <div className="flex items-center gap-4">
-                                <div className="w-64">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                                <div className="w-full sm:w-64">
                                     <ClientSelector
                                         selectedClientId={selectedClientId}
                                         onSelectClient={setSelectedClientId}
@@ -227,62 +227,64 @@ const CreativeStudio: React.FC = () => {
                                 {activeTab === 'copy' && (
                                     <button
                                         onClick={() => setShowHistory(!showHistory)}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${showHistory ? 'bg-slate-200 text-slate-800' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'}`}
+                                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${showHistory ? 'bg-slate-200 text-slate-800' : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100'}`}
                                     >
-                                        <HistoryIcon size={18} /> Histórico ({savedCopies.length})
+                                        <HistoryIcon size={18} /> <span className="hidden sm:inline">Histórico</span> ({savedCopies.length})
                                     </button>
                                 )}
                             </div>
                         </div>
 
-                        {/* Tabs */}
-                        <div className="flex space-x-1 bg-slate-100 p-1 rounded-xl w-fit">
-                            <button
-                                onClick={() => setActiveTab('design')}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'design'
-                                    ? 'bg-white text-slate-700 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
-                                    }`}
-                            >
-                                <Layout size={18} />
-                                Design & Mídia (IA Agent)
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('copy')}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'copy'
-                                    ? 'bg-white text-slate-700 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
-                                    }`}
-                            >
-                                <FileText size={18} />
-                                Sniper Copywriter
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('batch')}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'batch'
-                                    ? 'bg-white text-slate-700 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
-                                    }`}
-                            >
-                                <Layers size={18} />
-                                Produção em Série (Batch)
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('images')}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${activeTab === 'images'
-                                    ? 'bg-white text-slate-700 shadow-sm'
-                                    : 'text-slate-500 hover:text-slate-700'
-                                    }`}
-                            >
-                                <ImageIcon size={18} />
-                                Geração de Imagens (IA)
-                            </button>
+                        {/* Tabs - Scrollable on mobile */}
+                        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+                            <div className="flex space-x-1 bg-slate-100 p-1 rounded-xl w-max md:w-fit">
+                                <button
+                                    onClick={() => setActiveTab('design')}
+                                    className={`flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'design'
+                                        ? 'bg-white text-slate-700 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                >
+                                    <Layout size={18} />
+                                    Design <span className="hidden md:inline">& Mídia (IA Agent)</span>
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('copy')}
+                                    className={`flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'copy'
+                                        ? 'bg-white text-slate-700 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                >
+                                    <FileText size={18} />
+                                    Copywriter
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('batch')}
+                                    className={`flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'batch'
+                                        ? 'bg-white text-slate-700 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                >
+                                    <Layers size={18} />
+                                    Batch
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('images')}
+                                    className={`flex items-center gap-2 px-4 md:px-6 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'images'
+                                        ? 'bg-white text-slate-700 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700'
+                                        }`}
+                                >
+                                    <ImageIcon size={18} />
+                                    Imagens
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 p-8">
+                <div className="flex-1 p-4 md:p-8">
                     <div className="max-w-6xl mx-auto w-full h-full">
 
                         {activeTab === 'images' ? (
@@ -302,11 +304,11 @@ const CreativeStudio: React.FC = () => {
                                 />
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 animate-fade-in">
                                 {/* Coluna da Esquerda: Histórico (Condicional ou Fixo) */}
                                 {showHistory && (
-                                    <div className="lg:col-span-3 space-y-4 animate-fade-in">
-                                        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-[calc(100vh-200px)] overflow-y-auto">
+                                    <div className="lg:col-span-3 space-y-4 animate-fade-in order-1 lg:order-none">
+                                        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 h-64 lg:h-[calc(100vh-200px)] overflow-y-auto">
                                             <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
                                                 <HistoryIcon size={16} /> Copys Salvas
                                             </h3>
@@ -329,7 +331,7 @@ const CreativeStudio: React.FC = () => {
                                                                 </span>
                                                                 <button
                                                                     onClick={(e) => handleDelete(copy.id, e)}
-                                                                    className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                    className="text-slate-400 hover:text-red-500 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
                                                                 >
                                                                     <Trash2 size={14} />
                                                                 </button>
@@ -345,8 +347,8 @@ const CreativeStudio: React.FC = () => {
                                 )}
 
                                 {/* Coluna Central: Configuração */}
-                                <div className={`${showHistory ? 'lg:col-span-3' : 'lg:col-span-4'} space-y-6 transition-all`}>
-                                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <div className={`${showHistory ? 'lg:col-span-3' : 'lg:col-span-4'} space-y-6 transition-all order-2 lg:order-none`}>
+                                    <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
                                         <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
                                             <PenTool size={18} /> Configuração
                                         </h3>
@@ -364,34 +366,34 @@ const CreativeStudio: React.FC = () => {
 
                                             <div>
                                                 <label className="block text-sm font-medium text-slate-700 mb-1">Plataforma</label>
-                                                <div className="grid grid-cols-2 gap-2">
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                                     <button
                                                         onClick={() => setPlatform('instagram')}
-                                                        className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'instagram' ? 'bg-pink-50 border-pink-500 text-pink-700' : 'hover:bg-slate-50'}`}
+                                                        className={`p-2 md:p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'instagram' ? 'bg-pink-50 border-pink-500 text-pink-700' : 'hover:bg-slate-50'}`}
                                                     >
                                                         <Instagram size={20} /> <span className="text-xs font-medium">Instagram</span>
                                                     </button>
                                                     <button
                                                         onClick={() => setPlatform('linkedin')}
-                                                        className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'linkedin' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'hover:bg-slate-50'}`}
+                                                        className={`p-2 md:p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'linkedin' ? 'bg-blue-50 border-blue-500 text-blue-700' : 'hover:bg-slate-50'}`}
                                                     >
                                                         <Linkedin size={20} /> <span className="text-xs font-medium">LinkedIn</span>
                                                     </button>
                                                     <button
                                                         onClick={() => setPlatform('email')}
-                                                        className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'email' ? 'bg-yellow-50 border-yellow-500 text-yellow-700' : 'hover:bg-slate-50'}`}
+                                                        className={`p-2 md:p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'email' ? 'bg-yellow-50 border-yellow-500 text-yellow-700' : 'hover:bg-slate-50'}`}
                                                     >
                                                         <Mail size={20} /> <span className="text-xs font-medium">Email Mkt</span>
                                                     </button>
                                                     <button
                                                         onClick={() => setPlatform('whatsapp')}
-                                                        className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'whatsapp' ? 'bg-green-50 border-green-500 text-green-700' : 'hover:bg-slate-50'}`}
+                                                        className={`p-2 md:p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'whatsapp' ? 'bg-green-50 border-green-500 text-green-700' : 'hover:bg-slate-50'}`}
                                                     >
                                                         <MessageCircle size={20} /> <span className="text-xs font-medium">WhatsApp</span>
                                                     </button>
                                                     <button
                                                         onClick={() => setPlatform('tiktok')}
-                                                        className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'tiktok' ? 'bg-black/5 border-black text-black' : 'hover:bg-slate-50'}`}
+                                                        className={`p-2 md:p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${platform === 'tiktok' ? 'bg-black/5 border-black text-black' : 'hover:bg-slate-50'}`}
                                                     >
                                                         <Music size={20} /> <span className="text-xs font-medium">TikTok</span>
                                                     </button>
@@ -445,8 +447,8 @@ const CreativeStudio: React.FC = () => {
                                 </div>
 
                                 {/* Coluna da Direita: Resultado */}
-                                <div className={`${showHistory ? 'lg:col-span-6' : 'lg:col-span-8'} transition-all`}>
-                                    <div className="bg-white h-full min-h-[600px] rounded-xl shadow-sm border border-slate-200 flex flex-col">
+                                <div className={`${showHistory ? 'lg:col-span-6' : 'lg:col-span-8'} transition-all order-3 lg:order-none`}>
+                                    <div className="bg-white h-full min-h-[500px] lg:min-h-[600px] rounded-xl shadow-sm border border-slate-200 flex flex-col">
                                         <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
                                             <h3 className="font-bold text-slate-700">Resultado Gerado</h3>
                                             <div className="flex gap-2">
@@ -455,7 +457,7 @@ const CreativeStudio: React.FC = () => {
                                                         onClick={handleSave}
                                                         className="text-sm text-slate-600 hover:text-primary-600 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors border border-transparent hover:border-slate-200"
                                                     >
-                                                        <Save size={16} /> Salvar
+                                                        <Save size={16} /> <span className="hidden sm:inline">Salvar</span>
                                                     </button>
                                                 )}
                                                 {generatedContent && (
@@ -464,15 +466,15 @@ const CreativeStudio: React.FC = () => {
                                                         className="text-sm text-slate-600 hover:text-slate-900 flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white transition-colors border border-transparent hover:border-slate-200"
                                                     >
                                                         {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-                                                        {copied ? 'Copiado!' : 'Copiar'}
+                                                        {copied ? 'Copiado!' : <span className="hidden sm:inline">Copiar</span>}
                                                     </button>
                                                 )}
                                             </div>
                                         </div>
 
-                                        <div className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-250px)]">
+                                        <div className="flex-1 p-4 md:p-6 overflow-y-auto max-h-[calc(100vh-250px)]">
                                             {!generatedContent && !loading && (
-                                                <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                                <div className="h-full flex flex-col items-center justify-center text-slate-400 text-center">
                                                     <Sparkles size={48} className="mb-4 opacity-20" />
                                                     <p>Seu conteúdo gerado por IA aparecerá aqui.</p>
                                                 </div>
@@ -503,7 +505,7 @@ const CreativeStudio: React.FC = () => {
 
                                                     {/* Body */}
                                                     <div className="prose prose-slate max-w-none">
-                                                        <div className="whitespace-pre-wrap text-slate-800 text-lg leading-relaxed">
+                                                        <div className="whitespace-pre-wrap text-slate-800 text-base md:text-lg leading-relaxed">
                                                             {generatedContent.body}
                                                         </div>
                                                     </div>
